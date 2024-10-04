@@ -1,0 +1,8 @@
+steps:
+  - id: "hello ci"
+    name: gcr.io/cloud-builders/git
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        git clone https://khi.googlesource.com/kubernetes-history-inspector/
