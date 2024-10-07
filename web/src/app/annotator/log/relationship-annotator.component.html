@@ -1,0 +1,23 @@
+<div class="container" *ngIf="refs | async; let resolvedRefs">
+  <ng-container
+    *ngIf="currentSelectedTimelinePath | async; let currentTimelinePath"
+  >
+    <p class="label">
+      <mat-icon>link</mat-icon>Related resources ({{ resolvedRefs.length }})
+    </p>
+    <div class="path-container">
+      <p
+        class="path"
+        *ngFor="let resource of resolvedRefs; let i = index"
+        [ngClass]="{ current: currentTimelinePath === resource.path }"
+        (mouseover)="highlightResource(resource.path)"
+        (click)="selectResource(resource.path)"
+      >
+        <span
+          ><span class="index">{{ i }}</span
+          >{{ resource.label }}</span
+        >
+      </p>
+    </div>
+  </ng-container>
+</div>

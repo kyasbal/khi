@@ -1,0 +1,47 @@
+<div class="container">
+  <div class="log-toolbar">
+    <div class="timeline-filter-wrapper">
+      <khi-icon-toggle-button
+        icon="filter_alt"
+        tooltip="Filter with selected resource timeline"
+        [selected]="filterByTimeline | async"
+        (selectedChange)="filterByTimeline.next($event)"
+        [disabled]="false"
+      >
+      </khi-icon-toggle-button>
+    </div>
+    <div class="timeline-filter-children-wrapper">
+      <khi-icon-toggle-button
+        icon="sort"
+        tooltip="Includes children of the selected resource timeline"
+        [selected]="includeTimelineChildren | async"
+        (selectedChange)="setIncludeTimelineChildren($event)"
+        [disabled]="(filterByTimeline | async) === false"
+      ></khi-icon-toggle-button>
+    </div>
+    <p class="spacer">
+      {{ shownLogsCount | async }}/{{ allLogsCount | async }} logs
+    </p>
+  </div>
+  <table class="log-list-container" tabindex="0" (keydown)="onKeyDown($event)">
+    <cdk-virtual-scroll-viewport
+      itemSize="23.33"
+      class="virtual-viewport"
+      (scrolledIndexChange)="_onScroll()"
+    >
+      <ng-container *cdkVirtualFor="let log of shownLogs | async">
+        <khi-log-view-log-line
+          [log]="log"
+          (lineClick)="_selectLog($event)"
+          (lineHover)="_onLogHover($event)"
+        ></khi-log-view-log-line>
+      </ng-container>
+    </cdk-virtual-scroll-viewport>
+  </table>
+  <div class="resizer" (mousedown)="_resizeStart()"></div>
+  <khi-log-body
+    [logIndex]="(selectedLog | async)?.logIndex ?? 0"
+    [style.--log-body-view-height.px]="logViewHeight | async"
+  >
+  </khi-log-body>
+</div>

@@ -1,0 +1,69 @@
+package k8s_container
+
+import (
+	"context"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/form"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/query/queryutil"
+	gcp_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
+)
+
+const priorityForContainerGroup = gcp_task.FormBasePriority + 20000
+
+const InputContainerQueryNamespacesVariableName = gcp_task.GCPPrefix + "input/container-query-namespaces"
+
+var inputNamespacesAliasMap queryutil.SetFilterAliasToItemsMap = map[string][]string{
+	"managed": {"kube-system", "gke-system", "istio-system", "asm-system", "gmp-system", "gke-mcs", "configconnector-operator-system", "cnrm-system"},
+}
+var InputContainerQueryNamespaceFilterTask = form.NewInputFormDefinitionBuilder(InputContainerQueryNamespacesVariableName, priorityForContainerGroup+1000, "Namespaces(Container logs)").
+	WithDefaultValueConstant("@managed", true).
+	WithDescription(`Container logs tend to be a lot and take very long time to query.
+Specify the space splitted namespace lists to query container logs only in the specific namespaces.`).
+	WithValidator(func(ctx context.Context, value string, variables *task.VariableSet) (string, error) {
+		result, err := queryutil.ParseSetFilter(value, inputNamespacesAliasMap, true, true, true)
+		if err != nil {
+			return "", err
+		}
+		return result.ValidationError, nil
+	}).
+	WithConverter(func(ctx context.Context, value string, variables *task.VariableSet) (any, error) {
+		result, err := queryutil.ParseSetFilter(value, inputNamespacesAliasMap, true, true, true)
+		if err != nil {
+			return "", err
+		}
+		return result, nil
+	}).
+	Build()
+
+func GetInputContainerQueryNamespacesFilterFromTaskVariable(tv *task.VariableSet) (*queryutil.SetFilterParseResult, error) {
+	return task.GetTypedVariableFromTaskVariable[*queryutil.SetFilterParseResult](tv, InputContainerQueryNamespacesVariableName, nil)
+}
+
+const InputContainerQueryPodNamesVariableName = gcp_task.GCPPrefix + "input/container-query-podnames"
+
+var inputPodNamesAliasMap queryutil.SetFilterAliasToItemsMap = map[string][]string{}
+var InputContainerQueryPodNamesFilterMask = form.NewInputFormDefinitionBuilder(InputContainerQueryPodNamesVariableName, priorityForContainerGroup+2000, "Pod names(Container logs)").
+	WithDefaultValueConstant("@any", true).
+	WithDescription(`Container logs tend to be a lot and take very long time to query.
+	Specify the space splitted pod names lists to query container logs only in the specific pods.
+	This parameter is evaluated as the partial match not the perfect match. You can use the prefix of the pod names.`).
+	WithValidator(func(ctx context.Context, value string, variables *task.VariableSet) (string, error) {
+		result, err := queryutil.ParseSetFilter(value, inputPodNamesAliasMap, true, true, true)
+		if err != nil {
+			return "", err
+		}
+		return result.ValidationError, nil
+	}).
+	WithConverter(func(ctx context.Context, value string, variables *task.VariableSet) (any, error) {
+		result, err := queryutil.ParseSetFilter(value, inputPodNamesAliasMap, true, true, true)
+		if err != nil {
+			return "", err
+		}
+		return result, nil
+	}).
+	Build()
+
+func GetInputContainerQueryPodNamesFilterFromTaskVariable(tv *task.VariableSet) (*queryutil.SetFilterParseResult, error) {
+	return task.GetTypedVariableFromTaskVariable[*queryutil.SetFilterParseResult](tv, InputContainerQueryPodNamesVariableName, nil)
+}

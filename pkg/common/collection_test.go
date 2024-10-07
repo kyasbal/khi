@@ -1,0 +1,101 @@
+package common // Or the package your function belongs to
+
+import (
+	"testing"
+
+	"sort" // Import the sort package
+
+	"github.com/google/go-cmp/cmp"
+)
+
+func TestDedupeStringArray(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    []string
+		expected []string
+	}{
+		{"Empty array", []string{}, []string{}},
+		{"Unique elements (sorted)", []string{"hello", "world"}, []string{"hello", "world"}},
+		{"Duplicates (sorted)", []string{"apple", "banana", "apple", "orange"}, []string{"apple", "banana", "orange"}},
+		{"Duplicates (not sorted)", []string{"orange", "apple", "banana", "apple", "orange"}, []string{"apple", "banana", "orange"}},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := DedupeStringArray(tc.input)
+
+			// Sort expected output for consistent comparison
+			sort.Strings(tc.expected)
+
+			if diff := cmp.Diff(result, tc.expected); diff != "" {
+				t.Errorf("DedupeStringArray failed. Difference:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestSortByStringDistance(t *testing.T) {
+	tests := []struct {
+		query    string
+		strings  []string
+		expected []string
+	}{
+		{
+			query: "foo",
+			strings: []string{
+				"foooo",
+				"foo",
+				"fooo",
+				"fo",
+			},
+			expected: []string{
+				"foo",
+				"fooo",
+				"foooo",
+				"fo",
+			},
+		},
+		{
+			query: "foo",
+			strings: []string{
+				"foooo",
+				"fooo",
+				"fo",
+				"foo",
+			},
+			expected: []string{
+				"foo",
+				"fooo",
+				"foooo",
+				"fo",
+			},
+		},
+		{
+			query: "foo",
+			strings: []string{
+				"foooo",
+				"fooo",
+				"f",
+				"foo",
+				"fob",
+				"boo",
+			},
+			expected: []string{
+				"foo",
+				"fooo",
+				"foooo",
+				"fob",
+				"boo",
+				"f",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		actual := SortForAutocomplete(tt.query, tt.strings)
+		if diff := cmp.Diff(actual, tt.expected); diff != "" {
+			t.Errorf("%v", actual)
+			t.Errorf("TestSortByStringDistance failed. Difference:\n%s", diff)
+		}
+	}
+}

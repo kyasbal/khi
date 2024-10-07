@@ -1,0 +1,53 @@
+steps:
+  - id: npm install
+    name: node:18
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        cd ./web
+        npm ci
+    waitFor:
+      - "-"
+  - id: angular test
+    name: node:18
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        wget -nv https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        apt-get -qq update > /dev/null && apt-get -qq install -y libappindicator1 fonts-liberation ./google-chrome-stable_current_amd64.deb > /dev/null
+        cd web && npm run test-ci
+    waitFor:
+      - npm install
+  - id: lint web
+    name: node:18
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        make lint-web
+    waitFor:
+      - npm install
+  - id: check format web
+    name: node:18
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        make check-format-web
+    waitFor:
+      - npm install
+  - id: build web
+    name: node:18
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        make build-web
+    waitFor:
+      - "check format web"
+      - "lint web"
+      - "angular test"
+options:
+  machineType: E2_HIGHCPU_32

@@ -1,0 +1,10 @@
+<div class="container">
+  <p class="log-type">
+    <span class="label"> <mat-icon>article_shortcut</mat-icon> Type</span>
+    <span class="value" [ngClass]="logType">{{ logType }}</span>
+  </p>
+  <p class="log-severity">
+    <span class="label"> <mat-icon>warning</mat-icon> Severity</span>
+    <span class="value" [ngClass]="severity | lowercase">{{ severity }}</span>
+  </p>
+</div>

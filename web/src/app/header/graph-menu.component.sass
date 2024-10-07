@@ -1,0 +1,15 @@
+@use '@angular/material' as mat
+
+:host
+    display: flex
+    gap: 1px
+
+.menu-group
+    display: flex
+    justify-content: center
+    align-items: center
+    width: 140px
+    &.mat-menu-group
+        color: white
+        background-color: mat.get-color-from-palette(mat.$indigo-palette,400)
+        font-size: 20px

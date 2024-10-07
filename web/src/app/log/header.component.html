@@ -1,0 +1,7 @@
+<div class="container">
+  <ng-container *ngFor="let annotator of logAnnotators | async">
+    <ng-container
+      *ngComponentOutlet="annotator.component; inputs: annotator.inputs"
+    ></ng-container>
+  </ng-container>
+</div>

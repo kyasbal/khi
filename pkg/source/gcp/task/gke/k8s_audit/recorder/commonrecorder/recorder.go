@@ -1,0 +1,85 @@
+package commonrecorder
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/manifestutil"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/recorder"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/types"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
+)
+
+type commonRecorderStatus struct {
+	IsFirstRevision bool
+}
+
+func Register(manager *recorder.RecorderTaskManager) error {
+	manager.AddRecorder("common", []string{}, func(ctx context.Context, resourcePath string, l *types.ResourceSpecificParserInput, prevState any, cs *history.ChangeSet, builder *history.Builder, vs *task.VariableSet) (any, error) {
+		prevTypedState := &commonRecorderStatus{
+			IsFirstRevision: true,
+		}
+		if prevState != nil {
+			prevTypedState = prevState.(*commonRecorderStatus)
+		}
+		return recordChangeSetForLog(ctx, resourcePath, prevTypedState, l, cs)
+	}, recorder.AnyLogGroupFilter(), recorder.AnyLogFilter())
+	return nil
+}
+
+func recordChangeSetForLog(ctx context.Context, resourcePath string, prevState *commonRecorderStatus, log *types.ResourceSpecificParserInput, cs *history.ChangeSet) (*commonRecorderStatus, error) {
+	if log.Code != 0 {
+		message := log.Log.GetStringOrDefault("protoPayload.status.message", "Unknown")
+		cs.RecordEvent(log.Operation.CovertToResourcePath())
+		cs.RecordLogSeverity(enum.SeverityError)
+		cs.RecordLogSummary(fmt.Sprintf("【%s】%s", message, log.MethodName))
+		return prevState, nil
+	}
+	if !log.GeneratedFromDeleteCollectionOperation {
+		logSummary := fmt.Sprintf("%s on %s.%s.%s(%s in %s)", enum.RevisionVerbs[log.Operation.Verb].Label, log.Operation.Namespace, log.Operation.Name, log.Operation.SubResourceName, log.Operation.PluralKind, log.Operation.APIVersion)
+		cs.RecordLogSummary(logSummary)
+	}
+
+	if log.Operation.Verb == enum.RevisionVerbDeleteCollection {
+		return prevState, nil
+	}
+
+	if prevState.IsFirstRevision {
+		creationTime := manifestutil.ParseCreationTime(log.ResourceBodyReader, log.Log.Timestamp())
+		minimumDeltaToRecordInferredRevision := time.Second * 10
+		if log.Log.Timestamp().Sub(creationTime) > minimumDeltaToRecordInferredRevision {
+			cs.RecordRevision(resourcePath, &history.StagingResourceRevision{
+				Verb: enum.RevisionVerbCreate,
+				Body: `# Resource existence is inferred from '.metadata.creationTimestamp' of later logs.
+# The actual resource body is not available but this resource body may be available by extending log query range.`,
+				Partial:    false,
+				Requestor:  "unknown",
+				ChangeTime: log.Log.Timestamp(),
+				State:      enum.RevisionStateInferred,
+			})
+		}
+	}
+
+	deletionStatus := manifestutil.ParseDeletionStatus(ctx, log.ResourceBodyReader, log.Operation)
+	state := enum.RevisionStateExisting
+	if deletionStatus == manifestutil.DeletionStatusDeleting {
+		state = enum.RevisionStateDeleting
+	} else if deletionStatus == manifestutil.DeletionStatusDeleted {
+		state = enum.RevisionStateDeleted
+	}
+	cs.RecordRevision(resourcePath, &history.StagingResourceRevision{
+		Verb:       log.Operation.Verb,
+		Body:       log.ResourceBodyYaml,
+		Partial:    false,
+		Requestor:  log.PrincipalEmail,
+		ChangeTime: log.Log.Timestamp(),
+		State:      state,
+	})
+
+	return &commonRecorderStatus{
+		IsFirstRevision: false,
+	}, nil
+}

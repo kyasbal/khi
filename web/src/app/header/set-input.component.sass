@@ -1,0 +1,49 @@
+@use '../common.sass' as common
+.container
+    background: white
+    width: 600px
+    padding: 20px
+    box-shadow: 1px 1px 3px 3px rgba(0,0,0,0.3)
+mat-form-field
+    width: 600px
+.buttons
+    display: grid
+    grid-template-areas: "add remove - close"
+    grid-template-columns: auto auto 1fr auto
+    gap: 20px
+    .add-all-button
+        grid: add
+    .remove-all-button
+        grid: remove
+    .close-button
+        grid: close
+    mat-icon
+        margin: 0 5px 0 -5px
+    button
+        display: block
+        margin: 0 0 0 auto
+
+.chip-button-icon
+    width: inherit
+    height: inherit
+    font-size: inherit
+    fill: gray
+    &:hover
+        cursor: pointer
+    &.only
+        color: green
+        &:hover
+            color: darken(green,10%)
+    &.remove
+        color: red
+        &:hover
+            color: darken(red,10%)
+.chip-button
+    &.only
+        padding-right: 4px !important
+    &.remove
+        padding-left: 4px !important
+
+.chip-grid
+    max-height: 400px
+    @include common.show-vertical-scrollbar-always()

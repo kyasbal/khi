@@ -1,0 +1,58 @@
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ProgressDialogComponent } from './progress/progress.component';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatDialogModule } from '@angular/material/dialog';
+import { NewInspectionDialogComponent } from './new-inspection/new-inspection.component';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatOptionModule } from '@angular/material/core';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { InspectionMetadataDialogComponent } from './inspection-metadata/inspection-metadata.component';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
+import { MatStepperModule } from '@angular/material/stepper';
+import { MatCardModule } from '@angular/material/card';
+
+import { MatSelectModule } from '@angular/material/select';
+import { KHICommonModule } from '../common/common.module';
+import { StartupDialogComponent } from './startup/startup.component';
+import { NgxEnvModule } from '@ngx-env/core';
+import { MatTooltipModule } from '@angular/material/tooltip';
+
+@NgModule({
+  declarations: [
+    ProgressDialogComponent,
+    NewInspectionDialogComponent,
+    InspectionMetadataDialogComponent,
+  ],
+  imports: [
+    CommonModule,
+    KHICommonModule,
+    MatInputModule,
+    MatProgressBarModule,
+    MatDialogModule,
+    MatStepperModule,
+    MatSelectModule,
+    MatFormFieldModule,
+    ReactiveFormsModule,
+    FormsModule,
+    MatAutocompleteModule,
+    MatOptionModule,
+    MatCheckboxModule,
+    MatIconModule,
+    MatButtonModule,
+    MatCardModule,
+    NgxEnvModule,
+    MatTooltipModule,
+    StartupDialogComponent,
+  ],
+  exports: [
+    ProgressDialogComponent,
+    NewInspectionDialogComponent,
+    InspectionMetadataDialogComponent,
+  ],
+})
+export class DialogsModule {}

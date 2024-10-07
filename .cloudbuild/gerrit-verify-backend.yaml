@@ -1,0 +1,36 @@
+steps:
+  - id: get gcloud token
+    name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        gcloud auth print-access-token >> ./.token
+  - id: test go
+    name: golang:1.21
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        echo "#!/bin/bash\necho \"`cat ./.token`\"" > /usr/bin/gcloud
+        chmod +x /usr/bin/gcloud
+        mkdir dist
+        # A placeholder frontend code read from backend test
+        echo "<!--INJECT GENERATED CODE HERE FROM BACKEND-->" > ./dist/index.html
+        ACCESS_TOKEN=`cat ./.token` make test-go
+        test_exit_code=$?
+        rm ./.token
+        exit "$test_exit_code"
+    waitFor:
+      - "get gcloud token"
+  - name: golang:1.21
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        make check-format-go
+        make lint-go
+    waitFor:
+      - "-"
+options:
+  machineType: E2_HIGHCPU_32

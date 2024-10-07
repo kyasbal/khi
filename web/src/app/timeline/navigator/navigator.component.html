@@ -1,0 +1,16 @@
+<div class="container">
+  <div *ngFor="let layer of layers | async">
+    <div class="layer-title">
+      <mat-icon class="layer-icon">{{ layer.icon }}</mat-icon>
+      <p class="layer-label">{{ layer.label }}</p>
+    </div>
+    <div>
+      <ng-container *ngFor="let annotator of layer.annotators | async">
+        <ng-container
+          *ngComponentOutlet="annotator.component; inputs: annotator.inputs"
+        ></ng-container>
+      </ng-container>
+    </div>
+    <div *ngIf="!layer.isLast" class="layer-bottom"></div>
+  </div>
+</div>

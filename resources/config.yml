@@ -1,0 +1,34 @@
+kindMappings:
+  - singular: ingress
+    prural: ingresses
+  - singular: storageclass
+    prural: storageclasses
+mergeKeys:
+  # Specify a field name of map element to merge.
+  # When `!replace` is specified on the key, it will just replace the array instead of merging
+  - key: type
+    fieldPath: status.conditions
+  - key: key
+    fieldPath: spec.taints
+    kind: node
+  - key: type
+    fieldPath: status.addresses
+    kind: node
+  - key: image
+    fieldPath: status.containerStatuses
+    kind: pod
+  - key: image
+    fieldPath: status.initContainerStatuses
+    kind: pod
+  - key: "!replace"
+    fieldPath: status.images
+    kind: node
+resourcePriority:
+  - - core/v1
+    - app/v1
+  - - node
+    - pod
+    - service
+  - - kube-system
+  - []
+  - []

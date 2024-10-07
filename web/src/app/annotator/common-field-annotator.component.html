@@ -1,0 +1,15 @@
+<div class="container" [ngClass]="{ gray: isGray }">
+  <p class="label">
+    <mat-icon class="icon">{{ icon }}</mat-icon
+    >{{ label }}
+  </p>
+  <p
+    class="value"
+    *ngIf="value | async; let valueResolved"
+    (click)="onValueClick(valueResolved)"
+  >
+    <span class="copy-icon-container"
+      ><mat-icon class="icon">content_paste</mat-icon></span
+    ><span [matTooltip]="valueResolved">{{ valueResolved }}</span>
+  </p>
+</div>

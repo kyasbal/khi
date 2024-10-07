@@ -1,0 +1,7 @@
+data
+scripts
+.vscode
+.git
+.envrc
+go-cover*
+web

@@ -1,0 +1,8 @@
+<button
+  class="container"
+  [matTooltip]="tooltip"
+  [ngClass]="{ selected: selected, disabled: disabled }"
+  (click)="onClick()"
+>
+  <mat-icon>{{ icon }}</mat-icon>
+</button>

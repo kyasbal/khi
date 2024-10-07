@@ -1,0 +1,10 @@
+runtime: go121
+main: cmd/kubernetes-history-inspector
+env_variables:
+  KHI_VIEWER_MODE: "true"
+  KHI_SERVER_HOST: "0.0.0.0"
+  KHI_SERVER_PORT: "8080"
+  KHI_FRONTEND_STATIC_FILE_FOLDER: "./dist"
+handlers:
+  - url: "/(.*)"
+    script: auto

@@ -1,0 +1,20 @@
+#version 300 es
+precision highp float;
+precision highp int;
+
+layout(std140) uniform LineState {
+    // The offset to line in time from the minimum log time.
+    float lineOffsetFromLeft;
+
+    // Thickness of the line in pixels.
+    float lineThickness;
+
+    // The color of line.
+    vec4 lineColor;
+} ls;
+
+out vec4 resultColor;
+
+void main() {
+    resultColor = ls.lineColor;
+}

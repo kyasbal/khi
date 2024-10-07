@@ -1,0 +1,20 @@
+<button
+  mat-button
+  class="menu-group"
+  color="menu-group"
+  [matMenuTriggerFor]="fileMenu"
+>
+  <mat-icon class="icon">folder_open</mat-icon>
+  <span class="menu-group-label">File</span>
+</button>
+
+<mat-menu #fileMenu="matMenu">
+  <button mat-menu-item (click)="downloadAsPng()">
+    <mat-icon>download</mat-icon>
+    <span>Export as PNG</span>
+  </button>
+  <button mat-menu-item (click)="downloadAsSvg()">
+    <mat-icon>download</mat-icon>
+    <span>Export as SVG</span>
+  </button>
+</mat-menu>

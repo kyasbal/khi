@@ -1,0 +1,48 @@
+<div>
+  <!--Header-->
+  <mat-card *ngIf="data.header; let header">
+    <mat-card-header>
+      <mat-card-title>{{ header.inspectionType }}</mat-card-title>
+    </mat-card-header>
+  </mat-card>
+
+  <mat-card *ngIf="data.query; let queries">
+    <mat-card-header>
+      <mat-card-title>Query</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-card *ngFor="let query of queries">
+        <mat-card-header>
+          <mat-card-title>{{ query.name }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <pre>{{ query.query }}</pre>
+        </mat-card-content>
+      </mat-card>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card *ngIf="data.log; let logs">
+    <mat-card-header>
+      <mat-card-title>Logs</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-card *ngFor="let log of logs">
+        <mat-card-header>
+          <mat-card-title>{{ log.name }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <pre class="limit-pre-max-height">{{ log.log }}</pre>
+        </mat-card-content>
+      </mat-card>
+    </mat-card-content>
+  </mat-card>
+  <mat-card *ngIf="data.plan; let plan">
+    <mat-card-header>
+      <mat-card-title>Plan</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <pre class="limit-pre-max-height">{{ plan.taskGraph }}</pre>
+    </mat-card-content>
+  </mat-card>
+</div>

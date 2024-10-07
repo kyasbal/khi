@@ -1,0 +1,11 @@
+<div class="row">
+  <mat-icon class="icon line-icon" *ngIf="icon !== ''">{{ icon }}</mat-icon>
+  <div class="key">{{ key }}</div>
+  <div class="colon">:</div>
+  <div class="value" [matTooltip]="value">
+    <p class="value-inner">{{ value }}</p>
+  </div>
+  <button class="copy-button" color="primary" [cdkCopyToClipboard]="value">
+    <mat-icon class="line-icon">content_paste</mat-icon>
+  </button>
+</div>

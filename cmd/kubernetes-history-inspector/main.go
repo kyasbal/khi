@@ -1,0 +1,217 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log/slog"
+	"os"
+	"os/signal"
+	"strings"
+	"sync"
+	"syscall"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/analytics"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/analytics/types"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/common"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/logger"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/k8s"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/server"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp"
+
+	"cloud.google.com/go/profiler"
+)
+
+const (
+	bold  = "\033[1m"
+	green = "\033[32m"
+	cyan  = "\033[36m"
+	reset = "\033[0m"
+)
+
+func mustReadEnvVariable(name string) string {
+	value := os.Getenv(name)
+	if value == "" {
+		panic(fmt.Sprintf("No environment variable `%s` specified.", name))
+	}
+	return value
+}
+
+func displayStartMessage(port string) {
+	fmt.Printf(`
+%[1]s%[2]s%[3]sKHI server now listening on port %[5]s%[1]s
+
+%[4]s%[2]sFor Cloud Shell users:
+	Click this address >> %[3]shttp://localhost:%[5]s%[1]s%[2]s%[4]s << Click this address
+
+
+%[1]s%[4]s(For users of the other environments: Access %[3]shttp://localhost:%[5]s%[1]s%[4]s with your browser.)
+%[1]s`, reset, bold, green, cyan, port)
+}
+
+func main() {
+	logger.InitGlobalKHILogger()
+	_, enableProfiler := os.LookupEnv("KHI_ENABLE_PROFILER")
+	if enableProfiler {
+		cfg := profiler.Config{
+			Service:        "k8s-history-inspector",
+			ProjectID:      "kubernetes-history-inspector",
+			MutexProfiling: true,
+		}
+		if err := profiler.Start(cfg); err != nil {
+			slog.Error(fmt.Sprintf("Failed to start profiler\n%s", err.Error()))
+		}
+		slog.Info("Cloud Profiler is enabled")
+	}
+	_, found := os.LookupEnv("IAM_TOKEN")
+	if found {
+		slog.Warn("KHI is running as the inspection mode. IAM token is active.")
+		os.Setenv("USE_IAM_TOKEN", "true")
+	}
+	reporter := analytics.NewAnalyticsReporter()
+	reporter.ReportEvent(types.AnalyticsEventKHIStart, map[string]any{})
+	slog.Info("Initializing Kubernetes History Inspector...")
+	k8s.GenerateDefaultMergeConfig()
+
+	_, viewerMode := os.LookupEnv("KHI_VIEWER_MODE")
+	staticFileFolder, staticFileFolderSpecified := os.LookupEnv("KHI_FRONTEND_STATIC_FILE_FOLDER")
+	if !staticFileFolderSpecified {
+		staticFileFolder = "./web"
+	}
+
+	inspectionServer, err := inspection.NewServer()
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to construct the inspection server due to unexpected error\n%v", err))
+	}
+
+	if !viewerMode {
+		addons := []inspection.PrepareInspectionServerFunc{
+			common.PrepareInspectionServer,
+			gcp.PrepareInspectionServer,
+		}
+		for i, addon := range addons {
+			err = addon(inspectionServer)
+			if err != nil {
+				slog.Error(fmt.Sprintf("Failed to call initialize calls for addons(#%d)\n%v", i, err))
+			}
+		}
+	}
+
+	slog.Debug("Registered tasks:")
+	for _, task := range inspectionServer.GetAllRegisteredTasks() {
+		slog.Debug(fmt.Sprintf("* %s", task.ID()))
+	}
+	slog.Debug("Registered inspection types:")
+	for _, inspectionType := range inspectionServer.GetAllInspectionTypes() {
+		slog.Debug(fmt.Sprintf("* %s", inspectionType.Name))
+	}
+
+	mode, found := os.LookupEnv("KHI_MODE")
+	if strings.ToUpper(mode) == "SERVER" || !found {
+		slog.Info("Starting Kubernetes History Inspector server...")
+		engine := server.CreateKHIServer(inspectionServer, viewerMode, staticFileFolder, &server.ResourceMonitorImpl{})
+		host := mustReadEnvVariable("KHI_SERVER_HOST")
+		port := mustReadEnvVariable("KHI_SERVER_PORT")
+		grp := sync.WaitGroup{}
+		grp.Add(1)
+		go func() {
+			engine.Run(fmt.Sprintf("%s:%s", host, port))
+			grp.Done()
+		}()
+		// Catch termination signal and send the event to analytics backend
+		go func() {
+			sig := make(chan os.Signal, 1)
+			signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
+
+			s := <-sig
+			reporter.ReportEvent(types.AnalyticsEventKHITerminate, map[string]any{
+				"signal": s.String(),
+			})
+			os.Exit(0)
+		}()
+		displayStartMessage(port)
+		grp.Wait()
+	} else if strings.ToUpper(mode) == "JOB" {
+		slog.Info("Starting Kubernetes History Inspector as job mode...")
+		// Catch termination signal and send the event to analytics backend
+		go func() {
+			sig := make(chan os.Signal, 1)
+			signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
+
+			s := <-sig
+			reporter.ReportEvent(types.AnalyticsEventKHITerminate, map[string]any{
+				"signal": s.String(),
+			})
+			os.Exit(1)
+		}()
+		inspectionType := mustReadEnvVariable("KHI_JOB_INSPECTION_TYPE")
+		features := strings.Split(mustReadEnvVariable("KHI_JOB_INSPECTION_FEATURES"), ",")
+		valuesInJson := mustReadEnvVariable("KHI_JOB_INSPECTION_VALUES")
+		exportDestination := mustReadEnvVariable("KHI_JOB_EXPORT_DESTINATION")
+		var values map[string]any
+		err := json.Unmarshal([]byte(valuesInJson), &values)
+		if err != nil {
+			slog.Error(fmt.Sprintf("Failed to parse an inspection value %s\n%s", valuesInJson, err.Error()))
+			os.Exit(1)
+		}
+		taskId, err := inspectionServer.CreateInspection(inspectionType)
+		if err != nil {
+			slog.Error(fmt.Sprintf("Failed to create an inspection with type %s\n%s", inspectionType, err.Error()))
+			os.Exit(1)
+		}
+		t := inspectionServer.GetTask(taskId)
+		// When the features env has `ALL`, it enables every features being available
+		if len(features) == 1 && strings.ToUpper(features[0]) == "ALL" {
+			availableFeatures, err := t.FeatureList()
+			if err != nil {
+				slog.Error(fmt.Sprintf("Failed to obtain current feature list\n%s", err.Error()))
+				os.Exit(1)
+			}
+			allFeatures := []string{}
+			for _, af := range availableFeatures {
+				allFeatures = append(allFeatures, af.Id)
+			}
+			features = allFeatures
+		}
+		err = t.SetFeatureList(features)
+		if err != nil {
+			slog.Error(fmt.Sprintf("Failed to set features %v\n%s", features, err.Error()))
+			os.Exit(1)
+		}
+		err = t.Run(context.Background(), &task.InspectionRequest{
+			Values: values,
+		})
+		if err != nil {
+			slog.Error(fmt.Sprintf("Failed to run inspection task \n%s", err.Error()))
+			os.Exit(1)
+		}
+		<-t.Wait()
+		result, err := t.Result()
+		if err != nil {
+			slog.Error(fmt.Sprintf("Failed to get inspection result \n%s", err.Error()))
+			os.Exit(1)
+		}
+		reader, err := result.ResultStore.GetReader()
+		if err != nil {
+			slog.Error(fmt.Sprintf("Failed to get inspection result reader \n%s", err.Error()))
+			os.Exit(1)
+		}
+		file, err := os.OpenFile(exportDestination, os.O_WRONLY|os.O_CREATE, 0644)
+		if err != nil {
+			slog.Error(fmt.Sprintf("Failed to open the destination file \n%s", err.Error()))
+			os.Exit(1)
+		}
+		_, err = io.Copy(file, reader)
+		if err != nil {
+			slog.Error(fmt.Sprintf("Failed to flush to the destination file \n%s", err.Error()))
+			os.Exit(1)
+		}
+		os.Exit(0)
+	} else {
+		slog.Error(fmt.Sprintf("Unknown khi mode %s", mode))
+		os.Exit(1)
+	}
+}

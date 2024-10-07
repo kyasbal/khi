@@ -1,0 +1,14 @@
+<div class="container">
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ label }}</mat-label>
+    <mat-error *ngIf="!regexInput.valid">{{
+      regexFormErrorMessage()
+    }}</mat-error>
+    <input
+      matInput
+      [formControl]="regexInput"
+      placeholder="Type regex here to filter"
+      (input)="onFilterChange()"
+    />
+  </mat-form-field>
+</div>

@@ -1,0 +1,136 @@
+package statusrecorder
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/manifestutil"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/recorder"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/types"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
+
+	goyaml "gopkg.in/yaml.v3"
+)
+
+func Register(manager *recorder.RecorderTaskManager) error {
+	manager.AddRecorder("resource-status", []string{}, func(ctx context.Context, resourcePath string, l *types.ResourceSpecificParserInput, prevState any, cs *history.ChangeSet, builder *history.Builder, vs *task.VariableSet) (any, error) {
+		var prevResourceStatus *model.K8sResourceContainingStatus
+		if prevState != nil {
+			prevResourceStatus = prevState.(*model.K8sResourceContainingStatus)
+		}
+		return recordChangeSetForLog(ctx, resourcePath, l, prevResourceStatus, cs, builder)
+	}, recorder.AnyLogGroupFilter(), recorder.AndLogFilter(recorder.OnlySucceedLogs(), recorder.OnlyWithResourceBody()))
+	return nil
+}
+
+func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.ResourceSpecificParserInput, prevStatus *model.K8sResourceContainingStatus, cs *history.ChangeSet, builder *history.Builder) (*model.K8sResourceContainingStatus, error) {
+	var resourceContainingStatus model.K8sResourceContainingStatus
+	err := log.ResourceBodyReader.ReadReflect("", &resourceContainingStatus)
+	if err != nil {
+		return prevStatus, err
+	}
+	if resourceContainingStatus.Status == nil || len(resourceContainingStatus.Status.Conditions) == 0 {
+		// This resource has no status field or no conditions in status field
+		return &resourceContainingStatus, nil
+	}
+	for _, condition := range resourceContainingStatus.Status.Conditions {
+		lastTransitionTime, err := time.Parse(time.RFC3339, condition.LastTransitionTime)
+		if err != nil {
+			continue
+		}
+		conditionTime := lastTransitionTime
+		lastHeartbeatTime, err := time.Parse(time.RFC3339, condition.LastHeartbeatTime)
+		if err == nil && lastHeartbeatTime.Sub(conditionTime) > 0 {
+			conditionTime = lastHeartbeatTime
+		}
+		lastProbeTime, err := time.Parse(time.RFC3339, condition.LastProbeTime)
+		if err == nil && lastProbeTime.Sub(lastHeartbeatTime) > 0 {
+			conditionTime = lastProbeTime
+		}
+		// Ignore if the transition time was older than the last revision
+
+		statusPath := fmt.Sprintf("%s#%s", log.Operation.CovertToResourcePath(), condition.Type)
+		if log.Operation.SubResourceName != "" {
+			parentOp := model.KubernetesObjectOperation{
+				APIVersion: log.Operation.APIVersion,
+				PluralKind: log.Operation.PluralKind,
+				Namespace:  log.Operation.Namespace,
+				Name:       log.Operation.Name,
+				Verb:       log.Operation.Verb,
+			}
+			statusPath = fmt.Sprintf("%s#%s", parentOp.CovertToResourcePath(), condition.Type)
+		}
+		tb := builder.GetTimelineBuilder(statusPath)
+		latest := tb.GetLatestRevision()
+		latestTime := time.Time{}
+		if latest != nil {
+			latestTime = latest.ChangeTime
+		} else {
+			creationTime := manifestutil.ParseCreationTime(log.ResourceBodyReader, time.Time{})
+
+			if err == nil && conditionTime.Sub(creationTime) != 0 {
+				cs.RecordRevision(statusPath, &history.StagingResourceRevision{
+					Verb:       enum.RevisionVerbStatusUnknown,
+					Body:       "# status is unknown but existence is inferred from the later log.",
+					Partial:    false,
+					Inferred:   true,
+					Requestor:  "",
+					ChangeTime: creationTime,
+					State:      enum.RevisionStateConditionUnknown,
+				})
+			}
+		}
+		prevCondition := lookUpConditionFromStatus(prevStatus, condition.Type)
+		latestUpdateTimeIsLaterThanPrevRevision := conditionTime.Sub(latestTime) > 0 // The previous revision is older than the timestamps written on the condition. This should be recorded as the change even if the reason and state is same to show the heart beat timing.
+		conditionUpdated := prevCondition != nil && (prevCondition.Status != condition.Status || prevCondition.Message != condition.Message || prevCondition.Reason != condition.Reason)
+		if latestUpdateTimeIsLaterThanPrevRevision || conditionUpdated {
+			conditionYaml, err := goyaml.Marshal(condition)
+			if err != nil {
+				continue
+			}
+			cs.RecordRevision(statusPath, &history.StagingResourceRevision{
+				Verb:       conditionStateToRevisionVerb(condition.Status),
+				Body:       string(conditionYaml),
+				Partial:    false,
+				Requestor:  "",
+				ChangeTime: conditionTime,
+				State:      conditionStateToRevisionState(condition.Status),
+			}, history.RewriteRelationship(enum.RelationshipResourceStatus))
+		}
+	}
+	return &resourceContainingStatus, nil
+}
+
+func lookUpConditionFromStatus(status *model.K8sResourceContainingStatus, typeStr string) *model.K8sResourceStatusCondition {
+	if status == nil || status.Status == nil || status.Status.Conditions == nil {
+		return nil
+	}
+	for _, condition := range status.Status.Conditions {
+		if condition.Type == typeStr {
+			return condition
+		}
+	}
+	return nil
+}
+
+func conditionStateToRevisionVerb(conditionState string) enum.RevisionVerb {
+	if conditionState == "True" {
+		return enum.RevisionVerbStatusTrue
+	} else if conditionState == "False" {
+		return enum.RevisionVerbStatusFalse
+	}
+	return enum.RevisionVerbStatusUnknown
+}
+
+func conditionStateToRevisionState(conditionState string) enum.RevisionState {
+	if conditionState == "True" {
+		return enum.RevisionStateConditionTrue
+	} else if conditionState == "False" {
+		return enum.RevisionStateConditionFalse
+	}
+	return enum.RevisionStateConditionUnknown
+}

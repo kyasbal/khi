@@ -1,0 +1,52 @@
+<khi-title pageName="Diff view"></khi-title>
+<div>
+  <ng-container *ngFor="let annotator of timelineAnnotators | async">
+    <ng-container
+      *ngComponentOutlet="annotator.component; inputs: annotator.inputs"
+    ></ng-container>
+  </ng-container>
+</div>
+<div *ngIf="(timeline | async) === null; else diffInside">
+  <p class="empty-message">No resource selected</p>
+</div>
+<ng-template #diffInside>
+  <ng-container *ngIf="changePair | async; let pair">
+    <div class="diff">
+      <ng-container>
+        <div class="toolbar">
+          <ng-container
+            *ngFor="let annotator of changePairToolAnnotators | async"
+          >
+            <ng-container
+              *ngComponentOutlet="annotator.component; inputs: annotator.inputs"
+            ></ng-container>
+          </ng-container>
+        </div>
+        <ng-container *ngFor="let annotator of changePairAnnotators | async">
+          <ng-container
+            *ngComponentOutlet="annotator.component; inputs: annotator.inputs"
+          ></ng-container>
+        </ng-container>
+        <div class="diff-inner">
+          <ngx-side-by-side-diff
+            class="ngx-diff-light-theme"
+            *ngIf="
+              pair.previous && pair.previous.resourceContent;
+              else previousEmptyInlineDiff
+            "
+            [before]="pair.previous.resourceContent"
+            [after]="pair.current.resourceContent"
+          >
+          </ngx-side-by-side-diff>
+          <ng-template #previousEmptyInlineDiff>
+            <ngx-side-by-side-diff
+              class="ngx-diff-light-theme"
+              before=""
+              [after]="pair.current.resourceContent"
+            ></ngx-side-by-side-diff>
+          </ng-template>
+        </div>
+      </ng-container>
+    </div>
+  </ng-container>
+</ng-template>

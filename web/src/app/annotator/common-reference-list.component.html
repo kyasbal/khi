@@ -1,0 +1,10 @@
+<div class="container" [ngClass]="{ gray: isGray }">
+  <p class="label">
+    <mat-icon class="icon">quick_reference</mat-icon>{{ header }}:
+  </p>
+  <p class="link" *ngFor="let ref of references | async">
+    <a (click)="onLinkClick(ref)"
+      >{{ ref.displayText }}<mat-icon class="icon">open_in_new</mat-icon></a
+    >
+  </p>
+</div>

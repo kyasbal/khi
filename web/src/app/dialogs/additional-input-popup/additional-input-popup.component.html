@@ -1,0 +1,42 @@
+<div class="container">
+  <div class="request-message-container">
+    <p class="request-message">
+      Additional input parameter is requested to proceed further
+    </p>
+  </div>
+  <div class="popup-body">
+    <p class="popup-body-title">{{ formRequest.title }}</p>
+    <p class="popup-body-description">{{ formRequest.description }}</p>
+    <div class="popup-body-input">
+      <ng-container
+        *ngIf="formRequest.type === 'text'"
+        [ngTemplateOutlet]="textInput"
+      ></ng-container>
+      <!--Add other types here-->
+    </div>
+    <p class="validation-error">{{ validationError | async }}</p>
+    <div class="popup-body-footer">
+      <button
+        class="submit-button"
+        mat-flat-button
+        color="primary"
+        [disabled]="(isValid | async) === false"
+        (click)="onSubmit()"
+      >
+        Submit
+      </button>
+    </div>
+  </div>
+</div>
+
+<ng-template #textInput>
+  <textarea
+    class="input-text-type-textarea"
+    matInput
+    [placeholder]="formRequest.placeholder"
+    cdkTextareaAutosize
+    cdkAutosizeMinRows="5"
+    cdkAutosizeMaxRows="14"
+    (input)="onTextAreaUpdate($event)"
+  ></textarea>
+</ng-template>

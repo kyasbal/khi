@@ -1,0 +1,136 @@
+package k8s
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/config"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
+	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestParseKubernetesOperation(t *testing.T) {
+	config.DEFAULT_CONFIG_LOCATION = "resources/config.yml"
+	testCases := []struct {
+		ResourceName  string
+		MethodName    string
+		ExpectedK8sOp *model.KubernetesObjectOperation
+	}{
+		{
+			ResourceName: "io.k8s.core/v1/namespaces/foo/pods/bar/status",
+			MethodName:   "io.k8s.core.v1.pods.status.update",
+			ExpectedK8sOp: &model.KubernetesObjectOperation{
+				APIVersion:      "io.k8s.core/v1",
+				Namespace:       "foo",
+				Name:            "bar",
+				PluralKind:      "pods",
+				SubResourceName: "status",
+				Verb:            enum.RevisionVerbUpdate,
+			},
+		},
+		{
+			ResourceName: "io.k8s.core/v1/nodes/foo",
+			MethodName:   "io.k8s.core.v1.nodes.delete",
+			ExpectedK8sOp: &model.KubernetesObjectOperation{
+				APIVersion:      "io.k8s.core/v1",
+				Namespace:       "Cluster-Scope",
+				Name:            "foo",
+				PluralKind:      "nodes",
+				SubResourceName: "",
+				Verb:            enum.RevisionVerbDelete,
+			},
+		}, {
+			ResourceName: "apps/v1/namespaces/knative-serving/deployments",
+			MethodName:   "io.k8s.apps.v1.deployments.deletecollection",
+			ExpectedK8sOp: &model.KubernetesObjectOperation{
+				APIVersion:      "apps/v1",
+				Namespace:       "knative-serving",
+				Name:            "",
+				PluralKind:      "deployments",
+				SubResourceName: "",
+				Verb:            enum.RevisionVerbDeleteCollection,
+			},
+		},
+		{
+			ResourceName: "core/v1/namespaces/001-jobs/finalize",
+			MethodName:   "io.k8s.core.v1.namespaces.finalize.update",
+			ExpectedK8sOp: &model.KubernetesObjectOperation{
+				APIVersion:      "core/v1",
+				Namespace:       "Cluster-Scope",
+				Name:            "001-jobs",
+				PluralKind:      "namespaces",
+				SubResourceName: "finalize",
+				Verb:            enum.RevisionVerbUpdate,
+			},
+		},
+		{
+			ResourceName: "core/v1/namespaces/001-jobs",
+			MethodName:   "io.k8s.core.v1.namespaces.create",
+			ExpectedK8sOp: &model.KubernetesObjectOperation{
+				APIVersion:      "core/v1",
+				Namespace:       "Cluster-Scope",
+				Name:            "001-jobs",
+				PluralKind:      "namespaces",
+				SubResourceName: "",
+				Verb:            enum.RevisionVerbCreate,
+			},
+		},
+		{
+			ResourceName: "core/v1/namespaces/003-disks/pods",
+			MethodName:   "io.k8s.core.v1.pods.create",
+			ExpectedK8sOp: &model.KubernetesObjectOperation{
+				APIVersion:      "core/v1",
+				Namespace:       "003-disks",
+				Name:            "unknown",
+				PluralKind:      "pods",
+				SubResourceName: "",
+				Verb:            enum.RevisionVerbCreate,
+			},
+		},
+		{
+			ResourceName: "core/v1/namespaces/003-disks/pods",
+			MethodName:   "io.k8s.core.v1.pods.patch",
+			ExpectedK8sOp: &model.KubernetesObjectOperation{
+				APIVersion:      "core/v1",
+				Namespace:       "003-disks",
+				Name:            "unknown",
+				PluralKind:      "pods",
+				SubResourceName: "",
+				Verb:            enum.RevisionVerbPatch,
+			},
+		},
+		{
+			ResourceName: "core/v1/namespaces/003-disks/pods",
+			MethodName:   "io.k8s.core.v1.pods.watch",
+			ExpectedK8sOp: &model.KubernetesObjectOperation{
+				APIVersion:      "core/v1",
+				Namespace:       "003-disks",
+				Name:            "unknown",
+				PluralKind:      "pods",
+				SubResourceName: "",
+				Verb:            enum.RevisionVerbUnknown,
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("%s-%s", testCase.ResourceName, testCase.MethodName), func(t *testing.T) {
+			res := ParseKubernetesOperation(testCase.ResourceName, testCase.MethodName)
+			if diff := cmp.Diff(res, testCase.ExpectedK8sOp); diff != "" {
+				t.Errorf("result operation is not matching with the expected operation\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestConvertToResourcePath(t *testing.T) {
+	config.DEFAULT_CONFIG_LOCATION = "resources/config.yml"
+	res := ParseKubernetesOperation("io.k8s.core/v1/namespaces/foo/pods/bar/status", "io.k8s.core.v1.pods.status.update")
+	assert.Equal(t, res.CovertToResourcePath(), "io.k8s.core/v1#pod#foo#bar#status")
+
+	config.DEFAULT_CONFIG_LOCATION = "resources/config.yml"
+	res = ParseKubernetesOperation("io.k8s.core/v1/namespaces/foo/pods/bar", "io.k8s.core.v1.pods.update")
+	assert.Equal(t, res.CovertToResourcePath(), "io.k8s.core/v1#pod#foo#bar")
+}

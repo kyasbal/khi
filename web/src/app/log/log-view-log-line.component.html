@@ -1,0 +1,27 @@
+<tr
+  class="log-element"
+  [id]="'log-view-log-index-' + log.logIndex"
+  (mouseover)="onHover()"
+  [ngClass]="'log-view-log-index-' + log.logIndex"
+  (click)="onClick()"
+  [matTooltip]="log.message"
+  matTooltipPosition="left"
+>
+  <td
+    class="type-indicator"
+    [ngClass]="log.logTypeLabel"
+    [matTooltip]="'log type:' + log.logTypeLabel"
+  ></td>
+  <td class="severity-indicator-wrap">
+    <div
+      class="severity-indicator"
+      [ngClass]="log.logSeverityLabel | lowercase"
+      [matTooltip]="'severity:' + log.logSeverityLabel"
+    >
+      {{ (log.logSeverityLabel | uppercase)[0] }}
+      <!--`I` for INFO, `W` for WARNING..etc-->
+    </div>
+  </td>
+  <td class="ts">{{ log.time | tsf | async }}</td>
+  <td class="message">{{ log.message }}</td>
+</tr>

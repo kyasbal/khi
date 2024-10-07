@@ -1,0 +1,39 @@
+@use "../../common"
+@use '@angular/material' as mat
+
+$SIDEBAR_BACKGROUND:  mat.get-color-from-palette(mat.$indigo-palette,100)
+$BUTTON_BACKGROUND_ACTIVE:  mat.get-color-from-palette(mat.$indigo-palette,600)
+$BUTTON_BACKGROUND_INACTIVE:  mat.get-color-from-palette(mat.$indigo-palette,200)
+$BUTTON_COLOR_ACTIVE: white
+$BUTTON_COLOR_INACTIVE: black
+
+.wrapper
+    display: grid
+    grid-template-rows: auto minmax(0,1fr)
+    height: 100%
+    overflow: hidden
+.main-view-wrapper
+    display: flex
+.timeline
+    flex: 1
+.sidebar
+    grid-area: sidebar
+    display: flex
+    row-gap: 1px
+    flex-direction: column
+    justify-content: flex-end
+    background-color: $SIDEBAR_BACKGROUND
+    box-shadow:  -1px 0 5px 0 rgba(0, 0, 0, 0.35)
+.pane-toggle
+    appearance: none
+    border: none
+    padding: none
+    background-color: $BUTTON_BACKGROUND_INACTIVE
+    color: $BUTTON_COLOR_INACTIVE
+    &:hover
+        background-color: darken($BUTTON_BACKGROUND_INACTIVE,10%)
+    &.active
+        background-color: $BUTTON_BACKGROUND_ACTIVE
+        color: $BUTTON_COLOR_ACTIVE
+        &:hover
+            background-color: lighten($BUTTON_BACKGROUND_ACTIVE,10%)

@@ -1,0 +1,7 @@
+<div class="container" *ngIf="currentStatus | async; let progress">
+  <mat-progress-bar
+    [mode]="progress.mode"
+    [value]="progress.percent"
+  ></mat-progress-bar>
+  <p class="progress-detail">{{ progress.message }}</p>
+</div>

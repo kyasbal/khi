@@ -1,0 +1,77 @@
+package k8s_event
+
+import (
+	"context"
+	"fmt"
+	"slices"
+	"strings"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/query"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/query/queryutil"
+	gcp_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
+)
+
+func GenerateK8sEventQuery(clusterName string, projectId string, namespaceFilter *queryutil.SetFilterParseResult) string {
+	return fmt.Sprintf(`logName="projects/%s/logs/events"
+resource.labels.cluster_name="%s"
+%s`, projectId, clusterName, generateK8sEventNamespaceFilter(namespaceFilter))
+}
+
+func generateK8sEventNamespaceFilter(filter *queryutil.SetFilterParseResult) string {
+	if filter.ValidationError != "" {
+		return fmt.Sprintf(`-- Failed to generate namespace filter due to the validation error "%s"`, filter.ValidationError)
+	}
+	if filter.SubtractMode {
+		return "-- Unsupported operation"
+	} else {
+		hasClusterScope := slices.Contains(filter.Additives, "#cluster-scoped")
+		hasNamespacedScope := slices.Contains(filter.Additives, "#namespaced")
+		if hasClusterScope && hasNamespacedScope {
+			return "-- No namespace filter"
+		}
+		if !hasClusterScope && hasNamespacedScope {
+			return `jsonPayload.involvedObject.namespace:"" -- ignore events in k8s object with namespace`
+		}
+		if hasClusterScope && !hasNamespacedScope {
+			if len(filter.Additives) == 1 {
+				return `-jsonPayload.involvedObject.namespace:"" -- ignore events in k8s object with namespace`
+			}
+			namespaceContains := []string{}
+			for _, additive := range filter.Additives {
+				if strings.HasPrefix(additive, "#") {
+					continue
+				}
+				namespaceContains = append(namespaceContains, additive)
+			}
+			return fmt.Sprintf(`(jsonPayload.involvedObject.namespace=(%s) OR NOT (jsonPayload.involvedObject.namespace:""))`, strings.Join(namespaceContains, " OR "))
+		}
+		if len(filter.Additives) == 0 {
+			return `-- Invalid: none of the resources will be selected. Ignoreing namespace filter.`
+		}
+		return fmt.Sprintf(`jsonPayload.involvedObject.namespace=(%s)`, strings.Join(filter.Additives, " OR "))
+	}
+}
+
+const GKEK8sEventLogQueryTaskId = query.GKEQueryPrefix + "k8s-event"
+
+var GKEK8sEventLogQueryTask = query.NewQueryGeneratorTask(GKEK8sEventLogQueryTaskId, "K8s event logs", enum.LogTypeEvent, []string{
+	gcp_task.InputProjectIdVariableName,
+	gcp_task.InputClusterName,
+	gcp_task.InputNamespaceFilterVariableName,
+}, func(ctx context.Context, i int, vs *task.VariableSet) ([]string, error) {
+	clusterName, err := gcp_task.GetInputClusterNameFromTaskVariable(vs)
+	if err != nil {
+		return []string{}, err
+	}
+	projectId, err := gcp_task.GetInputProjectIdFromTaskVariable(vs)
+	if err != nil {
+		return []string{}, err
+	}
+	namespaceFilter, err := gcp_task.GetInputNamespaceFilterFromTaskVariable(vs)
+	if err != nil {
+		return []string{}, err
+	}
+	return []string{GenerateK8sEventQuery(clusterName, projectId, namespaceFilter)}, nil
+})
