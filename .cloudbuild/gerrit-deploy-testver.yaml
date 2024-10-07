@@ -1,0 +1,31 @@
+steps:
+  - id: npm install
+    name: node:18
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        cd ./web
+        npm ci
+    waitFor:
+      - "-"
+  - id: build web
+    name: node:18
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        make build-web
+    waitFor:
+      - "npm install"
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - build
+      - --file=./Dockerfile
+      - -t
+      - gcr.io/kubernetes-history-inspector/standalone:$COMMIT_SHA
+      - .
+    waitFor:
+      - build web
+images:
+  - gcr.io/kubernetes-history-inspector/standalone:$COMMIT_SHA
