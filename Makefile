@@ -1,8 +1,6 @@
-VERSION=0.41.3
+VERSION=$(shell cat ./VERSION)
 GIT_SHORT_HASH=$(shell git rev-parse --short HEAD)
 GIT_TAG_NAME="release-"$(VERSION)
-IMAGE_REGISTRY=gcr.io/tse-kakeru/
-IMAGE_PATH=$(IMAGE_REGISTRY)kubernetes-history-inspector
 GTAG_ID="G-JJ6G0C6V06"
 
 BUG_REPORT_URL="https://b.corp.google.com/issues/new?component=1265687&template=1747079"
