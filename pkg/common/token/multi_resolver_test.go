@@ -3,85 +3,59 @@ package token
 import (
 	"context"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestMultiTokenResolver_Resolve(t *testing.T) {
-	t.Parallel()
-	type fields struct {
-		resolvers []TokenResolver
-	}
-	type args struct {
-		ctx           context.Context
-		expiredTokens map[string]interface{}
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    string
-		wantErr bool
+	testCases := []struct {
+		name          string
+		resolvers     []TokenResolver
+		wantErr       bool
+		expectedToken *Token
 	}{
 		{
-			name: "Resolve should return the first token successfully resolved",
-			fields: fields{
-				resolvers: []TokenResolver{
-					newSpyTokenResolver("token1"),
-					newSpyTokenResolver("token2"),
-				},
-			},
-			args: args{
-				ctx:           context.Background(),
-				expiredTokens: map[string]interface{}{},
-			},
-			want:    "token1",
-			wantErr: false,
+			name:          "without any resolvers",
+			resolvers:     make([]TokenResolver, 0),
+			wantErr:       true,
+			expectedToken: nil,
 		},
 		{
-			name: "Resolve should skip resolvers that return an error",
-			fields: fields{
-				resolvers: []TokenResolver{
-					newMockErrorTokenResolver(),
-					newSpyTokenResolver("token2"),
-				},
+			name: "with the first successful resolver",
+			resolvers: []TokenResolver{
+				NewSpyTokenResolver(New("foo")),
 			},
-			args: args{
-				ctx:           context.Background(),
-				expiredTokens: map[string]interface{}{},
-			},
-			want:    "token2",
-			wantErr: false,
+			wantErr:       false,
+			expectedToken: New("foo"),
 		},
 		{
-			name: "Resolve should return ErrNoNewTokenResolved if every resolvers return error",
-			fields: fields{
-				resolvers: []TokenResolver{
-					newMockErrorTokenResolver(),
-					newMockErrorTokenResolver(),
-				},
+			name: "with the errornous resolver and successful resolver",
+			resolvers: []TokenResolver{
+				NewMockErrorTokenResolver(),
+				NewSpyTokenResolver(New("foo")),
 			},
-			args: args{
-				ctx:           context.Background(),
-				expiredTokens: map[string]interface{}{},
-			},
-			want:    "",
-			wantErr: true,
+			wantErr:       false,
+			expectedToken: New("foo"),
 		},
 	}
-	for _, tt := range tests {
+
+	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &MultiTokenResolver{
-				resolvers: tt.fields.resolvers,
-			}
-			got, err := m.Resolve(tt.args.ctx, tt.args.expiredTokens)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("MultiTokenResolver.Resolve() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr {
-				if diff := cmp.Diff(tt.want, got); diff != "" {
-					t.Errorf("MultiTokenResolver.Resolve() mismatch (-want +got):\n%s", diff)
+			resolver := NewMultiTokenResolver(tt.resolvers...)
+
+			token, err := resolver.Resolve(context.Background())
+
+			if tt.wantErr {
+				if err == nil {
+					t.Error("Expected an error but no error returned")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+				if token.RawToken != tt.expectedToken.RawToken {
+					t.Errorf("Unexpected token.RawToken: got %s, want %s", token.RawToken, tt.expectedToken.RawToken)
+				}
+				if !token.ValidAtLeastUntil.Equal(tt.expectedToken.ValidAtLeastUntil) {
+					t.Errorf("Unexpected token.ValidAtLeastUntil: got %v, want %v", token.ValidAtLeastUntil, tt.expectedToken.ValidAtLeastUntil)
 				}
 			}
 		})

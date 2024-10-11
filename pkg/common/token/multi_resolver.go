@@ -18,15 +18,19 @@ func NewMultiTokenResolver(resolvers ...TokenResolver) *MultiTokenResolver {
 }
 
 // Resolve implements TokenResolver.
-func (m *MultiTokenResolver) Resolve(ctx context.Context, expiredTokens map[string]interface{}) (string, error) {
+func (m *MultiTokenResolver) Resolve(ctx context.Context) (*Token, error) {
+	resultErrors := []error{
+		ErrNoValidTokenResolved,
+	}
 	for _, resolver := range m.resolvers {
-		token, err := resolver.Resolve(ctx, expiredTokens)
+		token, err := resolver.Resolve(ctx)
 		if err != nil {
+			resultErrors = append(resultErrors, err)
 			continue
 		}
 		return token, nil
 	}
-	return "", ErrNoValidTokenResolved
+	return nil, errors.Join(resultErrors...)
 }
 
 var _ TokenResolver = &MultiTokenResolver{}

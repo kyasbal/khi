@@ -7,8 +7,6 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestBasicHttpClient_DoWithContext(t *testing.T) {
@@ -24,8 +22,12 @@ func TestBasicHttpClient_DoWithContext(t *testing.T) {
 
 		resp, err := client.DoWithContext(context.Background(), req)
 
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		if err != nil {
+			t.Errorf("Expected no error, but got %v", err)
+		}
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("Expected status code %d, but got %d", http.StatusOK, resp.StatusCode)
+		}
 	})
 
 	t.Run("should return error when server is down", func(t *testing.T) {
@@ -34,7 +36,9 @@ func TestBasicHttpClient_DoWithContext(t *testing.T) {
 
 		_, err := client.DoWithContext(context.Background(), req)
 
-		assert.Error(t, err)
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
 	})
 
 	t.Run("should return error when context is canceled", func(t *testing.T) {
@@ -51,7 +55,11 @@ func TestBasicHttpClient_DoWithContext(t *testing.T) {
 
 		_, err := client.DoWithContext(ctx, req)
 
-		assert.Error(t, err)
-		assert.True(t, errors.Is(err, context.Canceled))
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("Expected error to be context.Canceled, but got %v", err)
+		}
 	})
 }

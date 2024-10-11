@@ -4,8 +4,7 @@ import (
 	"context"
 	"os"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
+	"time"
 )
 
 func TestEnvironmentVariableTokenResolver_Resolve(t *testing.T) {
@@ -14,8 +13,7 @@ func TestEnvironmentVariableTokenResolver_Resolve(t *testing.T) {
 		envVariableName string
 	}
 	type args struct {
-		ctx           context.Context
-		expiredTokens map[string]interface{}
+		ctx context.Context
 	}
 	tests := []struct {
 		name        string
@@ -33,8 +31,7 @@ func TestEnvironmentVariableTokenResolver_Resolve(t *testing.T) {
 				envVariableName: "TEST_TOKEN",
 			},
 			args: args{
-				ctx:           context.Background(),
-				expiredTokens: map[string]interface{}{},
+				ctx: context.Background(),
 			},
 			want:        "test-token",
 			wantErr:     false,
@@ -48,30 +45,12 @@ func TestEnvironmentVariableTokenResolver_Resolve(t *testing.T) {
 				envVariableName: "TEST_TOKEN_NOT_SET",
 			},
 			args: args{
-				ctx:           context.Background(),
-				expiredTokens: map[string]interface{}{},
+				ctx: context.Background(),
 			},
 			want:        "",
 			wantErr:     true,
 			before:      func() {},
 			after:       func() {},
-			envVarValue: "",
-		},
-		{
-			name: "Resolve should return an error if the environment variable is already expired",
-			fields: fields{
-				envVariableName: "TEST_TOKEN",
-			},
-			args: args{
-				ctx: context.Background(),
-				expiredTokens: map[string]interface{}{
-					"test-token": struct{}{},
-				},
-			},
-			want:        "",
-			wantErr:     true,
-			before:      func() { os.Setenv("TEST_TOKEN", "test-token") },
-			after:       func() { os.Unsetenv("TEST_TOKEN") },
 			envVarValue: "",
 		},
 	}
@@ -82,14 +61,17 @@ func TestEnvironmentVariableTokenResolver_Resolve(t *testing.T) {
 			e := &EnvironmentVariableTokenResolver{
 				envVariableName: tt.fields.envVariableName,
 			}
-			got, err := e.Resolve(tt.args.ctx, tt.args.expiredTokens)
+			got, err := e.Resolve(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("EnvironmentVariableTokenResolver.Resolve() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !tt.wantErr {
-				if diff := cmp.Diff(tt.want, got); diff != "" {
-					t.Errorf("EnvironmentVariableTokenResolver.Resolve() mismatch (-want +got):\n%s", diff)
+				if tt.want != got.RawToken {
+					t.Errorf("EnvironmentVariableTokenResolver.Resolve() didn't return the expected token. want=%s,got=%s", tt.want, got.RawToken)
+				}
+				if !(time.Time{}).Equal(got.ValidAtLeastUntil) {
+					t.Errorf("EnvironmentVariableTokenResolver.Resolve() should return a token without expiry, but non default time was given:%v", got.ValidAtLeastUntil)
 				}
 			}
 		})

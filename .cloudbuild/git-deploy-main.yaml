@@ -43,7 +43,7 @@ steps:
     args:
       - -c
       - |
-        gcloud app deploy --project="google.com:khi-ro" --ignore-file=.gcloudignore-khi-ro --version $(cat ./VERSION)
+        gcloud app deploy --project="google.com:khi-ro" --ignore-file=.gcloudignore-khi-ro --version latest
     waitFor:
       - build web viewer mode
 images:

@@ -48,22 +48,22 @@ type PopupIAMTokenResolver struct {
 }
 
 // Resolve implements token.TokenResolver.
-func (p *PopupIAMTokenResolver) Resolve(ctx context.Context, expiredTokens map[string]interface{}) (string, error) {
+func (p *PopupIAMTokenResolver) Resolve(ctx context.Context) (*token.Token, error) {
 	_, found := os.LookupEnv("USE_IAM_TOKEN")
 	if !found {
-		return "", nil
+		return nil, nil
 	}
 	slog.InfoContext(ctx, "Requesting a new token with showing a popup.")
 	gaCommand, err := popup.Instance.ShowPopup(&IAMTokenResolverPopupForm{})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	slog.InfoContext(ctx, "New IAM token received from the popup.")
-	token, err := extractTokenFromGACommand(gaCommand)
+	rawToken, err := extractTokenFromGACommand(gaCommand)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return token, nil
+	return token.New(rawToken), nil
 }
 
 var _ token.TokenResolver = (*PopupIAMTokenResolver)(nil)

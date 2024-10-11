@@ -2,11 +2,11 @@ package gcp_test
 
 import (
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestIsValidLogQuery(t *testing.T) {
 	err := IsValidLogQuery("\"")
-	assert.NotNil(t, err)
+	if err == nil {
+		t.Errorf("Expected error, but got nil")
+	}
 }

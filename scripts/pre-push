@@ -1,3 +1,0 @@
-#!/bin/bash
-
-gcloud builds submit --project kubernetes-history-inspector --config .cloudbuild/prepush.yaml .

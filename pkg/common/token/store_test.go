@@ -2,165 +2,193 @@ package token
 
 import (
 	"context"
+	"sync"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
+	"time"
 )
 
-func TestBasicTokenStore_GetToken(t *testing.T) {
-	t.Parallel()
-	type fields struct {
-		resolver      TokenResolver
-		expiredTokens map[string]interface{}
-		lastToken     string
-	}
-	type args struct {
-		ctx context.Context
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    string
-		wantErr bool
-	}{
-		{
-			name: "GetToken should return the token from the resolver if lastToken is empty",
-			fields: fields{
-				resolver:      newSpyTokenResolver("test-token"),
-				expiredTokens: map[string]interface{}{},
-				lastToken:     "",
-			},
-			args: args{
-				ctx: context.Background(),
-			},
-			want:    "test-token",
-			wantErr: false,
-		},
-		{
-			name: "GetToken should pass the expiredTokens and the expired token should be ignored",
-			fields: fields{
-				resolver: NewMultiTokenResolver(
-					newSpyTokenResolver("test-token-1"),
-					newSpyTokenResolver("test-token-2"),
-				),
-				expiredTokens: map[string]interface{}{
-					"test-token-1": struct{}{},
-				},
-				lastToken: "test-token-2",
-			},
-			args: args{
-				ctx: context.Background(),
-			},
-			want:    "test-token-2",
-			wantErr: false,
-		},
-		{
-			name: "GetToken should return the lastToken if it is not empty",
-			fields: fields{
-				resolver:      newSpyTokenResolver("test-token"),
-				expiredTokens: map[string]interface{}{},
-				lastToken:     "cached-token",
-			},
-			args: args{
-				ctx: context.Background(),
-			},
-			want:    "cached-token",
-			wantErr: false,
-		},
-		{
-			name: "GetToken should return error if resolver returns error",
-			fields: fields{
-				resolver:      newMockErrorTokenResolver(),
-				expiredTokens: map[string]interface{}{},
-				lastToken:     "",
-			},
-			args: args{
-				ctx: context.Background(),
-			},
-			want:    "",
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			b := NewBasicTokenStore("test", tt.fields.resolver)
-			b.lastToken = tt.fields.lastToken
-			b.expiredTokens = tt.fields.expiredTokens
-			got, err := b.GetToken(tt.args.ctx)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("BasicTokenStore.GetToken() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr {
-				if diff := cmp.Diff(tt.want, got); diff != "" {
-					t.Errorf("BasicTokenStore.GetToken() mismatch (-want +got):\n%s", diff)
-				}
-			}
-		})
+func TestBasicTokenStore_GetType(t *testing.T) {
+	store := NewBasicTokenStore("foo", NewSpyTokenResolver(New("token")))
+
+	if store.GetType() != "foo" {
+		t.Errorf("Expected type to be 'foo', but got '%s'", store.GetType())
 	}
 }
 
-func TestBasicTokenStore_RefreshToken(t *testing.T) {
-	t.Parallel()
-	type fields struct {
-		resolver      TokenResolver
-		expiredTokens map[string]interface{}
-		lastToken     string
+func TestBasicTokenStore_GetTokenOnlyCallsResolverOnce(t *testing.T) {
+	resolver := NewSpyTokenResolver(New("token"))
+	store := NewBasicTokenStore("foo", resolver)
+
+	token, err := store.GetToken(context.Background())
+
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
 	}
-	type args struct {
-		ctx context.Context
+	if token.RawToken != "token" {
+		t.Errorf("Expected token to be 'token', but got '%s'", token.RawToken)
 	}
-	tests := []struct {
+	if resolver.callCount != 1 {
+		t.Errorf("Expected resolver to be called once, but got %d", resolver.callCount)
+	}
+
+	token2, err := store.GetToken(context.Background())
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if token2.RawToken != "token" {
+		t.Errorf("Expected token to be 'token', but got '%s'", token2.RawToken)
+	}
+	if resolver.callCount != 1 {
+		t.Errorf("Expected resolver to be called once, but got %d", resolver.callCount)
+	}
+}
+
+func TestBasicTokenStore_RefreshTokenCallsResolverOnceInParallel(t *testing.T) {
+	wg := sync.WaitGroup{}
+	for attempt := 0; attempt < 1000; attempt++ {
+		wg.Add(1)
+		go func() {
+			resolver := NewSpyTokenResolverWithDelay(1000, New("token"))
+			store := NewBasicTokenStore("foo", resolver)
+
+			refreshWg := sync.WaitGroup{}
+			for i := 0; i < 100; i++ {
+				refreshWg.Add(1)
+				go func() {
+					err := store.RefreshToken(context.Background())
+					if err != nil {
+						t.Errorf("Unexpected error: %v", err)
+					}
+					refreshWg.Done()
+				}()
+			}
+			refreshWg.Wait()
+
+			if resolver.callCount != 1 {
+				t.Errorf("Expected resolver to be called once, but got %d", resolver.callCount)
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+
+func TestBasicTokenStore_GetTokenCallsResolverOnceInParallel(t *testing.T) {
+	wg := sync.WaitGroup{}
+	for attempt := 0; attempt < 1000; attempt++ {
+		wg.Add(1)
+		go func() {
+			resolver := NewSpyTokenResolverWithDelay(1000, New("token"))
+			store := NewBasicTokenStore("foo", resolver)
+
+			refreshWg := sync.WaitGroup{}
+			for i := 0; i < 100; i++ {
+				refreshWg.Add(1)
+				go func() {
+					token, err := store.GetToken(context.Background())
+					if err != nil {
+						t.Errorf("Unexpected error: %v", err)
+					}
+					refreshWg.Done()
+
+					if token.RawToken != "token" {
+						t.Errorf("Expected token to be 'token', but got '%s'", token.RawToken)
+					}
+				}()
+			}
+			refreshWg.Wait()
+
+			if resolver.callCount != 1 {
+				t.Errorf("Expected resolver to be called once, but got %d", resolver.callCount)
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+
+func TestBasicTokenStore_GetTokenReturnsErrorWhenTokenResolutionFails(t *testing.T) {
+	resolver := NewMockErrorTokenResolver()
+	store := NewBasicTokenStore("foo", resolver)
+
+	_, err := store.GetToken(context.Background())
+
+	if err == nil {
+		t.Error("Expected an error but no error returned")
+	}
+}
+
+func TestBasicTokenStore_RefreshTokenCallsResolverAndSet(t *testing.T) {
+	resolver := NewSpyTokenResolver(New("token1"), New("token2"))
+	store := NewBasicTokenStore("foo", resolver)
+
+	_, _ = store.GetToken(context.Background())
+	err1 := store.RefreshToken(context.Background())
+	token2, err2 := store.GetToken(context.Background())
+
+	if err1 != nil {
+		t.Errorf("Unexpected error: %v", err1)
+	}
+	if token2.RawToken != "token2" {
+		t.Errorf("Expected token to be 'token2', but got '%s'", token2.RawToken)
+	}
+	if err2 != nil {
+		t.Errorf("Unexpected error: %v", err2)
+	}
+}
+
+func TestBasicTokenStore_RefreshTokenReturnsErrorWhenTokenResolutionFails(t *testing.T) {
+	resolver := NewMockErrorTokenResolver()
+	store := NewBasicTokenStore("foo", resolver)
+
+	err := store.RefreshToken(context.Background())
+
+	if err == nil {
+		t.Error("Expected an error but no error returned")
+	}
+}
+
+func TestBasicTokenStore_ISValidityAssured(t *testing.T) {
+	testCases := []struct {
 		name   string
-		fields fields
-		args   args
-		want   fields
+		expect bool
+		store  *BasicTokenStore
 	}{
 		{
-			name: "RefreshToken should clear lastToken and add it to expiredTokens",
-			fields: fields{
-				resolver:      newSpyTokenResolver("test-token"),
-				expiredTokens: map[string]interface{}{},
-				lastToken:     "expired-token",
-			},
-			args: args{
-				ctx: context.Background(),
-			},
-			want: fields{
-				resolver:      newSpyTokenResolver("test-token"),
-				expiredTokens: map[string]interface{}{"expired-token": struct{}{}},
-				lastToken:     "test-token",
+			name:   "without the last token",
+			expect: false,
+			store: &BasicTokenStore{
+				lastToken: nil,
 			},
 		},
 		{
-			name: "RefreshToken should update the token if lastToken is empty",
-			fields: fields{
-				resolver:      newSpyTokenResolver("test-token"),
-				expiredTokens: map[string]interface{}{},
-				lastToken:     "",
+			name:   "with a token without expiry",
+			expect: false,
+			store: &BasicTokenStore{
+				lastToken: New("foo"),
 			},
-			args: args{
-				ctx: context.Background(),
+		},
+		{
+			name:   "with a token with non expired expiry",
+			expect: true,
+			store: &BasicTokenStore{
+				lastToken: NewWithExpiry("foo", time.Date(3000, time.January, 1, 0, 0, 0, 0, time.UTC)),
 			},
-			want: fields{
-				resolver:      newSpyTokenResolver("test-token"),
-				expiredTokens: map[string]interface{}{},
-				lastToken:     "test-token",
+		},
+		{
+			name:   "with a token with expired expiry",
+			expect: false,
+			store: &BasicTokenStore{
+				lastToken: NewWithExpiry("foo", time.Date(1900, time.January, 1, 0, 0, 0, 0, time.UTC)),
 			},
 		},
 	}
-	for _, tt := range tests {
+	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			b := NewBasicTokenStore("test", tt.fields.resolver)
-			b.lastToken = tt.fields.lastToken
-			b.expiredTokens = tt.fields.expiredTokens
-			b.RefreshToken(tt.args.ctx)
-			if diff := cmp.Diff(tt.want.expiredTokens, b.expiredTokens); diff != "" {
-				t.Errorf("BasicTokenStore.RefreshToken() mismatch (-want +got):\n%s", diff)
-			}
-			if diff := cmp.Diff(tt.want.lastToken, b.lastToken); diff != "" {
-				t.Errorf("BasicTokenStore.RefreshToken() mismatch (-want +got):\n%s", diff)
+			actual := tt.store.IsTokenValidityAssured(context.Background())
+
+			if actual != tt.expect {
+				t.Errorf("Expected %t, but got %t", tt.expect, actual)
 			}
 		})
 	}

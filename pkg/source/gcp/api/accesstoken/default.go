@@ -15,7 +15,7 @@ var RetriableHttpResponseCodes = []int{
 var DefaultAccessTokenStore = token.NewBasicTokenStore(
 	"accesstoken", token.NewMultiTokenResolver(
 		token.NewEnvironmentVariableTokenResolver("GCP_ACCESS_TOKEN"),
-		NewMetadataServerAccessTokenResolver(httpclient.NewJsonResponseHttpClient[MDSResponse](httpclient.NewRetryHttpClient(httpclient.NewBasicHttpClient(), MinWaitTimeOnRetriableError, MaxWaitTimeOnRetriableError, MaxRetryCount, RetriableHttpResponseCodes, []int{}, &httpclient.NopTokenRefresher{}, &httpclient.NopTokenApplier{}))),
+		NewMetadataServerAccessTokenResolver(httpclient.NewJsonResponseHttpClient[MDSResponse](httpclient.NewRetryHttpClient(httpclient.NewBasicHttpClient(), MinWaitTimeOnRetriableError, MaxWaitTimeOnRetriableError, MaxRetryCount, RetriableHttpResponseCodes, []int{}, &token.NopTokenRefresher{}, &httpclient.NopTokenApplier{}))),
 		&GCloudCommandAccessTokenResolver{},
 	),
 )

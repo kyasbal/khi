@@ -17,9 +17,17 @@ steps:
       - |
         wget -nv https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
         apt-get -qq update > /dev/null && apt-get -qq install -y libappindicator1 fonts-liberation ./google-chrome-stable_current_amd64.deb > /dev/null
-        cd web && npm run test-ci
+        make coverage-web
     waitFor:
       - npm install
+  - id: upload coverage result
+    name: "gcr.io/cloud-builders/gcloud-slim"
+    args: 
+    - "storage"
+    - "cp"
+    - "--recursive"
+    - "./web/coverage/frontend"
+    - "gs://kubernetes-history-inspector_cloudbuild/artifacts/$COMMIT_SHA/frontend"
   - id: lint web
     name: node:18
     entrypoint: /bin/bash

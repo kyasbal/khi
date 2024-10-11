@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/token"
 )
 
 type RetryHttpClient struct {
@@ -19,11 +21,11 @@ type RetryHttpClient struct {
 	RetriableWithRefreshTokenHttpCodes []int
 	currentWaitSeconds                 int
 	timeUnit                           time.Duration // For testing purpose to make test faster
-	tokenRefresher                     TokenRefresher
+	tokenRefresher                     token.TokenRefresher
 	tokenApplier                       TokenApplier
 }
 
-func NewRetryHttpClient(baseClient HttpClient[*http.Response], minWaitSeconds int, maxWaitSeconds int, maxRetryCount int, retriableHttpCodes []int, retriableWithRefreshTokenHttpCodes []int, tokenRefresher TokenRefresher, tokenApplier TokenApplier) *RetryHttpClient {
+func NewRetryHttpClient(baseClient HttpClient[*http.Response], minWaitSeconds int, maxWaitSeconds int, maxRetryCount int, retriableHttpCodes []int, retriableWithRefreshTokenHttpCodes []int, tokenRefresher token.TokenRefresher, tokenApplier TokenApplier) *RetryHttpClient {
 	return &RetryHttpClient{
 		Client:                             baseClient,
 		MinWaitSeconds:                     minWaitSeconds,
@@ -39,20 +41,23 @@ func NewRetryHttpClient(baseClient HttpClient[*http.Response], minWaitSeconds in
 }
 
 // DoWithContext implements HttpClient.
-func (r *RetryHttpClient) DoWithContext(ctx context.Context, request *http.Request) (*http.Response, error) {
+func (r *RetryHttpClient) DoWithContext(ctx context.Context, originalRequest *http.Request) (*http.Response, error) {
 	// Clone request body into array to create another reader of Body on retry.
 	var clonedRequest []byte
-	if request.Body != nil {
+	if originalRequest.Body != nil {
 		var err error
-		clonedRequest, err = io.ReadAll(request.Body)
+		clonedRequest, err = io.ReadAll(originalRequest.Body)
 		if err != nil {
 			return nil, err
 		}
-		request.Body = io.NopCloser(bytes.NewBuffer(clonedRequest))
 	}
 	statusCodes := []int{}
 	for i := 0; i < r.MaxRetryCount; i++ {
-		_, err := r.tokenApplier.ApplyCurrentToken(ctx, request)
+		request, err := http.NewRequestWithContext(ctx, originalRequest.Method, originalRequest.URL.String(), bytes.NewBuffer(clonedRequest))
+		if err != nil {
+			return nil, err
+		}
+		_, err = r.tokenApplier.ApplyCurrentToken(ctx, request)
 		if err != nil {
 			return nil, err
 		}
@@ -84,9 +89,6 @@ func (r *RetryHttpClient) DoWithContext(ctx context.Context, request *http.Reque
 				}
 				slog.DebugContext(ctx, fmt.Sprintf("Previous request to %s got %d response. Next retry after %d seconds", request.RequestURI, response.StatusCode, r.currentWaitSeconds))
 				time.Sleep(r.timeUnit * time.Duration(r.currentWaitSeconds))
-				if request.Body != nil {
-					request.Body = io.NopCloser(bytes.NewBuffer(clonedRequest))
-				}
 			}
 		}
 	}

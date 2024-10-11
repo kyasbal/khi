@@ -4,10 +4,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model"
-	"github.com/stretchr/testify/assert"
 )
-
-var testConfigFolder = "../../test/model/"
 
 func TestGetMergeKeys(t *testing.T) {
 	config := ConfigFile{}
@@ -45,28 +42,52 @@ func TestGetMergeKeys(t *testing.T) {
 	keys, err := config.GetMergeKeys(model.KubernetesObjectOperation{
 		PluralKind: "foo",
 	})
-	assert.Nil(t, err)
-	assert.Equal(t, 3, len(keys))
-	assert.Equal(t, "key1", keys["path1"])
-	assert.Equal(t, "key2", keys["path2"])
-	assert.Equal(t, "key3", keys["path3"])
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(keys) != 3 {
+		t.Errorf("Expected 3 keys, but got %d", len(keys))
+	}
+	if keys["path1"] != "key1" {
+		t.Errorf("Expected key1 for path1, but got %s", keys["path1"])
+	}
+	if keys["path2"] != "key2" {
+		t.Errorf("Expected key2 for path2, but got %s", keys["path2"])
+	}
+	if keys["path3"] != "key3" {
+		t.Errorf("Expected key3 for path3, but got %s", keys["path3"])
+	}
 
 	// case2
 	keys, err = config.GetMergeKeys(model.KubernetesObjectOperation{
 		PluralKind: "foo",
 		Namespace:  "not-baz",
 	})
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(keys))
-	assert.Equal(t, "key1", keys["path1"])
-	assert.Equal(t, "key3", keys["path3"])
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(keys) != 2 {
+		t.Errorf("Expected 2 keys, but got %d", len(keys))
+	}
+	if keys["path1"] != "key1" {
+		t.Errorf("Expected key1 for path1, but got %s", keys["path1"])
+	}
+	if keys["path3"] != "key3" {
+		t.Errorf("Expected key3 for path3, but got %s", keys["path3"])
+	}
 
 	// case3
 	keys, err = config.GetMergeKeys(model.KubernetesObjectOperation{
 		PluralKind: "not-foo",
 		Namespace:  "not-baz",
 	})
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(keys))
-	assert.Equal(t, "key3", keys["path3"])
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(keys) != 1 {
+		t.Errorf("Expected 1 key, but got %d", len(keys))
+	}
+	if keys["path3"] != "key3" {
+		t.Errorf("Expected key3 for path3, but got %s", keys["path3"])
+	}
 }

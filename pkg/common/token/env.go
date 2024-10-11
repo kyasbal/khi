@@ -9,26 +9,25 @@ import (
 // EnvironmentVariableTokenResolver resolves the token from environment variable.
 type EnvironmentVariableTokenResolver struct {
 	envVariableName string
+	// tokenResolved is set to true once this resolver returns a token.
+	tokenResolved bool
 }
 
 func NewEnvironmentVariableTokenResolver(envVariableName string) *EnvironmentVariableTokenResolver {
 	return &EnvironmentVariableTokenResolver{
 		envVariableName: envVariableName,
+		tokenResolved:   false,
 	}
 }
 
 // Resolve implements TokenResolver.
-func (e *EnvironmentVariableTokenResolver) Resolve(ctx context.Context, expiredTokens map[string]interface{}) (string, error) {
+func (e *EnvironmentVariableTokenResolver) Resolve(ctx context.Context) (*Token, error) {
 	token, found := os.LookupEnv(e.envVariableName)
-	if found {
-		if _, found := expiredTokens[token]; found {
-			// If the token is received from env varialble, it could be the expired token already.
-			// This resolver will ignore if the token is already in the expired token set.
-			return "", fmt.Errorf("token found from environment variable `%s` is already expired", e.envVariableName)
-		}
-		return token, nil
+	if found && !e.tokenResolved {
+		e.tokenResolved = true
+		return New(token), nil
 	} else {
-		return "", fmt.Errorf("token not found from environment variable `%s`", e.envVariableName)
+		return nil, fmt.Errorf("token not found from environment variable `%s`", e.envVariableName)
 	}
 }
 

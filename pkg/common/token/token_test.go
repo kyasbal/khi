@@ -1,37 +1,29 @@
 package token
 
 import (
-	"context"
-	"errors"
+	"testing"
+	"time"
 )
 
-type spyTokenResolver struct {
-	tokenResponse string
-	callCount     int
-}
+func TestNew(t *testing.T) {
+	token := New("foo")
 
-func newSpyTokenResolver(tokenResponse string) *spyTokenResolver {
-	return &spyTokenResolver{
-		tokenResponse: tokenResponse,
+	if token.RawToken != "foo" {
+		t.Errorf("Expected token.RawToken to be 'foo', but got '%s'", token.RawToken)
+	}
+	if !token.ValidAtLeastUntil.IsZero() {
+		t.Errorf("Expected token.ValidAtLeastUntil to be zero, but got '%s'", token.ValidAtLeastUntil)
 	}
 }
 
-func (m *spyTokenResolver) Resolve(ctx context.Context, expiredTokens map[string]interface{}) (string, error) {
-	m.callCount++
-	return m.tokenResponse, nil
+func TestNewWithExpiry(t *testing.T) {
+	expireTime := time.Date(2020, time.January, 1, 1, 0, 0, 0, time.UTC)
+	token := NewWithExpiry("foo", expireTime)
+
+	if token.RawToken != "foo" {
+		t.Errorf("Expected token.RawToken to be 'foo', but got '%s'", token.RawToken)
+	}
+	if !expireTime.Equal(token.ValidAtLeastUntil) {
+		t.Errorf("Expected token.ValidAtLeastUntil to be '%s', but got '%s'", expireTime, token.ValidAtLeastUntil)
+	}
 }
-
-var _ TokenResolver = &spyTokenResolver{}
-
-type mockErrorTokenResolver struct{}
-
-func newMockErrorTokenResolver() *mockErrorTokenResolver {
-	return &mockErrorTokenResolver{}
-}
-
-// Resolve implements TokenResolver.
-func (m *mockErrorTokenResolver) Resolve(ctx context.Context, expiredTokens map[string]interface{}) (string, error) {
-	return "", errors.New("test error")
-}
-
-var _ TokenResolver = &mockErrorTokenResolver{}

@@ -3,8 +3,6 @@ package config
 import (
 	"os"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func MustOpen(path string) *os.File {
@@ -17,6 +15,10 @@ func MustOpen(path string) *os.File {
 
 func TestDefaultConfigurationIsValid(t *testing.T) {
 	config, err := readConfig(MustOpen("../../resources/config.yml"))
-	assert.Nil(t, err)
-	assert.NotNil(t, config)
+	if err != nil {
+		t.Errorf("Failed to read configuration\n%v", err)
+	}
+	if config == nil {
+		t.Errorf("Failed to read configuration. Config is nil")
+	}
 }

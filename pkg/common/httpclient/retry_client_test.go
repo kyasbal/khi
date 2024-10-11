@@ -1,15 +1,20 @@
 package httpclient
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/token"
 )
 
 type mockFailClient struct {
 	Responses    []*http.Response
+	Requests     []*http.Request
 	RequestCount int
 }
 
@@ -32,15 +37,17 @@ type tokenRefresherClientSpy struct {
 }
 
 // Refresh implements TokenRefresher.
-func (t *tokenRefresherClientSpy) Refresh(ctx context.Context) {
+func (t *tokenRefresherClientSpy) Refresh(ctx context.Context) error {
 	t.CallCount++
+	return nil
 }
 
-var _ TokenRefresher = (*tokenRefresherClientSpy)(nil)
+var _ token.TokenRefresher = (*tokenRefresherClientSpy)(nil)
 
 // DoWithContext implements HttpClient.
 func (m *mockFailClient) DoWithContext(ctx context.Context, request *http.Request) (*http.Response, error) {
 	m.RequestCount += 1
+	m.Requests = append(m.Requests, request)
 	return m.Responses[m.RequestCount-1], nil
 }
 
@@ -79,6 +86,7 @@ func TestRetryBehavior(t *testing.T) {
 	type testCase struct {
 		Title                       string
 		ResponseCodes               []int
+		RequestBody                 string
 		ExpectedRequestCount        int
 		ExpectedError               string
 		MinWaitTime                 int
@@ -92,6 +100,7 @@ func TestRetryBehavior(t *testing.T) {
 		{
 			Title:                       "Simple success",
 			ResponseCodes:               []int{200},
+			RequestBody:                 "foo",
 			ExpectedRequestCount:        1,
 			ExpectedError:               "",
 			MaxRetryCount:               3,
@@ -104,6 +113,7 @@ func TestRetryBehavior(t *testing.T) {
 		{
 			Title:                       "Non retriable",
 			ResponseCodes:               []int{500},
+			RequestBody:                 "foo",
 			ExpectedRequestCount:        1,
 			ExpectedError:               "unretriable error returned(500):\nBODY:",
 			MaxRetryCount:               3,
@@ -116,6 +126,7 @@ func TestRetryBehavior(t *testing.T) {
 		{
 			Title:                       "Multiple retries",
 			ResponseCodes:               []int{400, 400, 200},
+			RequestBody:                 "foo",
 			ExpectedRequestCount:        3,
 			ExpectedError:               "",
 			MaxRetryCount:               3,
@@ -128,6 +139,7 @@ func TestRetryBehavior(t *testing.T) {
 		{
 			Title:                       "Multiple retries and exceed maximum",
 			ResponseCodes:               []int{400, 400, 400},
+			RequestBody:                 "foo",
 			ExpectedRequestCount:        3,
 			ExpectedError:               "maximum retry count exceeded 3\nStatus codes:[400 400 400]",
 			MaxRetryCount:               3,
@@ -140,6 +152,7 @@ func TestRetryBehavior(t *testing.T) {
 		{
 			Title:                       "Wait time should be increased as exponential",
 			ResponseCodes:               []int{400, 400},
+			RequestBody:                 "foo",
 			ExpectedRequestCount:        2,
 			ExpectedError:               "maximum retry count exceeded 2\nStatus codes:[400 400]",
 			MaxRetryCount:               2,
@@ -152,6 +165,7 @@ func TestRetryBehavior(t *testing.T) {
 		{
 			Title:                       "Refresh token when response code require refreshing token",
 			ResponseCodes:               []int{401, 200},
+			RequestBody:                 "foo",
 			ExpectedRequestCount:        2,
 			ExpectedError:               "",
 			MaxRetryCount:               2,
@@ -172,12 +186,17 @@ func TestRetryBehavior(t *testing.T) {
 			}
 			baseClient := mockFailClient{
 				Responses: responses,
+				Requests:  make([]*http.Request, 0),
 			}
 			refresherSpy := tokenRefresherClientSpy{}
 			applierSpy := tokenApplierClientSpy{}
 			retryClient := NewRetryHttpClient(&baseClient, tc.MinWaitTime, tc.MaxWaitTime, tc.MaxRetryCount, []int{400}, []int{401}, &refresherSpy, &applierSpy)
 			retryClient.timeUnit = time.Millisecond
-			response, err := retryClient.DoWithContext(context.Background(), &http.Request{})
+			req, err := http.NewRequest("GET", "https://google.com", bytes.NewBuffer([]byte(tc.RequestBody)))
+			if err != nil {
+				t.Errorf("unexpected error %s", err.Error())
+			}
+			response, err := retryClient.DoWithContext(context.Background(), req)
 			if tc.ExpectedError == "" {
 				if response == nil {
 					t.Errorf("response was unexpected nil")
@@ -194,6 +213,16 @@ func TestRetryBehavior(t *testing.T) {
 				}
 				if baseClient.RequestCount != tc.ExpectedRequestCount {
 					t.Errorf("unexpected retry count, expected %d, but %d", tc.ExpectedRequestCount, baseClient.RequestCount)
+				}
+			}
+			for _, req := range baseClient.Requests {
+				requestBody, err := io.ReadAll(req.Body)
+				if err != nil {
+					t.Errorf("unexpected error %s", err)
+				}
+				requestBodyStr := string(requestBody)
+				if requestBodyStr != tc.RequestBody {
+					t.Errorf("unexpected requestBody %s, expected %s", requestBody, tc.RequestBody)
 				}
 			}
 			if tc.ExpectedLastCurrentWaitTime != retryClient.currentWaitSeconds {

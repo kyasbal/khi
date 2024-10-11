@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
+	"time"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
@@ -16,19 +17,22 @@ type TokenStore interface {
 	task.CachableDependency
 	GetType() string
 	// GetToken returns the current token. It can come from cache or newly resolved from TokenResolver.
-	GetToken(ctx context.Context) (string, error)
-	// RefreshToken try to get new token
-	RefreshToken(ctx context.Context) (string, error)
+	GetToken(ctx context.Context) (*Token, error)
+	// IsTokenValidityAssured returns true if this token is assured to be valid now.
+	// When a permission error happens, refresher may attempt to refresh tokens. The refresh is only needed when the token can be expired(when we don't know the expiration time) or the token is actually expired.
+	IsTokenValidityAssured(ctx context.Context) bool
+	// RefreshToken refreshes the token returned from GetToken()
+	RefreshToken(ctx context.Context) error
 }
 
 // BasicTokenStore provides feature to refresh token and return cached token.
 // BasicTokenStore memory the expired tokens and it calls resolvers in order to get new token after MarkTokenExpired called.
 type BasicTokenStore struct {
-	tokenType     string
-	resolver      TokenResolver
-	tokenLock     sync.Mutex
-	expiredTokens map[string]interface{}
-	lastToken     string
+	tokenType             string
+	resolver              TokenResolver
+	tokenLock             sync.RWMutex
+	lastToken             *Token
+	lastTokenRefreshError error
 }
 
 // Digest implements TokenStore.
@@ -38,10 +42,8 @@ func (b *BasicTokenStore) Digest() string {
 
 func NewBasicTokenStore(tokenType string, resolver TokenResolver) *BasicTokenStore {
 	return &BasicTokenStore{
-		tokenType:     tokenType,
-		resolver:      resolver,
-		expiredTokens: map[string]interface{}{},
-		lastToken:     "",
+		tokenType: tokenType,
+		resolver:  resolver,
 	}
 }
 
@@ -50,36 +52,46 @@ func (b *BasicTokenStore) GetType() string {
 }
 
 // GetToken implements TokenStore.
-func (b *BasicTokenStore) GetToken(ctx context.Context) (string, error) {
-	b.tokenLock.Lock()
-	defer b.tokenLock.Unlock()
-	if b.lastToken == "" {
-		return b.refreshTokenWithoutLock(ctx)
+func (b *BasicTokenStore) GetToken(ctx context.Context) (*Token, error) {
+	defer b.tokenLock.RUnlock()
+	b.tokenLock.RLock()
+	if b.lastToken == nil {
+		b.tokenLock.RUnlock()
+		b.RefreshToken(ctx)
+		b.tokenLock.RLock()
 	}
-	return b.lastToken, nil
+	return b.lastToken, b.lastTokenRefreshError
+}
+
+func (b *BasicTokenStore) IsTokenValidityAssured(ctx context.Context) bool {
+	return b.lastToken != nil && b.lastToken.ValidAtLeastUntil.After(time.Now())
 }
 
 // RefreshToken implements TokenStore.
-func (b *BasicTokenStore) RefreshToken(ctx context.Context) (string, error) {
-	b.tokenLock.Lock()
+// A token store can be referenced from multiple http client and these can call RefreshToken multiple times in parallel just after token expiration.
+// RefreshToken() will ignore the refresh request when it can't acquire the write lock and wait until the lock to be acquired.
+func (b *BasicTokenStore) RefreshToken(ctx context.Context) error {
 	defer b.tokenLock.Unlock()
-	return b.refreshTokenWithoutLock(ctx)
+	if b.tokenLock.TryLock() {
+		// Only the thread acquiring the lock will request the actual token refresh.
+		return b.refreshTokenWithoutLock(ctx)
+	} else {
+		b.tokenLock.Lock()
+	}
+	return nil
 }
 
-func (b *BasicTokenStore) refreshTokenWithoutLock(ctx context.Context) (string, error) {
+func (b *BasicTokenStore) refreshTokenWithoutLock(ctx context.Context) error {
 	slog.DebugContext(ctx, fmt.Sprintf("Current token for %s is expired. Refreshing a new token", b.tokenType))
-	if b.lastToken != "" {
-		b.expiredTokens[b.lastToken] = struct{}{}
-	}
-	token, err := b.resolver.Resolve(ctx, b.expiredTokens)
+	token, err := b.resolver.Resolve(ctx)
 	if err != nil {
-		return "", err
-	}
-	if b.lastToken == token {
-		return "", ErrNoNewTokenResolved
+		b.lastToken = nil
+		b.lastTokenRefreshError = err
+		return err
 	}
 	b.lastToken = token
-	return token, err
+	b.lastTokenRefreshError = nil
+	return nil
 }
 
 var _ TokenStore = &BasicTokenStore{}

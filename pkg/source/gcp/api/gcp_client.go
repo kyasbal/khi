@@ -129,7 +129,7 @@ var _ GCPClient = (*GCPClientImpl)(nil)
 func NewGCPClient(accessToken token.TokenStore, iamToken token.TokenStore, quotaProject string) (GCPClient, error) {
 	return &GCPClientImpl{
 		BaseClient: httpclient.NewRetryHttpClient(httpclient.NewBasicHttpClient(), MinWaitTimeOnRetriableError, MaxWaitTimeOnRetriableError, MaxRetryCount, RetriableHttpResponseCodes, RetriableWithRefreshingTokenHttpResponseCodes,
-			httpclient.NewMultiTokenStoreRefresher(accessToken, iamToken), NewGCPTokenApplier(accessToken, iamToken)),
+			token.NewMultiTokenStoreRefresher(accessToken, iamToken), NewGCPTokenApplier(accessToken, iamToken)),
 		AccessToken:   accessToken,
 		IamToken:      iamToken,
 		QuotaProject:  quotaProject,

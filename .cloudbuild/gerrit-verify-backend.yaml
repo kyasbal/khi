@@ -17,7 +17,7 @@ steps:
         mkdir dist
         # A placeholder frontend code read from backend test
         echo "<!--INJECT GENERATED CODE HERE FROM BACKEND-->" > ./dist/index.html
-        ACCESS_TOKEN=`cat ./.token` make test-go
+        GCP_ACCESS_TOKEN=`cat ./.token` make coverage-go
         test_exit_code=$?
         rm ./.token
         exit "$test_exit_code"
@@ -32,5 +32,10 @@ steps:
         make lint-go
     waitFor:
       - "-"
+artifacts:
+  objects:
+    location: 'gs://kubernetes-history-inspector_cloudbuild/artifacts/$COMMIT_SHA'
+    paths:
+      - go-cover.html
 options:
   machineType: E2_HIGHCPU_32

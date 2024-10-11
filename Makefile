@@ -31,11 +31,6 @@ test: test-web test-go
 .PHONY=coverage
 coverage: coverage-go coverage-web
 
-# Update the snapshot data used in snapshot testing in server side
-.PHONY=update-snapshot
-update-snapshot:
-	UPDATE_SNAPSHOT=true go test -v ./...
-
 .PHONY=lint
 lint: lint-web lint-go
 
@@ -53,33 +48,12 @@ build-web-beta: build-web-frontend-beta
 
 .PHONY=build-web-viewer-mode
 build-web-viewer-mode: build-web-frontend-viewer-mode
-
-### Deploy
-
-.PHONY=deploy
-deploy: deploy-precondition qa deploy-container-image
-	git tag -a $(GIT_TAG_NAME) -m $(GIT_TAG_NAME)
-	git push origin $(GIT_TAG_NAME):refs/for/main
-
-.PHONY=deploy-beta
-deploy-beta: deploy-container-image-beta
-
 ### Initial setup
 
 .PHONY=setup-hooks
 setup-hooks:
-	cp ./scripts/pre-push .git/hooks/
 	cp ./scripts/pre-commit .git/hooks/
-	chmod +x .git/hooks/pre-push
 	chmod +x .git/hooks/pre-commit
-
-###############################
-# For internal use only       #
-# TODO: remove before OSSing  #
-###############################
-.PHONY=deploy-khi-ro
-deploy-khi-ro:
-	$(GCLOUD) builds submit --config .cloudbuild/deploy-khi-ro.yaml
 
 # Sub level commands used in the top level commands
 
@@ -99,20 +73,6 @@ build-web-frontend-viewer-mode: ./web/**/*.ts ./web/**/*.html ./web/**/*.sass
 	cd web &&NG_APP_VIEWER_MODE=true NG_APP_VERSION="$(VERSION)" NG_APP_GTAG_ID="$(GTAG_ID)" NG_APP_ENABLE_GOOGLE_DRIVE_DATA_LOADER="true" NG_APP_REPORT_BUG_URL=$(BUG_REPORT_URL) NG_APP_DOCUMENT_URL=$(DOCUMENT_URL) npx ng build --output-path ../dist
 
 ## Deploy subcommands
-
-# TODO: Remove gcertstatus command for OSSing
-.PHONY=deploy-precondition
-deploy-precondition:
-	./scripts/git-precondition.sh $(GIT_TAG_NAME)
-	gcertstatus --check_remaining=15m
-
-.PHONY=deploy-container-image
-deploy-container-image: build-web ./pkg/**/*.go Dockerfile
-	$(GCLOUD) builds submit --config=./cloudbuild.yaml --substitutions=_IMAGE_TAG="$(VERSION)"
-
-.PHONY=deploy-container-image-beta
-deploy-container-image-beta: build-web-beta ./pkg/**/*.go Dockerfile
-	$(GCLOUD) builds submit --config=./cloudbuild-beta.yaml --substitutions=_IMAGE_TAG="$(VERSION)-beta"
 
 .PHONY=deploy-analytics
 deploy-analytics:
@@ -161,7 +121,7 @@ qa: clean-go-test-cache test lint check-format-go check-format-web
 
 .PHONY=coverage-web
 coverage-web:
-	cd web && ng test --code-coverage
+	cd web && npx ng test --code-coverage --browsers ChromeHeadlessNoSandbox --watch false --progress false
 
 .PHONY=coverage-go
 coverage-go:

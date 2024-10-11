@@ -3,8 +3,6 @@ package model
 import (
 	"fmt"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestToSingularKindName(t *testing.T) {
@@ -24,11 +22,26 @@ func TestToSingularKindName(t *testing.T) {
 			plural:   "ingresses",
 			singular: "ingress",
 		},
+		{
+			plural:   "clusterdnses",
+			singular: "clusterdns",
+		},
+		{
+			plural:   "csinodetopologies",
+			singular: "csinodetopology",
+		},
+		{
+			plural:   "entitlementidentities",
+			singular: "entitlementidentity",
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("plural:%s", tc.plural), func(t *testing.T) {
 			o := KubernetesObjectOperation{PluralKind: tc.plural}
-			assert.Equal(t, tc.singular, o.GetSingularKindName())
+
+			if tc.singular != o.GetSingularKindName() {
+				t.Errorf("Expected singular name to be %s, but got %s", tc.singular, o.GetSingularKindName())
+			}
 		})
 	}
 }
