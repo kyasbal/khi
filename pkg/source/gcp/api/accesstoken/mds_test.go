@@ -62,15 +62,15 @@ func TestMDSTokenResolver(t *testing.T) {
 			m := NewMetadataServerAccessTokenResolver(tt.client)
 			got, err := m.Resolve(context.Background())
 			if (err != nil) != tt.wantErr {
-				t.Errorf("MDSTokenResolver.Resolve() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("got %v, want %v", err, tt.wantErr)
 				return
 			}
 			if !tt.wantErr {
-				if diff := cmp.Diff(tt.want, got.RawToken); diff != "" {
-					t.Errorf("MDSTokenResolver.Resolve() mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(got.RawToken, tt.want); diff != "" {
+					t.Errorf("token mismatch (-got +want):\n%s", diff)
 				}
 				if !got.ValidAtLeastUntil.Before(tt.wantExpireAround.Add(time.Second*10)) || !got.ValidAtLeastUntil.After(tt.wantExpireAround.Add(-time.Second*10)) {
-					t.Errorf("MDSTokenResolver.Resolve() returns expire time far different from the expected time. want:%v, got:%v", tt.wantExpireAround, got.ValidAtLeastUntil)
+					t.Errorf("expire time far different from the expected time,got %v, want around %v", got.ValidAtLeastUntil, tt.wantExpireAround)
 				}
 			}
 		})

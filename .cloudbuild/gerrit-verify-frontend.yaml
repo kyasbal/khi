@@ -22,7 +22,7 @@ steps:
       - npm install
   - id: upload coverage result
     name: "gcr.io/cloud-builders/gcloud-slim"
-    args: 
+    args:
     - "storage"
     - "cp"
     - "--recursive"

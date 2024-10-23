@@ -82,20 +82,23 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 				continue
 			}
 			if shouldRecordForPod {
-				cs.RecordRevision(resourcepath.PodEndpointSlice(log.Operation.Namespace, log.Operation.Name, endpoint.TargetRef.Namespace, endpoint.TargetRef.Name), &history.StagingResourceRevision{
+				podEndpointSliceResourcePath := resourcepath.PodEndpointSlice(log.Operation.Namespace, log.Operation.Name, endpoint.TargetRef.Namespace, endpoint.TargetRef.Name)
+				cs.RecordRevision(podEndpointSliceResourcePath, &history.StagingResourceRevision{
 					Body:       string(endpointYaml),
 					State:      state,
 					Verb:       verb,
 					ChangeTime: log.Log.Timestamp(),
-				}, history.RewriteRelationship(enum.RelationshipEndpointSlice))
+				})
 			}
 			if shouldRecordForService {
-				cs.RecordRevision(resourcepath.ServiceEndpointSlice(log.Operation.Namespace, log.Operation.Name, relatedServiceName), &history.StagingResourceRevision{
+				serviceEndpointSliceResourcePath := resourcepath.ServiceEndpointSlice(log.Operation.Namespace, log.Operation.Name, relatedServiceName)
+				cs.RecordRevision(serviceEndpointSliceResourcePath, &history.StagingResourceRevision{
 					Body:       string(endpointYaml),
 					State:      state,
 					Verb:       verb,
 					ChangeTime: log.Log.Timestamp(),
-				}, history.RewriteRelationship(enum.RelationshipEndpointSlice))
+				})
+
 			}
 		}
 	}
@@ -110,22 +113,24 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 				continue
 			}
 			if endpoint.TargetRef != nil {
+				podEndpointSliceResourcePath := resourcepath.PodEndpointSlice(log.Operation.Namespace, log.Operation.Name, endpoint.TargetRef.Namespace, endpoint.TargetRef.Name)
 				// Only process endpoints not included in current endpoint slices
-				cs.RecordRevision(resourcepath.PodEndpointSlice(log.Operation.Namespace, log.Operation.Name, endpoint.TargetRef.Namespace, endpoint.TargetRef.Name), &history.StagingResourceRevision{
+				cs.RecordRevision(podEndpointSliceResourcePath, &history.StagingResourceRevision{
 					Body:       "# This endpoint removed from endpoint list of the EndpointSlice",
 					State:      enum.RevisionStateDeleted,
 					Verb:       enum.RevisionVerbDelete,
 					ChangeTime: log.Log.Timestamp(),
-				}, history.RewriteRelationship(enum.RelationshipEndpointSlice))
+				})
 			}
 
 			if shouldRecordForService {
-				cs.RecordRevision(resourcepath.ServiceEndpointSlice(log.Operation.Namespace, log.Operation.Name, relatedServiceName), &history.StagingResourceRevision{
+				serviceEndpointSliceResourcePath := resourcepath.ServiceEndpointSlice(log.Operation.Namespace, log.Operation.Name, relatedServiceName)
+				cs.RecordRevision(serviceEndpointSliceResourcePath, &history.StagingResourceRevision{
 					Body:       "# This endpoint removed from endpoint list of the EndpointSlice",
 					State:      enum.RevisionStateDeleted,
 					Verb:       enum.RevisionVerbDelete,
 					ChangeTime: log.Log.Timestamp(),
-				}, history.RewriteRelationship(enum.RelationshipEndpointSlice))
+				})
 			}
 		}
 	}

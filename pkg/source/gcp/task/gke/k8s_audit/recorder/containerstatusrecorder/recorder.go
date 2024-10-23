@@ -52,7 +52,7 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 		isInitContainer := i >= len(pod.Status.ContainerStatuses)
 		cpath := resourcepath.Container(log.Operation.Namespace, log.Operation.Name, status.Name)
 		changed := builder.ClusterResource.ContainerStatuses.IsNewChange(log.Operation.Namespace, log.Operation.Name, status.Name, status)
-		tb := builder.GetTimelineBuilder(cpath)
+		tb := builder.GetTimelineBuilder(cpath.Path)
 		last := tb.GetLatestRevision()
 		if changed {
 			// Current container is running
@@ -67,7 +67,7 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 						Partial:    false,
 						ChangeTime: running.StartedAt.Time,
 						State:      enum.RevisionStateContainerRunningNonReady,
-					}, history.RewriteRelationship(enum.RelationshipContainer))
+					})
 				}
 				if status.Ready {
 					readinessChangeTime := log.Log.Timestamp()
@@ -81,7 +81,7 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 						Partial:    false,
 						ChangeTime: readinessChangeTime,
 						State:      enum.RevisionStateContainerRunningReady,
-					}, history.RewriteRelationship(enum.RelationshipContainer))
+					})
 				} else {
 					cs.RecordRevision(cpath, &history.StagingResourceRevision{
 						Verb:       enum.RevisionVerbContainerNonReady,
@@ -90,7 +90,8 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 						Partial:    false,
 						ChangeTime: log.Log.Timestamp(),
 						State:      enum.RevisionStateContainerRunningNonReady,
-					}, history.RewriteRelationship(enum.RelationshipContainer))
+					})
+
 				}
 			} else if status.State.Terminated != nil { // Current container is terminated
 				terminated := status.State.Terminated
@@ -113,7 +114,8 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 					Partial:    false,
 					ChangeTime: terminated.FinishedAt.Time,
 					State:      state,
-				}, history.RewriteRelationship(enum.RelationshipContainer))
+				})
+
 			} else if status.State.Waiting != nil { // Current container is waiting
 				cs.RecordRevision(cpath, &history.StagingResourceRevision{
 					Verb:       enum.RevisionVerbContainerWaiting,
@@ -122,7 +124,7 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 					Partial:    false,
 					ChangeTime: log.Log.Timestamp(),
 					State:      enum.RevisionStateContainerWaiting,
-				}, history.RewriteRelationship(enum.RelationshipContainer))
+				})
 			}
 		}
 	}

@@ -31,21 +31,21 @@ func (s *SchedulerComponentParser) ShouldProcess(component_name string) bool {
 	return component_name == "scheduler"
 }
 
-func (s *SchedulerComponentParser) podRelatedLogsToResourcePath(ctx context.Context, l *log.LogEntity) (string, error) {
+func (s *SchedulerComponentParser) podRelatedLogsToResourcePath(ctx context.Context, l *log.LogEntity) (resourcepath.ResourcePath, error) {
 	hasPodField := l.HasKLogField("pod")
 	if hasPodField {
 		pod, err := l.KLogField("pod")
 		if err != nil {
-			return "", ErrParserNoMatchingWithLog
+			return resourcepath.ResourcePath{}, ErrParserNoMatchingWithLog
 		}
 		splittedPodName := strings.Split(pod, "/")
 		if len(splittedPodName) != 2 {
 			slog.WarnContext(ctx, fmt.Sprintf("Unexpected pod klog format: %s", pod))
-			return "", ErrParserNoMatchingWithLog
+			return resourcepath.ResourcePath{}, ErrParserNoMatchingWithLog
 		}
 		return resourcepath.Pod(splittedPodName[0], splittedPodName[1]), nil
 	}
-	return "", ErrParserNoMatchingWithLog
+	return resourcepath.ResourcePath{}, ErrParserNoMatchingWithLog
 }
 
 var _ ControlPlaneComponentParser = (*SchedulerComponentParser)(nil)

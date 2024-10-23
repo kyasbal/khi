@@ -9,7 +9,7 @@ import (
 
 func TestReadPodManifest(t *testing.T) {
 	testutil.InitTestIO()
-	podYaml := testutil.MustReadText("test/k8s/sample_pod.yaml", "")
+	podYaml := testutil.MustReadText("test/k8s/sample_pod.yaml")
 	sd, err := DataFromYaml(podYaml)
 	if err != nil {
 		t.Fatal(err)

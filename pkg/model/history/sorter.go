@@ -10,7 +10,7 @@ import (
 var ErrorSortSkipped = errors.New("skipping this sorter for the given resource chunk")
 
 type ResourceChunkSortStrategy interface {
-	SortChunk(builder *Builder, parents []*Resource, groupedRelationship enum.ParentRelationShip, chunk []*Resource) ([]*Resource, error)
+	SortChunk(builder *Builder, parents []*Resource, groupedRelationship enum.ParentRelationship, chunk []*Resource) ([]*Resource, error)
 }
 
 type ResourceSorter struct {
@@ -27,7 +27,7 @@ func (r *ResourceSorter) SortAll(builder *Builder, resources []*Resource) ([]*Re
 
 func (r *ResourceSorter) sortLayer(builder *Builder, parents []*Resource, children []*Resource) ([]*Resource, error) {
 	result := make([]*Resource, 0)
-	grouped := map[enum.ParentRelationShip][]*Resource{}
+	grouped := map[enum.ParentRelationship][]*Resource{}
 	for _, child := range children {
 		if _, found := grouped[child.Relationship]; !found {
 			grouped[child.Relationship] = make([]*Resource, 0)
@@ -36,7 +36,7 @@ func (r *ResourceSorter) sortLayer(builder *Builder, parents []*Resource, childr
 		grouped[child.Relationship] = append(group, child)
 	}
 	// gen sorted keys
-	keys := make([]enum.ParentRelationShip, 0, len(grouped))
+	keys := make([]enum.ParentRelationship, 0, len(grouped))
 	for prs := range grouped {
 		keys = append(keys, prs)
 	}
@@ -61,7 +61,7 @@ func (r *ResourceSorter) sortLayer(builder *Builder, parents []*Resource, childr
 	return result, nil
 }
 
-func (r *ResourceSorter) sortGroupInLayer(builder *Builder, parents []*Resource, groupedRelationship enum.ParentRelationShip, children []*Resource) ([]*Resource, error) {
+func (r *ResourceSorter) sortGroupInLayer(builder *Builder, parents []*Resource, groupedRelationship enum.ParentRelationship, children []*Resource) ([]*Resource, error) {
 	for _, strategy := range r.Strategies {
 		sortedResource, err := strategy.SortChunk(builder, parents, groupedRelationship, children)
 		if errors.Is(err, ErrorSortSkipped) {

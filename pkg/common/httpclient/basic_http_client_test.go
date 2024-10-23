@@ -26,7 +26,7 @@ func TestBasicHttpClient_DoWithContext(t *testing.T) {
 			t.Errorf("Expected no error, but got %v", err)
 		}
 		if resp.StatusCode != http.StatusOK {
-			t.Errorf("Expected status code %d, but got %d", http.StatusOK, resp.StatusCode)
+			t.Errorf("got status code %d, want %d", http.StatusOK, resp.StatusCode)
 		}
 	})
 
@@ -37,7 +37,7 @@ func TestBasicHttpClient_DoWithContext(t *testing.T) {
 		_, err := client.DoWithContext(context.Background(), req)
 
 		if err == nil {
-			t.Error("Expected error, but got nil")
+			t.Error("got nil, want error")
 		}
 	})
 
@@ -56,10 +56,10 @@ func TestBasicHttpClient_DoWithContext(t *testing.T) {
 		_, err := client.DoWithContext(ctx, req)
 
 		if err == nil {
-			t.Error("Expected error, but got nil")
+			t.Error("got nil, want error")
 		}
 		if !errors.Is(err, context.Canceled) {
-			t.Errorf("Expected error to be context.Canceled, but got %v", err)
+			t.Errorf("got %v, want context.Canceled", err)
 		}
 	})
 }

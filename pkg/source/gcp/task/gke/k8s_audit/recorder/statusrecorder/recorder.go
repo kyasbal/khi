@@ -2,12 +2,12 @@ package statusrecorder
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/manifestutil"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/recorder"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/types"
@@ -52,8 +52,7 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 			conditionTime = lastProbeTime
 		}
 		// Ignore if the transition time was older than the last revision
-
-		statusPath := fmt.Sprintf("%s#%s", log.Operation.CovertToResourcePath(), condition.Type)
+		statusPath := resourcepath.Status(resourcepath.FromK8sOperation(*log.Operation), condition.Type)
 		if log.Operation.SubResourceName != "" {
 			parentOp := model.KubernetesObjectOperation{
 				APIVersion: log.Operation.APIVersion,
@@ -62,9 +61,9 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 				Name:       log.Operation.Name,
 				Verb:       log.Operation.Verb,
 			}
-			statusPath = fmt.Sprintf("%s#%s", parentOp.CovertToResourcePath(), condition.Type)
+			statusPath = resourcepath.Status(resourcepath.FromK8sOperation(parentOp), condition.Type)
 		}
-		tb := builder.GetTimelineBuilder(statusPath)
+		tb := builder.GetTimelineBuilder(statusPath.Path)
 		latest := tb.GetLatestRevision()
 		latestTime := time.Time{}
 		if latest != nil {
@@ -99,7 +98,7 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 				Requestor:  "",
 				ChangeTime: conditionTime,
 				State:      conditionStateToRevisionState(condition.Status),
-			}, history.RewriteRelationship(enum.RelationshipResourceStatus))
+			})
 		}
 	}
 	return &resourceContainingStatus, nil

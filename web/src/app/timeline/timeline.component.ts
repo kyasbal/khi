@@ -42,7 +42,11 @@ import {
 } from './timeline.component.vm';
 import { LogEntry } from '../store/log';
 import { ResourceRevisionChangePair, TimelineEntry } from '../store/timeline';
-import { ParentRelationshipMetadataType } from '../generated';
+import {
+  LogType,
+  ParentRelationshipMetadataType,
+  Severity,
+} from '../generated';
 
 interface HoverViewStateLog {
   time: number;
@@ -233,7 +237,7 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
       )
         return DEFAULT_HOVER_VIEW_STATE;
       const MAX_VISIBLE_LOGS = 10;
-      const timestamps = highlightLogs.map((l) => l.time);
+      const highlightedLogTimestamps: number[] = [];
       const logs: HoverViewStateLog[] = [];
       if (revisions.length == 0) {
         // for event logs
@@ -250,6 +254,7 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
             logTypeCss: eventLog.logTypeLabel,
             revisionPair: null,
           });
+          highlightedLogTimestamps.push(eventLog.time);
         }
       } else {
         const logByIndex: { [logIndex: number]: LogEntry } = {};
@@ -263,8 +268,26 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
         // for revision logs
         for (let i = 0; i < Math.min(revisions.length, MAX_VISIBLE_LOGS); i++) {
           const revision = revisions[i];
-          const associatedLog = logByIndex[revision.logIndex];
-          if (!associatedLog) continue;
+          let associatedLog = logByIndex[revision.logIndex];
+          if (!associatedLog && revision.logIndex >= 0) continue;
+          if (revision.logIndex === -1) {
+            // The revision has no associated log. The resource status was inferred from other logs.
+            // Generates a pseudo log and only set the log time from revision start time.
+            associatedLog = new LogEntry(
+              -1,
+              '',
+              LogType.LogTypeUnknown,
+              Severity.SeverityUnknown,
+              revision.startAt,
+              '',
+              {
+                offset: 0,
+                len: 0,
+                buffer: 0,
+              },
+              [],
+            );
+          }
           const prev =
             logs.length > 0
               ? logs[logs.length - 1].revisionPair!.current
@@ -276,6 +299,7 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
             logTypeCss: associatedLog.logTypeLabel,
             revisionPair: new ResourceRevisionChangePair(prev, revision),
           });
+          highlightedLogTimestamps.push(associatedLog.time);
         }
       }
       const pathFragments =
@@ -296,8 +320,8 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
             mouseEvent.clientY -
             this.HOVER_BOTTOM_MARGIN,
         ),
-        endTime: Math.max(...timestamps),
-        beginTime: Math.min(...timestamps),
+        endTime: Math.max(...highlightedLogTimestamps),
+        beginTime: Math.min(...highlightedLogTimestamps),
         logCount: highlightLogs.length,
         logs: logs,
         isRevisions: revisions.length > 0,

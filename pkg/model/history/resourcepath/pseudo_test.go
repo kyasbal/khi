@@ -2,9 +2,12 @@ package resourcepath
 
 import (
 	"testing"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 )
 
 func TestCluster(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipChild
 	testCases := []struct {
 		name        string
 		clusterName string
@@ -17,14 +20,18 @@ func TestCluster(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Cluster(tc.clusterName)
-			if result != tc.expected {
-				t.Errorf("Cluster function failed. Expected '%s', got '%s'", tc.expected, result)
+			if result.Path != tc.expected {
+				t.Errorf("got %q,want %q", result.Path, tc.expected)
+			}
+			if result.ParentRelationship != expectedParentRelationship {
+				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
 }
 
 func TestAutoscaler(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipControlPlaneComponent
 	testCases := []struct {
 		name        string
 		clusterName string
@@ -37,14 +44,18 @@ func TestAutoscaler(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Autoscaler(tc.clusterName)
-			if result != tc.expected {
-				t.Errorf("Autoscaler function failed. Expected '%s', got '%s'", tc.expected, result)
+			if result.Path != tc.expected {
+				t.Errorf("got %q,want %q", result.Path, tc.expected)
+			}
+			if result.ParentRelationship != expectedParentRelationship {
+				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
 }
 
 func TestNodepool(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipChild
 	testCases := []struct {
 		name         string
 		clusterName  string
@@ -60,14 +71,18 @@ func TestNodepool(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Nodepool(tc.clusterName, tc.nodepoolName)
-			if result != tc.expected {
-				t.Errorf("Nodepool function failed. Expected '%s', got '%s'", tc.expected, result)
+			if result.Path != tc.expected {
+				t.Errorf("got %q,want %q", result.Path, tc.expected)
+			}
+			if result.ParentRelationship != expectedParentRelationship {
+				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
 }
 
 func TestMig(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipManagedInstanceGroup
 	testCases := []struct {
 		name         string
 		clusterName  string
@@ -87,14 +102,18 @@ func TestMig(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Mig(tc.clusterName, tc.nodepoolName, tc.migName)
-			if result != tc.expected {
-				t.Errorf("Mig function failed. Expected '%s', got '%s'", tc.expected, result)
+			if result.Path != tc.expected {
+				t.Errorf("got %q,want %q", result.Path, tc.expected)
+			}
+			if result.ParentRelationship != expectedParentRelationship {
+				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
 }
 
 func TestNodeComponent(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipNodeComponent
 	testCases := []struct {
 		name             string
 		nodeName         string
@@ -110,8 +129,187 @@ func TestNodeComponent(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := NodeComponent(tc.nodeName, tc.syslogIdentifier)
-			if result != tc.expected {
-				t.Errorf("NodeComponent function failed. Expected '%s', got '%s'", tc.expected, result)
+			if result.Path != tc.expected {
+				t.Errorf("got %q,want %q", result.Path, tc.expected)
+			}
+			if result.ParentRelationship != expectedParentRelationship {
+				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+			}
+		})
+	}
+}
+
+func TestNodeBinding(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipPodBinding
+	testCases := []struct {
+		name         string
+		nodeName     string
+		podNamespace string
+		podName      string
+		expected     string
+	}{
+		{"All specified", "my-node", "my-namespace", "my-pod", "core/v1#node#cluster-scope#my-node#my-pod(my-namespace)"},
+		{"Empty node name", "", "my-namespace", "my-pod", "core/v1#node#cluster-scope#unknown#my-pod(my-namespace)"},
+		{"Empty pod namespace", "my-node", "", "my-pod", "core/v1#node#cluster-scope#my-node#my-pod(unknown)"},
+		{"Empty pod name", "my-node", "my-namespace", "", "core/v1#node#cluster-scope#my-node#unknown(my-namespace)"},
+		{"Two empty", "", "my-namespace", "", "core/v1#node#cluster-scope#unknown#unknown(my-namespace)"},
+		{"Two empty #2", "my-node", "", "", "core/v1#node#cluster-scope#my-node#unknown(unknown)"},
+		{"All empty", "", "", "", "core/v1#node#cluster-scope#unknown#unknown(unknown)"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := NodeBinding(tc.nodeName, tc.podNamespace, tc.podName)
+			if result.Path != tc.expected {
+				t.Errorf("got %q,want %q", result.Path, tc.expected)
+			}
+			if result.ParentRelationship != expectedParentRelationship {
+				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+			}
+		})
+	}
+}
+
+func TestPodEndpointSlice(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipEndpointSlice
+	testCases := []struct {
+		name                   string
+		endpointSliceName      string
+		endpointSliceNamespace string
+		podNamespace           string
+		podName                string
+		expected               string
+	}{
+		{"All specified", "my-endpointslice", "my-namespace", "my-namespace", "my-pod", "core/v1#pod#my-namespace#my-pod#my-endpointslice(my-namespace)[endpointslice]"},
+		{"Empty endpointSliceName", "", "my-namespace", "my-namespace", "my-pod", "core/v1#pod#my-namespace#my-pod#unknown(my-namespace)[endpointslice]"},
+		{"Empty endpointSliceNamespace", "my-endpointslice", "", "my-namespace", "my-pod", "core/v1#pod#my-namespace#my-pod#my-endpointslice(unknown)[endpointslice]"},
+		{"Empty pod namespace", "my-endpointslice", "my-namespace", "", "my-pod", "core/v1#pod#unknown#my-pod#my-endpointslice(my-namespace)[endpointslice]"},
+		{"Empty pod name", "my-endpointslice", "my-namespace", "my-namespace", "", "core/v1#pod#my-namespace#unknown#my-endpointslice(my-namespace)[endpointslice]"},
+		{"Two empty", "", "my-namespace", "", "", "core/v1#pod#unknown#unknown#unknown(my-namespace)[endpointslice]"},
+		{"Two empty #2", "my-endpointslice", "", "my-namespace", "", "core/v1#pod#my-namespace#unknown#my-endpointslice(unknown)[endpointslice]"},
+		{"All empty", "", "", "", "", "core/v1#pod#unknown#unknown#unknown(unknown)[endpointslice]"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := PodEndpointSlice(tc.endpointSliceNamespace, tc.endpointSliceName, tc.podNamespace, tc.podName)
+			if result.Path != tc.expected {
+				t.Errorf("got %q,want %q", result.Path, tc.expected)
+			}
+			if result.ParentRelationship != expectedParentRelationship {
+				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+			}
+		})
+	}
+}
+
+func TestServiceEndpointSlice(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipEndpointSlice
+	testCases := []struct {
+		name              string
+		namespace         string
+		endpointSliceName string
+		serviceName       string
+		expected          string
+	}{
+		{"All specified", "my-namespace", "my-endpointslice", "my-service", "core/v1#service#my-namespace#my-service#my-endpointslice(my-namespace)[endpointslice]"},
+		{"Empty endpointSliceName", "my-namespace", "", "my-service", "core/v1#service#my-namespace#my-service#unknown(my-namespace)[endpointslice]"},
+		{"Empty namespace", "", "my-endpointslice", "my-service", "core/v1#service#unknown#my-service#my-endpointslice(unknown)[endpointslice]"},
+		{"Empty serviceName", "my-namespace", "my-endpointslice", "", "core/v1#service#my-namespace#unknown#my-endpointslice(my-namespace)[endpointslice]"},
+		{"Two empty", "", "", "my-service", "core/v1#service#unknown#my-service#unknown(unknown)[endpointslice]"},
+		{"Two empty #2", "my-namespace", "", "", "core/v1#service#my-namespace#unknown#unknown(my-namespace)[endpointslice]"},
+		{"All empty", "", "", "", "core/v1#service#unknown#unknown#unknown(unknown)[endpointslice]"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := ServiceEndpointSlice(tc.namespace, tc.endpointSliceName, tc.serviceName)
+			if result.Path != tc.expected {
+				t.Errorf("got %q,want %q", result.Path, tc.expected)
+			}
+			if result.ParentRelationship != expectedParentRelationship {
+				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+			}
+		})
+	}
+}
+
+func TestOperation(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipOperation
+	testCases := []struct {
+		name            string
+		operationOwner  ResourcePath
+		operationMethod string
+		operationId     string
+		expected        string
+	}{
+		{"All specified", ResourcePath{Path: "foo"}, "GET", "1234567890", "foo#GET-1234567890"},
+		{"Empty operation method", ResourcePath{Path: "foo"}, "", "1234567890", "foo#unknown-1234567890"},
+		{"Empty operation id", ResourcePath{Path: "foo"}, "GET", "", "foo#GET-unknown"},
+		{"Both empty", ResourcePath{Path: "foo"}, "", "", "foo#unknown-unknown"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := Operation(tc.operationOwner, tc.operationMethod, tc.operationId)
+			if result.Path != tc.expected {
+				t.Errorf("got %q,want %q", result.Path, tc.expected)
+			}
+			if result.ParentRelationship != expectedParentRelationship {
+				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+			}
+		})
+	}
+}
+
+func TestStatus(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipResourceStatus
+	testCases := []struct {
+		name        string
+		statusOwner ResourcePath
+		statusName  string
+		expected    string
+	}{
+		{"All specified", ResourcePath{Path: "foo"}, "status", "foo#status"},
+		{"Empty status name", ResourcePath{Path: "foo"}, "", "foo#unknown"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := Status(tc.statusOwner, tc.statusName)
+			if result.Path != tc.expected {
+				t.Errorf("got %q,want %q", result.Path, tc.expected)
+			}
+			if result.ParentRelationship != expectedParentRelationship {
+				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+			}
+		})
+	}
+}
+
+func TestNetworkEndpointGroupUnderResource(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipNetworkEndpointGroup
+	testCases := []struct {
+		name         string
+		parent       ResourcePath
+		negNamespace string
+		negName      string
+		expected     string
+	}{
+		{"All specified", ResourcePath{Path: "foo"}, "my-namespace", "my-neg", "foo#my-namespace(my-neg)"},
+		{"Empty neg namespace", ResourcePath{Path: "foo"}, "", "my-neg", "foo#unknown(my-neg)"},
+		{"Empty neg name", ResourcePath{Path: "foo"}, "my-namespace", "", "foo#my-namespace(unknown)"},
+		{"Both empty", ResourcePath{Path: "foo"}, "", "", "foo#unknown(unknown)"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := NetworkEndpointGroupUnderResource(tc.parent, tc.negNamespace, tc.negName)
+			if result.Path != tc.expected {
+				t.Errorf("got %q,want %q", result.Path, tc.expected)
+			}
+			if result.ParentRelationship != expectedParentRelationship {
+				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}

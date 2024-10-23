@@ -1,10 +1,10 @@
 package testutil
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v2"
 )
@@ -29,22 +29,47 @@ func InitTestIO() {
 	}
 }
 
-func MustReadText(filePath string, onerrorResult string) string {
+func MustReadText(filePath string) string {
 	buf, err := os.ReadFile(filePath)
 	if err != nil {
-		fmt.Printf("[WARN]File %s was not found. Returning the default value", filePath)
-		return onerrorResult
+		panic(err)
 	}
 	return string(buf)
 }
 
 func MustReadYaml(filePath string) map[string]any {
 	result := map[string]any{}
-	err := yaml.Unmarshal([]byte(MustReadText(filePath, "")), &result)
+	err := yaml.Unmarshal([]byte(MustReadText(filePath)), &result)
 	if err != nil {
 		panic(err)
 	}
 	return result
+}
+
+func MustParseTimeRFC3339(timeStr string) time.Time {
+	time, err := time.Parse(time.RFC3339, timeStr)
+	if err != nil {
+		panic(err)
+	}
+	return time
+}
+
+// MustPlaceTemporalFile write a file at the specified path and returns a function to unlink it for cleaning up.
+func MustPlaceTemporalFile(filePath, content string) (cleanup func()) {
+	buf, err := os.Create(filePath)
+	if err != nil {
+		panic(err)
+	}
+	_, err = buf.WriteString(content)
+	if err != nil {
+		panic(err)
+	}
+	return func() {
+		err := os.Remove(filePath)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
 func GlobTestResources(fileGlob string, ignoredSuffixes []string) []string {

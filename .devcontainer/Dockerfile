@@ -3,10 +3,11 @@ FROM mcr.microsoft.com/devcontainers/go:1.21 as base
 ### Installing dependencies
 
 # Setup Node.js 18.x
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# This build step is removed for solving b/372108831. TODO: install node here:
+# RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+#     apt-get install -y nodejs && \
+#     apt-get clean && \
+#     rm -rf /var/lib/apt/lists/*
 
 # Install ng command
 RUN npm install -g @angular/cli

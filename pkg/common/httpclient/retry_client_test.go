@@ -76,7 +76,7 @@ func TestIsRetriable(t *testing.T) {
 			client := &RetryHttpClient{RetriableHttpCodes: tc.RetriableHttpCodes}
 			actual := client.isRetriable(tc.HttpCode)
 			if actual != tc.Expected {
-				t.Errorf("unmatched result. Expected:%t, Actual:%t", tc.Expected, actual)
+				t.Errorf("got retriability %t, want %t", actual, tc.Expected)
 			}
 		})
 	}
@@ -194,45 +194,45 @@ func TestRetryBehavior(t *testing.T) {
 			retryClient.timeUnit = time.Millisecond
 			req, err := http.NewRequest("GET", "https://google.com", bytes.NewBuffer([]byte(tc.RequestBody)))
 			if err != nil {
-				t.Errorf("unexpected error %s", err.Error())
+				t.Errorf("got error %v, want nil", err)
 			}
 			response, err := retryClient.DoWithContext(context.Background(), req)
 			if tc.ExpectedError == "" {
 				if response == nil {
-					t.Errorf("response was unexpected nil")
+					t.Error("got nil, want response")
 				}
 				if err != nil {
-					t.Errorf("unexpected error %s", err.Error())
+					t.Errorf("got error %v, want nil", err)
 				}
 				if baseClient.RequestCount != tc.ExpectedRequestCount {
-					t.Errorf("unexpected retry count, expected %d, but %d", tc.ExpectedRequestCount, baseClient.RequestCount)
+					t.Errorf("got retry count %d, want %d", baseClient.RequestCount, tc.ExpectedRequestCount)
 				}
 			} else {
 				if err.Error() != tc.ExpectedError {
-					t.Errorf("unexpected error %s, expected %s", err.Error(), tc.ExpectedError)
+					t.Errorf("got error %s, want %s", err.Error(), tc.ExpectedError)
 				}
 				if baseClient.RequestCount != tc.ExpectedRequestCount {
-					t.Errorf("unexpected retry count, expected %d, but %d", tc.ExpectedRequestCount, baseClient.RequestCount)
+					t.Errorf("got retry count %d, want %d", baseClient.RequestCount, tc.ExpectedRequestCount)
 				}
 			}
 			for _, req := range baseClient.Requests {
 				requestBody, err := io.ReadAll(req.Body)
 				if err != nil {
-					t.Errorf("unexpected error %s", err)
+					t.Errorf("got error %v, wnt nil", err)
 				}
 				requestBodyStr := string(requestBody)
 				if requestBodyStr != tc.RequestBody {
-					t.Errorf("unexpected requestBody %s, expected %s", requestBody, tc.RequestBody)
+					t.Errorf("got requestBody %s, want %s", requestBody, tc.RequestBody)
 				}
 			}
 			if tc.ExpectedLastCurrentWaitTime != retryClient.currentWaitSeconds {
-				t.Errorf("unexpected wait time %d, expected %d", retryClient.currentWaitSeconds, tc.ExpectedLastCurrentWaitTime)
+				t.Errorf("got wait time %d, want %d", retryClient.currentWaitSeconds, tc.ExpectedLastCurrentWaitTime)
 			}
 			if tc.ExpectedTokenApplierCall != applierSpy.CallCount {
-				t.Errorf("unexpected token applier call count %d, expected %d", applierSpy.CallCount, tc.ExpectedTokenApplierCall)
+				t.Errorf("got token applier call count %d, want %d", applierSpy.CallCount, tc.ExpectedTokenApplierCall)
 			}
 			if tc.ExpectedTokenRefresherCall != refresherSpy.CallCount {
-				t.Errorf("unexpected token refresher call count %d, expected %d", refresherSpy.CallCount, tc.ExpectedTokenRefresherCall)
+				t.Errorf("got token refresher call count %d, want %d", refresherSpy.CallCount, tc.ExpectedTokenRefresherCall)
 			}
 		})
 	}

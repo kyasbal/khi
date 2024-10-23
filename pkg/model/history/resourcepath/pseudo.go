@@ -2,84 +2,131 @@ package resourcepath
 
 import (
 	"fmt"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 )
 
-func Cluster(name string) string {
+func Cluster(name string) ResourcePath {
 	if name == "" {
 		name = nonSpecifiedPlaceholder
 	}
-	return fmt.Sprintf("@Cluster#controlplane#cluster-scope#%s", name)
+	return NameLayerGeneralItem("@Cluster", "controlplane", "cluster-scope", name)
 }
 
-func Autoscaler(clusterName string) string {
-	return fmt.Sprintf("%s#autoscaler", Cluster(clusterName))
+func Autoscaler(clusterName string) ResourcePath {
+	cluster := Cluster(clusterName)
+	cluster.Path = fmt.Sprintf("%s#autoscaler", cluster.Path)
+	cluster.ParentRelationship = enum.RelationshipControlPlaneComponent
+	return cluster
 }
 
-func Nodepool(clusterName string, nodepoolName string) string {
+func Nodepool(clusterName string, nodepoolName string) ResourcePath {
 	if clusterName == "" {
 		clusterName = nonSpecifiedPlaceholder
 	}
 	if nodepoolName == "" {
 		nodepoolName = nonSpecifiedPlaceholder
 	}
-	return fmt.Sprintf("@Cluster#nodepool#%s#%s", clusterName, nodepoolName)
+	return NameLayerGeneralItem("@Cluster", "nodepool", clusterName, nodepoolName)
 }
 
-func Mig(clusterName string, nodepoolName string, migName string) string {
-	if clusterName == "" {
-		clusterName = nonSpecifiedPlaceholder
-	}
-	if nodepoolName == "" {
-		nodepoolName = nonSpecifiedPlaceholder
-	}
+func Mig(clusterName string, nodepoolName string, migName string) ResourcePath {
 	if migName == "" {
 		migName = nonSpecifiedPlaceholder
 	}
-	return fmt.Sprintf("@Cluster#nodepool#%s#%s#%s", clusterName, nodepoolName, migName)
+	nodepool := Nodepool(clusterName, nodepoolName)
+	nodepool.Path = fmt.Sprintf("%s#%s", nodepool.Path, migName)
+	nodepool.ParentRelationship = enum.RelationshipManagedInstanceGroup
+	return nodepool
 }
 
-func NodeComponent(nodeName string, syslogIdentifier string) string {
-	if nodeName == "" {
-		nodeName = nonSpecifiedPlaceholder
-	}
+func NodeComponent(nodeName string, syslogIdentifier string) ResourcePath {
 	if syslogIdentifier == "" {
 		syslogIdentifier = nonSpecifiedPlaceholder
 	}
-	return fmt.Sprintf("%s#%s", Node(nodeName), syslogIdentifier)
+	node := Node(nodeName)
+	node.ParentRelationship = enum.RelationshipNodeComponent
+	node.Path = fmt.Sprintf("%s#%s", node.Path, syslogIdentifier)
+	return node
 }
 
-func NodeBinding(nodeName string, podNamespace string, podName string) string {
-	if nodeName == "" {
-		nodeName = nonSpecifiedPlaceholder
-	}
+// NodeBinding returns a ResourcePath for the pseudo binding timeline under nodes.
+func NodeBinding(nodeName string, podNamespace string, podName string) ResourcePath {
 	if podName == "" {
 		podName = nonSpecifiedPlaceholder
 	}
 	if podNamespace == "" {
 		podNamespace = nonSpecifiedPlaceholder
 	}
-	return fmt.Sprintf("%s#%s(%s)", Node(nodeName), podName, podNamespace)
+	node := Node(nodeName)
+	node.Path = fmt.Sprintf("%s#%s(%s)", node.Path, podName, podNamespace)
+	node.ParentRelationship = enum.RelationshipPodBinding
+	return node
 }
 
-func PodEndpointSlice(endpointSliceNamespace string, endpointSliceName string, podNamespace string, serviceName string) string {
-	if podNamespace == "" {
-		podNamespace = nonSpecifiedPlaceholder
+// PodEndpointSlice returns a ResourcePath for the pseudo endpointslice timeline under pods.
+func PodEndpointSlice(endpointSliceNamespace string, endpointSliceName string, podNamespace string, podName string) ResourcePath {
+	if endpointSliceName == "" {
+		endpointSliceName = nonSpecifiedPlaceholder
 	}
-	if serviceName == "" {
-		serviceName = nonSpecifiedPlaceholder
+	if endpointSliceNamespace == "" {
+		endpointSliceNamespace = nonSpecifiedPlaceholder
 	}
-	return fmt.Sprintf("%s#%s(%s)[EndpointSlice]", Pod(podNamespace, serviceName), endpointSliceName, endpointSliceNamespace)
+	pod := Pod(podNamespace, podName)
+	pod.Path = fmt.Sprintf("%s#%s(%s)[endpointslice]", pod.Path, endpointSliceName, endpointSliceNamespace)
+	pod.ParentRelationship = enum.RelationshipEndpointSlice
+	return pod
 }
 
-func ServiceEndpointSlice(namespace string, endpointSliceName string, serviceName string) string {
+// ServiceEndpointSlice returns a ResourcePath for the pseudo endpointslice timeline under services.
+func ServiceEndpointSlice(namespace string, endpointSliceName string, serviceName string) ResourcePath {
 	if namespace == "" {
 		namespace = nonSpecifiedPlaceholder
-	}
-	if serviceName == "" {
-		serviceName = nonSpecifiedPlaceholder
 	}
 	if endpointSliceName == "" {
 		endpointSliceName = nonSpecifiedPlaceholder
 	}
-	return fmt.Sprintf("%s#%s(%s)[EndpointSlice]", Service(namespace, serviceName), endpointSliceName, namespace)
+	service := Service(namespace, serviceName)
+	service.Path = fmt.Sprintf("%s#%s(%s)[endpointslice]", service.Path, endpointSliceName, namespace)
+	service.ParentRelationship = enum.RelationshipEndpointSlice
+	return service
+}
+
+// Operation returns a ResourcePath for the pseudo operation timeline under the given name layer resource.
+func Operation(operationOwner ResourcePath, operationMethod string, operationId string) ResourcePath {
+	if operationMethod == "" {
+		operationMethod = nonSpecifiedPlaceholder
+	}
+	if operationId == "" {
+		operationId = nonSpecifiedPlaceholder
+	}
+	return ResourcePath{
+		Path:               fmt.Sprintf("%s#%s-%s", operationOwner.Path, operationMethod, operationId),
+		ParentRelationship: enum.RelationshipOperation,
+	}
+}
+
+// Status returns a ResourcePath for the pseudo status timeline under the given name layer resource.
+func Status(statusOwner ResourcePath, statusName string) ResourcePath {
+	if statusName == "" {
+		statusName = nonSpecifiedPlaceholder
+	}
+	return ResourcePath{
+		Path:               fmt.Sprintf("%s#%s", statusOwner.Path, statusName),
+		ParentRelationship: enum.RelationshipResourceStatus,
+	}
+}
+
+// NetworkEndpointGroupUnderResource returns the pseudo neg timeline under the given name layer resource.
+func NetworkEndpointGroupUnderResource(parent ResourcePath, negNamespace string, negName string) ResourcePath {
+	if negNamespace == "" {
+		negNamespace = nonSpecifiedPlaceholder
+	}
+	if negName == "" {
+		negName = nonSpecifiedPlaceholder
+	}
+	return ResourcePath{
+		Path:               fmt.Sprintf("%s#%s(%s)", parent.Path, negNamespace, negName),
+		ParentRelationship: enum.RelationshipNetworkEndpointGroup,
+	}
 }

@@ -8,7 +8,7 @@ import (
 
 func TestParentRelationshipMetadataIsFilled(t *testing.T) {
 	for i := 0; i <= int(relationshipUnusedEnd); i++ {
-		if _, ok := ParentRelationships[ParentRelationShip(i)]; !ok {
+		if _, ok := ParentRelationships[ParentRelationship(i)]; !ok {
 			t.Errorf("ParentRelationshipMetadata[%d] is not filled", i)
 		}
 	}
@@ -16,7 +16,7 @@ func TestParentRelationshipMetadataIsFilled(t *testing.T) {
 
 func TestParentRelationshipMetadataIsValid(t *testing.T) {
 	for i := 0; i <= int(relationshipUnusedEnd); i++ {
-		if relationship, ok := ParentRelationships[ParentRelationShip(i)]; ok {
+		if relationship, ok := ParentRelationships[ParentRelationship(i)]; ok {
 			t.Run(fmt.Sprintf("%d-%s", i, relationship.EnumKeyName), func(t *testing.T) {
 				if relationship.EnumKeyName == "" {
 					t.Errorf("EnumKeyName in `%s(%d)` is empty", relationship.Label, i)

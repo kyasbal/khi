@@ -1,0 +1,30 @@
+insertId: 19ifmfxdycab
+logName: projects/your-project-id/logs/cloudaudit.googleapis.com%2Factivity
+operation:
+    id: operation-1726191716103-f4072772-f902-453d-8776-b69047cebae6
+    last: true
+    producer: container.googleapis.com
+protoPayload:
+    '@type': type.googleapis.com/google.cloud.audit.AuditLog
+    metadata:
+        operationType: CREATE_NODE_POOL
+        requestID: "0x46033378011f51ee"
+    methodName: google.container.v1.ClusterManager.CreateNodePool
+    policyViolationInfo:
+        orgPolicyViolationInfo: {}
+    resourceLocation:
+        currentLocations:
+            - us-central1-a
+    resourceName: projects/your-project-id/zones/us-central1-a/clusters/gke-basic-1/nodePools/default
+    serviceName: container.googleapis.com
+    status: {}
+receiveTimestamp: "2024-09-13T01:42:57.746697583Z"
+resource:
+    labels:
+        cluster_name: gke-basic-1
+        location: us-central1-a
+        nodepool_name: default
+        project_id: your-project-id
+    type: gke_nodepool
+severity: NOTICE
+timestamp: "2025-01-01T00:00:00Z"

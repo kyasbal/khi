@@ -13,7 +13,7 @@ type TestResourceChunkSortStrategy struct {
 }
 
 // SortChunk implements ResourceChunkSortStrategy.
-func (t *TestResourceChunkSortStrategy) SortChunk(builder *Builder, parents []*Resource, groupedRelationship enum.ParentRelationShip, chunk []*Resource) ([]*Resource, error) {
+func (t *TestResourceChunkSortStrategy) SortChunk(builder *Builder, parents []*Resource, groupedRelationship enum.ParentRelationship, chunk []*Resource) ([]*Resource, error) {
 	slices.SortFunc(
 		chunk, func(a, b *Resource) int {
 			return strings.Compare(a.ResourceName, b.ResourceName)
@@ -28,13 +28,13 @@ type testAllSkipChunkSortStrategy struct {
 }
 
 // SortChunk implements ResourceChunkSortStrategy.
-func (t *testAllSkipChunkSortStrategy) SortChunk(builder *Builder, parents []*Resource, groupedRelationship enum.ParentRelationShip, chunk []*Resource) ([]*Resource, error) {
+func (t *testAllSkipChunkSortStrategy) SortChunk(builder *Builder, parents []*Resource, groupedRelationship enum.ParentRelationship, chunk []*Resource) ([]*Resource, error) {
 	return nil, ErrorSortSkipped
 }
 
 var _ ResourceChunkSortStrategy = (*testAllSkipChunkSortStrategy)(nil)
 
-func newResourceForTesting(name string, rel enum.ParentRelationShip, children ...*Resource) *Resource {
+func newResourceForTesting(name string, rel enum.ParentRelationship, children ...*Resource) *Resource {
 	if children == nil {
 		children = make([]*Resource, 0)
 	}

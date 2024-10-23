@@ -1,11 +1,15 @@
 package resourcepath
 
-func ControlplaneComponent(cluster string, component string) string {
+import "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
+
+func ControlplaneComponent(cluster string, component string) ResourcePath {
 	if cluster == "" {
 		cluster = nonSpecifiedPlaceholder
 	}
 	if component == "" {
 		component = nonSpecifiedPlaceholder
 	}
-	return SubresourceLayerGeneralItem("@Cluster", "controlplane", "cluster-scope", cluster, component)
+	controlPlaneComponentResourcePath := SubresourceLayerGeneralItem("@Cluster", "controlplane", "cluster-scope", cluster, component)
+	controlPlaneComponentResourcePath.ParentRelationship = enum.RelationshipControlPlaneComponent
+	return controlPlaneComponentResourcePath
 }

@@ -39,6 +39,8 @@ const (
 	RevisionStateEndpointTerminating RevisionState = 27
 	RevisionStateEndpointUnready     RevisionState = 28
 
+	RevisionStateProvisioning RevisionState = 29 // Added since 0.42
+
 	revisionStateUnusedEnd // Adds items above. This value is used for counting items in this enum to test.
 )
 
@@ -231,5 +233,11 @@ var RevisionStates = map[RevisionState]RevisionStateFrontendMetadata{
 		BackgroundColor: "#fed700",
 		CSSSelector:     "terminating",
 		Label:           "Endpoint is being terminated",
+	},
+	RevisionStateProvisioning: {
+		EnumKeyName:     "RevisionStateProvisioning",
+		BackgroundColor: "#4444ff",
+		CSSSelector:     "provisioning",
+		Label:           "Resource is being provisioned",
 	},
 }

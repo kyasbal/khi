@@ -246,15 +246,17 @@
             </p>
           </div>
           <ng-template #hoverNoLog>
-            <p class="warn emp">No log information available.</p>
-            <p class="warn">
-              This revision existence is infered from following another
-              revision.
-            </p>
-            <p class="warn">
-              Try extending query range to more past time to see this revision
-              information.
-            </p>
+            <div class="warn">
+              <p class="emp">
+                <span> <mat-icon>lightbulb</mat-icon> Tips:</span> Only the
+                resource existence is inferred during the yellow period
+              </p>
+              <p class="message">
+                KHI knows there was something during the yellow period. The
+                existence was inferred from other logs, but no detail is
+                available.
+              </p>
+            </div>
           </ng-template>
         </div>
       </div>

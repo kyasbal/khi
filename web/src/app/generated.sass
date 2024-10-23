@@ -29,6 +29,9 @@
     &.mig
         background-color: #FF5555
         color: #FFFFFF
+    &.controlplane
+        background-color: #FF5555
+        color: #FFFFFF
 
 
 $color-unknown: #000000
@@ -174,6 +177,7 @@ $color-revisionstate-deleting: #CC5500
 $color-revisionstate-ready: #004400
 $color-revisionstate-terminating: #fed700
 $color-revisionstate-unready: #EE4400
+$color-revisionstate-provisioning: #4444ff
 
 @mixin revisionstate-type-colors($revision-state-selector,$revision-state-color)
     &.#{$revision-state-selector}
@@ -209,6 +213,7 @@ $color-revisionstate-unready: #EE4400
    @include revisionstate-type-colors("ready",$color-revisionstate-ready)
    @include revisionstate-type-colors("terminating",$color-revisionstate-terminating)
    @include revisionstate-type-colors("unready",$color-revisionstate-unready)
+   @include revisionstate-type-colors("provisioning",$color-revisionstate-provisioning)
 
 
 

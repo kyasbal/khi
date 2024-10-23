@@ -15,6 +15,6 @@ var AnthosOnBaremetalInspectionType = inspection.InspectionType{
 Supporting K8s audit log, k8s event log,k8s node log, k8s container log and OnPream API audit log.
 
 This type can also be used for GCDE or GDCH.`,
-	Icon:     "/assets/icons/anthos.png",
+	Icon:     "assets/icons/anthos.png",
 	Priority: math.MaxInt - 3,
 }

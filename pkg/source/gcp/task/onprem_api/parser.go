@@ -57,7 +57,7 @@ func (*onpremCloudAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, c
 	principal := l.GetStringOrDefault("protoPayload.authenticationInfo.principalEmail", "unknown")
 	code := l.GetStringOrDefault("protoPayload.status.code", "0")
 	isSucceedRequest := code == "0"
-	operationResourcePath := ""
+	var operationResourcePath resourcepath.ResourcePath
 	if resource.NodepoolName == "" {
 		// assume this is a cluster operation
 		clusterResourcePath := resourcepath.Cluster(resource.ClusterName)
@@ -113,10 +113,10 @@ func (*onpremCloudAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, c
 		}
 		methodNameSplitted := strings.Split(methodName, ".")
 		methodVerb := methodNameSplitted[len(methodNameSplitted)-1]
-		operationResourcePath = fmt.Sprintf("%s#%s-%s", clusterResourcePath, methodVerb, operationId)
+		operationResourcePath = resourcepath.Operation(clusterResourcePath, methodVerb, operationId)
 		cs.RecordEvent(clusterResourcePath)
 	} else {
-		nodepoolResourcePath := fmt.Sprintf("@Cluster#nodepools#%s#%s", resource.ClusterName, resource.NodepoolName)
+		nodepoolResourcePath := resourcepath.Nodepool(resource.ClusterName, resource.NodepoolName)
 		if filterMethodNameOperation(methodName, "Create", "NodePool") && isFirst && isSucceedRequest {
 			// NodePool info is stored at protoPayload.request.(aws|azure)NodePool
 			body, err := l.GetChildYamlOf("protoPayload.request")
@@ -145,7 +145,7 @@ func (*onpremCloudAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, c
 		cs.RecordEvent(nodepoolResourcePath)
 		methodNameSplitted := strings.Split(methodName, ".")
 		methodVerb := methodNameSplitted[len(methodNameSplitted)-1]
-		operationResourcePath = fmt.Sprintf("%s#%s-%s", nodepoolResourcePath, methodVerb, operationId)
+		operationResourcePath = resourcepath.Operation(nodepoolResourcePath, methodVerb, operationId)
 	}
 
 	// If this was an operation, it will be recorded as operation data
@@ -162,7 +162,7 @@ func (*onpremCloudAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, c
 			Requestor:  principal,
 			ChangeTime: l.Timestamp(),
 			Partial:    false,
-		}, history.RewriteRelationship(enum.RelationshipOperation))
+		})
 	}
 
 	if isFirst && !isLast {

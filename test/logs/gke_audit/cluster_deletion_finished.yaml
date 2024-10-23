@@ -1,0 +1,29 @@
+insertId: 1hv8p4dd9j5i
+logName: projects/project-id/logs/cloudaudit.googleapis.com%2Factivity
+operation:
+    id: operation-1726199159930-7409b104-8654-4667-b477-4ce504d09bea
+    last: true
+    producer: container.googleapis.com
+protoPayload:
+    '@type': type.googleapis.com/google.cloud.audit.AuditLog
+    metadata:
+        operationType: DELETE_CLUSTER
+        requestID: "0xaf8711bdcf30268f"
+    methodName: google.container.v1.ClusterManager.DeleteCluster
+    policyViolationInfo:
+        orgPolicyViolationInfo: {}
+    resourceLocation:
+        currentLocations:
+            - us-central1-a
+    resourceName: projects/project-id/zones/us-central1-a/clusters/gke-basic-1
+    serviceName: container.googleapis.com
+    status: {}
+receiveTimestamp: "2025-01-01T00:00:00.000000000Z"
+resource:
+    labels:
+        cluster_name: gke-basic-1
+        location: us-central1-a
+        project_id: project-id
+    type: gke_cluster
+severity: NOTICE
+timestamp: "2025-01-01T00:00:00.000000000Z"

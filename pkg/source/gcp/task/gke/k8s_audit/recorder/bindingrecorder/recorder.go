@@ -2,9 +2,7 @@ package bindingrecorder
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourcepath"
@@ -26,22 +24,17 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 	}
 	target := log.ResourceBodyReader.ReadStringOrDefault("target.name", "unknown")
 
-	podK8sOp := model.KubernetesObjectOperation{
-		APIVersion: log.Operation.APIVersion,
-		PluralKind: log.Operation.PluralKind,
-		Namespace:  log.Operation.Namespace,
-		Name:       log.Operation.Name,
-	}
-	podScheduledStatusPath := fmt.Sprintf("%s#PodScheduled", podK8sOp.CovertToResourcePath())
+	podScheduledStatusPath := resourcepath.Status(resourcepath.Pod(log.Operation.Namespace, log.Operation.Name), "PodScheduled")
+	nodeBindingResourcePath := resourcepath.NodeBinding(target, log.Operation.Namespace, log.Operation.Name)
 	if log.Operation.Verb == enum.RevisionVerbCreate {
-		cs.RecordRevision(resourcepath.NodeBinding(target, log.Operation.Namespace, log.Operation.Name), &history.StagingResourceRevision{
+		cs.RecordRevision(nodeBindingResourcePath, &history.StagingResourceRevision{
 			Verb:       enum.RevisionVerbCreate,
 			Body:       log.ResourceBodyYaml,
 			Partial:    false,
 			Requestor:  log.PrincipalEmail,
 			ChangeTime: log.Log.Timestamp(),
 			State:      enum.RevisionStateExisting,
-		}, history.RewriteRelationship(enum.RelationshipPodBinding))
+		})
 		cs.RecordRevision(podScheduledStatusPath, &history.StagingResourceRevision{
 			Verb:       enum.RevisionVerbStatusTrue,
 			Body:       "# PodScheduled status was inferred to be `True` from a binding resource",
@@ -49,16 +42,16 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 			Requestor:  "",
 			ChangeTime: log.Log.Timestamp(),
 			State:      enum.RevisionStateConditionTrue,
-		}, history.RewriteRelationship(enum.RelationshipResourceStatus))
+		})
 	} else {
-		cs.RecordRevision(resourcepath.NodeBinding(target, log.Operation.Namespace, log.Operation.Name), &history.StagingResourceRevision{
+		cs.RecordRevision(nodeBindingResourcePath, &history.StagingResourceRevision{
 			Verb:       enum.RevisionVerbDelete,
 			Body:       log.ResourceBodyYaml,
 			Partial:    false,
 			Requestor:  log.PrincipalEmail,
 			ChangeTime: log.Log.Timestamp(),
 			State:      enum.RevisionStateDeleted,
-		}, history.RewriteRelationship(enum.RelationshipPodBinding))
+		})
 		cs.RecordRevision(podScheduledStatusPath, &history.StagingResourceRevision{
 			Verb:       enum.RevisionVerbStatusFalse,
 			Body:       "# PodScheduled status was inferred to be `False` from a binding resource",
@@ -66,7 +59,7 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 			Requestor:  "",
 			ChangeTime: log.Log.Timestamp(),
 			State:      enum.RevisionStateConditionFalse,
-		}, history.RewriteRelationship(enum.RelationshipResourceStatus))
+		})
 	}
 	return nil
 }

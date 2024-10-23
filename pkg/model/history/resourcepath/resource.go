@@ -1,12 +1,12 @@
 package resourcepath
 
 import (
-	"fmt"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 )
 
 const nonSpecifiedPlaceholder = "unknown"
 
-func Container(namespace string, name string, containerName string) string {
+func Container(namespace string, name string, containerName string) ResourcePath {
 	if namespace == "" {
 		namespace = nonSpecifiedPlaceholder
 	}
@@ -16,26 +16,34 @@ func Container(namespace string, name string, containerName string) string {
 	if containerName == "" {
 		containerName = nonSpecifiedPlaceholder
 	}
-	return fmt.Sprintf("core/v1#pod#%s#%s#%s", namespace, name, containerName)
+	containerResourcePath := SubresourceLayerGeneralItem("core/v1", "pod", namespace, name, containerName)
+	containerResourcePath.ParentRelationship = enum.RelationshipContainer
+	return containerResourcePath
 }
 
-func Pod(namespace string, name string) string {
+func Pod(namespace string, name string) ResourcePath {
 	if namespace == "" {
 		namespace = nonSpecifiedPlaceholder
 	}
 	if name == "" {
 		name = nonSpecifiedPlaceholder
 	}
-	return fmt.Sprintf("core/v1#pod#%s#%s", namespace, name)
+	return NameLayerGeneralItem("core/v1", "pod", namespace, name)
 }
 
-func Service(namespace string, name string) string {
-	return NameLayerGeneralItem("core/v1", "service", namespace, name)
-}
-
-func Node(name string) string {
+func Service(namespace string, name string) ResourcePath {
+	if namespace == "" {
+		namespace = nonSpecifiedPlaceholder
+	}
 	if name == "" {
 		name = nonSpecifiedPlaceholder
 	}
-	return fmt.Sprintf("core/v1#node#cluster-scope#%s", name)
+	return NameLayerGeneralItem("core/v1", "service", namespace, name)
+}
+
+func Node(name string) ResourcePath {
+	if name == "" {
+		name = nonSpecifiedPlaceholder
+	}
+	return NameLayerGeneralItem("core/v1", "node", "cluster-scope", name)
 }

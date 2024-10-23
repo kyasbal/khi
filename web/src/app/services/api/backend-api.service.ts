@@ -33,32 +33,61 @@ import {
 import { ViewStateService } from '../view-state.service';
 import { BackendAPI, DownloadProgressReporter } from './backend-api-interface';
 
-const BASE_URL = process.env['NG_APP_BACKEND_ROOT_URL']
-  ? process.env['NG_APP_BACKEND_ROOT_URL']
-  : '/';
-
+/**
+ * An implementation of BackendAPI interface.
+ * All of the actual request calls against the backend must be through this class.
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class BackendAPIImpl implements BackendAPI {
+  /**
+   * The base address of the backend server.
+   *
+   * The index HTML file contains `<base>` tag to control the base address of resources in frontend to supporting KHI to be hosted with path rewriting behind reverse proxies.
+   * This backend address can't rely on this feature, because the backend can be placed on the other servers from this frontend and addresses in this class must be in the absolute format. (any path beginning with `/` or the address begining with `http`).
+   * (The development server usually runs the backend with the port 8080, but runs the angular development server for frontend with the port 4200. The origin is different and frontend needs to access the backend.)
+   *
+   * KHI uses the environment variable `NG_APP_BACKEND_URL_PREFIX` at the build time, and another parameter given from the backend via the meta tag.
+   * The format will be in `(The environment variable NG_APP_BACKEND_URL_PREFIX)(The prefix supplied from the backend)` and it must not have the trailing slash.
+   */
+  private readonly baseUrl: string;
+
   constructor(
     private http: HttpClient,
     private readonly viewState: ViewStateService,
-  ) {}
+  ) {
+    const urlPrefix = process.env['NG_APP_BACKEND_URL_PREFIX'] ?? '';
+    this.baseUrl = urlPrefix + BackendAPIImpl.getServerBasePath();
+  }
+
+  /**
+   * Get the server base path configuration path which is a configuration given as meta tag from backend.
+   */
+  public static getServerBasePath(): string {
+    const basePathTag = document.getElementById('server-base-path');
+    if (basePathTag === null) return '';
+    let content = basePathTag.getAttribute('content');
+    if (content?.endsWith('/')) {
+      content = content.substring(0, content.length - 1);
+    }
+    return content ?? '';
+  }
+
   public getInspectionTypes() {
-    const url = BASE_URL + 'api/v2/inspection/types';
+    const url = this.baseUrl + '/api/v2/inspection/types';
     return this.http.get<GetInspectionTypesResponse>(url);
   }
 
   public getTaskStatuses() {
-    const url = BASE_URL + 'api/v2/inspection/tasks';
+    const url = this.baseUrl + '/api/v2/inspection/tasks';
     return this.http.get<GetInspectionTasksResponse>(url);
   }
 
   public createInspection(
     inspectionTypeId: string,
   ): Observable<InspectionTaskClient> {
-    const url = BASE_URL + 'api/v2/inspection/types/' + inspectionTypeId;
+    const url = this.baseUrl + '/api/v2/inspection/types/' + inspectionTypeId;
     return this.http
       .post<CreateInspectionTaskResponse>(url, null)
       .pipe(
@@ -74,12 +103,12 @@ export class BackendAPIImpl implements BackendAPI {
   }
 
   public getFeatureList(taskId: string) {
-    const url = BASE_URL + `api/v2/inspection/tasks/${taskId}/features`;
+    const url = this.baseUrl + `/api/v2/inspection/tasks/${taskId}/features`;
     return this.http.get<GetInspectionTaskFeatureResponse>(url);
   }
 
   public setEnabledFeatures(taskId: string, featureIds: string[]) {
-    const url = BASE_URL + `api/v2/inspection/tasks/${taskId}/features`;
+    const url = this.baseUrl + `/api/v2/inspection/tasks/${taskId}/features`;
     const request: PutInspectionTaskFeatureRequest = {
       features: featureIds,
     };
@@ -89,7 +118,7 @@ export class BackendAPIImpl implements BackendAPI {
   }
 
   public getInspectionMetadata(taskId: string) {
-    const url = BASE_URL + `api/v2/inspection/tasks/${taskId}/metadata`;
+    const url = this.baseUrl + `/api/v2/inspection/tasks/${taskId}/metadata`;
     return this.http.get<InspectionMetadataResponse>(url);
   }
 
@@ -97,7 +126,7 @@ export class BackendAPIImpl implements BackendAPI {
     taskId: string,
     request: InspectionRunRequest,
   ): Observable<void> {
-    const url = BASE_URL + `api/v2/inspection/tasks/${taskId}/run`;
+    const url = this.baseUrl + `/api/v2/inspection/tasks/${taskId}/run`;
     return this.http
       .post(url, request, { responseType: 'text' })
       .pipe(map(() => void 0));
@@ -107,12 +136,12 @@ export class BackendAPIImpl implements BackendAPI {
     taskId: string,
     request: InspectionDryRunRequest,
   ): Observable<InspectionDryRunResponse> {
-    const url = BASE_URL + `api/v2/inspection/tasks/${taskId}/dryrun`;
+    const url = this.baseUrl + `/api/v2/inspection/tasks/${taskId}/dryrun`;
     return this.http.post<InspectionDryRunResponse>(url, request);
   }
 
   public getInspectionData(taskId: string, reporter: DownloadProgressReporter) {
-    const url = BASE_URL + `api/v2/inspection/tasks/${taskId}/data`;
+    const url = this.baseUrl + `/api/v2/inspection/tasks/${taskId}/data`;
     const httpRequest = new HttpRequest('GET', url, null, {
       reportProgress: true,
       responseType: 'blob',
@@ -135,23 +164,23 @@ export class BackendAPIImpl implements BackendAPI {
   }
 
   public getPopup(): Observable<PopupFormRequest | null> {
-    const url = BASE_URL + `api/v2/popup`;
+    const url = this.baseUrl + `/api/v2/popup`;
     return this.http.get<PopupFormRequest | null>(url);
   }
 
   public validatePopupAnswer(
     answer: PopupAnswerResponse,
   ): Observable<PopupAnswerValidationResult> {
-    const url = BASE_URL + `api/v2/popup/validate`;
+    const url = this.baseUrl + `/api/v2/popup/validate`;
     return this.http.post<PopupAnswerValidationResult>(url, answer);
   }
   public answerPopup(answer: PopupAnswerResponse): Observable<void> {
-    const url = BASE_URL + `api/v2/popup/answer`;
+    const url = this.baseUrl + `/api/v2/popup/answer`;
     return this.http.post(url, answer).pipe(map(() => {}));
   }
 
   public cancelInspection(taskId: string) {
-    const url = BASE_URL + `api/v2/inspection/tasks/${taskId}/cancel`;
+    const url = this.baseUrl + `/api/v2/inspection/tasks/${taskId}/cancel`;
     return this.http
       .post(url, null, { responseType: 'text' })
       .pipe(map(() => {}));

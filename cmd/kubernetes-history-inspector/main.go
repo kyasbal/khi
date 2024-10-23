@@ -111,8 +111,17 @@ func main() {
 
 	mode, found := os.LookupEnv("KHI_MODE")
 	if strings.ToUpper(mode) == "SERVER" || !found {
+
+		serverBasePath := os.Getenv("KHI_SERVER_BASE_PATH")
+
 		slog.Info("Starting Kubernetes History Inspector server...")
-		engine := server.CreateKHIServer(inspectionServer, viewerMode, staticFileFolder, &server.ResourceMonitorImpl{})
+		config := server.ServerConfig{
+			ViewerMode:       viewerMode,
+			StaticFolderPath: staticFileFolder,
+			ResourceMonitor:  &server.ResourceMonitorImpl{},
+			ServerBasePath:   serverBasePath,
+		}
+		engine := server.CreateKHIServer(inspectionServer, &config)
 		host := mustReadEnvVariable("KHI_SERVER_HOST")
 		port := mustReadEnvVariable("KHI_SERVER_PORT")
 		grp := sync.WaitGroup{}

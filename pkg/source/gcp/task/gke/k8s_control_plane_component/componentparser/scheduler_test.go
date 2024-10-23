@@ -79,8 +79,8 @@ timestamp: "2024-08-19T10:06:31.833958Z"`,
 					t.Errorf("unexpected error: %v", err)
 				}
 			}
-			if diff := cmp.Diff(tc.expectedPath, path); diff != "" {
-				t.Errorf("the result path is not valid:\nInput:\n%v\nActual:\n%s\nExpected:\n%s", tc.inputLog, path, tc.expectedPath)
+			if diff := cmp.Diff(tc.expectedPath, path.Path); diff != "" {
+				t.Errorf("the result path is not valid:\nInput:\n%v\nActual:\n%s\nExpected:\n%s", tc.inputLog, path.Path, tc.expectedPath)
 			}
 		})
 	}

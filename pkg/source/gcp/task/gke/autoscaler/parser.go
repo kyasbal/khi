@@ -78,7 +78,7 @@ func (p *autoscalerLogParser) Parse(ctx context.Context, l *log.LogEntity, cs *h
 			return err
 		}
 	}
-	cs.RecordEvent(resourcepath.Autoscaler(clusterName), history.RewriteRelationship(enum.RelationshipManagedInstanceGroup))
+	cs.RecordEvent(resourcepath.Autoscaler(clusterName))
 	return nil
 }
 
@@ -97,7 +97,8 @@ func parseDecision(ctx context.Context, clusterName string, l *log.LogEntity, cs
 		nodepoolNames := []string{}
 		requestedSum := 0
 		for _, mig := range scaleUp.IncreasedMigs {
-			cs.RecordEvent(resourcepath.Mig(clusterName, mig.Mig.Nodepool, mig.Mig.Name), history.RewriteRelationship(enum.RelationshipManagedInstanceGroup))
+			migResourcePath := resourcepath.Mig(clusterName, mig.Mig.Nodepool, mig.Mig.Name)
+			cs.RecordEvent(migResourcePath)
 			nodepoolNames = append(nodepoolNames, mig.Mig.Nodepool)
 			requestedSum += mig.RequestedNodes
 		}
@@ -111,8 +112,9 @@ func parseDecision(ctx context.Context, clusterName string, l *log.LogEntity, cs
 		scaleDown := decision.ScaleDown
 		nodepoolNames := []string{}
 		for _, nodeToBeRemoved := range scaleDown.NodesToBeRemoved {
+			migResourcePath := resourcepath.Mig(clusterName, nodeToBeRemoved.Node.Mig.Nodepool, nodeToBeRemoved.Node.Name)
 			cs.RecordEvent(resourcepath.Node(nodeToBeRemoved.Node.Name))
-			cs.RecordEvent(resourcepath.Mig(clusterName, nodeToBeRemoved.Node.Mig.Nodepool, nodeToBeRemoved.Node.Name), history.RewriteRelationship(enum.RelationshipManagedInstanceGroup))
+			cs.RecordEvent(migResourcePath)
 			for _, pod := range nodeToBeRemoved.EvictedPods {
 				cs.RecordEvent(resourcepath.Pod(pod.Namespace, pod.Name))
 			}
@@ -127,7 +129,8 @@ func parseDecision(ctx context.Context, clusterName string, l *log.LogEntity, cs
 		for _, nodepool := range nodePoolCreated.NodePools {
 			cs.RecordEvent(resourcepath.Nodepool(clusterName, nodepool.Name))
 			for _, mig := range nodepool.Migs {
-				cs.RecordEvent(resourcepath.Mig(clusterName, mig.Nodepool, mig.Name), history.RewriteRelationship(enum.RelationshipManagedInstanceGroup))
+				migResourcePath := resourcepath.Mig(clusterName, mig.Nodepool, mig.Name)
+				cs.RecordEvent(migResourcePath)
 			}
 			nodepools = append(nodepools, nodepool.Name)
 		}
@@ -156,7 +159,8 @@ func parseNoDecision(ctx context.Context, clusterName string, l *log.LogEntity, 
 	if noDecision.NoScaleUp != nil {
 		noScaleUp := noDecision.NoScaleUp
 		for _, mig := range noScaleUp.SkippedMigs {
-			cs.RecordEvent(resourcepath.Mig(clusterName, mig.Mig.Nodepool, mig.Mig.Name), history.RewriteRelationship(enum.RelationshipManagedInstanceGroup))
+			migResourcePath := resourcepath.Mig(clusterName, mig.Mig.Nodepool, mig.Mig.Name)
+			cs.RecordEvent(migResourcePath)
 		}
 		cs.RecordLogSummary("autoscaler decided not to scale up")
 		// TODO: support unhandled migs
@@ -170,7 +174,8 @@ func parseNoDecision(ctx context.Context, clusterName string, l *log.LogEntity, 
 			migs[node.Node.Mig.Id()] = node.Node.Mig
 		}
 		for _, mig := range migs {
-			cs.RecordEvent(resourcepath.Mig(clusterName, mig.Nodepool, mig.Name), history.RewriteRelationship(enum.RelationshipManagedInstanceGroup))
+			migResourcePath := resourcepath.Mig(clusterName, mig.Nodepool, mig.Name)
+			cs.RecordEvent(migResourcePath)
 		}
 		cs.RecordLogSummary("autoscaler decided not to scale down")
 	}

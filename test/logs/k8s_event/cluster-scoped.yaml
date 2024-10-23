@@ -1,0 +1,12 @@
+insertId: 1gqsr69emw8s6
+logName: projects/project-id/logs/events
+receiveTimestamp: "2024-09-13T01:43:15.904295709Z"
+resource:
+    labels:
+        cluster_name: gke-basic-1
+        location: us-central1-a
+        project_id: project-id
+    type: k8s_cluster
+severity: WARNING
+textPayload: Event exporter started watching. Some events may have been lost up to this point.
+timestamp: "2024-09-13T01:43:00.840333259Z"

@@ -41,8 +41,8 @@ func TestInspectionTasksAreResolvable(t *testing.T) {
 	})
 }
 
-func TestAuditTaskGenerate(t *testing.T) {
-	inspection_test.ConformanceEveryInspectionTypeMustHaveAtLeastOneFeature(t, "gcp", []inspection.PrepareInspectionServerFunc{
+func TestConformanceTestForInspectionTypes(t *testing.T) {
+	inspection_test.ConformanceTestForInspectionTypes(t, []inspection.PrepareInspectionServerFunc{
 		common.PrepareInspectionServer,
 		testPrepareInspectionServer,
 	})

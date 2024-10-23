@@ -45,17 +45,17 @@ func TestMultiTokenResolver_Resolve(t *testing.T) {
 
 			if tt.wantErr {
 				if err == nil {
-					t.Error("Expected an error but no error returned")
+					t.Error("got nil, want error")
 				}
 			} else {
 				if err != nil {
-					t.Errorf("Unexpected error: %v", err)
+					t.Errorf("got %v, want nil", err)
 				}
 				if token.RawToken != tt.expectedToken.RawToken {
-					t.Errorf("Unexpected token.RawToken: got %s, want %s", token.RawToken, tt.expectedToken.RawToken)
+					t.Errorf("got raw token %s, want %s", token.RawToken, tt.expectedToken.RawToken)
 				}
 				if !token.ValidAtLeastUntil.Equal(tt.expectedToken.ValidAtLeastUntil) {
-					t.Errorf("Unexpected token.ValidAtLeastUntil: got %v, want %v", token.ValidAtLeastUntil, tt.expectedToken.ValidAtLeastUntil)
+					t.Errorf("got expiry %v, want %v", token.ValidAtLeastUntil, tt.expectedToken.ValidAtLeastUntil)
 				}
 			}
 		})

@@ -39,7 +39,7 @@ func (g *GCPTokenApplier) ApplyCurrentToken(ctx context.Context, req *http.Reque
 	if use, found := os.LookupEnv("USE_IAM_TOKEN"); found && use != "false" {
 		iamToken, err := g.iamTokenStore.GetToken(req.Context())
 		if err != nil {
-			return nil, errors.New("USE_IAM_TOKEN environment variable is given but no IAM token resolved")
+			return nil, errors.New("USE_IAM_TOKEN environment variable is given but IAM token is not set")
 		}
 		req.Header.Set("x-goog-iam-authorization-token", iamToken.RawToken)
 	}

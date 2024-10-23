@@ -83,15 +83,17 @@ func (p *k8sNodeParser) Parse(ctx context.Context, l *log.LogEntity, cs *history
 
 	supportsLifetimeParse := false
 	syslogIdentifier := l.GetStringOrDefault("jsonPayload.SYSLOG_IDENTIFIER", "Unknown")
+	nodeComponentPath := resourcepath.NodeComponent(nodeName, syslogIdentifier)
 	if syslogIdentifier == "Unknown" {
 		// Check if the log is for kube-proxy. If it was true, the log event will be generated on the Pod resource.
 		logName := l.GetStringOrDefault("logName", "")
 		if strings.HasSuffix(logName, "kube-proxy") {
-			kubeProxyPodPath := fmt.Sprintf("core/v1#pod#kube-system#kube-proxy-%s", nodeName)
+			kubeProxyPodPath := resourcepath.Pod("kube-system", fmt.Sprintf("kube-proxy-%s", nodeName))
 			cs.RecordEvent(kubeProxyPodPath)
 			return nil
 		}
 	}
+
 	if syslogIdentifier == "containerd" {
 		msg, err := l.KLogField("msg")
 		if err != nil {
@@ -102,13 +104,13 @@ func (p *k8sNodeParser) Parse(ctx context.Context, l *log.LogEntity, cs *history
 			return err
 		}
 		if msg == ContainerdStartingMsg {
-			cs.RecordRevision(resourcepath.NodeComponent(nodeName, syslogIdentifier),
+			cs.RecordRevision(nodeComponentPath,
 				&history.StagingResourceRevision{
 					Verb:       enum.RevisionVerbCreate,
 					State:      enum.RevisionStateExisting,
 					Requestor:  syslogIdentifier,
 					ChangeTime: l.Timestamp(),
-				}, history.RewriteRelationship(enum.RelationshipNodeComponent))
+				})
 		}
 		supportsLifetimeParse = true
 	}
@@ -118,22 +120,22 @@ func (p *k8sNodeParser) Parse(ctx context.Context, l *log.LogEntity, cs *history
 			return err
 		}
 		if msg == DockerdStartingMsg {
-			cs.RecordRevision(resourcepath.NodeComponent(nodeName, syslogIdentifier),
+			cs.RecordRevision(nodeComponentPath,
 				&history.StagingResourceRevision{
 					Verb:       enum.RevisionVerbCreate,
 					State:      enum.RevisionStateExisting,
 					Requestor:  syslogIdentifier,
 					ChangeTime: l.Timestamp(),
-				}, history.RewriteRelationship(enum.RelationshipNodeComponent))
+				})
 		}
 		if msg == DockerdTerminatingMsg {
-			cs.RecordRevision(resourcepath.NodeComponent(nodeName, syslogIdentifier),
+			cs.RecordRevision(nodeComponentPath,
 				&history.StagingResourceRevision{
 					Verb:       enum.RevisionVerbDelete,
 					State:      enum.RevisionStateDeleted,
 					Requestor:  syslogIdentifier,
 					ChangeTime: l.Timestamp(),
-				}, history.RewriteRelationship(enum.RelationshipNodeComponent))
+				})
 		}
 		supportsLifetimeParse = true
 	}
@@ -143,22 +145,22 @@ func (p *k8sNodeParser) Parse(ctx context.Context, l *log.LogEntity, cs *history
 			return err
 		}
 		if msg == ConfigureShStartingMsg {
-			cs.RecordRevision(resourcepath.NodeComponent(nodeName, syslogIdentifier),
+			cs.RecordRevision(nodeComponentPath,
 				&history.StagingResourceRevision{
 					Verb:       enum.RevisionVerbCreate,
 					State:      enum.RevisionStateExisting,
 					Requestor:  syslogIdentifier,
 					ChangeTime: l.Timestamp(),
-				}, history.RewriteRelationship(enum.RelationshipNodeComponent))
+				})
 		}
 		if msg == ConfigureShTerminatingMsg {
-			cs.RecordRevision(resourcepath.NodeComponent(nodeName, syslogIdentifier),
+			cs.RecordRevision(nodeComponentPath,
 				&history.StagingResourceRevision{
 					Verb:       enum.RevisionVerbDelete,
 					State:      enum.RevisionStateDeleted,
 					Requestor:  syslogIdentifier,
 					ChangeTime: l.Timestamp(),
-				}, history.RewriteRelationship(enum.RelationshipNodeComponent))
+				})
 		}
 		supportsLifetimeParse = true
 	}
@@ -168,22 +170,22 @@ func (p *k8sNodeParser) Parse(ctx context.Context, l *log.LogEntity, cs *history
 			return err
 		}
 		if msg == ConfigureHelperShStartingMsg {
-			cs.RecordRevision(resourcepath.NodeComponent(nodeName, syslogIdentifier),
+			cs.RecordRevision(nodeComponentPath,
 				&history.StagingResourceRevision{
 					Verb:       enum.RevisionVerbCreate,
 					State:      enum.RevisionStateExisting,
 					Requestor:  syslogIdentifier,
 					ChangeTime: l.Timestamp(),
-				}, history.RewriteRelationship(enum.RelationshipNodeComponent))
+				})
 		}
 		if msg == ConfigureHelperShTerminatingMsg {
-			cs.RecordRevision(resourcepath.NodeComponent(nodeName, syslogIdentifier),
+			cs.RecordRevision(nodeComponentPath,
 				&history.StagingResourceRevision{
 					Verb:       enum.RevisionVerbDelete,
 					State:      enum.RevisionStateDeleted,
 					Requestor:  syslogIdentifier,
 					ChangeTime: l.Timestamp(),
-				}, history.RewriteRelationship(enum.RelationshipNodeComponent))
+				})
 		}
 		supportsLifetimeParse = true
 	}
@@ -199,7 +201,8 @@ func (p *k8sNodeParser) Parse(ctx context.Context, l *log.LogEntity, cs *history
 				if err != nil {
 					slog.DebugContext(ctx, fmt.Sprintf("pod %s associated to %s was not found. It would be created before the log query start time", containerIdLeaseHolder.Holder.PodSandboxId, containerId))
 				} else {
-					cs.RecordEvent(resourcepath.Container(podSandboxIdLeaseHolder.Holder.Namespace, podSandboxIdLeaseHolder.Holder.Name, containerIdLeaseHolder.Holder.ContainerName), history.RewriteRelationship(enum.RelationshipContainer))
+					containerResourcePath := resourcepath.Container(podSandboxIdLeaseHolder.Holder.Namespace, podSandboxIdLeaseHolder.Holder.Name, containerIdLeaseHolder.Holder.ContainerName)
+					cs.RecordEvent(containerResourcePath)
 					cs.RecordLogSummary(fmt.Sprintf("%s【%s】", summary, toReadableContainerName(podSandboxIdLeaseHolder.Holder.Namespace, podSandboxIdLeaseHolder.Holder.Name, containerIdLeaseHolder.Holder.ContainerName)))
 				}
 			}
@@ -216,19 +219,19 @@ func (p *k8sNodeParser) Parse(ctx context.Context, l *log.LogEntity, cs *history
 
 	// Add inferred revision at the beginning when parse logics written before is not supporting lifetime visualization
 	if !supportsLifetimeParse {
-		tb := builder.GetTimelineBuilder(resourcepath.NodeComponent(nodeName, syslogIdentifier))
+		tb := builder.GetTimelineBuilder(nodeComponentPath.Path)
 		if tb.GetLatestRevision() == nil {
-			cs.RecordRevision(resourcepath.NodeComponent(nodeName, syslogIdentifier),
+			cs.RecordRevision(nodeComponentPath,
 				&history.StagingResourceRevision{
 					Verb:       enum.RevisionVerbCreate,
 					State:      enum.RevisionStateInferred,
 					Requestor:  syslogIdentifier,
 					ChangeTime: l.Timestamp(),
-				}, history.RewriteRelationship(enum.RelationshipNodeComponent))
+				})
 		}
 	}
 
-	cs.RecordEvent(resourcepath.NodeComponent(nodeName, syslogIdentifier), history.RewriteRelationship(enum.RelationshipNodeComponent))
+	cs.RecordEvent(nodeComponentPath)
 
 	klognode, err := l.KLogField("node")
 	if err == nil && klognode != "" {
@@ -246,10 +249,10 @@ func (p *k8sNodeParser) Parse(ctx context.Context, l *log.LogEntity, cs *history
 		}
 		containerName, err := l.KLogField("containerName")
 		if err != nil || containerName == "" {
-			cs.RecordEvent(fmt.Sprintf("core/v1#pod#%s", strings.ReplaceAll(podNameWithNamespace, "/", "#")))
+			cs.RecordEvent(resourcepath.Container(podNamespace, podName, containerName))
 			cs.RecordLogSummary(fmt.Sprintf("%s【%s】", summary, toReadablePodSandboxName(podNamespace, podName)))
 		} else {
-			cs.RecordEvent(fmt.Sprintf("core/v1#pod#%s#%s", strings.ReplaceAll(podNameWithNamespace, "/", "#"), containerName))
+			cs.RecordEvent(resourcepath.Pod(podNamespace, podName))
 			cs.RecordLogSummary(fmt.Sprintf("%s【%s】", summary, toReadableContainerName(podNamespace, podName, containerName)))
 		}
 	}
@@ -330,7 +333,8 @@ func (*k8sNodeParser) handleContainerdSandboxLogs(ctx context.Context, l *log.Lo
 			slog.DebugContext(ctx, fmt.Sprintf("pod sandbox %s was not found. It would be created before the log query start time", container.PodSandboxId), logger.LogKind("pod-sandbox-not-found"))
 			return nil
 		}
-		cs.RecordEvent(resourcepath.Container(podSandboxIdLease.Holder.Namespace, podSandboxIdLease.Holder.Name, container.ContainerName), history.RewriteRelationship(enum.RelationshipContainer))
+		containerResourcePath := resourcepath.Container(podSandboxIdLease.Holder.Namespace, podSandboxIdLease.Holder.Name, container.ContainerName)
+		cs.RecordEvent(containerResourcePath)
 		cs.RecordLogSummary(rewriteIdWithReadableName(container.PodSandboxId, toReadableContainerName(podSandboxIdLease.Holder.Namespace, podSandboxIdLease.Holder.Name, container.ContainerName), summary))
 		if container.ContainerId != "" {
 			builder.ClusterResource.ContainerIds.TouchResourceLease(container.ContainerId, l.Timestamp(), resourcelease.NewContainerLeaseHolder(container.PodSandboxId, container.ContainerName))
@@ -350,7 +354,8 @@ func (*k8sNodeParser) handleContainerdSandboxLogs(ctx context.Context, l *log.Lo
 				slog.DebugContext(ctx, fmt.Sprintf("pod %s associated to container %s was not found. It would be created before the log query start time", containerIdLease.Holder.PodSandboxId, containerId))
 				return nil
 			}
-			cs.RecordEvent(resourcepath.Container(podIdLease.Holder.Namespace, podIdLease.Holder.Name, containerIdLease.Holder.ContainerName), history.RewriteRelationship(enum.RelationshipContainer))
+			containerResourcePath := resourcepath.Container(podIdLease.Holder.Namespace, podIdLease.Holder.Name, containerIdLease.Holder.ContainerName)
+			cs.RecordEvent(containerResourcePath)
 			cs.RecordLogSummary(rewriteIdWithReadableName(containerId, toReadableContainerName(podIdLease.Holder.Namespace, podIdLease.Holder.Name, containerIdLease.Holder.ContainerName), summary))
 		}
 		return nil

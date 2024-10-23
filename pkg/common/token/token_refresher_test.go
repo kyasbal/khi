@@ -10,7 +10,7 @@ func TestNewMultiTokenStoreRefresher(t *testing.T) {
 	refresher := NewMultiTokenStoreRefresher(NewBasicTokenStore("foo", NewSpyTokenResolver()), NewBasicTokenStore("bar", NewSpyTokenResolver()))
 
 	if refresher.nextStoreIndexToRefresh != 0 {
-		t.Errorf("Expected refresher.nextStoreIndexToRefresh to be 0, but got %d", refresher.nextStoreIndexToRefresh)
+		t.Errorf("got %d, want %d", refresher.nextStoreIndexToRefresh, 0)
 	}
 }
 
@@ -86,27 +86,27 @@ func TestMultiTokenStoreRefresher_Refresh(t *testing.T) {
 			err := store.Refresh(context.Background())
 			if tt.wantErr {
 				if err == nil {
-					t.Error("Expected an error but no error returned")
+					t.Error("got nil, want error")
 				}
 			} else {
 				if err != nil {
-					t.Errorf("Unexpected error: %v", err)
+					t.Errorf("got %v, want nil", err)
 				}
 				if tt.nextStoreIndexToRefreshExpected != store.nextStoreIndexToRefresh {
-					t.Errorf("Expected nextStoreIndexToRefresh to be %d, but got %d", tt.nextStoreIndexToRefreshExpected, store.nextStoreIndexToRefresh)
+					t.Errorf("got %d, want %d", store.nextStoreIndexToRefresh, tt.nextStoreIndexToRefreshExpected)
 				}
 				if len(tt.expectedRawTokens) != len(tt.stores) {
-					t.Errorf("Expected len(expectedRawTokens) to be %d, but got %d", len(tt.expectedRawTokens), len(tt.stores))
+					t.Errorf("got %d, want %d", len(tt.expectedRawTokens), len(tt.stores))
 				}
 
 				for i, store := range tt.stores {
 					token, err := store.GetToken(context.Background())
 
 					if err != nil {
-						t.Errorf("Unexpected error: %v", err)
+						t.Errorf("got %v, want nil", err)
 					}
 					if tt.expectedRawTokens[i] != token.RawToken {
-						t.Errorf("Expected token.RawToken to be %s, but got %s", tt.expectedRawTokens[i], token.RawToken)
+						t.Errorf("got %q, want %q", token.RawToken, tt.expectedRawTokens[i])
 					}
 				}
 			}

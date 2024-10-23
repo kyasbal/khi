@@ -4,9 +4,11 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 )
 
 func TestComposerTaskInstance(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipChild
 	tests := []struct {
 		name string
 		ti   *model.AirflowTaskInstance
@@ -21,14 +23,18 @@ func TestComposerTaskInstance(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got := ComposerTaskInstance(test.ti)
-			if got != test.want {
-				t.Errorf("ComposerTaskInstance(%v) = %v, want %v", test.ti, got, test.want)
+			if got.Path != test.want {
+				t.Errorf("ComposerTaskInstance(%v).Path = %v, want %v", test.ti, got.Path, test.want)
+			}
+			if got.ParentRelationship != expectedParentRelationship {
+				t.Errorf("ComposerTaskInstance(%v).Parentrelationship = %v, want %v", test.ti, got.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
 }
 
 func TestComposerAirflowWorker(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipChild
 	tests := []struct {
 		name string
 		wo   *model.AirflowWorker
@@ -43,14 +49,18 @@ func TestComposerAirflowWorker(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got := ComposerAirflowWorker(test.wo)
-			if got != test.want {
-				t.Errorf("ComposerAirflowWorker(%v) = %v, want %v", test.wo, got, test.want)
+			if got.Path != test.want {
+				t.Errorf("ComposerAirflowWorker(%v).Path = %v, want %v", test.wo, got.Path, test.want)
+			}
+			if got.ParentRelationship != expectedParentRelationship {
+				t.Errorf("ComposerAirflowWorker(%v).Parentrelationship = %v, want %v", test.wo, got.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
 }
 
 func TestDagFileProcessorStats(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipChild
 	tests := []struct {
 		name  string
 		stats *model.DagFileProcessorStats
@@ -65,8 +75,11 @@ func TestDagFileProcessorStats(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got := DagFileProcessorStats(test.stats)
-			if got != test.want {
-				t.Errorf("DagFileProcessorStats(%v) = %v, want %v", test.stats, got, test.want)
+			if got.Path != test.want {
+				t.Errorf("DagFileProcessorStats(%v).Path = %v, want %v", test.stats, got.Path, test.want)
+			}
+			if got.ParentRelationship != expectedParentRelationship {
+				t.Errorf("DagFileProcessorStats(%v).Parentrelationship = %v, want %v", test.stats, got.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}

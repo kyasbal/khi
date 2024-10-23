@@ -2,6 +2,8 @@ package resourcepath
 
 import (
 	"testing"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 )
 
 func TestContainer(t *testing.T) {
@@ -24,8 +26,11 @@ func TestContainer(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Container(tc.namespace, tc.podName, tc.containerName)
-			if result != tc.expected {
-				t.Errorf("Container function failed. Expected '%s', got '%s'", tc.expected, result)
+			if result.Path != tc.expected {
+				t.Errorf("got unexpected path %q, want %q", result.Path, tc.expected)
+			}
+			if result.ParentRelationship != enum.RelationshipContainer {
+				t.Errorf("got unexpected relationship %q, want %q", result.ParentRelationship, enum.RelationshipContainer)
 			}
 		})
 	}
@@ -47,8 +52,11 @@ func TestPod(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Pod(tc.namespace, tc.podName)
-			if result != tc.expected {
-				t.Errorf("Pod function failed. Expected '%s', got '%s'", tc.expected, result)
+			if result.Path != tc.expected {
+				t.Errorf("got unexpected path %q, want %q", result.Path, tc.expected)
+			}
+			if result.ParentRelationship != enum.RelationshipChild {
+				t.Errorf("got unexpected relationship %q, want %q", result.ParentRelationship, enum.RelationshipContainer)
 			}
 		})
 	}
@@ -67,8 +75,11 @@ func TestNode(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Node(tc.nodeName)
-			if result != tc.expected {
-				t.Errorf("Node function failed. Expected '%s', got '%s'", tc.expected, result)
+			if result.Path != tc.expected {
+				t.Errorf("got unexpected path %q, want %q", result.Path, tc.expected)
+			}
+			if result.ParentRelationship != enum.RelationshipChild {
+				t.Errorf("got unexpected relationship %q, want %q", result.ParentRelationship, enum.RelationshipContainer)
 			}
 		})
 	}

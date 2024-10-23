@@ -216,15 +216,14 @@ func (builder *Builder) GetLog(logId string) (*SerializableLog, error) {
 	return nil, fmt.Errorf("log %s was not found", logId)
 }
 
-func (builder *Builder) addTimelineAlias(sourcePath string, destPath string, relationship enum.ParentRelationShip) {
+func (builder *Builder) addTimelineAlias(sourcePath string, destPath string) {
 	builder.GetTimelineBuilder(sourcePath) // Make sure timeline element related to the resource is already generated
 	copySource := builder.ensureResourcePath(sourcePath)
 	copyTo := builder.ensureResourcePath(destPath)
-	copyTo.Relationship = relationship
 	copyTo.Timeline = copySource.Timeline
 }
 
-func (builder *Builder) rewriteRelationship(path string, relationship enum.ParentRelationShip) error {
+func (builder *Builder) rewriteRelationship(path string, relationship enum.ParentRelationship) error {
 	resource := builder.ensureResourcePath(path)
 	if resource.Relationship != relationship && resource.Relationship != enum.RelationshipChild {
 		return fmt.Errorf("failed to rewrite the parentRelationship of %s. It was already rewritten to %d", path, resource.Relationship)

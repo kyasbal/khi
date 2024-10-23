@@ -16,7 +16,7 @@ type NameSortStrategy struct {
 }
 
 // SortChunk implements ResourceChunkSortStrategy.
-func (n *NameSortStrategy) SortChunk(builder *Builder, parents []*Resource, groupedRelationship enum.ParentRelationShip, chunk []*Resource) ([]*Resource, error) {
+func (n *NameSortStrategy) SortChunk(builder *Builder, parents []*Resource, groupedRelationship enum.ParentRelationship, chunk []*Resource) ([]*Resource, error) {
 	if len(parents) != n.Layer {
 		return nil, ErrorSortSkipped
 	}
@@ -64,7 +64,7 @@ type UnreachableSortStrategy struct {
 }
 
 // SortChunk implements ResourceChunkSortStrategy.
-func (u *UnreachableSortStrategy) SortChunk(builder *Builder, parents []*Resource, groupedRelationship enum.ParentRelationShip, chunk []*Resource) ([]*Resource, error) {
+func (u *UnreachableSortStrategy) SortChunk(builder *Builder, parents []*Resource, groupedRelationship enum.ParentRelationship, chunk []*Resource) ([]*Resource, error) {
 	cloned := slices.Clone(chunk)
 	slices.SortFunc(cloned, func(a, b *Resource) int {
 		return strings.Compare(a.ResourceName, b.ResourceName)
@@ -78,11 +78,11 @@ func (u *UnreachableSortStrategy) SortChunk(builder *Builder, parents []*Resourc
 var _ ResourceChunkSortStrategy = (*UnreachableSortStrategy)(nil)
 
 type FirstRevisionTimeSortStrategy struct {
-	TargetRelationship enum.ParentRelationShip
+	TargetRelationship enum.ParentRelationship
 }
 
 // SortChunk implements ResourceChunkSortStrategy.
-func (b *FirstRevisionTimeSortStrategy) SortChunk(builder *Builder, parents []*Resource, groupedRelationship enum.ParentRelationShip, chunk []*Resource) ([]*Resource, error) {
+func (b *FirstRevisionTimeSortStrategy) SortChunk(builder *Builder, parents []*Resource, groupedRelationship enum.ParentRelationship, chunk []*Resource) ([]*Resource, error) {
 	if groupedRelationship != b.TargetRelationship {
 		return nil, ErrorSortSkipped
 	}

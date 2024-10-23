@@ -287,7 +287,7 @@ func TestGetTimelineBuilderThreadSafety(t *testing.T) {
 			uuid3 := common.NewUUID()
 			uuid4 := common.NewUUID()
 			uuid5 := common.NewUUID()
-			builder.GetTimelineBuilder(resourcepath.SubresourceLayerGeneralItem(uuid1[:3], uuid2[:3], uuid3[:3], uuid4[:3], uuid5[:3]))
+			builder.GetTimelineBuilder(resourcepath.SubresourceLayerGeneralItem(uuid1[:3], uuid2[:3], uuid3[:3], uuid4[:3], uuid5[:3]).Path)
 		}
 	})
 	pool.Wait()

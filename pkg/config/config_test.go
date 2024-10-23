@@ -38,56 +38,64 @@ func TestGetMergeKeys(t *testing.T) {
 		},
 	}
 
-	// case1
-	keys, err := config.GetMergeKeys(model.KubernetesObjectOperation{
-		PluralKind: "foo",
-	})
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-	if len(keys) != 3 {
-		t.Errorf("Expected 3 keys, but got %d", len(keys))
-	}
-	if keys["path1"] != "key1" {
-		t.Errorf("Expected key1 for path1, but got %s", keys["path1"])
-	}
-	if keys["path2"] != "key2" {
-		t.Errorf("Expected key2 for path2, but got %s", keys["path2"])
-	}
-	if keys["path3"] != "key3" {
-		t.Errorf("Expected key3 for path3, but got %s", keys["path3"])
+	testCases := []struct {
+		name     string
+		k8sOps   model.KubernetesObjectOperation
+		wantKeys map[string]string
+		wantErr  bool
+	}{
+		{
+			name: "matching all of the given merge keys",
+			k8sOps: model.KubernetesObjectOperation{
+				PluralKind: "foo",
+			},
+			wantKeys: map[string]string{
+				"path1": "key1",
+				"path2": "key2",
+				"path3": "key3",
+			},
+			wantErr: false,
+		},
+		{
+			name: "matching only the kind",
+			k8sOps: model.KubernetesObjectOperation{
+				PluralKind: "foo",
+				Namespace:  "not-baz",
+			},
+			wantKeys: map[string]string{
+				"path1": "key1",
+				"path3": "key3",
+			},
+			wantErr: false,
+		},
+		{
+			name: "not matching any selector but the field path",
+			k8sOps: model.KubernetesObjectOperation{
+				PluralKind: "not-foo",
+				Namespace:  "not-baz",
+			},
+			wantKeys: map[string]string{
+				"path3": "key3",
+			},
+			wantErr: false,
+		},
 	}
 
-	// case2
-	keys, err = config.GetMergeKeys(model.KubernetesObjectOperation{
-		PluralKind: "foo",
-		Namespace:  "not-baz",
-	})
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-	if len(keys) != 2 {
-		t.Errorf("Expected 2 keys, but got %d", len(keys))
-	}
-	if keys["path1"] != "key1" {
-		t.Errorf("Expected key1 for path1, but got %s", keys["path1"])
-	}
-	if keys["path3"] != "key3" {
-		t.Errorf("Expected key3 for path3, but got %s", keys["path3"])
-	}
-
-	// case3
-	keys, err = config.GetMergeKeys(model.KubernetesObjectOperation{
-		PluralKind: "not-foo",
-		Namespace:  "not-baz",
-	})
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-	if len(keys) != 1 {
-		t.Errorf("Expected 1 key, but got %d", len(keys))
-	}
-	if keys["path3"] != "key3" {
-		t.Errorf("Expected key3 for path3, but got %s", keys["path3"])
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			gotKeys, err := config.GetMergeKeys(tc.k8sOps)
+			if (err != nil) != tc.wantErr {
+				t.Errorf("got %v, wantErr %v", err, tc.wantErr)
+				return
+			}
+			if len(gotKeys) != len(tc.wantKeys) {
+				t.Errorf("got %d keys, want %d", len(gotKeys), len(tc.wantKeys))
+			}
+			for k, v := range tc.wantKeys {
+				if gotKeys[k] != v {
+					t.Errorf("for %q, got %q, want %q", k, gotKeys[k], v)
+				}
+			}
+		})
 	}
 }

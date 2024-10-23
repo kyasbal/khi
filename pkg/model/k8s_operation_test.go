@@ -40,7 +40,7 @@ func TestToSingularKindName(t *testing.T) {
 			o := KubernetesObjectOperation{PluralKind: tc.plural}
 
 			if tc.singular != o.GetSingularKindName() {
-				t.Errorf("Expected singular name to be %s, but got %s", tc.singular, o.GetSingularKindName())
+				t.Errorf("got %q, want %q", o.GetSingularKindName(), tc.singular)
 			}
 		})
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/grouper"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parser"
 	gcp_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task"
 	composer_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/cloud-composer"
@@ -56,26 +57,28 @@ func (*gceNetworkParser) Parse(ctx context.Context, l *log.LogEntity, cs *histor
 	resourceNameSplitted := strings.Split(resourceName, "/")
 	negName := resourceNameSplitted[len(resourceNameSplitted)-1]
 	principal := l.GetStringOrDefault("protoPayload.authenticationInfo.principalEmail", "unknown")
-	resourcePath := fmt.Sprintf("networking.gke.io/v1beta1#servicenetworkendpointgroup#unknown#%s", negName)
+	var negResourcePath resourcepath.ResourcePath
 	lease, err := builder.ClusterResource.NEGs.GetResourceLeaseHolderAt(negName, l.Timestamp())
 	if err == nil {
-		resourcePath = fmt.Sprintf("networking.gke.io/v1beta1#servicenetworkendpointgroup#%s#%s", lease.Holder.Namespace, negName)
+		negResourcePath = resourcepath.NetworkEndpointGroup(lease.Holder.Namespace, negName)
+	} else {
+		negResourcePath = resourcepath.NetworkEndpointGroup("unknown", negName)
 	}
 	if !(isLast && isFirst) && (isLast || isFirst) {
 		state := enum.RevisionStateOperationStarted
 		if isLast {
 			state = enum.RevisionStateOperationFinished
 		}
-		operationPath := fmt.Sprintf("%s#%s-%s", resourcePath, methodNameSplitted[len(methodNameSplitted)-1], operationId)
+		operationPath := resourcepath.Operation(negResourcePath, methodNameSplitted[len(methodNameSplitted)-1], operationId)
 		cs.RecordRevision(operationPath, &history.StagingResourceRevision{
 			Verb:       enum.RevisionVerbCreate,
 			State:      state,
 			Requestor:  principal,
 			ChangeTime: l.Timestamp(),
 			Partial:    false,
-		}, history.RewriteRelationship(enum.RelationshipOperation))
+		})
 	} else {
-		cs.RecordEvent(resourcePath)
+		cs.RecordEvent(negResourcePath)
 	}
 	if isFirst {
 		method := methodNameSplitted[len(methodNameSplitted)-1]
@@ -98,8 +101,8 @@ func (*gceNetworkParser) Parse(ctx context.Context, l *log.LogEntity, cs *histor
 				}
 				holder := lease.Holder
 				if holder.Kind == "pod" {
-					podPath := fmt.Sprintf("core/v1#pod#%s#%s", holder.Namespace, holder.Name)
-					negSubresourcePath := fmt.Sprintf("%s#%s", podPath, negName)
+					podPath := resourcepath.Pod(holder.Namespace, holder.Name)
+					negSubresourcePath := resourcepath.NetworkEndpointGroupUnderResource(podPath, holder.Namespace, negName)
 					state := enum.RevisionStateConditionTrue
 					verb := enum.RevisionVerbReady
 					if isDetach {
@@ -112,7 +115,7 @@ func (*gceNetworkParser) Parse(ctx context.Context, l *log.LogEntity, cs *histor
 						Requestor:  principal,
 						ChangeTime: l.Timestamp(),
 						Partial:    false,
-					}, history.RewriteRelationship(enum.RelationshipNetworkEndpointGroup))
+					})
 				}
 			}
 		}

@@ -25,7 +25,7 @@ var templateFuncMap = template.FuncMap{
 }
 
 type templateInput struct {
-	ParentRelationships     map[enum.ParentRelationShip]enum.ParentRelationshipFrontendMetadata
+	ParentRelationships     map[enum.ParentRelationship]enum.ParentRelationshipFrontendMetadata
 	Severities              map[enum.Severity]enum.SeverityFrontendMetadata
 	LogTypes                map[enum.LogType]enum.LogTypeFrontendMetadata
 	RevisionStates          map[enum.RevisionState]enum.RevisionStateFrontendMetadata

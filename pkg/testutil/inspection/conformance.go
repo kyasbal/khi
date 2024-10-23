@@ -2,6 +2,7 @@ package inspection_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection"
@@ -45,7 +46,7 @@ func ConformanceEveryInspectionTasksAreResolvable(t *testing.T, label string, pr
 	}
 }
 
-func ConformanceEveryInspectionTypeMustHaveAtLeastOneFeature(t *testing.T, label string, preps []inspection.PrepareInspectionServerFunc) {
+func ConformanceTestForInspectionTypes(t *testing.T, preps []inspection.PrepareInspectionServerFunc) {
 	testServer, err := inspection.NewServer()
 	if err != nil {
 		t.Errorf("unexpected error %v", err)
@@ -75,6 +76,13 @@ func ConformanceEveryInspectionTypeMustHaveAtLeastOneFeature(t *testing.T, label
 				result += fmt.Sprintf("* %s", feature.Label)
 			}
 			fmt.Printf("Feature=%s\n%s\n", inspectionType.Id, result)
+		})
+
+		// icons must be in relative path for frontend to read it when the base path was rewritten
+		t.Run(fmt.Sprintf("%s-icon-must-be-relative-path", inspectionType.Name), func(t *testing.T) {
+			if strings.HasPrefix(inspectionType.Icon, "/") {
+				t.Errorf("icon path must be relative path, got %s", inspectionType.Icon)
+			}
 		})
 	}
 }

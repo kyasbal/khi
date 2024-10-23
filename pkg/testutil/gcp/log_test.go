@@ -7,6 +7,6 @@ import (
 func TestIsValidLogQuery(t *testing.T) {
 	err := IsValidLogQuery("\"")
 	if err == nil {
-		t.Errorf("Expected error, but got nil")
+		t.Errorf("got nil, want invalid query error")
 	}
 }

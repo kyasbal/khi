@@ -11,7 +11,7 @@ func TestBasicTokenStore_GetType(t *testing.T) {
 	store := NewBasicTokenStore("foo", NewSpyTokenResolver(New("token")))
 
 	if store.GetType() != "foo" {
-		t.Errorf("Expected type to be 'foo', but got '%s'", store.GetType())
+		t.Errorf("got %q, want %q", store.GetType(), "foo")
 	}
 }
 
@@ -25,10 +25,10 @@ func TestBasicTokenStore_GetTokenOnlyCallsResolverOnce(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 	if token.RawToken != "token" {
-		t.Errorf("Expected token to be 'token', but got '%s'", token.RawToken)
+		t.Errorf("got %q, want %q", token.RawToken, "token")
 	}
 	if resolver.callCount != 1 {
-		t.Errorf("Expected resolver to be called once, but got %d", resolver.callCount)
+		t.Errorf("got %d resolver calls, want 1", resolver.callCount)
 	}
 
 	token2, err := store.GetToken(context.Background())
@@ -36,10 +36,10 @@ func TestBasicTokenStore_GetTokenOnlyCallsResolverOnce(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 	if token2.RawToken != "token" {
-		t.Errorf("Expected token to be 'token', but got '%s'", token2.RawToken)
+		t.Errorf("got %q, want %q", token2.RawToken, "token")
 	}
 	if resolver.callCount != 1 {
-		t.Errorf("Expected resolver to be called once, but got %d", resolver.callCount)
+		t.Errorf("got %d resolver calls, want 1", resolver.callCount)
 	}
 }
 
@@ -65,7 +65,7 @@ func TestBasicTokenStore_RefreshTokenCallsResolverOnceInParallel(t *testing.T) {
 			refreshWg.Wait()
 
 			if resolver.callCount != 1 {
-				t.Errorf("Expected resolver to be called once, but got %d", resolver.callCount)
+				t.Errorf("got %d resolver calls, want 1", resolver.callCount)
 			}
 			wg.Done()
 		}()
@@ -92,14 +92,14 @@ func TestBasicTokenStore_GetTokenCallsResolverOnceInParallel(t *testing.T) {
 					refreshWg.Done()
 
 					if token.RawToken != "token" {
-						t.Errorf("Expected token to be 'token', but got '%s'", token.RawToken)
+						t.Errorf("got %q, want %q", token.RawToken, "token")
 					}
 				}()
 			}
 			refreshWg.Wait()
 
 			if resolver.callCount != 1 {
-				t.Errorf("Expected resolver to be called once, but got %d", resolver.callCount)
+				t.Errorf("got %d resolver calls, want 1", resolver.callCount)
 			}
 			wg.Done()
 		}()
@@ -114,7 +114,7 @@ func TestBasicTokenStore_GetTokenReturnsErrorWhenTokenResolutionFails(t *testing
 	_, err := store.GetToken(context.Background())
 
 	if err == nil {
-		t.Error("Expected an error but no error returned")
+		t.Error("got nil, want error")
 	}
 }
 
@@ -130,7 +130,7 @@ func TestBasicTokenStore_RefreshTokenCallsResolverAndSet(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err1)
 	}
 	if token2.RawToken != "token2" {
-		t.Errorf("Expected token to be 'token2', but got '%s'", token2.RawToken)
+		t.Errorf("got %q, want %q", token2.RawToken, "token2")
 	}
 	if err2 != nil {
 		t.Errorf("Unexpected error: %v", err2)
@@ -144,7 +144,7 @@ func TestBasicTokenStore_RefreshTokenReturnsErrorWhenTokenResolutionFails(t *tes
 	err := store.RefreshToken(context.Background())
 
 	if err == nil {
-		t.Error("Expected an error but no error returned")
+		t.Error("got nil, want error")
 	}
 }
 
@@ -188,7 +188,7 @@ func TestBasicTokenStore_ISValidityAssured(t *testing.T) {
 			actual := tt.store.IsTokenValidityAssured(context.Background())
 
 			if actual != tt.expect {
-				t.Errorf("Expected %t, but got %t", tt.expect, actual)
+				t.Errorf("got %t, want %t", actual, tt.expect)
 			}
 		})
 	}

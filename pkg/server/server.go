@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"strings"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata"
@@ -17,6 +18,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type ServerConfig struct {
+	ViewerMode       bool
+	StaticFolderPath string
+	ResourceMonitor  ResourceMonitor
+	ServerBasePath   string
+}
+
 func redirectMiddleware(exactPath string, redirectTo string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if ctx.Request.URL.Path == exactPath {
@@ -27,28 +35,31 @@ func redirectMiddleware(exactPath string, redirectTo string) gin.HandlerFunc {
 	}
 }
 
-func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, viewerMode bool, staticFolderPath string, resourceMonitor ResourceMonitor) *gin.Engine {
+func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, config *ServerConfig) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 
-	appHtmlPath := path.Join(staticFolderPath, "/index.html")
+	appHtmlPath := path.Join(config.StaticFolderPath, "/index.html")
 	indexHtml := generateIndexHtmlWithGALabels(appHtmlPath)
-	engine.Use(redirectMiddleware("/", "/session/0")) // Request for `/` shouldn't be handled by `static.Serve`, redirect `/session/0` to be handled by patternToString
-	engine.Use(static.Serve("/", static.LocalFile(staticFolderPath, false)))
+
+	basePathWithoutTrailingSlash := strings.TrimSuffix(config.ServerBasePath, "/")
+	engine.Use(redirectMiddleware(basePathWithoutTrailingSlash+"/", basePathWithoutTrailingSlash+"/session/0")) // Request for `/` shouldn't be handled by `static.Serve`, redirect `/session/0` to be handled by patternToString
+	engine.Use(static.Serve(basePathWithoutTrailingSlash+"/", static.LocalFile(config.StaticFolderPath, false)))
 	engine.Use(gin.Recovery())
 	engine.Use(cors.New(corsConfig))
+	router := engine.Group(basePathWithoutTrailingSlash)
 
 	// frontend uses Angular router. All frontend routing path should return the app html
-	engine.GET("/session/*wild", func(ctx *gin.Context) {
+	router.GET("/session/*wild", func(ctx *gin.Context) {
 		ctx.Header("Content-Type", "text/html")
 		ctx.Writer.Write([]byte(indexHtml))
 	})
-	if !viewerMode {
+	if !config.ViewerMode {
 		// GET /api/v2/inspection/types
 		// Returns the list of inspection types available on the inspection server.
-		engine.GET("/api/v2/inspection/types", func(ctx *gin.Context) {
+		router.GET("/api/v2/inspection/types", func(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, &GetInspectionTypesResponse{
 				Types: inspectionServer.GetAllInspectionTypes(),
 			})
@@ -56,7 +67,7 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, viewerMo
 
 		// GET /api/v2/inspection/tasks
 		// Returns the all started inspections on the inspection server.
-		engine.GET("/api/v2/inspection/tasks", func(ctx *gin.Context) {
+		router.GET("/api/v2/inspection/tasks", func(ctx *gin.Context) {
 			inspections := inspectionServer.GetAllRunners()
 			responseInspections := map[string]SerializedMetadata{}
 			for _, inspection := range inspections {
@@ -78,13 +89,13 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, viewerMo
 			ctx.JSON(http.StatusOK, &GetInspectionTasksResponse{
 				Tasks: responseInspections,
 				ServerStat: &ServerStat{
-					TotalMemoryAvailable: resourceMonitor.GetUsedMemory(),
+					TotalMemoryAvailable: config.ResourceMonitor.GetUsedMemory(),
 				},
 			})
 		})
 
 		// POST /api/v2/inspection/tasks
-		engine.POST("/api/v2/inspection/types/:typeId", func(ctx *gin.Context) {
+		router.POST("/api/v2/inspection/types/:typeId", func(ctx *gin.Context) {
 			typeId := ctx.Param("typeId")
 			inspectionId, err := inspectionServer.CreateInspection(typeId)
 			if err != nil {
@@ -95,7 +106,7 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, viewerMo
 			ctx.JSON(http.StatusAccepted, &PostInspectionTaskResponse{InspectionId: inspectionId})
 		})
 		// PUT /api/v2/inspection/tasks/<task-id>/features
-		engine.PUT("/api/v2/inspection/tasks/:taskId/features", func(ctx *gin.Context) {
+		router.PUT("/api/v2/inspection/tasks/:taskId/features", func(ctx *gin.Context) {
 			taskId := ctx.Param("taskId")
 			task := inspectionServer.GetTask(taskId)
 			if task == nil {
@@ -115,7 +126,7 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, viewerMo
 			ctx.String(http.StatusAccepted, "ok")
 		})
 		//GET /api/v2/inspection/tasks/<task-id>/features
-		engine.GET("/api/v2/inspection/tasks/:taskId/features", func(ctx *gin.Context) {
+		router.GET("/api/v2/inspection/tasks/:taskId/features", func(ctx *gin.Context) {
 			taskId := ctx.Param("taskId")
 			task := inspectionServer.GetTask(taskId)
 			if task == nil {
@@ -132,7 +143,7 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, viewerMo
 			})
 		})
 
-		engine.POST("/api/v2/inspection/tasks/:taskId/dryrun", func(ctx *gin.Context) {
+		router.POST("/api/v2/inspection/tasks/:taskId/dryrun", func(ctx *gin.Context) {
 			taskId := ctx.Param("taskId")
 			currentTask := inspectionServer.GetTask(taskId)
 			if currentTask == nil {
@@ -154,7 +165,7 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, viewerMo
 			ctx.JSON(http.StatusOK, result)
 		})
 
-		engine.POST("/api/v2/inspection/tasks/:taskId/run", func(ctx *gin.Context) {
+		router.POST("/api/v2/inspection/tasks/:taskId/run", func(ctx *gin.Context) {
 			taskId := ctx.Param("taskId")
 			currentTask := inspectionServer.GetTask(taskId)
 			if currentTask == nil {
@@ -176,7 +187,7 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, viewerMo
 			ctx.String(http.StatusAccepted, "ok")
 		})
 
-		engine.POST("/api/v2/inspection/tasks/:taskId/cancel", func(ctx *gin.Context) {
+		router.POST("/api/v2/inspection/tasks/:taskId/cancel", func(ctx *gin.Context) {
 			taskId := ctx.Param("taskId")
 			currentTask := inspectionServer.GetTask(taskId)
 			if currentTask == nil {
@@ -191,7 +202,7 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, viewerMo
 			ctx.String(http.StatusOK, "ok")
 		})
 
-		engine.GET("/api/v2/inspection/tasks/:taskId/metadata", func(ctx *gin.Context) {
+		router.GET("/api/v2/inspection/tasks/:taskId/metadata", func(ctx *gin.Context) {
 			taskId := ctx.Param("taskId")
 			currentTask := inspectionServer.GetTask(taskId)
 			if currentTask == nil {
@@ -206,7 +217,7 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, viewerMo
 			ctx.JSON(http.StatusOK, result)
 		})
 
-		engine.GET("/api/v2/inspection/tasks/:taskId/data", func(ctx *gin.Context) {
+		router.GET("/api/v2/inspection/tasks/:taskId/data", func(ctx *gin.Context) {
 			taskId := ctx.Param("taskId")
 			currentTask := inspectionServer.GetTask(taskId)
 			if currentTask == nil {
@@ -232,7 +243,7 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, viewerMo
 			result.ResultStore.Close()
 		})
 
-		engine.GET("/api/v2/popup", func(ctx *gin.Context) {
+		router.GET("/api/v2/popup", func(ctx *gin.Context) {
 			currentPopup := popup.Instance.GetCurrentPopup()
 			if currentPopup == nil {
 				ctx.String(http.StatusOK, "")
@@ -241,7 +252,7 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, viewerMo
 			ctx.JSON(http.StatusOK, currentPopup)
 		})
 
-		engine.POST("/api/v2/popup/validate", func(ctx *gin.Context) {
+		router.POST("/api/v2/popup/validate", func(ctx *gin.Context) {
 			request := &popup.PopupAnswerResponse{}
 			if err := ctx.ShouldBindJSON(request); err != nil {
 				ctx.String(http.StatusBadRequest, err.Error())
@@ -263,7 +274,7 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, viewerMo
 			ctx.JSON(http.StatusOK, result)
 		})
 
-		engine.POST("/api/v2/popup/answer", func(ctx *gin.Context) {
+		router.POST("/api/v2/popup/answer", func(ctx *gin.Context) {
 			request := &popup.PopupAnswerResponse{}
 			if err := ctx.ShouldBindJSON(request); err != nil {
 				ctx.String(http.StatusBadRequest, err.Error())

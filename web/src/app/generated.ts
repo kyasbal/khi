@@ -16,6 +16,7 @@ export enum ParentRelationship {
   RelationshipPodBinding = 7,
   RelationshipNetworkEndpointGroup = 8,
   RelationshipManagedInstanceGroup = 9,
+  RelationshipControlPlaneComponent = 10,
 
   Unknown = -1,
 }
@@ -86,6 +87,12 @@ export const ParentRelationshipMetadata: ParentRelationshipMetadataType[] = [
     label: 'mig',
     hint: 'MIG logs associated to the parent node pool',
   },
+
+  {
+    visible: true,
+    label: 'controlplane',
+    hint: 'control plane component of the cluster',
+  },
 ];
 
 export function ParentRelationshipToLabel(rel: ParentRelationship): string {
@@ -116,6 +123,8 @@ export function ParseParentRelationshipLabel(
       return ParentRelationship.RelationshipNetworkEndpointGroup;
     case 'mig':
       return ParentRelationship.RelationshipManagedInstanceGroup;
+    case 'controlplane':
+      return ParentRelationship.RelationshipControlPlaneComponent;
     default:
       return ParentRelationship.Unknown;
   }
@@ -433,6 +442,7 @@ export enum RevisionState {
   RevisionStateEndpointReady = 26,
   RevisionStateEndpointTerminating = 27,
   RevisionStateEndpointUnready = 28,
+  RevisionStateProvisioning = 29,
 }
 
 export interface RevisionStateMetadataType {
@@ -585,6 +595,11 @@ export const RevisionStateMetadata: RevisionStateMetadataType[] = [
     cssSelector: 'unready',
     label: 'Endpoint is not ready',
   },
+
+  {
+    cssSelector: 'provisioning',
+    label: 'Resource is being provisioned',
+  },
 ];
 
 export const revisionStates = [
@@ -617,6 +632,7 @@ export const revisionStates = [
   'ready',
   'terminating',
   'unready',
+  'provisioning',
 ];
 
 export const revisionStatecolors: { [state: string]: string } = {
@@ -649,6 +665,7 @@ export const revisionStatecolors: { [state: string]: string } = {
   ready: '#004400',
   terminating: '#fed700',
   unready: '#EE4400',
+  provisioning: '#4444ff',
 };
 
 export const revisionStateDarkColors: { [state: string]: string } = {
@@ -678,6 +695,7 @@ export const revisionStateDarkColors: { [state: string]: string } = {
   inferred: 'hsl(46.666667deg 100.000000% 24.000000%)',
   operation_finished: 'hsl(0.000000deg 0.000000% 16.000000%)',
   operation_started: 'hsl(120.000000deg 100.000000% 10.640000%)',
+  provisioning: 'hsl(240.000000deg 100.000000% 50.640000%)',
   ready: 'hsl(120.000000deg 100.000000% 10.640000%)',
   terminating: 'hsl(50.787402deg 100.000000% 39.840000%)',
   unready: 'hsl(17.142857deg 100.000000% 37.360000%)',

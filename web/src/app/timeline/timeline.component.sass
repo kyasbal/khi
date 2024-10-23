@@ -277,10 +277,20 @@ $layer-hover-tooltips: 4000
         max-width: 500px
         margin: 3px 10px 5px 10px
     .warn
-        margin: 2px 0
-        &.emp
+        background-color: rgba(0,255,255,0.3)
+        font-size: x-small
+        .message
+            margin: 0px 0px 2px 0
+        .emp
+            mat-icon
+                width: 12px
+                height: 12px
+                font-size: 12px
+                line-height: 12px
+                margin: -2px 0px
+            margin: 0
             font-weight: bold
-            color: yellow
+            padding: 0px 20px 0px 5px
 .log-detail-row,.log-detail-count
     box-sizing: border-box
     border-bottom: 1px solid rgba(255,255,255,0.3)

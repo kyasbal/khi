@@ -9,6 +9,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/grouper"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parser"
 	gcp_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
@@ -65,8 +66,8 @@ func (*k8sContainerParser) Parse(ctx context.Context, l *log.LogEntity, cs *hist
 		mainMessage = "(unknown)"
 	}
 	severityOverride := ParseSeverity(mainMessage)
-	containerPath := fmt.Sprintf("core/v1#pod#%s#%s#%s", namespace, podName, containerName)
-	cs.RecordEvent(containerPath, history.RewriteRelationship(enum.RelationshipContainer))
+	containerPath := resourcepath.Container(namespace, podName, containerName)
+	cs.RecordEvent(containerPath)
 	cs.RecordLogSummary(mainMessage)
 	if severityOverride != enum.SeverityUnknown {
 		cs.RecordLogSeverity(severityOverride)

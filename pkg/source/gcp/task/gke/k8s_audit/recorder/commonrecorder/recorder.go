@@ -7,6 +7,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/manifestutil"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/recorder"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/types"
@@ -30,10 +31,11 @@ func Register(manager *recorder.RecorderTaskManager) error {
 	return nil
 }
 
-func recordChangeSetForLog(ctx context.Context, resourcePath string, prevState *commonRecorderStatus, log *types.ResourceSpecificParserInput, cs *history.ChangeSet) (*commonRecorderStatus, error) {
+func recordChangeSetForLog(ctx context.Context, resourcePathString string, prevState *commonRecorderStatus, log *types.ResourceSpecificParserInput, cs *history.ChangeSet) (*commonRecorderStatus, error) {
+	resourcePath := resourcepath.FromK8sOperation(*log.Operation)
 	if log.Code != 0 {
 		message := log.Log.GetStringOrDefault("protoPayload.status.message", "Unknown")
-		cs.RecordEvent(log.Operation.CovertToResourcePath())
+		cs.RecordEvent(resourcePath)
 		cs.RecordLogSeverity(enum.SeverityError)
 		cs.RecordLogSummary(fmt.Sprintf("【%s】%s", message, log.MethodName))
 		return prevState, nil
@@ -57,8 +59,9 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, prevState *
 # The actual resource body is not available but this resource body may be available by extending log query range.`,
 				Partial:    false,
 				Requestor:  "unknown",
-				ChangeTime: log.Log.Timestamp(),
+				ChangeTime: creationTime,
 				State:      enum.RevisionStateInferred,
+				Inferred:   true,
 			})
 		}
 	}

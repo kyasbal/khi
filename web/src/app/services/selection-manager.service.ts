@@ -12,7 +12,7 @@ import {
   withLatestFrom,
 } from 'rxjs';
 import { InspectionDataStoreService } from './inspection-data-store.service';
-import { LogEntry } from '../store/log';
+import { LogEntry, NullLog } from '../store/log';
 import { TimelineEntry } from '../store/timeline';
 import { ResourceRevision } from '../store/revision';
 import { ResourceEvent } from '../store/event';
@@ -387,6 +387,7 @@ export class SelectionManagerService {
     const result: LogEntry[] = [];
     for (const index of indexSet) {
       if (index >= 0 && index < logs.length) result.push(logs[index]);
+      else if (index === -1) result.push(NullLog);
     }
     return result;
   }

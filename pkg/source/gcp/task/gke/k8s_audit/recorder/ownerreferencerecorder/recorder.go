@@ -50,9 +50,12 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 		if kind == "Node" {
 			namespace = "cluster-scope"
 		}
-		cs.RecordAliasRelationship(log.Operation.CovertToResourcePath(), resourcepath.SubresourceLayerGeneralItem(
-			apiVersion, strings.ToLower(kind), namespace, name, fmt.Sprintf("%s(%s)[%s]", log.Operation.Name, log.Operation.Namespace, log.Operation.GetSingularKindName()),
-		), history.RewriteRelationship(enum.RelationshipOwnerReference))
+
+		ownerResource := resourcepath.FromK8sOperation(*log.Operation)
+		owneeResource := resourcepath.SubresourceLayerGeneralItem(
+			apiVersion, strings.ToLower(kind), namespace, name, fmt.Sprintf("%s(%s)[%s]", log.Operation.Name, log.Operation.Namespace, log.Operation.GetSingularKindName()))
+		owneeResource.ParentRelationship = enum.RelationshipOwnerReference
+		cs.RecordResourceAlias(ownerResource, owneeResource)
 	}
 	return nil
 }

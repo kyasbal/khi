@@ -114,10 +114,6 @@ export class TimelineEntry {
   ): ResourceRevision[] {
     const result = [] as ResourceRevision[];
     for (const revision of this.revisions) {
-      if (revision.isInferred) {
-        // `inferred` type revision is not selectable. Filtering out from the query result.
-        continue;
-      }
       const startEdgeIncludedInRange =
         revision.startAt >= beginTime && revision.startAt < endTime;
       const endEdgeIncludedInRange =

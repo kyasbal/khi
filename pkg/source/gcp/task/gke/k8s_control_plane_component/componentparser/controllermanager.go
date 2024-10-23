@@ -84,18 +84,18 @@ func (c *ControllerManagerComponentParser) ShouldProcess(component_name string) 
 
 var _ ControlPlaneComponentParser = (*ControllerManagerComponentParser)(nil)
 
-func (*ControllerManagerComponentParser) kindLogToResourcePath(ctx context.Context, l *log.LogEntity) (string, error) {
+func (*ControllerManagerComponentParser) kindLogToResourcePath(ctx context.Context, l *log.LogEntity) (resourcepath.ResourcePath, error) {
 	if !l.HasKLogField("kind") {
-		return "", fmt.Errorf("kind field wasn't found from the log")
+		return resourcepath.ResourcePath{}, fmt.Errorf("kind field wasn't found from the log")
 	}
 	kind, err := l.KLogField("kind")
 	if err != nil {
-		return "", fmt.Errorf("kind field not found from the log")
+		return resourcepath.ResourcePath{}, fmt.Errorf("kind field not found from the log")
 	}
 	kind = strings.ToLower(kind)
 	key, err := l.KLogField("key")
 	if err != nil || key == "" {
-		return "", fmt.Errorf("key field not found from the log")
+		return resourcepath.ResourcePath{}, fmt.Errorf("key field not found from the log")
 	}
 	for _, pair := range kindToKLogFieldPairs {
 		if pair.KindName == kind {
@@ -111,13 +111,13 @@ func (*ControllerManagerComponentParser) kindLogToResourcePath(ctx context.Conte
 		}
 	}
 	slog.WarnContext(ctx, fmt.Sprintf("kind %s is not coverred in the parser", kind), logger.LogKind(fmt.Sprintf("controller-manager-component-missing-support-%s", kind)))
-	return "", fmt.Errorf("kind %s is not coverred in the parser", kind)
+	return resourcepath.ResourcePath{}, fmt.Errorf("kind %s is not coverred in the parser", kind)
 }
 
 // controllerLogToResourcePath returns the list of resource path parsed by controller specific klog parser
 // Example format: "Too few replicas" replicaSet="kube-system/kube-dns-68b67b4c6f" need=2 creating=1
-func (*ControllerManagerComponentParser) controllerLogToResourcePath(l *log.LogEntity) ([]string, error) {
-	result := []string{}
+func (*ControllerManagerComponentParser) controllerLogToResourcePath(l *log.LogEntity) ([]resourcepath.ResourcePath, error) {
+	result := []resourcepath.ResourcePath{}
 	for _, pair := range kindToKLogFieldPairs {
 		field, err := l.KLogField(pair.KLogField)
 		if err != nil || field == "" {
@@ -138,12 +138,12 @@ func (*ControllerManagerComponentParser) controllerLogToResourcePath(l *log.LogE
 
 // eventLogToResourcePath returns the resource path with checking fields in KLog format of the given log entry.
 // Example format: "Event occurred" object="gmp-system/collector" fieldPath="" kind="DaemonSet" apiVersion="apps/v1" type="Normal" reason="SuccessfulCreate" message="Created pod: collector-fwbmm"
-func (*ControllerManagerComponentParser) eventLogToResourcePath(l *log.LogEntity) (string, error) {
+func (*ControllerManagerComponentParser) eventLogToResourcePath(l *log.LogEntity) (resourcepath.ResourcePath, error) {
 	var namespace string
 	var name string
 	obj, err := l.KLogField("object")
 	if err != nil || obj == "" {
-		return "", fmt.Errorf("failed to read object from klog")
+		return resourcepath.ResourcePath{}, fmt.Errorf("failed to read object from klog")
 	}
 	if strings.Contains(obj, "/") {
 		parts := strings.Split(obj, "/")
@@ -155,11 +155,11 @@ func (*ControllerManagerComponentParser) eventLogToResourcePath(l *log.LogEntity
 	}
 	kind, err := l.KLogField("kind")
 	if err != nil || kind == "" {
-		return "", fmt.Errorf("failed to read kind from klog")
+		return resourcepath.ResourcePath{}, fmt.Errorf("failed to read kind from klog")
 	}
 	apiVersion, err := l.KLogField("apiVersion")
 	if err != nil || apiVersion == "" {
-		return "", fmt.Errorf("failed to read apiVersion from klog")
+		return resourcepath.ResourcePath{}, fmt.Errorf("failed to read apiVersion from klog")
 	}
 	return resourcepath.NameLayerGeneralItem(apiVersion, strings.ToLower(kind), namespace, name), nil
 }

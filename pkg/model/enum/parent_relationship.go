@@ -1,19 +1,20 @@
 package enum
 
-type ParentRelationShip int
+type ParentRelationship int
 
 const (
-	RelationshipChild                ParentRelationShip = 0
-	RelationshipResourceStatus       ParentRelationShip = 1
-	RelationshipOperation            ParentRelationShip = 2
-	RelationshipEndpointSlice        ParentRelationShip = 3
-	RelationshipContainer            ParentRelationShip = 4
-	RelationshipNodeComponent        ParentRelationShip = 5
-	RelationshipOwnerReference       ParentRelationShip = 6
-	RelationshipPodBinding           ParentRelationShip = 7
-	RelationshipNetworkEndpointGroup ParentRelationShip = 8
-	RelationshipManagedInstanceGroup ParentRelationShip = 9
-	relationshipUnusedEnd                               // Add items above. This field is used for counting items in this enum to test.
+	RelationshipChild                 ParentRelationship = 0
+	RelationshipResourceStatus        ParentRelationship = 1
+	RelationshipOperation             ParentRelationship = 2
+	RelationshipEndpointSlice         ParentRelationship = 3
+	RelationshipContainer             ParentRelationship = 4
+	RelationshipNodeComponent         ParentRelationship = 5
+	RelationshipOwnerReference        ParentRelationship = 6
+	RelationshipPodBinding            ParentRelationship = 7
+	RelationshipNetworkEndpointGroup  ParentRelationship = 8
+	RelationshipManagedInstanceGroup  ParentRelationship = 9
+	RelationshipControlPlaneComponent ParentRelationship = 10
+	relationshipUnusedEnd                                // Add items above. This field is used for counting items in this enum to test.
 )
 
 // parentRelationshipFrontendMetadata is a type defined for each parent relationship types.
@@ -26,7 +27,7 @@ type ParentRelationshipFrontendMetadata struct {
 	LabelBackgroundColor string
 }
 
-var ParentRelationships = map[ParentRelationShip]ParentRelationshipFrontendMetadata{
+var ParentRelationships = map[ParentRelationship]ParentRelationshipFrontendMetadata{
 	RelationshipChild: {
 		Visible:              false,
 		EnumKeyName:          "RelationshipChild",
@@ -105,5 +106,13 @@ var ParentRelationships = map[ParentRelationShip]ParentRelationshipFrontendMetad
 		LabelColor:           "#FFFFFF",
 		LabelBackgroundColor: "#FF5555",
 		Hint:                 "MIG logs associated to the parent node pool",
+	},
+	RelationshipControlPlaneComponent: {
+		Visible:              true,
+		EnumKeyName:          "RelationshipControlPlaneComponent",
+		Label:                "controlplane",
+		LabelColor:           "#FFFFFF",
+		LabelBackgroundColor: "#FF5555",
+		Hint:                 "control plane component of the cluster",
 	},
 }

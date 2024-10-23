@@ -9,13 +9,15 @@ import (
 )
 
 var irregularPluralToSingularSuffixMap = map[string]string{
-	"classes":    "class",
-	"ingresses":  "ingress",
-	"leases":     "lease",
-	"dnses":      "dns",
-	"identities": "identity",
-	"policies":   "policy",
-	"topologies": "topology",
+	"classes":      "class",
+	"ingresses":    "ingress",
+	"leases":       "lease",
+	"dnses":        "dns",
+	"identities":   "identity",
+	"policies":     "policy",
+	"topologies":   "topology",
+	"statuses":     "status",
+	"capabilities": "capability",
 }
 
 type KubernetesObjectOperation struct {

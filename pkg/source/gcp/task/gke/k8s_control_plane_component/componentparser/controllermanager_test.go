@@ -89,8 +89,8 @@ func TestEventLogToResourcePath(t *testing.T) {
 					t.Errorf("unexpected error: %v", err)
 				}
 			}
-			if diff := cmp.Diff(tc.expectedPath, path); diff != "" {
-				t.Errorf("the result path is not valid:\nInput:\n%v\nActual:\n%s\nExpected:\n%s", tc.inputLog, path, tc.expectedPath)
+			if diff := cmp.Diff(tc.expectedPath, path.Path); diff != "" {
+				t.Errorf("the result path is not valid:\nInput:\n%v\nActual:\n%s\nExpected:\n%s", tc.inputLog, path.Path, tc.expectedPath)
 			}
 		})
 	}
@@ -143,8 +143,12 @@ func TestControllerLogToResourcePath(t *testing.T) {
 					t.Errorf("unexpected error: %v", err)
 				}
 			}
-			if diff := cmp.Diff(tc.expectedPaths, paths); diff != "" {
-				t.Errorf("the result path is not valid:\nInput:\n%v\nActual:\n%v\nExpected:\n%v", tc.inputLog, paths, tc.expectedPaths)
+			rawPaths := []string{}
+			for _, path := range paths {
+				rawPaths = append(rawPaths, path.Path)
+			}
+			if diff := cmp.Diff(tc.expectedPaths, rawPaths); diff != "" {
+				t.Errorf("different resource path(-want, +got): %v", diff)
 			}
 		})
 	}
@@ -175,7 +179,7 @@ func TestKindLogToResourcePath(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			parser := &ControllerManagerComponentParser{}
 			l := log_test.MustLogEntity(tc.inputLog)
-			paths, err := parser.kindLogToResourcePath(context.Background(), l)
+			path, err := parser.kindLogToResourcePath(context.Background(), l)
 			if tc.expectedError {
 				if err == nil {
 					t.Errorf("expected an error but no error returned")
@@ -185,8 +189,9 @@ func TestKindLogToResourcePath(t *testing.T) {
 					t.Errorf("unexpected error: %v", err)
 				}
 			}
-			if diff := cmp.Diff(tc.expectedPath, paths); diff != "" {
-				t.Errorf("the result path is not valid:\nInput:\n%v\nActual:\n%v\nExpected:\n%v", tc.inputLog, paths, tc.expectedPath)
+
+			if diff := cmp.Diff(tc.expectedPath, path.Path); diff != "" {
+				t.Errorf("different resource path (-want,+got):%v", diff)
 			}
 		})
 	}

@@ -36,6 +36,13 @@ describe('BackendAPIImpl testing', () => {
     httpTestingController = TestBed.inject(HttpTestingController);
   });
 
+  it('read server-base-path from meta tag', () => {
+    document.head.innerHTML += `<meta id="server-base-path" content="/api/v2">`;
+    expect(BackendAPIImpl.getServerBasePath()).toEqual('/api/v2');
+    document.getElementById('server-base-path')?.remove();
+    expect(BackendAPIImpl.getServerBasePath()).toEqual('');
+  });
+
   it('can call getInspectionTypes', () => {
     const testData: GetInspectionTypesResponse = {
       types: [

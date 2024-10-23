@@ -10,6 +10,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/grouper"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parser"
 	gcp_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task"
 	composer_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/cloud-composer"
@@ -54,7 +55,7 @@ func (*computeAPIParser) Parse(ctx context.Context, l *log.LogEntity, cs *histor
 	resourceNameSplitted := strings.Split(resourceName, "/")
 	instanceName := resourceNameSplitted[len(resourceNameSplitted)-1]
 	principal := l.GetStringOrDefault("protoPayload.authenticationInfo.principalEmail", "unknown")
-	resourcePath := fmt.Sprintf("core/v1#node#cluster-scope#%s", instanceName)
+	nodeResourcePath := resourcepath.Node(instanceName)
 	// If this was an operation, it will be recorded as operation data
 	if !(isLast && isFirst) && (isLast || isFirst) {
 		state := enum.RevisionStateOperationStarted
@@ -63,16 +64,18 @@ func (*computeAPIParser) Parse(ctx context.Context, l *log.LogEntity, cs *histor
 			state = enum.RevisionStateOperationFinished
 			verb = enum.RevisionVerbOperationFinish
 		}
-		operationPath := fmt.Sprintf("%s#%s-%s", resourcePath, methodNameSplitted[len(methodNameSplitted)-1], operationId)
+		requestBody, _ := l.GetChildYamlOf("protoPayload.request") // ignore the error to set the empty body when the field is not available in the log.
+		operationPath := resourcepath.Operation(nodeResourcePath, methodNameSplitted[len(methodNameSplitted)-1], operationId)
 		cs.RecordRevision(operationPath, &history.StagingResourceRevision{
+			Body:       requestBody,
 			Verb:       verb,
 			State:      state,
 			Requestor:  principal,
 			ChangeTime: l.Timestamp(),
 			Partial:    false,
-		}, history.RewriteRelationship(enum.RelationshipOperation))
+		})
 	}
-	cs.RecordEvent(resourcePath)
+	cs.RecordEvent(nodeResourcePath)
 
 	if isFirst && !isLast {
 		cs.RecordLogSummary(fmt.Sprintf("%s Started", methodName))

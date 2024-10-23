@@ -16,11 +16,11 @@ GCLOUD=gcloud --project $(GCLOUD_PROJECT)
 # For main frontend view
 .PHONY=watch-web-front
 watch-web-front:
-	cd web && NG_APP_BACKEND_ROOT_URL="http://localhost:8080/" NG_APP_REPORT_BUG_URL=$(BUG_REPORT_URL) NG_APP_DOCUMENT_URL=$(DOCUMENT_URL) ng serve
+	cd web && NG_APP_BACKEND_URL_PREFIX="http://localhost:8080" NG_APP_REPORT_BUG_URL=$(BUG_REPORT_URL) NG_APP_DOCUMENT_URL=$(DOCUMENT_URL) ng serve
 
 .PHONY=watch-web-front-viewer-mode
 watch-web-front-viewer-mode:
-	cd web && NG_APP_ENABLE_GOOGLE_DRIVE_DATA_LOADER="true" NG_APP_VIEWER_MODE="true" NG_APP_BACKEND_ROOT_URL="http://localhost:8080/" NG_APP_REPORT_BUG_URL=$(BUG_REPORT_URL) NG_APP_DOCUMENT_URL=$(DOCUMENT_URL) ng serve
+	cd web && NG_APP_ENABLE_GOOGLE_DRIVE_DATA_LOADER="true" NG_APP_VIEWER_MODE="true" NG_APP_BACKEND_URL_PREFIX="http://localhost:8080" NG_APP_REPORT_BUG_URL=$(BUG_REPORT_URL) NG_APP_DOCUMENT_URL=$(DOCUMENT_URL) ng serve
 
 ## Test
 

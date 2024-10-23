@@ -19,7 +19,7 @@ type History struct {
 type Resource struct {
 	ResourceName     string                  `json:"name"`
 	Timeline         string                  `json:"timeline"`
-	Relationship     enum.ParentRelationShip `json:"relationship"`
+	Relationship     enum.ParentRelationship `json:"relationship"`
 	Children         []*Resource             `json:"children"`
 	FullResourcePath string                  `json:"path"`
 }

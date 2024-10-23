@@ -44,3 +44,17 @@ export class LogEntry {
     );
   }
 }
+
+/**
+ * NullLog is just a placeholder for log reference when the resource status is not inferred from any logs.
+ */
+export const NullLog = new LogEntry(
+  -1,
+  '',
+  LogType.LogTypeUnknown,
+  Severity.SeverityUnknown,
+  0,
+  '',
+  { offset: 0, len: 0, buffer: 0 },
+  [],
+);

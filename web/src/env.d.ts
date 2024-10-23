@@ -1,7 +1,7 @@
 /* eslint-disable */
 declare var process: {
   env: {
-    NG_APP_BACKEND_ROOT_URL: string;
+    NG_APP_BACKEND_URL_PREFIX: string;
     NG_APP_ENV: string;
     NG_APP_VIEWER_MODE: string;
     NG_APP_VERSION: string;

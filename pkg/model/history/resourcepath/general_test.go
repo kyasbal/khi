@@ -2,6 +2,8 @@ package resourcepath
 
 import (
 	"testing"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 )
 
 func TestAPIVersionLayerGeneralItem(t *testing.T) {
@@ -28,8 +30,12 @@ func TestAPIVersionLayerGeneralItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := APIVersionLayerGeneralItem(tt.apiVersion); got != tt.want {
-				t.Errorf("APIVersionLayerGeneralItem() = %v, want %v", got, tt.want)
+			resourcePath := APIVersionLayerGeneralItem(tt.apiVersion)
+			if resourcePath.Path != tt.want {
+				t.Errorf("APIVersionLayerGeneralItem(%s).Path=%v, want %v", tt.apiVersion, resourcePath.Path, tt.want)
+			}
+			if resourcePath.ParentRelationship != enum.RelationshipChild {
+				t.Errorf("APIVersionLayerGeneralItem(%s).ParentRelationship=%q, want %q", tt.apiVersion, resourcePath.ParentRelationship, enum.RelationshipChild)
 			}
 		})
 	}
@@ -63,8 +69,12 @@ func TestKindLayerGeneralItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := KindLayerGeneralItem(tt.apiVersion, tt.kind); got != tt.want {
-				t.Errorf("KindLayerGeneralItem() = %v, want %v", got, tt.want)
+			resourcePath := KindLayerGeneralItem(tt.apiVersion, tt.kind)
+			if resourcePath.Path != tt.want {
+				t.Errorf("KindLayerGeneralItem(%s,%s).Path=%v, want %v", tt.apiVersion, tt.kind, resourcePath.Path, tt.want)
+			}
+			if resourcePath.ParentRelationship != enum.RelationshipChild {
+				t.Errorf("KindLayerGeneralItem(%s,%s).ParentRelationship=%q, want %q", tt.apiVersion, tt.kind, resourcePath.ParentRelationship, enum.RelationshipChild)
 			}
 		})
 	}
@@ -109,8 +119,12 @@ func TestNamespaceLayerGeneralItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NamespaceLayerGeneralItem(tt.apiVersion, tt.kind, tt.namespace); got != tt.want {
-				t.Errorf("NamespaceLayerGeneralItem() = %v, want %v", got, tt.want)
+			resourcePath := NamespaceLayerGeneralItem(tt.apiVersion, tt.kind, tt.namespace)
+			if resourcePath.Path != tt.want {
+				t.Errorf("NamespaceLayerGeneralItem(%s,%s,%s).Path=%v, want %v", tt.apiVersion, tt.kind, tt.namespace, resourcePath.Path, tt.want)
+			}
+			if resourcePath.ParentRelationship != enum.RelationshipChild {
+				t.Errorf("NamespaceLayerGeneralItem(%s,%s,%s).ParentRelationship=%q, want %q", tt.apiVersion, tt.kind, tt.namespace, resourcePath.ParentRelationship, enum.RelationshipChild)
 			}
 		})
 	}
@@ -168,8 +182,12 @@ func TestNameLayerGeneralItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.tname, func(t *testing.T) {
-			if got := NameLayerGeneralItem(tt.apiVersion, tt.kind, tt.namespace, tt.name); got != tt.want {
-				t.Errorf("NameLayerGeneralItem() = %v, want %v", got, tt.want)
+			resourcePath := NameLayerGeneralItem(tt.apiVersion, tt.kind, tt.namespace, tt.name)
+			if resourcePath.Path != tt.want {
+				t.Errorf("NameLayerGeneralItem(%s,%s,%s,%s).Path=%v, want %v", tt.apiVersion, tt.kind, tt.namespace, tt.name, resourcePath.Path, tt.want)
+			}
+			if resourcePath.ParentRelationship != enum.RelationshipChild {
+				t.Errorf("NameLayerGeneralItem(%s,%s,%s,%s).ParentRelationship=%q, want %q", tt.apiVersion, tt.kind, tt.namespace, tt.name, resourcePath.ParentRelationship, enum.RelationshipChild)
 			}
 		})
 	}
@@ -242,8 +260,12 @@ func TestSubresourceLayerGeneralItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.tname, func(t *testing.T) {
-			if got := SubresourceLayerGeneralItem(tt.apiVersion, tt.kind, tt.namespace, tt.name, tt.subresource); got != tt.want {
-				t.Errorf("SubresourceLayerGeneralItem() = %v, want %v", got, tt.want)
+			resourcePath := SubresourceLayerGeneralItem(tt.apiVersion, tt.kind, tt.namespace, tt.name, tt.subresource)
+			if resourcePath.Path != tt.want {
+				t.Errorf("SubresourceLayerGeneralItem(%s,%s,%s,%s,%s).Path=%v, want %v", tt.apiVersion, tt.kind, tt.namespace, tt.name, tt.subresource, resourcePath.Path, tt.want)
+			}
+			if resourcePath.ParentRelationship != enum.RelationshipChild {
+				t.Errorf("SubresourceLayerGeneralItem(%s,%s,%s,%s,%s).ParentRelationship=%q, want %q", tt.apiVersion, tt.kind, tt.namespace, tt.name, tt.subresource, resourcePath.ParentRelationship, enum.RelationshipChild)
 			}
 		})
 	}

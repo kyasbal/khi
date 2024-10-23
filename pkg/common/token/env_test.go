@@ -63,15 +63,15 @@ func TestEnvironmentVariableTokenResolver_Resolve(t *testing.T) {
 			}
 			got, err := e.Resolve(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("EnvironmentVariableTokenResolver.Resolve() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("got %v, want %v", err, tt.wantErr)
 				return
 			}
 			if !tt.wantErr {
 				if tt.want != got.RawToken {
-					t.Errorf("EnvironmentVariableTokenResolver.Resolve() didn't return the expected token. want=%s,got=%s", tt.want, got.RawToken)
+					t.Errorf("got raw token %s, want %s", got.RawToken, tt.want)
 				}
 				if !(time.Time{}).Equal(got.ValidAtLeastUntil) {
-					t.Errorf("EnvironmentVariableTokenResolver.Resolve() should return a token without expiry, but non default time was given:%v", got.ValidAtLeastUntil)
+					t.Errorf("got a token with expiry, want a token without expiry %v", got.ValidAtLeastUntil)
 				}
 			}
 		})
