@@ -7,6 +7,8 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common"
 )
 
+var PopupOptionRedirectTargetKey = "redirectTo"
+
 var NoCurrentPopup = fmt.Errorf("no active current popup")
 var CurrentPopupIsntMatchingWithGivenId = fmt.Errorf("given id is not matching with the current popup")
 
@@ -22,20 +24,24 @@ type PopupForm interface {
 type PopupFormMetadata struct {
 	// The title of this form
 	Title string
-	// Type of input field. Currently, only `text` is the supported value.
+	// Type of input field. Currently, only `text` or `popup_redirect` is the supported value.
 	Type string
 	// Description of this form.
 	Description string
 	Placeholder string
+
+	// The other option values of the request.
+	Options map[string]string `json:"options"`
 }
 
 // PopupFormRequest is a popup display request that is actually passed to the frontend.
 type PopupFormRequest struct {
-	Id          string `json:"id"`
-	Title       string `json:"title"`
-	Type        string `json:"type"`
-	Description string `json:"description"`
-	Placeholder string `json:"placeholder"`
+	Id          string            `json:"id"`
+	Title       string            `json:"title"`
+	Type        string            `json:"type"`
+	Description string            `json:"description"`
+	Placeholder string            `json:"placeholder"`
+	Options     map[string]string `json:"options"`
 }
 
 // PopupAnswerResponse is the container of the data to validate/answer shown popup form.
@@ -82,6 +88,7 @@ func (p *PopupManager) ShowPopup(popup PopupForm) (string, error) {
 		Type:        metadata.Type,
 		Description: metadata.Description,
 		Placeholder: metadata.Placeholder,
+		Options:     metadata.Options,
 	}
 	p.popupWaiter = sync.WaitGroup{}
 	p.popupWaiter.Add(1)

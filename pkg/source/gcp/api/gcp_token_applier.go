@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/httpclient"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/token"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 )
 
 type GCPTokenApplier struct {
@@ -36,10 +36,10 @@ func (g *GCPTokenApplier) ApplyCurrentToken(ctx context.Context, req *http.Reque
 		return nil, errors.New("access token is empty")
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token.RawToken))
-	if use, found := os.LookupEnv("USE_IAM_TOKEN"); found && use != "false" {
+	if parameters.Private.InspectionMode != nil && *parameters.Private.InspectionMode {
 		iamToken, err := g.iamTokenStore.GetToken(req.Context())
 		if err != nil {
-			return nil, errors.New("USE_IAM_TOKEN environment variable is given but IAM token is not set")
+			return nil, errors.New("failed to get iam token")
 		}
 		req.Header.Set("x-goog-iam-authorization-token", iamToken.RawToken)
 	}

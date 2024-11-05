@@ -10,3 +10,4 @@ go-cover.output
 .envrc
 *.khi
 .terraform/
+oauth_key.json

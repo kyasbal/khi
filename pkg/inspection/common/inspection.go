@@ -12,16 +12,6 @@ func PrepareInspectionServer(rootServer *inspection.InspectionTaskServer) error 
 		return err
 	}
 
-	err = rootServer.AddTaskDefinition(ioconfig.EnvDataDestinationTask)
-	if err != nil {
-		return err
-	}
-
-	err = rootServer.AddTaskDefinition(ioconfig.EnvTemporaryFolderTask)
-	if err != nil {
-		return err
-	}
-
 	err = rootServer.AddTaskDefinition(ioconfig.ProductionIOConfig)
 	if err != nil {
 		return err

@@ -330,3 +330,24 @@ func TestGkeAuditLogParser_NodepoolDeletionFinishedLog(t *testing.T) {
 	}
 	testutil.VerifyWithGolden(t, "operation-body", gotRevisions[0].Body)
 }
+
+func TestGkeAuditLogParser_ClusterCreationWithErrorLog(t *testing.T) {
+	clusterName := "p0-gke-basic-1"
+	cs, err := parser_test.ParseFromYamlLogFile(
+		"test/logs/gke_audit/cluster_creation_started_with_error.yaml",
+		&gkeAuditLogParser{},
+		nil,
+		nil)
+	if err != nil {
+		t.Errorf("got error %v, want nil", err)
+	}
+
+	gotRevisions := cs.GetRevisions(resourcepath.Cluster(clusterName))
+	if gotRevisions != nil {
+		t.Errorf("got revision %v, want nil", gotRevisions)
+	}
+	gotEvents := cs.GetEvents(resourcepath.Cluster(clusterName))
+	if len(gotEvents) != 1 {
+		t.Errorf("got event count %d, want 1", len(gotEvents))
+	}
+}

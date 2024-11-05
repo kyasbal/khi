@@ -5,9 +5,9 @@ import {
   tick,
 } from '@angular/core/testing';
 import {
-  AdditionalInputPopupComponent,
-  AdditionalInputPopupDialogRequest,
-} from './additional-input-popup.component';
+  RequestUserActionPopupComponent,
+  RequestUserActionPopupRequest,
+} from './request-user-action-popup.component';
 import {
   MAT_DIALOG_DATA,
   MatDialog,
@@ -22,7 +22,7 @@ import { PopupFormRequestWithClient } from 'src/app/services/popup/popup-manager
 import { By } from '@angular/platform-browser';
 import { MockPopupClient } from 'src/app/services/popup/mock';
 
-describe('AdditionalInputPopupComponent in dialog context', () => {
+describe('RequestUserActionPopup in dialog context', () => {
   @Component({
     template: '<div></div>',
     standalone: true,
@@ -45,9 +45,9 @@ describe('AdditionalInputPopupComponent in dialog context', () => {
   ) {
     const matDialog = TestBed.inject(MatDialog);
     matDialog.open<
-      AdditionalInputPopupComponent,
-      AdditionalInputPopupDialogRequest
-    >(AdditionalInputPopupComponent, {
+      RequestUserActionPopupComponent,
+      RequestUserActionPopupRequest
+    >(RequestUserActionPopupComponent, {
       data: {
         formRequest: request,
       },
@@ -63,14 +63,15 @@ describe('AdditionalInputPopupComponent in dialog context', () => {
       title: 'foo title',
       description: 'test description',
       placeholder: 'test placeholder',
+      options: {},
       client: new MockPopupClient(),
     });
   });
 });
 
-describe('AdditionalInputPopupComponent', () => {
+describe('RequestUserActionPopup', () => {
   let matDialogRefSpy: jasmine.SpyObj<
-    MatDialogRef<AdditionalInputPopupDialogRequest, void>
+    MatDialogRef<RequestUserActionPopupRequest, void>
   >;
   beforeEach(async () => {
     matDialogRefSpy = jasmine.createSpyObj('MatDialogRef', ['close'], {
@@ -79,7 +80,7 @@ describe('AdditionalInputPopupComponent', () => {
   });
   it('should have disbaled submit button at first', async () => {
     await TestBed.configureTestingModule({
-      imports: [AdditionalInputPopupComponent, MatDialogModule],
+      imports: [RequestUserActionPopupComponent, MatDialogModule],
       providers: [
         {
           provide: MAT_DIALOG_DATA,
@@ -100,7 +101,7 @@ describe('AdditionalInputPopupComponent', () => {
         },
       ],
     }).compileComponents();
-    const fixture = TestBed.createComponent(AdditionalInputPopupComponent);
+    const fixture = TestBed.createComponent(RequestUserActionPopupComponent);
     fixture.detectChanges();
     const button = fixture.debugElement.query(By.css('.submit-button'));
     expect(button.nativeElement.disabled).toBe(true);
@@ -108,7 +109,7 @@ describe('AdditionalInputPopupComponent', () => {
 
   it('should update the disabled status of submit button by input', fakeAsync(async () => {
     await TestBed.configureTestingModule({
-      imports: [AdditionalInputPopupComponent, MatDialogModule],
+      imports: [RequestUserActionPopupComponent, MatDialogModule],
       providers: [
         {
           provide: MAT_DIALOG_DATA,
@@ -129,7 +130,7 @@ describe('AdditionalInputPopupComponent', () => {
         },
       ],
     }).compileComponents();
-    const fixture = TestBed.createComponent(AdditionalInputPopupComponent);
+    const fixture = TestBed.createComponent(RequestUserActionPopupComponent);
     fixture.detectChanges();
     const textarea = fixture.debugElement.query(
       By.css('.input-text-type-textarea'),
@@ -151,7 +152,7 @@ describe('AdditionalInputPopupComponent', () => {
 
   it('should close dialog after submit', fakeAsync(async () => {
     await TestBed.configureTestingModule({
-      imports: [AdditionalInputPopupComponent, MatDialogModule],
+      imports: [RequestUserActionPopupComponent, MatDialogModule],
       providers: [
         {
           provide: MAT_DIALOG_DATA,
@@ -172,7 +173,7 @@ describe('AdditionalInputPopupComponent', () => {
         },
       ],
     }).compileComponents();
-    const fixture = TestBed.createComponent(AdditionalInputPopupComponent);
+    const fixture = TestBed.createComponent(RequestUserActionPopupComponent);
     fixture.detectChanges();
 
     const textarea = fixture.debugElement.query(
@@ -191,7 +192,7 @@ describe('AdditionalInputPopupComponent', () => {
 
   it('should show the valdiation error', fakeAsync(async () => {
     await TestBed.configureTestingModule({
-      imports: [AdditionalInputPopupComponent, MatDialogModule],
+      imports: [RequestUserActionPopupComponent, MatDialogModule],
       providers: [
         {
           provide: MAT_DIALOG_DATA,
@@ -212,7 +213,7 @@ describe('AdditionalInputPopupComponent', () => {
         },
       ],
     }).compileComponents();
-    const fixture = TestBed.createComponent(AdditionalInputPopupComponent);
+    const fixture = TestBed.createComponent(RequestUserActionPopupComponent);
     fixture.detectChanges();
 
     const textarea = fixture.debugElement.query(

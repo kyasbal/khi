@@ -4,12 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/popup"
 	common_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 
@@ -36,13 +38,12 @@ func redirectMiddleware(exactPath string, redirectTo string) gin.HandlerFunc {
 }
 
 func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, config *ServerConfig) *gin.Engine {
-	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
+	configureDebugMode(engine, parameters.Debug.Verbose != nil && *parameters.Debug.Verbose)
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 
 	appHtmlPath := path.Join(config.StaticFolderPath, "/index.html")
-	indexHtml := generateIndexHtmlWithGALabels(appHtmlPath)
 
 	basePathWithoutTrailingSlash := strings.TrimSuffix(config.ServerBasePath, "/")
 	engine.Use(redirectMiddleware(basePathWithoutTrailingSlash+"/", basePathWithoutTrailingSlash+"/session/0")) // Request for `/` shouldn't be handled by `static.Serve`, redirect `/session/0` to be handled by patternToString
@@ -54,7 +55,18 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, config *
 	// frontend uses Angular router. All frontend routing path should return the app html
 	router.GET("/session/*wild", func(ctx *gin.Context) {
 		ctx.Header("Content-Type", "text/html")
-		ctx.Writer.Write([]byte(indexHtml))
+		file, err := os.ReadFile(appHtmlPath)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		originalIndexHTML := string(file)
+		replacedIndexHtml, err := replaceDynamicPartOfIndex(originalIndexHTML)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		ctx.Writer.Write([]byte(replacedIndexHtml))
 	})
 	if !config.ViewerMode {
 		// GET /api/v2/inspection/types
@@ -297,4 +309,14 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, config *
 		})
 	}
 	return engine
+}
+
+// configureDebugMode configure the given gin.Engine to respect the debugMode flag.
+func configureDebugMode(engine *gin.Engine, debugMode bool) {
+	if debugMode {
+		gin.SetMode(gin.DebugMode)
+		engine.Use(gin.Logger())
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
 }

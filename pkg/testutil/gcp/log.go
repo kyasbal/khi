@@ -3,13 +3,19 @@ package gcp_test
 import (
 	"context"
 	"fmt"
+	"os"
 
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/api/iamtoken"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/api"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/api/accesstoken"
 )
 
 func IsValidLogQuery(query string) error {
+	accessToken, found := os.LookupEnv("GCP_ACCESS_TOKEN")
+	if found {
+		parameters.Auth.AccessToken = &accessToken
+	}
 	gcpApi, err := api.NewGCPClient(accesstoken.DefaultAccessTokenStore, iamtoken.DefaultIAMTokenStore, "")
 	if err != nil {
 		return err

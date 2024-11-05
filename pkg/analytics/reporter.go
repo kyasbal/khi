@@ -6,52 +6,37 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
-	"strings"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/analytics/types"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 )
 
 var analyticsEndpoint = "https://khi-analytics-5dxktvcd7q-uc.a.run.app"
 
 type AnalyticsReporter struct {
 	debug          bool
-	GlobalMetadata map[string]any
-}
-
-// This will be deprecated in the future. KHI_GA_LABELS are used for frontend initially, we should define new environment variables for analytics.
-// But for now, we will use the old environment variable in the transition time.
-func getCommaSeperatedKVPairEnv() map[string]any {
-	result := make(map[string]any)
-	if env, hasEnv := os.LookupEnv("KHI_GA_LABELS"); hasEnv {
-		keyValuePairs := strings.Split(env, ",")
-		for _, pair := range keyValuePairs {
-			keyValues := strings.Split(pair, "=")
-			key := keyValues[0]
-			value := "null"
-			if len(keyValues) > 1 {
-				value = keyValues[1]
-			}
-			result[key] = value
-		}
-	}
-
-	return result
+	GlobalMetadata map[string]string
 }
 
 func NewAnalyticsReporter() *AnalyticsReporter {
-	analyticsDebug, found := os.LookupEnv("KHI_ANALYTICS_DEBUG")
-	isDebug := false
-	if found && strings.ToLower(analyticsDebug) != "false" {
-		isDebug = true
+	debug := false
+	if parameters.Debug.AnalyticsDebug != nil {
+		debug = *parameters.Debug.AnalyticsDebug
+	}
+	gaMetadata := map[string]string{}
+	if parameters.Private.GALabels != nil {
+		gaMetadata = parameters.Private.GetMapOfGALabels()
 	}
 	return &AnalyticsReporter{
-		debug:          isDebug,
-		GlobalMetadata: getCommaSeperatedKVPairEnv(),
+		debug:          debug,
+		GlobalMetadata: gaMetadata,
 	}
 }
 
 func (r *AnalyticsReporter) ReportEvent(event types.AnalyticsEvent, metadata map[string]any) {
+	if parameters.Debug.DisableAnalytics == nil || *parameters.Debug.DisableAnalytics {
+		return
+	}
 	mergedMetadata := map[string]any{}
 	for globalKey, globalValue := range r.GlobalMetadata {
 		mergedMetadata[globalKey] = globalValue

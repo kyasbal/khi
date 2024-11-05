@@ -32,7 +32,7 @@ import { KHICommonModule } from './common/common.module';
 import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { HttpClientModule } from '@angular/common/http';
-import { AdditionalInputPopupComponent } from './dialogs/additional-input-popup/additional-input-popup.component';
+import { RequestUserActionPopupComponent } from './dialogs/request-user-action-popup/request-user-action-popup.component';
 import { POPUP_MANAGER } from './services/popup/popup-manager';
 import { PopupManagerImpl } from './services/popup/popup-manager-impl';
 import { BACKEND_API } from './services/api/backend-api-interface';
@@ -70,7 +70,7 @@ import { GraphPageDataSourceServer } from './services/frame-connection/frames/gr
     GoogleDriveDataLoaderModule,
 
     // Standoalone components
-    AdditionalInputPopupComponent,
+    RequestUserActionPopupComponent,
   ],
   providers: [
     importProvidersFrom(HttpClientModule),

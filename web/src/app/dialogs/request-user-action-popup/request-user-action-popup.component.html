@@ -1,8 +1,6 @@
 <div class="container">
   <div class="request-message-container">
-    <p class="request-message">
-      Additional input parameter is requested to proceed further
-    </p>
+    <p class="request-message">KHI backend server requested your action</p>
   </div>
   <div class="popup-body">
     <p class="popup-body-title">{{ formRequest.title }}</p>
@@ -12,6 +10,11 @@
         *ngIf="formRequest.type === 'text'"
         [ngTemplateOutlet]="textInput"
       ></ng-container>
+      <ng-container
+        *ngIf="formRequest.type === 'popup_redirect'"
+        [ngTemplateOutlet]="popupRedirect"
+      >
+      </ng-container>
       <!--Add other types here-->
     </div>
     <p class="validation-error">{{ validationError | async }}</p>
@@ -22,8 +25,9 @@
         color="primary"
         [disabled]="(isValid | async) === false"
         (click)="onSubmit()"
+        *ngIf="nextButtonText !== ''"
       >
-        Submit
+        {{ nextButtonText }}
       </button>
     </div>
   </div>
@@ -39,4 +43,13 @@
     cdkAutosizeMaxRows="14"
     (input)="onTextAreaUpdate($event)"
   ></textarea>
+</ng-template>
+
+<ng-template #popupRedirect>
+  <div class="popup-redirect-type-container">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p class="open-popup-again-paragraph">
+      <a (click)="openRedirectPopup()">Open the popup again</a>
+    </p>
+  </div>
 </ng-template>

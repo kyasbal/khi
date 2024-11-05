@@ -1,36 +1,15 @@
 package server
 
 import (
-	"os"
 	"sort"
 	"testing"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
+	"github.com/google/go-cmp/cmp"
 )
 
-func TestGetCommaSeparatedKVPairEnv(t *testing.T) {
-	t.Run("With single kv pair", func(t *testing.T) {
-		os.Setenv("TEST_KV_PAIRS", "bar=baz")
-
-		result := getCommaSeperatedKVPairEnv("TEST_KV_PAIRS")
-
-		if val, contained := result["bar"]; !contained || val != "baz" {
-			t.Errorf("expect result['bar'] to be 'baz' but %s", val)
-		}
-
-		os.Unsetenv("TEST_KV_PAIRS")
-	})
-	t.Run("With multiple kv pairs", func(t *testing.T) {
-		os.Setenv("TEST_KV_PAIRS", "foo=bar,qux=quux")
-
-		result := getCommaSeperatedKVPairEnv("TEST_KV_PAIRS")
-
-		if val, contained := result["foo"]; !contained || val != "bar" {
-			t.Errorf("expect result['foo'] to be 'bar' but %s", val)
-		}
-		if val, contained := result["qux"]; !contained || val != "quux" {
-			t.Errorf("expect result['qux'] to be 'quux' but %s", val)
-		}
-		os.Unsetenv("TEST_KV_PAIRS")
-	})
+func wrapPointer[T any](t T) *T {
+	return &t
 }
 
 func TestGenerateGaMetaTags(t *testing.T) {
@@ -65,38 +44,12 @@ func TestGetServerBasePathMetaTag(t *testing.T) {
 		{
 			name: "With server base path env",
 			before: func() {
-				os.Setenv(
-					"KHI_SERVER_BASE_PATH",
-					"/foo/bar/",
-				)
+				parameters.Server.BasePath = wrapPointer("/foo/bar/")
 			},
 			after: func() {
-				os.Unsetenv("KHI_SERVER_BASE_PATH")
+				parameters.Server.BasePath = nil
 			},
 			wantResult: `<meta id="server-base-path" content="/foo/bar/">`,
-		},
-		{
-			name: "without the training slash",
-			before: func() {
-				os.Setenv(
-					"KHI_SERVER_BASE_PATH",
-					"/foo/bar",
-				)
-			},
-			after: func() {
-				os.Unsetenv("KHI_SERVER_BASE_PATH")
-			},
-			wantResult: `<meta id="server-base-path" content="/foo/bar/">`,
-		},
-		{
-			name: "Without server base path env",
-			before: func() {
-				os.Unsetenv("KHI_SERVER_BASE_PATH")
-			},
-			after: func() {
-				os.Unsetenv("KHI_SERVER_BASE_PATH")
-			},
-			wantResult: `<meta id="server-base-path" content="/">`,
 		},
 	}
 	for _, tc := range testCases {
@@ -121,71 +74,12 @@ func TestGetBaseTag(t *testing.T) {
 		{
 			name: "With frontend resource base path env",
 			before: func() {
-				os.Setenv(
-					"KHI_FRONTEND_RESOURCE_BASE_PATH",
-					"/foo/bar/",
-				)
+				parameters.Server.FrontendResourceBasePath = wrapPointer("/foo/bar/")
 			},
 			after: func() {
-				os.Unsetenv("KHI_FRONTEND_RESOURCE_BASE_PATH")
+				parameters.Server.FrontendResourceBasePath = nil
 			},
 			wantResult: `<base href="/foo/bar/">`,
-		},
-		{
-			name: "With server base path env",
-			before: func() {
-				os.Setenv(
-					"KHI_SERVER_BASE_PATH",
-					"/foo/bar/",
-				)
-			},
-			after: func() {
-				os.Unsetenv("KHI_SERVER_BASE_PATH")
-			},
-			wantResult: `<base href="/foo/bar/">`,
-		},
-		{
-			name: "complements the training slash",
-			before: func() {
-				os.Setenv(
-					"KHI_FRONTEND_RESOURCE_BASE_PATH",
-					"/foo/bar",
-				)
-			},
-			after: func() {
-				os.Unsetenv("KHI_FRONTEND_RESOURCE_BASE_PATH")
-			},
-			wantResult: `<base href="/foo/bar/">`,
-		},
-		{
-			name: "prioritize KHI_FRONTEND_RESOURCE_BASE_PATH env if both envs are set",
-			before: func() {
-				os.Setenv(
-					"KHI_SERVER_BASE_PATH",
-					"/foo/bar/",
-				)
-				os.Setenv(
-					"KHI_FRONTEND_RESOURCE_BASE_PATH",
-					"/qux/",
-				)
-			},
-			after: func() {
-				os.Unsetenv("KHI_SERVER_BASE_PATH")
-				os.Unsetenv("KHI_FRONTEND_RESOURCE_BASE_PATH")
-			},
-			wantResult: `<base href="/qux/">`,
-		},
-		{
-			name: "Without any env",
-			before: func() {
-				os.Unsetenv("KHI_FRONTEND_RESOURCE_BASE_PATH")
-				os.Unsetenv("KHI_SERVER_BASE_PATH")
-			},
-			after: func() {
-				os.Unsetenv("KHI_FRONTEND_RESOURCE_BASE_PATH")
-				os.Unsetenv("KHI_SERVER_BASE_PATH")
-			},
-			wantResult: `<base href="/">`,
 		},
 	}
 	for _, tc := range testCases {
@@ -195,6 +89,61 @@ func TestGetBaseTag(t *testing.T) {
 			got := getBaseTag()
 			if got != tc.wantResult {
 				t.Errorf("got %s, want %s", got, tc.wantResult)
+			}
+		})
+	}
+}
+
+func TestReplaceDynamicPartOfInde(t *testing.T) {
+	source := `<!--INJECT GENERATED CODE HERE FROM BACKEND--><base href="/" />`
+	testCases := []struct {
+		name       string
+		before     func()
+		after      func()
+		wantSource string
+	}{{
+		name: "with basic values",
+		before: func() {
+			parameters.Private.GALabels = wrapPointer("key1=val1,key2=val2")
+			parameters.Server.BasePath = wrapPointer("/basepath/")
+			parameters.Server.FrontendResourceBasePath = wrapPointer("/frontend/")
+		},
+		after: func() {
+			parameters.Private.GALabels = nil
+			parameters.Server.BasePath = nil
+			parameters.Server.FrontendResourceBasePath = nil
+		},
+		wantSource: `<base href="/frontend/">
+<meta id="ga-meta-key1" content="val1">
+<meta id="ga-meta-key2" content="val2">
+<meta id="server-base-path" content="/basepath/">`,
+	}, {
+		name: "with the / base path(not to be removed with the patch code for the local dev server)",
+		before: func() {
+			parameters.Private.GALabels = wrapPointer("key1=val1,key2=val2")
+			parameters.Server.BasePath = wrapPointer("/basepath/")
+			parameters.Server.FrontendResourceBasePath = wrapPointer("/")
+		},
+		after: func() {
+			parameters.Private.GALabels = nil
+			parameters.Server.BasePath = nil
+			parameters.Server.FrontendResourceBasePath = nil
+		},
+		wantSource: `<base href="/">
+<meta id="ga-meta-key1" content="val1">
+<meta id="ga-meta-key2" content="val2">
+<meta id="server-base-path" content="/basepath/">`,
+	}}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.before()
+			defer tc.after()
+			got, err := replaceDynamicPartOfIndex(source)
+			if err != nil {
+				t.Errorf("unexpected error %s", err)
+			}
+			if diff := cmp.Diff(tc.wantSource, got); diff != "" {
+				t.Errorf("the result is not matching with the expected response(-want +got)\n%s", diff)
 			}
 		})
 	}

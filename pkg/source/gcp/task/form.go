@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/env"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/form"
 	form_metadata "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata/form"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata/header"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata/progress"
 	common_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/query/queryutil"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
@@ -30,9 +30,7 @@ var projectIdValidator = regexp.MustCompile(`^\s*[0-9a-z\.:\-]+\s*$`)
 
 var InputProjectIdTask = form.NewInputFormDefinitionBuilder(InputProjectIdVariableName, PriorityForResourceIdentifierGroup+5000, "Project ID").
 	WithDescription("A project ID containing the cluster to inspect").
-	WithDependencies([]string{
-		EnvFixedProjectIdVariableName,
-	}).
+	WithDependencies([]string{}).
 	WithValidator(func(ctx context.Context, value string, variables *task.VariableSet) (string, error) {
 		if !projectIdValidator.Match([]byte(value)) {
 			return "Project ID must match `^*[0-9a-z\\.:\\-]+$`", nil
@@ -40,24 +38,19 @@ var InputProjectIdTask = form.NewInputFormDefinitionBuilder(InputProjectIdVariab
 		return "", nil
 	}).
 	WithAllowEditFunc(func(ctx context.Context, variables *task.VariableSet) (bool, error) {
-		fixedProjectEnv, err := env.GetEnvironmentVariableFromTaskVariables(ctx, EnvFixedProjectIdVariableName, variables)
-		if err != nil {
-			return false, err
+		if parameters.Auth.FixedProjectID == nil {
+			return true, nil
 		}
-		return fixedProjectEnv.Value == "", nil
+		return *parameters.Auth.FixedProjectID == "", nil
 	}).
 	WithDefaultValueFunc(func(ctx context.Context, variables *task.VariableSet, previousValues []string) (string, error) {
-		fixedProjectEnv, err := env.GetEnvironmentVariableFromTaskVariables(ctx, EnvFixedProjectIdVariableName, variables)
-		if err != nil {
-			return "", err
-		}
-		if fixedProjectEnv.Exists {
-			return fixedProjectEnv.Value, nil
+		if parameters.Auth.FixedProjectID != nil && *parameters.Auth.FixedProjectID != "" {
+			return *parameters.Auth.FixedProjectID, nil
 		}
 		if len(previousValues) > 0 {
 			return previousValues[0], nil
 		}
-		return "", err
+		return "", nil
 	}).
 	WithConverter(func(ctx context.Context, value string, variables *task.VariableSet) (any, error) {
 		return strings.TrimSpace(value), nil

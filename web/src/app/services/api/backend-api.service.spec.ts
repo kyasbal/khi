@@ -218,6 +218,7 @@ describe('BackendAPIImpl testing', () => {
       type: 'text',
       description: 'test',
       placeholder: 'test',
+      options: {},
     };
 
     api.getPopup().subscribe((data) => {

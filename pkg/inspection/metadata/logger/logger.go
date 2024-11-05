@@ -8,6 +8,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/logger"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task/taskid"
 )
@@ -141,6 +142,10 @@ func (l *Logger) ToSerializable() interface{} {
 }
 
 func (l *Logger) MakeTaskLogger(ctx context.Context, minLevel slog.Level) *TaskLogger {
+	stdoutWithColor := true
+	if parameters.Debug.NoColor != nil && *parameters.Debug.NoColor {
+		stdoutWithColor = false
+	}
 	iidAny := ctx.Value("iid")
 	if iid, convertible := iidAny.(string); convertible {
 		tidAny := ctx.Value("tid")
@@ -151,7 +156,7 @@ func (l *Logger) MakeTaskLogger(ctx context.Context, minLevel slog.Level) *TaskL
 				th := &TaskSlogHandler{
 					minLogLevel:   minLevel,
 					enableStdout:  true,
-					stdoutHandler: logger.NewKHIFormatLogger(os.Stdout, true),
+					stdoutHandler: logger.NewKHIFormatLogger(os.Stdout, stdoutWithColor),
 					stringHandler: logger.NewKHIFormatLogger(lb, false),
 					throttle:      NewConstantLogThrottle(similarLogThrottlingLogCount),
 				}

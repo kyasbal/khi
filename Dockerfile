@@ -13,16 +13,12 @@ RUN mkdir /built/data
 COPY ./resources /built/resources
 COPY ./dist /built/web
 
-FROM scratch
+FROM alpine
 ENV ROOT=/go/src/app
 WORKDIR ${ROOT}
 COPY --from=builder /built ${ROOT}
 COPY --from=alpine:latest /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-ENV KHI_SERVER_HOST=0.0.0.0
-ENV KHI_SERVER_PORT=8080
-ENV DATA_DESTINATION_FOLDER=/
-ENV TMPORARY_FOLDER=/
 ENV GOMEMLIMIT=10000MiB
 EXPOSE 8080
-CMD ["/go/src/app/khi"]
+CMD /go/src/app/khi --host=0.0.0.0 --temporary-folder=/ --data-destination-folder=/ --iam-token=${IAM_TOKEN} --access-token=${GCP_ACCESS_TOKEN} --fixed-project-id=${KHI_FIXED_PROJECT_ID} --ga-labels=${KHI_GA_LABELS}

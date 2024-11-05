@@ -262,9 +262,6 @@ export class InspectionTaskClient {
         ...request,
         ...nonForm,
       })),
-      tap((param) => {
-        console.log(param);
-      }),
     );
   }
 }

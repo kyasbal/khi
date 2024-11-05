@@ -9,12 +9,12 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata/form"
 	inspection_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/query/queryutil"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	form_test "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/testutil/form"
-	env_test "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/testutil/inspection/env"
 	task_test "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/testutil/task"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/testutil/testtask"
 )
@@ -28,7 +28,6 @@ func TestProjectIdInput(t *testing.T) {
 			Input:         "foo-project",
 			ExpectedValue: "foo-project",
 			Dependencies: []task.Definition{
-				env_test.MockedEnvironmentVariableProducer(EnvFixedProjectIdTask, ""),
 				testClusterNamePrefix,
 			},
 			ExpectedFormField: &form.FormField{
@@ -46,7 +45,6 @@ func TestProjectIdInput(t *testing.T) {
 			Input:         "foo-project",
 			ExpectedValue: "bar-project",
 			Dependencies: []task.Definition{
-				env_test.MockedEnvironmentVariableProducer(EnvFixedProjectIdTask, "bar-project"),
 				testClusterNamePrefix,
 			},
 			ExpectedFormField: &form.FormField{
@@ -59,13 +57,19 @@ func TestProjectIdInput(t *testing.T) {
 				HintType:    form.HintTypeInfo,
 				Default:     "bar-project",
 			},
+			Before: func() {
+				expectedFixedProjectId := "bar-project"
+				parameters.Auth.FixedProjectID = &expectedFixedProjectId
+			},
+			After: func() {
+				parameters.Auth.FixedProjectID = nil
+			},
 		},
 		{
 			Name:          "With invalid project ID",
 			Input:         "A invalid project ID",
 			ExpectedValue: "",
 			Dependencies: []task.Definition{
-				env_test.MockedEnvironmentVariableProducer(EnvFixedProjectIdTask, ""),
 				testClusterNamePrefix,
 			},
 			ExpectedFormField: &form.FormField{
@@ -84,7 +88,6 @@ func TestProjectIdInput(t *testing.T) {
 			Input:         "  project-foo   ",
 			ExpectedValue: "project-foo",
 			Dependencies: []task.Definition{
-				env_test.MockedEnvironmentVariableProducer(EnvFixedProjectIdTask, ""),
 				testClusterNamePrefix,
 			},
 			ExpectedFormField: &form.FormField{
@@ -102,7 +105,6 @@ func TestProjectIdInput(t *testing.T) {
 			Input:         "  deprecated.com:but-still-usable-project-id   ",
 			ExpectedValue: "deprecated.com:but-still-usable-project-id",
 			Dependencies: []task.Definition{
-				env_test.MockedEnvironmentVariableProducer(EnvFixedProjectIdTask, ""),
 				testClusterNamePrefix,
 			},
 			ExpectedFormField: &form.FormField{

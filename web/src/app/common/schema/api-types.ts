@@ -86,7 +86,8 @@ export interface PutInspectionTaskFeatureRequest {
   features: string[];
 }
 
-export type PopupFormType = 'text';
+export type PopupFormType = 'text' | 'popup_redirect';
+
 /**
  * PopupFormRequest is a type returned on the endpoint GET /api/v2/popup.
  * Note this request is from backend with polling. Thus this is also a response in HTTP.
@@ -97,6 +98,13 @@ export interface PopupFormRequest {
   type: PopupFormType;
   description: string;
   placeholder: string;
+  options: {
+    /**
+     * The redirect target. This option is valid only when the type is `popup_redirect`.
+     */
+    redirectTo?: string;
+    [key: string]: string | undefined;
+  };
 }
 
 /**

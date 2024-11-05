@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"os"
-	"strings"
 
 	form_metadata "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata/form"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata/header"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata/progress"
 	inspection_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 	gcp_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task"
 	baremetal "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gdcv-for-baremetal"
 	vmware "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gdcv-for-vmware"
@@ -22,31 +21,14 @@ import (
 
 var availableForAllGCPInspectionTypes = inspection_task.InspectionTaskLabel(gke.InspectionTypeId, aws.InspectionTypeId, azure.InspectionTypeId, baremetal.InspectionTypeId, vmware.InspectionTypeId)
 
-// This will be deprecated in the future. KHI_GA_LABELS are used for frontend initially, we should define new environment variables for analytics.
-// But for now, we will use the old environment variable in the transition time.
-func getCommaSeperatedKVPairEnv() map[string]any {
-	result := make(map[string]any)
-	if env, hasEnv := os.LookupEnv("KHI_GA_LABELS"); hasEnv {
-		keyValuePairs := strings.Split(env, ",")
-		for _, pair := range keyValuePairs {
-			keyValues := strings.Split(pair, "=")
-			key := keyValues[0]
-			value := "null"
-			if len(keyValues) > 1 {
-				value = keyValues[1]
-			}
-			result[key] = value
-		}
-	}
-
-	return result
-}
-
 const justificationFormTaskId = gcp_task.GCPPrefix + "private/justification"
 
 var JustificationFormTask = inspection_task.NewInspectionProcessor(justificationFormTaskId, []string{}, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (any, error) {
-	gaLabelPairs := getCommaSeperatedKVPairEnv()
-	if justification, found := gaLabelPairs["justification"]; found {
+	gaLabelsMap := map[string]string{}
+	if parameters.Private.GALabels != nil {
+		gaLabelsMap = parameters.Private.GetMapOfGALabels()
+	}
+	if justification, found := gaLabelsMap["justification"]; found {
 		m, err := inspection_task.GetMetadataSetFromVariable(v)
 		if err != nil {
 			return nil, err
@@ -58,7 +40,7 @@ var JustificationFormTask = inspection_task.NewInspectionProcessor(justification
 			Type:      "Text",
 			Label:     "Justification",
 			AllowEdit: false,
-			Default:   justification.(string),
+			Default:   justification,
 		})
 		return justification, nil
 	}

@@ -2,13 +2,11 @@ package ioconfig
 
 import (
 	"context"
-	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/env"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
@@ -23,36 +21,26 @@ type IOConfig struct {
 	TemporaryFolder string
 }
 
-var EnvDataDestinationTaskId = task.KHISystemPrefix + "inspection/data-location"
-
-var EnvDataDestinationTask = env.EnvironmentVariableProducer(EnvDataDestinationTaskId, "DATA_DESTINATION_FOLDER", "./data")
-
-var EnvTemporaryFolderTaskId = task.KHISystemPrefix + "inspection/tmp-location"
-
-var EnvTemporaryFolderTask = env.EnvironmentVariableProducer(EnvTemporaryFolderTaskId, "TMPORARY_FOLDER", "/tmp/")
-
-var ProductionIOConfig = task.NewCachedProcessor(IOConfigTaskName, []string{EnvDataDestinationTaskId, EnvTemporaryFolderTaskId}, func(ctx context.Context, taskMode int, v *task.VariableSet) (any, error) {
-	dataFolder, err := env.GetEnvironmentVariableFromTaskVariables(ctx, EnvDataDestinationTaskId, v)
-	if err != nil {
-		return nil, err
+var ProductionIOConfig = task.NewCachedProcessor(IOConfigTaskName, []string{}, func(ctx context.Context, taskMode int, v *task.VariableSet) (any, error) {
+	dataDestinationFolder := "./data"
+	if parameters.Common.DataDestinationFolder != nil {
+		dataDestinationFolder = *parameters.Common.DataDestinationFolder
 	}
-	tmpFolder, err := env.GetEnvironmentVariableFromTaskVariables(ctx, EnvTemporaryFolderTaskId, v)
-	if err != nil {
-		return nil, err
+	temporaryFolder := "/tmp"
+	if parameters.Common.TemporaryFolder != nil {
+		temporaryFolder = *parameters.Common.TemporaryFolder
 	}
-	dataFolderPath := dataFolder.Value
 	dir, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
-	if !filepath.IsAbs(dataFolderPath) {
-		dataFolderPath = filepath.Join(dir, dataFolderPath)
+	if !filepath.IsAbs(dataDestinationFolder) {
+		dataDestinationFolder = filepath.Join(dir, dataDestinationFolder)
 	}
-	slog.InfoContext(ctx, fmt.Sprintf("Application root: %s , Data destination path: %s, Temporary folder: %s", dir, dataFolderPath, tmpFolder.Value))
 	return &IOConfig{
 		ApplicationRoot: dir,
-		DataDestination: dataFolderPath,
-		TemporaryFolder: tmpFolder.Value,
+		DataDestination: dataDestinationFolder,
+		TemporaryFolder: temporaryFolder,
 	}, nil
 })
 

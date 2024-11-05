@@ -21,6 +21,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata/progress"
 	inspection_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task/serializer"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task/taskid"
 )
@@ -178,7 +179,7 @@ func (i *InspectionRunner) Run(ctx context.Context, req *inspection_task.Inspect
 			InspectionType:         currentInspectionType.Name,
 			InspectionTypeIconPath: currentInspectionType.Icon,
 		}})
-	i.MakeLoggers(ctx, slog.LevelDebug, m, runnableTaskGraph.GetAll())
+	i.MakeLoggers(ctx, getLogLevel(), m, runnableTaskGraph.GetAll())
 	i.metadata = m
 	analytics.ReportEvent(types.AnalyticsEventInspectionStart, map[string]any{
 		"rid":            rid,
@@ -293,7 +294,7 @@ func (i *InspectionRunner) DryRun(ctx context.Context, req *inspection_task.Insp
 	m.LoadOrStore(form.FormFieldSetMetadataKey, &form.FormFieldSetMetadataFactory{})
 	planMetadata := m.LoadOrStore(plan.InspectionPlanMetadataKey, &plan.InspectionPlanMetadataFactory{}).(*plan.InspectionPlan)
 	planMetadata.TaskGraph = runnableTaskGraphGraphviz
-	i.MakeLoggers(ctx, slog.LevelError, m, runnableTaskGraph.GetAll())
+	i.MakeLoggers(ctx, getLogLevel(), m, runnableTaskGraph.GetAll())
 	err = runner.Run(ctx, inspection_task.TaskModeDryRun, i.generateInitialVariablesForDryRun(m, req))
 	if err != nil {
 		return nil, err
@@ -407,4 +408,11 @@ func generateFilterByIncluded(value string) func(v any) bool {
 		}
 		return false
 	}
+}
+
+func getLogLevel() slog.Level {
+	if parameters.Debug.Verbose != nil && *parameters.Debug.Verbose {
+		return slog.LevelDebug
+	}
+	return slog.LevelInfo
 }

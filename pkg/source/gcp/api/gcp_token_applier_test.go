@@ -3,13 +3,17 @@ package api
 import (
 	"context"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/token"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 	"github.com/google/go-cmp/cmp"
 )
+
+func wrapPointer[T any](t T) *T {
+	return &t
+}
 
 func TestGCPTokenApplier(t *testing.T) {
 	testCases := []struct {
@@ -30,10 +34,10 @@ func TestGCPTokenApplier(t *testing.T) {
 			wantIamTokenHeader: "iamtoken1",
 			wantErr:            false,
 			before: func() {
-				os.Setenv("USE_IAM_TOKEN", "1")
+				parameters.Private.InspectionMode = wrapPointer(true)
 			},
 			after: func() {
-				os.Unsetenv("USE_IAM_TOKEN")
+				parameters.Private.InspectionMode = nil
 			},
 		},
 		{
@@ -44,10 +48,10 @@ func TestGCPTokenApplier(t *testing.T) {
 			wantIamTokenHeader: "",
 			wantErr:            false,
 			before: func() {
-				os.Unsetenv("USE_IAM_TOKEN")
+				parameters.Private.InspectionMode = wrapPointer(false)
 			},
 			after: func() {
-				os.Unsetenv("USE_IAM_TOKEN")
+				parameters.Private.InspectionMode = nil
 			},
 		},
 		{
@@ -58,10 +62,10 @@ func TestGCPTokenApplier(t *testing.T) {
 			wantIamTokenHeader: "",
 			wantErr:            false,
 			before: func() {
-				os.Unsetenv("USE_IAM_TOKEN")
+				parameters.Private.InspectionMode = wrapPointer(false)
 			},
 			after: func() {
-				os.Unsetenv("USE_IAM_TOKEN")
+				parameters.Private.InspectionMode = nil
 			},
 		},
 		{
@@ -72,10 +76,10 @@ func TestGCPTokenApplier(t *testing.T) {
 			wantIamTokenHeader: "",
 			wantErr:            true,
 			before: func() {
-				os.Setenv("USE_IAM_TOKEN", "1")
+				parameters.Private.InspectionMode = wrapPointer(true)
 			},
 			after: func() {
-				os.Unsetenv("USE_IAM_TOKEN")
+				parameters.Private.InspectionMode = nil
 			},
 		},
 	}

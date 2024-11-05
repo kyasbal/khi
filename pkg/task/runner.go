@@ -75,7 +75,6 @@ func (r *LocalRunner) Run(ctx context.Context, taskMode int, initialVariables ma
 			taskDefIndex := i
 			// if this task was thread-unsafe, wait all tasks started before.
 			if isThreadUnsafe := definition.Labels().GetOrDefault(LabelKeyThreadUnsafe, false); isThreadUnsafe.(bool) {
-				// slog.Info(fmt.Sprintf("Waiting for tasks to be done\n%s", strings.Join(currentTasks, ",")))
 				err := currentErrGrp.Wait()
 				if err != nil {
 					slog.WarnContext(currentErrCtx, fmt.Sprintf("tasks return errors during waiting for starting task %s", definitions[taskDefIndex].ID()))
@@ -105,7 +104,6 @@ func (r *LocalRunner) Run(ctx context.Context, taskMode int, initialVariables ma
 				})
 			}
 		}
-		// slog.Info(fmt.Sprintf("Waiting for tasks to be done\n%s", strings.Join(currentTasks, ",")))
 		err := currentErrGrp.Wait()
 		if err != nil {
 			r.resultError = err

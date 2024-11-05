@@ -48,45 +48,51 @@ func (*gkeAuditLogParser) Grouper() grouper.LogGrouper {
 // Parse implements parser.Parser.
 func (p *gkeAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, cs *history.ChangeSet, builder *history.Builder, variables *task.VariableSet) error {
 	clusterName := l.GetStringOrDefault("resource.labels.cluster_name", "unknown")
-	nodepoolName, err := getRelatedNodepool(l)
 	isFirst := l.Has("operation.first")
 	isLast := l.Has("operation.last")
 	operationId := l.GetStringOrDefault("operation.id", "unknown")
 	methodName := l.GetStringOrDefault("protoPayload.methodName", "unknown")
 	principal := l.GetStringOrDefault("protoPayload.authenticationInfo.principalEmail", "unknown")
+	statusCode := l.GetIntOrDefault("protoPayload.status.code", 0)
+	shouldRecordResourceRevision := statusCode == 0
 	var operationResourcePath resourcepath.ResourcePath
+
+	nodepoolName, err := getRelatedNodepool(l)
 	if err != nil {
 		// assume this is a cluster operation
 		clusterResourcePath := resourcepath.Cluster(clusterName)
-		if strings.HasSuffix(methodName, "CreateCluster") {
-			body, _ := l.GetChildYamlOf("protoPayload.request.cluster") // Ignore the error and use "" as the body of the cluster setting when the field is not available.
-			state := enum.RevisionStateExisting
-			if isFirst {
-				state = enum.RevisionStateProvisioning
+		if shouldRecordResourceRevision {
+			if strings.HasSuffix(methodName, "CreateCluster") {
+				body, _ := l.GetChildYamlOf("protoPayload.request.cluster") // Ignore the error and use "" as the body of the cluster setting when the field is not available.
+				state := enum.RevisionStateExisting
+				if isFirst {
+					state = enum.RevisionStateProvisioning
+				}
+				cs.RecordRevision(clusterResourcePath, &history.StagingResourceRevision{
+					Verb:       enum.RevisionVerbCreate,
+					State:      state,
+					Requestor:  principal,
+					ChangeTime: l.Timestamp(),
+					Partial:    false,
+					Body:       body,
+				})
 			}
-			cs.RecordRevision(clusterResourcePath, &history.StagingResourceRevision{
-				Verb:       enum.RevisionVerbCreate,
-				State:      state,
-				Requestor:  principal,
-				ChangeTime: l.Timestamp(),
-				Partial:    false,
-				Body:       body,
-			})
-		}
-		if strings.HasSuffix(methodName, "DeleteCluster") {
-			state := enum.RevisionStateDeleted
-			if isFirst {
-				state = enum.RevisionStateDeleting
+			if strings.HasSuffix(methodName, "DeleteCluster") {
+				state := enum.RevisionStateDeleted
+				if isFirst {
+					state = enum.RevisionStateDeleting
+				}
+				cs.RecordRevision(clusterResourcePath, &history.StagingResourceRevision{
+					Verb:       enum.RevisionVerbDelete,
+					State:      state,
+					Requestor:  principal,
+					ChangeTime: l.Timestamp(),
+					Partial:    false,
+					Body:       "",
+				})
 			}
-			cs.RecordRevision(clusterResourcePath, &history.StagingResourceRevision{
-				Verb:       enum.RevisionVerbDelete,
-				State:      state,
-				Requestor:  principal,
-				ChangeTime: l.Timestamp(),
-				Partial:    false,
-				Body:       "",
-			})
 		}
+
 		methodNameSplitted := strings.Split(methodName, ".")
 		methodVerb := methodNameSplitted[len(methodNameSplitted)-1]
 		operationResourcePath = resourcepath.Operation(clusterResourcePath, methodVerb, operationId)
@@ -94,34 +100,36 @@ func (p *gkeAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, cs *his
 		cs.RecordEvent(clusterResourcePath)
 	} else {
 		nodepoolResourcePath := resourcepath.Nodepool(clusterName, nodepoolName)
-		if strings.HasSuffix(methodName, "CreateNodePool") {
-			body, _ := l.GetChildYamlOf("protoPayload.request.nodePool") // Ignore the error and use "" as the body of the nodepool setting when the field is not available.
-			state := enum.RevisionStateExisting
-			if isFirst {
-				state = enum.RevisionStateProvisioning
+		if shouldRecordResourceRevision {
+			if strings.HasSuffix(methodName, "CreateNodePool") {
+				body, _ := l.GetChildYamlOf("protoPayload.request.nodePool") // Ignore the error and use "" as the body of the nodepool setting when the field is not available.
+				state := enum.RevisionStateExisting
+				if isFirst {
+					state = enum.RevisionStateProvisioning
+				}
+				cs.RecordRevision(nodepoolResourcePath, &history.StagingResourceRevision{
+					Verb:       enum.RevisionVerbCreate,
+					State:      state,
+					Requestor:  principal,
+					ChangeTime: l.Timestamp(),
+					Partial:    false,
+					Body:       body,
+				})
 			}
-			cs.RecordRevision(nodepoolResourcePath, &history.StagingResourceRevision{
-				Verb:       enum.RevisionVerbCreate,
-				State:      state,
-				Requestor:  principal,
-				ChangeTime: l.Timestamp(),
-				Partial:    false,
-				Body:       body,
-			})
-		}
-		if strings.HasSuffix(methodName, "DeleteNodePool") {
-			state := enum.RevisionStateDeleted
-			if isFirst {
-				state = enum.RevisionStateDeleting
+			if strings.HasSuffix(methodName, "DeleteNodePool") {
+				state := enum.RevisionStateDeleted
+				if isFirst {
+					state = enum.RevisionStateDeleting
+				}
+				cs.RecordRevision(nodepoolResourcePath, &history.StagingResourceRevision{
+					Verb:       enum.RevisionVerbDelete,
+					State:      state,
+					Requestor:  principal,
+					ChangeTime: l.Timestamp(),
+					Partial:    false,
+					Body:       "",
+				})
 			}
-			cs.RecordRevision(nodepoolResourcePath, &history.StagingResourceRevision{
-				Verb:       enum.RevisionVerbDelete,
-				State:      state,
-				Requestor:  principal,
-				ChangeTime: l.Timestamp(),
-				Partial:    false,
-				Body:       "",
-			})
 		}
 		cs.RecordEvent(nodepoolResourcePath)
 		methodNameSplitted := strings.Split(methodName, ".")
@@ -130,7 +138,7 @@ func (p *gkeAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, cs *his
 	}
 
 	// If this was an operation, it will be recorded as operation data
-	if !(isLast && isFirst) && (isLast || isFirst) {
+	if !(isLast && isFirst) && (isLast || isFirst) && shouldRecordResourceRevision {
 		requestBody, _ := l.GetChildYamlOf("protoPayload.request") // ignore the error to set the empty body when the field is not available in the log.
 		state := enum.RevisionStateOperationStarted
 		verb := enum.RevisionVerbOperationStart

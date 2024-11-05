@@ -10,6 +10,8 @@ require (
 require (
 	cloud.google.com/go/bigquery v1.57.1
 	github.com/crazy3lf/colorconv v1.2.0
+	github.com/google/uuid v1.4.0
+	golang.org/x/oauth2 v0.13.0
 	golang.org/x/sync v0.5.0
 	k8s.io/apimachinery v0.29.2
 )
@@ -35,7 +37,6 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20230602150820-91b7bce49751 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
-	github.com/google/uuid v1.4.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/klauspost/asmfmt v1.3.2 // indirect
@@ -49,7 +50,6 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/arch v0.5.0 // indirect
 	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/oauth2 v0.13.0 // indirect
 	golang.org/x/tools v0.16.1 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/api v0.149.0 // indirect
@@ -70,7 +70,6 @@ require (
 	cloud.google.com/go/profiler v0.4.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gin-contrib/cors v1.5.0
-	github.com/gin-contrib/pprof v1.4.0
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-contrib/static v0.0.1
 	github.com/gin-gonic/gin v1.9.1

@@ -1,5 +1,12 @@
 import { Inject, Injectable, InjectionToken } from '@angular/core';
-import { Observable, interval, retry, shareReplay, switchMap, tap } from 'rxjs';
+import {
+  Observable,
+  exhaustMap,
+  interval,
+  retry,
+  shareReplay,
+  tap,
+} from 'rxjs';
 import { BACKEND_API, BackendAPI } from './backend-api-interface';
 import { BackendConnectionService } from './backend-connection-interface';
 import {
@@ -32,7 +39,7 @@ export class BackendConnectionServiceImpl implements BackendConnectionService {
   private inspectionTypesObservable = interval(
     BackendConnectionServiceImpl.LIST_INSPECTION_TYPES_RETRY_TIME,
   ).pipe(
-    switchMap(() => this.backendApi.getInspectionTypes()),
+    exhaustMap(() => this.backendApi.getInspectionTypes()),
     retry(),
     shareReplay({
       bufferSize: 1,
@@ -44,7 +51,7 @@ export class BackendConnectionServiceImpl implements BackendConnectionService {
   private taskProgressObservable = interval(
     BackendConnectionServiceImpl.PROGRESS_POLLING_INTERVAL,
   ).pipe(
-    switchMap(() => this.backendApi.getTaskStatuses()),
+    exhaustMap(() => this.backendApi.getTaskStatuses()),
     tap({
       error: (err) => {
         console.warn(

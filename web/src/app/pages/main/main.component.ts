@@ -1,26 +1,34 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { DataLoadSourceExtension } from '../../extensions/data-loader/extension';
-import { animationFrames, BehaviorSubject, map } from 'rxjs';
+import {
+  animationFrames,
+  BehaviorSubject,
+  map,
+  Subject,
+  takeUntil,
+} from 'rxjs';
 import { StartupDialogComponent } from 'src/app/dialogs/startup/startup.component';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import {
   POPUP_MANAGER,
   PopupManager,
 } from 'src/app/services/popup/popup-manager';
 import {
-  AdditionalInputPopupComponent,
-  AdditionalInputPopupDialogRequest,
-} from 'src/app/dialogs/additional-input-popup/additional-input-popup.component';
+  RequestUserActionPopupComponent,
+  RequestUserActionPopupRequest,
+} from 'src/app/dialogs/request-user-action-popup/request-user-action-popup.component';
 import { NotificationManager } from 'src/app/services/notification/notification';
 import { ResizingCalculator } from 'src/app/common/resizable-pane/resizing-calculator';
 import { DiffPageDataSourceServer } from 'src/app/services/frame-connection/frames/diff-page-datasource-server.service';
 import { GraphPageDataSourceServer } from 'src/app/services/frame-connection/frames/graph-page-datasource-server.service';
+import { NilPopupFormRequest } from 'src/app/services/popup/popup-manager-impl';
 
 @Component({
   templateUrl: './main.component.html',
   styleUrls: ['./main.component.sass'],
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
+  readonly destroyed = new Subject<void>();
   readonly showLogPane = new BehaviorSubject<boolean>(true);
   readonly showHistoryPane = new BehaviorSubject<boolean>(true);
   readonly popupManager: PopupManager = inject(POPUP_MANAGER);
@@ -91,22 +99,36 @@ export class AppComponent implements OnInit {
       });
     }
     // Start monitoring popup request from server
-    this.popupManager.requests().subscribe((formRequest) => {
-      this.notificationManager.notify({
-        title: 'KHI requests additional parameter',
-        body: `Please supply ${formRequest.title} to proceed tasks`,
+    let lastDialogRef: MatDialogRef<RequestUserActionPopupComponent> | null =
+      null;
+    this.popupManager
+      .requests()
+      .pipe(takeUntil(this.destroyed))
+      .subscribe((formRequest) => {
+        // The last opened dialog will be closed automatically When the popup was cancelled from server side,
+        if (formRequest.id === NilPopupFormRequest.id) {
+          lastDialogRef?.close();
+          lastDialogRef = null;
+          return;
+        }
+        lastDialogRef = this.dialog.open<
+          RequestUserActionPopupComponent,
+          RequestUserActionPopupRequest
+        >(RequestUserActionPopupComponent, {
+          data: {
+            formRequest,
+          },
+        });
+        this.notificationManager.notify({
+          title: 'KHI requests additional parameter',
+          body: `Please supply ${formRequest.title} to proceed tasks`,
+        });
       });
-      this.dialog.open<
-        AdditionalInputPopupComponent,
-        AdditionalInputPopupDialogRequest
-      >(AdditionalInputPopupComponent, {
-        data: {
-          formRequest,
-        },
-      });
-    });
     animationFrames()
-      .pipe(map(() => document.body.getBoundingClientRect().width))
+      .pipe(
+        takeUntil(this.destroyed),
+        map(() => document.body.getBoundingClientRect().width),
+      )
       .subscribe((width) => {
         this.resizer.setContainerSizeInPx(width);
       });
@@ -126,7 +148,7 @@ export class AppComponent implements OnInit {
   }
 
   /**
-   *
+   * Attempts loading Google Drive file ID from URL hash and load.
    * @returns if file loader extension loads the file or not
    */
   private _processFileLoaderExtension(): boolean {
@@ -136,5 +158,9 @@ export class AppComponent implements OnInit {
       return true;
     }
     return false;
+  }
+
+  ngOnDestroy(): void {
+    this.destroyed.next();
   }
 }

@@ -28,7 +28,6 @@ func NewMetadataServerAccessTokenResolver(client *httpclient.JSONReponseHttpClie
 
 // Resolve implements token.TokenResolver.
 func (m *MDSTokenResolver) Resolve(ctx context.Context) (*token.Token, error) {
-	slog.InfoContext(ctx, `Environment variable "GCP_ACCESS_TOKEN" was not found. Trying to get access token from metadata server`)
 	req, err := http.NewRequest("GET", metadataServerAddress, nil)
 	if err != nil {
 		return nil, err
@@ -36,6 +35,7 @@ func (m *MDSTokenResolver) Resolve(ctx context.Context) (*token.Token, error) {
 	req.Header.Add("Metadata-Flavor", "Google")
 	response, _, err := m.client.DoWithContext(ctx, req)
 	if err != nil {
+		slog.InfoContext(ctx, fmt.Sprintf("failed to get access token from metadata server\n%s", err.Error()))
 		return nil, err
 	}
 	if response.AccessToken != "" {

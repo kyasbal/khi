@@ -1,12 +1,11 @@
 import {
   distinctUntilKeyChanged,
-  filter,
+  exhaustMap,
   interval,
   map,
   Observable,
   retry,
   shareReplay,
-  switchMap,
   throwError,
 } from 'rxjs';
 import {
@@ -22,11 +21,22 @@ import {
 import { BACKEND_API, BackendAPI } from '../api/backend-api-interface';
 import { Inject, Injectable } from '@angular/core';
 
+export const NilPopupFormRequest: PopupFormRequest = {
+  id: 'none',
+  title: '',
+  type: 'text',
+  description: '',
+  placeholder: '',
+  options: {},
+};
+
 @Injectable({ providedIn: 'any' })
 export class PopupManagerImpl implements PopupManager {
   private popupRequest = interval(1000).pipe(
-    switchMap(() => this.backendAPI.getPopup() as Observable<PopupFormRequest>),
-    filter((pr) => !!pr),
+    exhaustMap(
+      () => this.backendAPI.getPopup() as Observable<PopupFormRequest>,
+    ),
+    map((req) => req ?? NilPopupFormRequest),
     distinctUntilKeyChanged('id'),
     retry(),
     shareReplay({

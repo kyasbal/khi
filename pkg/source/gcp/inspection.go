@@ -327,20 +327,5 @@ func PrepareInspectionServer(inspectionServer *inspection.InspectionTaskServer) 
 	if err != nil {
 		return err
 	}
-
-	err = inspectionServer.AddTaskDefinition(task.EnvGcpIamTokenTask)
-	if err != nil {
-		return err
-	}
-
-	err = inspectionServer.AddTaskDefinition(task.EnvFixedProjectIdTask)
-	if err != nil {
-		return err
-	}
-
-	err = inspectionServer.AddTaskDefinition(task.EnvQuotaProjectIdTask)
-	if err != nil {
-		return err
-	}
 	return nil
 }

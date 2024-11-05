@@ -13,12 +13,8 @@ var DEFAULT_CONFIG_LOCATION = "./resources/config.yml"
 var parsedConfigCache *ConfigFile = nil
 
 func DefaultConfig() *ConfigFile {
-	location, found := os.LookupEnv("KHI_CONFIG_LOCATION")
-	if !found {
-		location = DEFAULT_CONFIG_LOCATION
-	}
 	if parsedConfigCache == nil {
-		file, err := os.Open(location)
+		file, err := os.Open(DEFAULT_CONFIG_LOCATION)
 		if err != nil {
 			panic("Failed to open default configuration")
 		}

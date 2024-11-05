@@ -18,12 +18,16 @@ type FormTestCase struct {
 	ExpectedValue     any
 	ExpectedFormField *form.FormField
 	Dependencies      []task.Definition
+	Before            func()
+	After             func()
 }
 
 func TestTextForms(t *testing.T, label string, formVariable task.Definition, testCases []*FormTestCase, cmpOptions ...cmp.Option) {
-
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
+			if testCase.Before != nil {
+				testCase.Before()
+			}
 			if testCase.Dependencies == nil {
 				testCase.Dependencies = make([]task.Definition, 0)
 			}
@@ -79,6 +83,9 @@ func TestTextForms(t *testing.T, label string, formVariable task.Definition, tes
 			}
 			if diff := cmp.Diff(testCase.ExpectedFormField, field, cmpopts.IgnoreFields(form.FormField{}, "Priority", "Id", "Type")); diff != "" {
 				t.Errorf("the form task didn't generate the expected form field metadata\n%s", diff)
+			}
+			if testCase.After != nil {
+				testCase.After()
 			}
 		})
 	}
