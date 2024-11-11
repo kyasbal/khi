@@ -1,7 +1,26 @@
-import { Component, EnvironmentInjector, inject } from '@angular/core';
-import { Observable, map, of, shareReplay } from 'rxjs';
-import { ResolvedAnnotator } from 'src/app/annotator/annotator';
-import { NAVIGATOR_ANNOTATOR_RESOLVER } from 'src/app/annotator/navigator/resolver';
+/**
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { Component, inject } from '@angular/core';
+import { map, shareReplay } from 'rxjs';
+import {
+  ExtensionStoreUtil,
+  GlobalExtensionStore,
+} from 'src/app/extensions/extension-common/extension-store';
+import { DisplayableTimelineNavigatorExtension } from 'src/app/extensions/extension-common/extension-types/timeline-navigator';
 import { SelectionManagerService } from 'src/app/services/selection-manager.service';
 import { TimelineEntry } from 'src/app/store/timeline';
 
@@ -9,7 +28,7 @@ interface NavigatorLayer {
   label: string;
   icon: string;
   isLast: boolean;
-  annotators: Observable<ResolvedAnnotator[]>;
+  extensions: DisplayableTimelineNavigatorExtension[];
 }
 
 /**
@@ -22,14 +41,13 @@ interface NavigatorLayer {
   selector: 'khi-timeline-navigator',
 })
 export class NavigatorComponent {
-  private readonly envInjector = inject(EnvironmentInjector);
   private readonly selectionManager = inject(SelectionManagerService);
-  private readonly navigatorAnnotatorResolver = inject(
-    NAVIGATOR_ANNOTATOR_RESOLVER,
-  );
   selectedTimeline = this.selectionManager.selectedTimeline;
 
-  layerTimelines = this.selectedTimeline.pipe(
+  /**
+   * Array of timelines in the path between selected timeline and its root.
+   */
+  timelinesInHierarchyPath = this.selectedTimeline.pipe(
     map((tl) => {
       const layers: TimelineEntry[] = [];
       while (tl) {
@@ -41,7 +59,7 @@ export class NavigatorComponent {
     shareReplay(1),
   );
 
-  layers = this.layerTimelines.pipe(
+  navigatorLayers = this.timelinesInHierarchyPath.pipe(
     map((tls) =>
       tls.map(
         (tl, index) =>
@@ -49,10 +67,11 @@ export class NavigatorComponent {
             label: tl.name,
             icon: '',
             isLast: index == tls.length - 1,
-            annotators: this.navigatorAnnotatorResolver.getResolvedAnnotators(
-              of(tl),
-              this.envInjector,
-            ),
+            extensions:
+              ExtensionStoreUtil.getVisibleTimelineNavigatorExtensions(
+                GlobalExtensionStore,
+                tl,
+              ),
           }) as NavigatorLayer,
       ),
     ),

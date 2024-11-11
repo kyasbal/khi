@@ -33,19 +33,15 @@
             "webWorkerTsConfig": "tsconfig.worker.json"
           },
           "configurations": {
-            "production": {
-              "budgets": [
+            "oss": {
+              "fileReplacements": [
                 {
-                  "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1gb"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "50kb",
-                  "maximumError": "100gb"
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod-oss.ts"
                 }
-              ],
+              ]
+            },
+            "production": {
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",

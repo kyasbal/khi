@@ -1,12 +1,26 @@
+/**
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 @use '@angular/material' as mat
 
 $ICON_SIZE : 18px
 $FONT_SIZE: 12px
 $LABEL_WIDTH: 100px
 $LABEL_BACKGROUND: mat.get-color-from-palette(mat.$indigo-palette,600)
-$LABEL_BACKGROUND_GRAY: mat.get-color-from-palette(mat.$gray-palette,600)
 $BACKGROUND: mat.get-color-from-palette(mat.$indigo-palette,100)
-$BACKGROUND_GRAY: mat.get-color-from-palette(mat.$gray-palette,100)
 $LABEL_COLOR: white
 $VALUE_COLOR: black
 .container
@@ -26,10 +40,6 @@ $VALUE_COLOR: black
         background-color: $LABEL_BACKGROUND
         .icon
             margin: 3px 3px -3px 1px
-    &.gray
-        background-color: $BACKGROUND_GRAY
-        .label
-            background-color: $LABEL_BACKGROUND_GRAY
         
     .link
         color: $VALUE_COLOR

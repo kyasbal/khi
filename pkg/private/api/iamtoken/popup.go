@@ -1,3 +1,17 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package iamtoken
 
 import (
@@ -21,7 +35,7 @@ func (i *IAMTokenResolverPopupForm) GetMetadata() popup.PopupFormMetadata {
 		Description: "Refresh Google Admin token by pasting the KHI command again on this form",
 		Type:        "text",
 		Placeholder: "gcloud auth configure-docker --quiet\n" +
-			"docker run --rm --pull always -p 8080:8080 -it -e KHI_FIXED_PROJECT_ID=\"XXXXXXXXX\" -e GCP_DEFAULT_PROJECT=\"XXXXXXXXX\" -e GCP_ACCESS_TOKEN=`gcloud auth print-access-token` -e GCP_IDENTITY_TOKEN=`gcloud auth print-identity-token` -e KHI_GA_LABELS=\"justification=vector/123456,user=XXXXXXXXX\" -e IAM_TOKEN=\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\n" +
+			"docker run --rm --pull always -p 8080:8080 -it -e KHI_FIXED_PROJECT_ID=\"XXXXXXXXX\" -e GCP_DEFAULT_PROJECT=\"XXXXXXXXX\" -e GCP_ACCESS_TOKEN=`gcloud auth print-access-token` -e KHI_GA_LABELS=\"justification=vector/123456,user=XXXXXXXXX\" -e IAM_TOKEN=\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\n" +
 			"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\n" +
 			"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\n" +
 			"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\n" +

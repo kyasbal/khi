@@ -1,3 +1,17 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package resourcepath
 
 import (
@@ -21,10 +35,10 @@ func TestCluster(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Cluster(tc.clusterName)
 			if result.Path != tc.expected {
-				t.Errorf("got %q,want %q", result.Path, tc.expected)
+				t.Errorf("Cluster(%v).Path = %v, want %v", tc.clusterName, result.Path, tc.expected)
 			}
 			if result.ParentRelationship != expectedParentRelationship {
-				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+				t.Errorf("Cluster(%v).ParentRelationship = %v, want %v", tc.clusterName, result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
@@ -45,10 +59,10 @@ func TestAutoscaler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Autoscaler(tc.clusterName)
 			if result.Path != tc.expected {
-				t.Errorf("got %q,want %q", result.Path, tc.expected)
+				t.Errorf("Autoscaler(%v).Path = %v, want %v", tc.clusterName, result.Path, tc.expected)
 			}
 			if result.ParentRelationship != expectedParentRelationship {
-				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+				t.Errorf("Autoscaler(%v).ParentRelationship = %v, want %v", tc.clusterName, result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
@@ -72,10 +86,10 @@ func TestNodepool(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Nodepool(tc.clusterName, tc.nodepoolName)
 			if result.Path != tc.expected {
-				t.Errorf("got %q,want %q", result.Path, tc.expected)
+				t.Errorf("Nodepool(%v,%v).Path = %v, want %v", tc.clusterName, tc.nodepoolName, result.Path, tc.expected)
 			}
 			if result.ParentRelationship != expectedParentRelationship {
-				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+				t.Errorf("Nodepool(%v,%v).ParentRelationship = %v, want %v", tc.clusterName, tc.nodepoolName, result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
@@ -103,10 +117,10 @@ func TestMig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Mig(tc.clusterName, tc.nodepoolName, tc.migName)
 			if result.Path != tc.expected {
-				t.Errorf("got %q,want %q", result.Path, tc.expected)
+				t.Errorf("Mig(%v,%v,%v).Path = %v, want %v", tc.clusterName, tc.nodepoolName, tc.migName, result.Path, tc.expected)
 			}
 			if result.ParentRelationship != expectedParentRelationship {
-				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+				t.Errorf("Mig(%v,%v,%v).ParentRelationship = %v, want %v", tc.clusterName, tc.nodepoolName, tc.migName, result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
@@ -130,10 +144,10 @@ func TestNodeComponent(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := NodeComponent(tc.nodeName, tc.syslogIdentifier)
 			if result.Path != tc.expected {
-				t.Errorf("got %q,want %q", result.Path, tc.expected)
+				t.Errorf("NodeComponent(%v,%v).Path = %v, want %v", tc.nodeName, tc.syslogIdentifier, result.Path, tc.expected)
 			}
 			if result.ParentRelationship != expectedParentRelationship {
-				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+				t.Errorf("NodeComponent(%v,%v).ParentRelationship = %v, want %v", tc.nodeName, tc.syslogIdentifier, result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
@@ -161,10 +175,10 @@ func TestNodeBinding(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := NodeBinding(tc.nodeName, tc.podNamespace, tc.podName)
 			if result.Path != tc.expected {
-				t.Errorf("got %q,want %q", result.Path, tc.expected)
+				t.Errorf("NodeBinding(%v,%v,%v).Path = %v, want %v", tc.nodeName, tc.podNamespace, tc.podName, result.Path, tc.expected)
 			}
 			if result.ParentRelationship != expectedParentRelationship {
-				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+				t.Errorf("NodeBinding(%v,%v,%v).ParentRelationship = %v, want %v", tc.nodeName, tc.podNamespace, tc.podName, result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
@@ -194,10 +208,10 @@ func TestPodEndpointSlice(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := PodEndpointSlice(tc.endpointSliceNamespace, tc.endpointSliceName, tc.podNamespace, tc.podName)
 			if result.Path != tc.expected {
-				t.Errorf("got %q,want %q", result.Path, tc.expected)
+				t.Errorf("PodEndpointSlice(%v,%v,%v,%v).Path = %v, want %v", tc.endpointSliceNamespace, tc.endpointSliceName, tc.podNamespace, tc.podName, result.Path, tc.expected)
 			}
 			if result.ParentRelationship != expectedParentRelationship {
-				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+				t.Errorf("PodEndpointSlice(%v,%v,%v,%v).ParentRelationship = %v, want %v", tc.endpointSliceNamespace, tc.endpointSliceName, tc.podNamespace, tc.podName, result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
@@ -225,10 +239,10 @@ func TestServiceEndpointSlice(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := ServiceEndpointSlice(tc.namespace, tc.endpointSliceName, tc.serviceName)
 			if result.Path != tc.expected {
-				t.Errorf("got %q,want %q", result.Path, tc.expected)
+				t.Errorf("ServiceEndpointSlice(%v,%v,%v).Path = %v, want %v", tc.namespace, tc.endpointSliceName, tc.serviceName, result.Path, tc.expected)
 			}
 			if result.ParentRelationship != expectedParentRelationship {
-				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+				t.Errorf("ServiceEndpointSlice(%v,%v,%v).ParentRelationship = %v, want %v", tc.namespace, tc.endpointSliceName, tc.serviceName, result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
@@ -253,10 +267,10 @@ func TestOperation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Operation(tc.operationOwner, tc.operationMethod, tc.operationId)
 			if result.Path != tc.expected {
-				t.Errorf("got %q,want %q", result.Path, tc.expected)
+				t.Errorf("Operation(%v,%v,%v).Path = %v, want %v", tc.operationOwner, tc.operationMethod, tc.operationId, result.Path, tc.expected)
 			}
 			if result.ParentRelationship != expectedParentRelationship {
-				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+				t.Errorf("Operation(%v,%v,%v).ParentRelationship = %v, want %v", tc.operationOwner, tc.operationMethod, tc.operationId, result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
@@ -278,10 +292,10 @@ func TestStatus(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Status(tc.statusOwner, tc.statusName)
 			if result.Path != tc.expected {
-				t.Errorf("got %q,want %q", result.Path, tc.expected)
+				t.Errorf("Status(%v,%v).Path = %v, want %v", tc.statusOwner, tc.statusName, result.Path, tc.expected)
 			}
 			if result.ParentRelationship != expectedParentRelationship {
-				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+				t.Errorf("Status(%v,%v).ParentRelationship = %v, want %v", tc.statusOwner, tc.statusName, result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}
@@ -306,10 +320,38 @@ func TestNetworkEndpointGroupUnderResource(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := NetworkEndpointGroupUnderResource(tc.parent, tc.negNamespace, tc.negName)
 			if result.Path != tc.expected {
-				t.Errorf("got %q,want %q", result.Path, tc.expected)
+				t.Errorf("NetworkEndpointGroupUnderResource(%v,%v,%v).Path = %v, want %v", tc.parent, tc.negNamespace, tc.negName, result.Path, tc.expected)
 			}
 			if result.ParentRelationship != expectedParentRelationship {
-				t.Errorf("got %d,want %d", result.ParentRelationship, expectedParentRelationship)
+				t.Errorf("NetworkEndpointGroupUnderResource(%v,%v,%v).ParentRelationship = %v, want %v", tc.parent, tc.negNamespace, tc.negName, result.ParentRelationship, expectedParentRelationship)
+			}
+		})
+	}
+}
+
+func TestOwnerSubresource(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipOwnerReference
+	testCases := []struct {
+		name              string
+		ownerPath         ResourcePath
+		ownedResourceName string
+		ownedResourceKind string
+		expected          string
+	}{
+		{"All specified", ResourcePath{Path: "foo"}, "bar", "Deployment", "foo#bar[kind:Deployment]"},
+		{"Empty ownedResourceName", ResourcePath{Path: "foo"}, "", "Deployment", "foo#unknown[kind:Deployment]"},
+		{"Empty ownedResourceKind", ResourcePath{Path: "foo"}, "bar", "", "foo#bar[kind:unknown]"},
+		{"Both empty", ResourcePath{Path: "foo"}, "", "", "foo#unknown[kind:unknown]"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := OwnerSubresource(tc.ownerPath, tc.ownedResourceName, tc.ownedResourceKind)
+			if result.Path != tc.expected {
+				t.Errorf("OwnerSubresource(%v,%v,%v).Path = %v, want %v", tc.ownerPath, tc.ownedResourceName, tc.ownedResourceKind, result.Path, tc.expected)
+			}
+			if result.ParentRelationship != expectedParentRelationship {
+				t.Errorf("OwnerSubresource(%v,%v,%v).ParentRelationship = %v, want %v", tc.ownerPath, tc.ownedResourceName, tc.ownedResourceKind, result.ParentRelationship, expectedParentRelationship)
 			}
 		})
 	}

@@ -1,4 +1,20 @@
-import { NgModule, importProvidersFrom } from '@angular/core';
+/**
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { Inject, NgModule, Optional, importProvidersFrom } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
 import { AppComponent } from './pages/main/main.component';
@@ -48,6 +64,12 @@ import {
 import { DiffPageDataSource } from './services/frame-connection/frames/diff-page-datasource.service';
 import { DiffPageDataSourceServer } from './services/frame-connection/frames/diff-page-datasource-server.service';
 import { GraphPageDataSourceServer } from './services/frame-connection/frames/graph-page-datasource-server.service';
+import {
+  KHI_FRONTEND_EXTENSION_BUNDLE,
+  KHIExtensionBundle,
+} from './extensions/extension-common/extension';
+import { GlobalExtensionStore } from './extensions/extension-common/extension-store';
+import { environment } from 'src/environments/environment';
 @NgModule({
   declarations: [AppComponent, RootComponent],
   imports: [
@@ -71,6 +93,7 @@ import { GraphPageDataSourceServer } from './services/frame-connection/frames/gr
 
     // Standoalone components
     RequestUserActionPopupComponent,
+    environment.pluginModules,
   ],
   providers: [
     importProvidersFrom(HttpClientModule),
@@ -119,8 +142,15 @@ export class RootModule {
   constructor(
     iconRegistry: MatIconRegistry,
     notificationManager: NotificationManager,
+    @Optional()
+    @Inject(KHI_FRONTEND_EXTENSION_BUNDLE)
+    extensions: KHIExtensionBundle[] | null,
   ) {
+    if (!extensions) extensions = [];
     iconRegistry.setDefaultFontSetClass('material-symbols-outlined');
+    extensions.forEach((extension) => {
+      extension.initializeExtension(GlobalExtensionStore);
+    });
     notificationManager.initialize();
   }
 }

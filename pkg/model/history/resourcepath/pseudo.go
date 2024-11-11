@@ -1,3 +1,17 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package resourcepath
 
 import (
@@ -128,5 +142,19 @@ func NetworkEndpointGroupUnderResource(parent ResourcePath, negNamespace string,
 	return ResourcePath{
 		Path:               fmt.Sprintf("%s#%s(%s)", parent.Path, negNamespace, negName),
 		ParentRelationship: enum.RelationshipNetworkEndpointGroup,
+	}
+}
+
+// OwnerSubresource returns a ResourcePath for the pseudo owner reference timeline under the given owner resource timeline at the name layer.
+func OwnerSubresource(ownerPath ResourcePath, ownedResourceName string, ownedResourceKind string) ResourcePath {
+	if ownedResourceName == "" {
+		ownedResourceName = nonSpecifiedPlaceholder
+	}
+	if ownedResourceKind == "" {
+		ownedResourceKind = nonSpecifiedPlaceholder
+	}
+	return ResourcePath{
+		Path:               fmt.Sprintf("%s#%s[kind:%s]", ownerPath.Path, ownedResourceName, ownedResourceKind),
+		ParentRelationship: enum.RelationshipOwnerReference,
 	}
 }

@@ -1,11 +1,23 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package ownerreferencerecorder
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/recorder"
@@ -51,11 +63,10 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 			namespace = "cluster-scope"
 		}
 
-		ownerResource := resourcepath.FromK8sOperation(*log.Operation)
-		owneeResource := resourcepath.SubresourceLayerGeneralItem(
-			apiVersion, strings.ToLower(kind), namespace, name, fmt.Sprintf("%s(%s)[%s]", log.Operation.Name, log.Operation.Namespace, log.Operation.GetSingularKindName()))
-		owneeResource.ParentRelationship = enum.RelationshipOwnerReference
-		cs.RecordResourceAlias(ownerResource, owneeResource)
+		ownedResource := resourcepath.FromK8sOperation(*log.Operation)
+		ownerResource := resourcepath.NameLayerGeneralItem(apiVersion, strings.ToLower(kind), namespace, name)
+		ownerSubresource := resourcepath.OwnerSubresource(ownerResource, log.Operation.Name, log.Operation.GetSingularKindName())
+		cs.RecordResourceAlias(ownedResource, ownerSubresource)
 	}
 	return nil
 }
