@@ -76,12 +76,20 @@ export class TimelineNavigatorExtensionUtil {
     predicate: RevisionManifestFieldFilterPredicate,
   ): boolean {
     for (const revision of timeline.revisions) {
-      if (revision.parsedManifest === undefined) continue;
+      if (
+        revision.parsedManifest === undefined ||
+        revision.parsedManifest === null
+      )
+        continue;
       let currentManifestBody: Record<string, unknown> =
         revision.parsedManifest as unknown as Record<string, unknown>; // TODO: revision.parsedManifest must not be strictly typed and it should be just a map.
       for (let pathIndex = 0; pathIndex < path.length; pathIndex++) {
         const pathElement = path[pathIndex];
-        if (currentManifestBody === undefined) break;
+        if (
+          currentManifestBody === undefined ||
+          revision.parsedManifest === null
+        )
+          break;
         const next = currentManifestBody[pathElement];
         if (pathIndex === path.length - 1) {
           if (predicate(next, revision, timeline)) {
@@ -111,12 +119,17 @@ export class TimelineNavigatorExtensionUtil {
   ): unknown[] {
     const result = new Set<unknown>();
     for (const revision of timeline.revisions) {
-      if (revision.parsedManifest === undefined) continue;
+      if (
+        revision.parsedManifest === undefined ||
+        revision.parsedManifest === null
+      )
+        continue;
       let currentManifestBody: Record<string, unknown> =
         revision.parsedManifest as unknown as Record<string, unknown>; // TODO: revision.parsedManifest must not be strictly typed and it should be just a map.
       for (let pathIndex = 0; pathIndex < path.length; pathIndex++) {
         const pathElement = path[pathIndex];
-        if (currentManifestBody === undefined) break;
+        if (currentManifestBody === undefined || currentManifestBody === null)
+          break;
         const next = currentManifestBody[pathElement];
         if (pathIndex === path.length - 1) {
           result.add(next);

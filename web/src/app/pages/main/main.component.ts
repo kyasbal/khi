@@ -1,5 +1,20 @@
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
-import { DataLoadSourceExtension } from '../../extensions/data-loader/extension';
+/**
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { Component, Inject, inject, OnDestroy, OnInit } from '@angular/core';
 import {
   animationFrames,
   BehaviorSubject,
@@ -22,6 +37,10 @@ import { ResizingCalculator } from 'src/app/common/resizable-pane/resizing-calcu
 import { DiffPageDataSourceServer } from 'src/app/services/frame-connection/frames/diff-page-datasource-server.service';
 import { GraphPageDataSourceServer } from 'src/app/services/frame-connection/frames/graph-page-datasource-server.service';
 import { NilPopupFormRequest } from 'src/app/services/popup/popup-manager-impl';
+import {
+  EXTENSION_STORE,
+  ExtensionStore,
+} from 'src/app/extensions/extension-common/extension-store';
 
 @Component({
   templateUrl: './main.component.html',
@@ -86,12 +105,12 @@ export class AppComponent implements OnInit, OnDestroy {
   ]);
 
   constructor(
-    private loaderExtension: DataLoadSourceExtension,
+    @Inject(EXTENSION_STORE) private extensionStore: ExtensionStore,
     private dialog: MatDialog,
   ) {}
 
   ngOnInit() {
-    if (!this._processFileLoaderExtension()) {
+    if (!this.extensionStore.tryOpenDataFromURL()) {
       this.dialog.open(StartupDialogComponent, {
         maxWidth: '100vw',
         panelClass: 'startup-modalbox',
@@ -145,19 +164,6 @@ export class AppComponent implements OnInit, OnDestroy {
         this.showHistoryPane.next(!this.showHistoryPane.value);
         break;
     }
-  }
-
-  /**
-   * Attempts loading Google Drive file ID from URL hash and load.
-   * @returns if file loader extension loads the file or not
-   */
-  private _processFileLoaderExtension(): boolean {
-    if (window.location.hash.length > 1) {
-      const hash = window.location.hash.substring(1);
-      this.loaderExtension.load(hash);
-      return true;
-    }
-    return false;
   }
 
   ngOnDestroy(): void {

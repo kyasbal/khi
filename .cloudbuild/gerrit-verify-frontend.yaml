@@ -23,6 +23,16 @@ steps:
         npm ci
     waitFor:
       - "-"
+  - id: generate frontend codes
+    name: golang:1.21
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        apt-get update && apt-get install jq -y
+        make prepare-frontend
+    waitFor:
+      - npm install
   - id: angular test
     name: node:18
     entrypoint: /bin/bash
@@ -30,10 +40,10 @@ steps:
       - -c
       - |
         wget -nv https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        apt-get -qq update > /dev/null && apt-get -qq install -y libappindicator1 fonts-liberation ./google-chrome-stable_current_amd64.deb > /dev/null
+        apt-get -qq update > /dev/null && apt-get -qq install -y libappindicator1 fonts-liberation jq ./google-chrome-stable_current_amd64.deb > /dev/null
         make coverage-web
     waitFor:
-      - npm install
+      - generate frontend codes
   - id: upload coverage result
     name: "gcr.io/cloud-builders/gcloud-slim"
     args:
@@ -50,7 +60,7 @@ steps:
       - |
         make lint-web
     waitFor:
-      - npm install
+      - generate frontend codes
   - id: check format web
     name: node:18
     entrypoint: /bin/bash
@@ -59,14 +69,15 @@ steps:
       - |
         make check-format-web
     waitFor:
-      - npm install
-  - id: build web
+      - generate frontend codes
+  - id: build web internal
     name: node:18
     entrypoint: /bin/bash
     args:
       - -c
       - |
-        make build-web
+        apt-get update && apt-get install jq -y
+        cd web && cat angular.json | jq '.projects.frontend.architect.build.configurations|to_entries[]|.key' -r | xargs -I@ bash -c -x "npx ng build --configuration @"
     waitFor:
       - "check format web"
       - "lint web"

@@ -29,8 +29,21 @@ type ParameterStore interface {
 	PostProcess() error
 }
 
+var stores []ParameterStore = make([]ParameterStore, 0)
+
+// AddStore adds a ParameterStore to be initialized in the next Parse() call.
+// This function is expected to be called from init()
+func AddStore(store ParameterStore) {
+	stores = append(stores, store)
+}
+
+// ResetStore removes all stores registered from AddStore. This function is for testing.
+func ResetStore() {
+	stores = make([]ParameterStore, 0)
+}
+
 // Parse initializes the given parameter stores.
-func Parse(stores ...ParameterStore) error {
+func Parse() error {
 	if flag.Parsed() {
 		return errors.New("parameter flags are already parsed")
 	}

@@ -38,7 +38,7 @@ var DefaultAccessTokenStore = token.NewBasicTokenStore(
 			}
 			return *parameters.Auth.AccessToken
 		}),
-		NewMetadataServerAccessTokenResolver(httpclient.NewJsonResponseHttpClient[MDSResponse](httpclient.NewRetryHttpClient(httpclient.NewBasicHttpClient(), MinWaitTimeOnRetriableError, MaxWaitTimeOnRetriableError, MaxRetryCount, RetriableHttpResponseCodes, []int{}, &token.NopTokenRefresher{}, &httpclient.NopTokenApplier{}))),
+		NewMetadataServerAccessTokenResolver(httpclient.NewJsonResponseHttpClient[MDSResponse](httpclient.NewRetryHttpClient(httpclient.NewBasicHttpClient(), MinWaitTimeOnRetriableError, MaxWaitTimeOnRetriableError, MaxRetryCount, RetriableHttpResponseCodes, []int{}, &token.NopTokenRefresher{}))),
 		&GCloudCommandAccessTokenResolver{},
 	),
 )

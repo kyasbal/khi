@@ -20,15 +20,15 @@ import (
 	"log/slog"
 
 	inspection_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/api"
 	gcp_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
 var AutocompleteClusterNames = task.NewCachedProcessor(gcp_task.AutocompleteClusterNamesTaskId+"#anthos-on-aws", []string{
-	gcp_task.GCPApiClientTaskId,
 	gcp_task.InputProjectIdVariableName,
 }, func(ctx context.Context, taskMode int, v *task.VariableSet) (any, error) {
-	client, err := gcp_task.GetGCPApiClientFromTaskVariable(v)
+	client, err := api.DefaultGCPClientFactory.NewClient()
 	if err != nil {
 		return nil, err
 	}

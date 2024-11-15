@@ -19,14 +19,16 @@ import { StartupDialogComponent } from './startup.component';
 import { MatDialogRef } from '@angular/material/dialog';
 import { BACKEND_API } from 'src/app/services/api/backend-api-interface';
 import { InspectionDataLoaderService } from 'src/app/services/data-loader.service';
-import { FRONTEND_ANALYTICS } from 'src/app/services/analytics/types';
-import { NopFrontendAnalytics } from 'src/app/services/analytics/nop';
 import { ProgressDialogService } from 'src/app/services/progress/progress-dialog.service';
 import { BACKEND_CONNECTION } from 'src/app/services/api/backend-connection.service';
 import { BackendConnectionService } from 'src/app/services/api/backend-connection-interface';
 import { ReplaySubject, Subject } from 'rxjs';
 import { By } from '@angular/platform-browser';
 import { GetInspectionTasksResponse } from 'src/app/common/schema/api-types';
+import {
+  EXTENSION_STORE,
+  ExtensionStore,
+} from 'src/app/extensions/extension-common/extension-store';
 
 describe('StartupDialogComponent', () => {
   let component: ComponentFixture<StartupDialogComponent>;
@@ -56,12 +58,12 @@ describe('StartupDialogComponent', () => {
           useValue: backendConnectionSpy,
         },
         {
-          provide: InspectionDataLoaderService,
-          useClass: InspectionDataLoaderService,
+          provide: EXTENSION_STORE,
+          useValue: new ExtensionStore(),
         },
         {
-          provide: FRONTEND_ANALYTICS,
-          useClass: NopFrontendAnalytics,
+          provide: InspectionDataLoaderService,
+          useClass: InspectionDataLoaderService,
         },
       ],
     });

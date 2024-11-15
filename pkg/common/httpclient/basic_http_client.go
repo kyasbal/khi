@@ -20,18 +20,35 @@ import (
 )
 
 type BasicHttpClient struct {
+	HeaderProvider []HTTPHeaderProvider
 }
 
 // BasicHttpClient implements HttpClient interface
-var _ HttpClient[*http.Response] = (*BasicHttpClient)(nil)
+var _ HTTPClient[*http.Response] = (*BasicHttpClient)(nil)
+
+func NewBasicHttpClient() *BasicHttpClient {
+	return &BasicHttpClient{
+		HeaderProvider: []HTTPHeaderProvider{},
+	}
+}
+
+// WithHeaderProvider creates a new BasicHttpClient with given header provider additionally.
+func (b *BasicHttpClient) WithHeaderProvider(headerProvider ...HTTPHeaderProvider) *BasicHttpClient {
+	client := NewBasicHttpClient()
+	client.HeaderProvider = append(client.HeaderProvider, b.HeaderProvider...)
+	b.HeaderProvider = append(b.HeaderProvider, headerProvider...)
+	return b
+}
 
 // DoWithContext implements HttpClient.
 func (b *BasicHttpClient) DoWithContext(ctx context.Context, request *http.Request) (*http.Response, error) {
+	for _, headerProvider := range b.HeaderProvider {
+		err := headerProvider.AddHeader(request)
+		if err != nil {
+			return nil, err
+		}
+	}
 	req := request.WithContext(ctx)
 	client := new(http.Client)
 	return client.Do(req)
-}
-
-func NewBasicHttpClient() HttpClient[*http.Response] {
-	return &BasicHttpClient{}
 }

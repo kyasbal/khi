@@ -46,7 +46,7 @@ func (m *mockMDSResponseHttpClient) DoWithContext(ctx context.Context, request *
 	return testutil.ResponseFromString(http.StatusOK, m.response), nil
 }
 
-var _ httpclient.HttpClient[*http.Response] = (*mockMDSResponseHttpClient)(nil)
+var _ httpclient.HTTPClient[*http.Response] = (*mockMDSResponseHttpClient)(nil)
 
 func TestMDSTokenResolver(t *testing.T) {
 	tests := []struct {

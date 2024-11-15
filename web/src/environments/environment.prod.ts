@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { PrivateKHIExtension } from 'src/app/extensions/private/module';
+
 import { PublicKHIExtension } from 'src/app/extensions/public/module';
 
 export const environment = {
   production: true,
-  pluginModules: [PrivateKHIExtension, PublicKHIExtension],
+  viewerMode: false,
+  bugReportUrl: '',
+  documentUrl: '',
+  pluginModules: [PublicKHIExtension],
+  options: {} as Record<string, unknown>,
 };

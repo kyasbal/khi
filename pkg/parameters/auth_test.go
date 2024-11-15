@@ -19,6 +19,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/testutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/oauth2"
@@ -34,15 +35,15 @@ func TestAuthParameters(t *testing.T) {
 		{
 			name: "default",
 			want: &AuthParameters{
-				AccessToken:                    wrapPointer(""),
-				DisableMetadataServer:          wrapPointer(false),
-				FixedProjectID:                 wrapPointer(""),
-				QuotaProjectID:                 wrapPointer(""),
-				OAuthClientID:                  wrapPointer(""),
-				OAuthClientSecret:              wrapPointer(""),
-				OAuthRedirectURI:               wrapPointer(""),
-				OAuthRedirectTargetServingPath: wrapPointer("/oauth/callback"),
-				OAuthStateSuffix:               wrapPointer(""),
+				AccessToken:                    testutil.P(""),
+				DisableMetadataServer:          testutil.P(false),
+				FixedProjectID:                 testutil.P(""),
+				QuotaProjectID:                 testutil.P(""),
+				OAuthClientID:                  testutil.P(""),
+				OAuthClientSecret:              testutil.P(""),
+				OAuthRedirectURI:               testutil.P(""),
+				OAuthRedirectTargetServingPath: testutil.P("/oauth/callback"),
+				OAuthStateSuffix:               testutil.P(""),
 			},
 			before: func() {
 				os.Args = []string{os.Args[0]}
@@ -56,7 +57,9 @@ func TestAuthParameters(t *testing.T) {
 			prepareFlagParsingTest(t)
 			tc.before()
 			store := &AuthParameters{}
-			err := Parse(store)
+			ResetStore()
+			AddStore(store)
+			err := Parse()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -76,9 +79,9 @@ func TestAuthParameters_GetOAuthConfig(t *testing.T) {
 		{
 			name: "with values",
 			params: &AuthParameters{
-				OAuthClientID:     wrapPointer("client-id"),
-				OAuthClientSecret: wrapPointer("client-secret"),
-				OAuthRedirectURI:  wrapPointer("https://example.com/callback"),
+				OAuthClientID:     testutil.P("client-id"),
+				OAuthClientSecret: testutil.P("client-secret"),
+				OAuthRedirectURI:  testutil.P("https://example.com/callback"),
 			},
 			expected: &oauth2.Config{
 				ClientID:     "client-id",
@@ -110,40 +113,40 @@ func TestAuthParameters_OAuthEnabled(t *testing.T) {
 		{
 			name: "all set",
 			params: &AuthParameters{
-				OAuthClientID:                  wrapPointer("client-id"),
-				OAuthClientSecret:              wrapPointer("client-secret"),
-				OAuthRedirectURI:               wrapPointer("https://example.com/callback"),
-				OAuthRedirectTargetServingPath: wrapPointer("/oauth/callback"),
+				OAuthClientID:                  testutil.P("client-id"),
+				OAuthClientSecret:              testutil.P("client-secret"),
+				OAuthRedirectURI:               testutil.P("https://example.com/callback"),
+				OAuthRedirectTargetServingPath: testutil.P("/oauth/callback"),
 			},
 			expected: true,
 		},
 		{
 			name: "client id is missing",
 			params: &AuthParameters{
-				OAuthClientID:                  wrapPointer(""),
-				OAuthClientSecret:              wrapPointer("client-secret"),
-				OAuthRedirectURI:               wrapPointer("https://example.com/callback"),
-				OAuthRedirectTargetServingPath: wrapPointer("/oauth/callback"),
+				OAuthClientID:                  testutil.P(""),
+				OAuthClientSecret:              testutil.P("client-secret"),
+				OAuthRedirectURI:               testutil.P("https://example.com/callback"),
+				OAuthRedirectTargetServingPath: testutil.P("/oauth/callback"),
 			},
 			expected: false,
 		},
 		{
 			name: "client secret is missing",
 			params: &AuthParameters{
-				OAuthClientID:                  wrapPointer("client-id"),
-				OAuthClientSecret:              wrapPointer(""),
-				OAuthRedirectURI:               wrapPointer("https://example.com/callback"),
-				OAuthRedirectTargetServingPath: wrapPointer("/oauth/callback"),
+				OAuthClientID:                  testutil.P("client-id"),
+				OAuthClientSecret:              testutil.P(""),
+				OAuthRedirectURI:               testutil.P("https://example.com/callback"),
+				OAuthRedirectTargetServingPath: testutil.P("/oauth/callback"),
 			},
 			expected: false,
 		},
 		{
 			name: "callback url is missing",
 			params: &AuthParameters{
-				OAuthClientID:                  wrapPointer("client-id"),
-				OAuthClientSecret:              wrapPointer("client-secret"),
-				OAuthRedirectURI:               wrapPointer(""),
-				OAuthRedirectTargetServingPath: wrapPointer("/oauth/callback"),
+				OAuthClientID:                  testutil.P("client-id"),
+				OAuthClientSecret:              testutil.P("client-secret"),
+				OAuthRedirectURI:               testutil.P(""),
+				OAuthRedirectTargetServingPath: testutil.P("/oauth/callback"),
 			},
 			expected: false,
 		},

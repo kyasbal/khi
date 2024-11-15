@@ -21,6 +21,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/form"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/api"
 	gcp_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
@@ -30,19 +31,18 @@ const InputProjectIdVariableName = gcp_task.GCPPrefix + "input/location"
 var AutocompleteComposerEnvironmentNamesTaskId = gcp_task.GCPPrefix + "autocomplete/composer-environment-names"
 
 var AutocompleteComposerEnvironmentNames = task.NewCachedProcessor(AutocompleteComposerEnvironmentNamesTaskId, []string{
-	gcp_task.GCPApiClientTaskId,
 	gcp_task.InputLocationsVariableName,
 	gcp_task.InputProjectIdVariableName,
 }, func(ctx context.Context, taskMode int, v *task.VariableSet) (any, error) {
+	client, err := api.DefaultGCPClientFactory.NewClient()
+	if err != nil {
+		return nil, err
+	}
 	projectId, err := gcp_task.GetInputProjectIdFromTaskVariable(v)
 	if err != nil {
 		return nil, err
 	}
 	location, err := gcp_task.GetInputLocationsFromTaskVariable(v)
-	if err != nil {
-		return nil, err
-	}
-	client, err := gcp_task.GetGCPApiClientFromTaskVariable(v)
 	if err != nil {
 		return nil, err
 	}

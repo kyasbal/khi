@@ -39,7 +39,7 @@ func (m *mockHttpClientForPageClient) DoWithContext(ctx context.Context, request
 	return response, nil
 }
 
-var _ httpclient.HttpClient[*http.Response] = (*mockHttpClientForPageClient)(nil)
+var _ httpclient.HTTPClient[*http.Response] = (*mockHttpClientForPageClient)(nil)
 
 func TestPageClient(t *testing.T) {
 	type TestResponseType struct {

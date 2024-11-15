@@ -16,10 +16,7 @@
 
 import { Component, inject } from '@angular/core';
 import { map, shareReplay } from 'rxjs';
-import {
-  ExtensionStoreUtil,
-  GlobalExtensionStore,
-} from 'src/app/extensions/extension-common/extension-store';
+import { EXTENSION_STORE } from 'src/app/extensions/extension-common/extension-store';
 import { DisplayableTimelineNavigatorExtension } from 'src/app/extensions/extension-common/extension-types/timeline-navigator';
 import { SelectionManagerService } from 'src/app/services/selection-manager.service';
 import { TimelineEntry } from 'src/app/store/timeline';
@@ -41,6 +38,7 @@ interface NavigatorLayer {
   selector: 'khi-timeline-navigator',
 })
 export class NavigatorComponent {
+  private readonly extensionStore = inject(EXTENSION_STORE);
   private readonly selectionManager = inject(SelectionManagerService);
   selectedTimeline = this.selectionManager.selectedTimeline;
 
@@ -68,10 +66,7 @@ export class NavigatorComponent {
             icon: '',
             isLast: index == tls.length - 1,
             extensions:
-              ExtensionStoreUtil.getVisibleTimelineNavigatorExtensions(
-                GlobalExtensionStore,
-                tl,
-              ),
+              this.extensionStore.getVisibleTimelineNavigatorExtensions(tl),
           }) as NavigatorLayer,
       ),
     ),

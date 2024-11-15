@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/token"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/popup"
+	privateParameters "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/parameters"
 )
 
 type IAMTokenResolverPopupForm struct {
@@ -63,7 +63,7 @@ type PopupIAMTokenResolver struct {
 
 // Resolve implements token.TokenResolver.
 func (p *PopupIAMTokenResolver) Resolve(ctx context.Context) (*token.Token, error) {
-	if !*parameters.Private.InspectionMode {
+	if !*privateParameters.Private.InspectionMode {
 		return nil, nil
 	}
 	slog.InfoContext(ctx, "Requesting a new token with showing a popup.")

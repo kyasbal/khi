@@ -19,7 +19,6 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { AppComponent } from './main.component';
 import { DiffModule } from '../../diff/diff.module';
-import { DataLoadSourceExtension } from '../../extensions/data-loader/extension';
 import { HeaderModule } from '../../header/header.module';
 import { LogModule } from '../../log/log.module';
 import { InspectionDataLoaderService } from '../../services/data-loader.service';
@@ -35,6 +34,10 @@ import { POPUP_MANAGER } from 'src/app/services/popup/popup-manager';
 import { MockPopupManager } from 'src/app/services/popup/mock';
 import { DiffPageDataSourceServer } from 'src/app/services/frame-connection/frames/diff-page-datasource-server.service';
 import { GraphPageDataSourceServer } from 'src/app/services/frame-connection/frames/graph-page-datasource-server.service';
+import {
+  EXTENSION_STORE,
+  ExtensionStore,
+} from 'src/app/extensions/extension-common/extension-store';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -50,7 +53,10 @@ describe('AppComponent', () => {
         MatSnackBarModule,
       ],
       providers: [
-        DataLoadSourceExtension,
+        {
+          provide: EXTENSION_STORE,
+          useValue: new ExtensionStore(),
+        },
         InspectionDataLoaderService,
         WindowConnectorService,
         {

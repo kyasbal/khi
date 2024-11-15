@@ -20,15 +20,15 @@ import { GraphComponent } from './pages/graph/graph.component';
 import {
   DiffPageDeactivateGuard,
   DiffPageGuard,
-  FrontendAnalyticsServiceGuard,
   GraphPageDeactiveGuard,
   GraphPageGuard,
+  PageOpenLifecycleGuard,
   SessionChildGuard,
   SessionDeactivateGuard,
   SessionHostGuard,
 } from './app.route.guard';
 import { DiffComponent } from './pages/diff/diff.component';
-import { KHIAnalyticsPageType } from './services/analytics/types';
+import { PageType } from './extensions/extension-common/extension-types/lifecycle-hook';
 
 export const KHIRoutes: Routes = [
   { path: '', redirectTo: 'session/0', pathMatch: 'full' },
@@ -36,10 +36,7 @@ export const KHIRoutes: Routes = [
     path: 'session/:sessionId',
     component: AppComponent,
     title: 'KHI - Main view',
-    canActivate: [
-      SessionHostGuard,
-      FrontendAnalyticsServiceGuard(KHIAnalyticsPageType.Main),
-    ],
+    canActivate: [SessionHostGuard, PageOpenLifecycleGuard(PageType.Main)],
     canDeactivate: [SessionDeactivateGuard],
   },
   {
@@ -49,7 +46,7 @@ export const KHIRoutes: Routes = [
     canActivate: [
       SessionChildGuard('Diagram'),
       GraphPageGuard,
-      FrontendAnalyticsServiceGuard(KHIAnalyticsPageType.GraphView),
+      PageOpenLifecycleGuard(PageType.GraphView),
     ],
     canDeactivate: [SessionDeactivateGuard, GraphPageDeactiveGuard],
   },
@@ -60,7 +57,7 @@ export const KHIRoutes: Routes = [
     canActivate: [
       SessionChildGuard('Diff'),
       DiffPageGuard,
-      FrontendAnalyticsServiceGuard(KHIAnalyticsPageType.DiffView),
+      PageOpenLifecycleGuard(PageType.DiffView),
     ],
     canDeactivate: [SessionDeactivateGuard, DiffPageDeactivateGuard],
   },

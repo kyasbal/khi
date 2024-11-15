@@ -44,6 +44,7 @@ import {
 } from 'src/app/services/api/backend-api-interface';
 import { BACKEND_CONNECTION } from 'src/app/services/api/backend-connection.service';
 import { BackendConnectionService } from 'src/app/services/api/backend-connection-interface';
+import { environment } from 'src/environments/environment';
 
 export type ProgressBarViewModel = {
   id: string;
@@ -91,6 +92,12 @@ export class StartupDialogComponent {
    * The interval to refresh the start time of each tasks written as `xx seconds ago`.
    */
   static UI_TIME_REFRESH_INTERVAL = 1000;
+
+  isViewerMode = environment.viewerMode;
+
+  bugReportUrl = environment.bugReportUrl;
+
+  documentUrl = environment.documentUrl;
 
   tasks = this.backendConnection.tasks();
 

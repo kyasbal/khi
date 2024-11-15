@@ -16,15 +16,15 @@ package iamtoken
 
 import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/token"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
+	privateParameters "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/parameters"
 )
 
 var DefaultIAMTokenStore = token.NewBasicTokenStore("iamtoken", token.NewMultiTokenResolver(
 	token.NewOnceTokenResolver(func() string {
-		if parameters.Private.IAMToken == nil {
+		if privateParameters.Private.IAMToken == nil {
 			return ""
 		}
-		return *parameters.Private.IAMToken
+		return *privateParameters.Private.IAMToken
 	}),
 	&PopupIAMTokenResolver{},
 ))

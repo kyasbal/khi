@@ -52,3 +52,8 @@ func ResponseFromString(code int, response string) *http.Response {
 		StatusCode: code,
 	}
 }
+
+// P returns the pointer of given value. This is helper to get the pointer from literal because Go doesn't allow &"foo".
+func P[T any](value T) *T {
+	return &value
+}

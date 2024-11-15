@@ -20,9 +20,7 @@ import (
 	"os"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/api/iamtoken"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/api"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/api/accesstoken"
 )
 
 func IsValidLogQuery(query string) error {
@@ -30,7 +28,7 @@ func IsValidLogQuery(query string) error {
 	if found {
 		parameters.Auth.AccessToken = &accessToken
 	}
-	gcpApi, err := api.NewGCPClient(accesstoken.DefaultAccessTokenStore, iamtoken.DefaultIAMTokenStore, "")
+	gcpApi, err := api.DefaultGCPClientFactory.NewClient()
 	if err != nil {
 		return err
 	}

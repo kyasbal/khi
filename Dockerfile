@@ -22,9 +22,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . ${ROOT}
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /built/khi cmd/kubernetes-history-inspector/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /built/khi cmd/kubernetes-history-inspector/*.go
 RUN mkdir /built/data
-COPY ./resources /built/resources
 COPY ./dist /built/web
 
 FROM alpine

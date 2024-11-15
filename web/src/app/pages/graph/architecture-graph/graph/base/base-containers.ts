@@ -295,13 +295,11 @@ export class GraphTransform {
   public updateLayout(x = 0, y = 0, max_layout_iteration = 100): boolean {
     for (let i = 0; i < max_layout_iteration; i++)
       if (this._updateSize()) {
-        console.log(`Sizes were decided in children by ${i} steps`);
         break;
       }
     if (!this._sizeDecided) return false;
     for (let i = 0; i < max_layout_iteration; i++)
       if (this._updatePositions(x, y)) {
-        console.log(`Locations were decided in children by ${i} steps`);
         break;
       }
     return true;

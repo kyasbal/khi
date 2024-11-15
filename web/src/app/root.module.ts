@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-import { Inject, NgModule, Optional, importProvidersFrom } from '@angular/core';
+import {
+  Inject,
+  Injector,
+  NgModule,
+  Optional,
+  importProvidersFrom,
+} from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
 import { AppComponent } from './pages/main/main.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideHighlightOptions } from 'ngx-highlightjs';
-import { RegisterGoogleDriveExtensionProvidersIfEnabled } from './extensions/data-loader/google-drive';
-import { DataLoadSourceExtension } from './extensions/data-loader/extension';
 import { InspectionDataLoaderService } from './services/data-loader.service';
 import { TimelineSelectionService } from './services/timeline-selection.service';
 import { InspectionDataStoreService } from './services/inspection-data-store.service';
 import { SelectionManagerService } from './services/selection-manager.service';
 import { HeaderModule } from './header/header.module';
 import { DialogsModule } from './dialogs/dialogs.module';
-import { GoogleDriveDataLoaderModule } from './extensions/data-loader/module';
 import { LogModule } from './log/log.module';
 import { DiffModule } from './diff/diff.module';
 import { CommonModule } from '@angular/common';
@@ -54,8 +57,6 @@ import { PopupManagerImpl } from './services/popup/popup-manager-impl';
 import { BACKEND_API } from './services/api/backend-api-interface';
 import { BackendAPIImpl } from './services/api/backend-api.service';
 import { NotificationManager } from './services/notification/notification';
-import { FRONTEND_ANALYTICS } from './services/analytics/types';
-import { FrontendAnalyticsWithGA } from './services/analytics/ga';
 import { ProgressDialogService } from './services/progress/progress-dialog.service';
 import {
   BACKEND_CONNECTION,
@@ -68,8 +69,11 @@ import {
   KHI_FRONTEND_EXTENSION_BUNDLE,
   KHIExtensionBundle,
 } from './extensions/extension-common/extension';
-import { GlobalExtensionStore } from './extensions/extension-common/extension-store';
 import { environment } from 'src/environments/environment';
+import {
+  EXTENSION_STORE,
+  ExtensionStore,
+} from './extensions/extension-common/extension-store';
 @NgModule({
   declarations: [AppComponent, RootComponent],
   imports: [
@@ -87,15 +91,12 @@ import { environment } from 'src/environments/environment';
     RouterModule.forRoot(KHIRoutes),
     MatIconModule,
     MatButtonModule,
-
-    // Extension modules
-    GoogleDriveDataLoaderModule,
-
     // Standoalone components
     RequestUserActionPopupComponent,
     environment.pluginModules,
   ],
   providers: [
+    { provide: EXTENSION_STORE, useValue: new ExtensionStore() },
     importProvidersFrom(HttpClientModule),
     provideHighlightOptions({
       coreLibraryLoader: () => import('highlight.js/lib/core'),
@@ -105,10 +106,7 @@ import { environment } from 'src/environments/environment';
       },
     }),
     { provide: TitleStrategy, useClass: KHITitleStrategy },
-    { provide: FRONTEND_ANALYTICS, useClass: FrontendAnalyticsWithGA },
-    ...RegisterGoogleDriveExtensionProvidersIfEnabled(),
     ...ProgressDialogService.providers(),
-    DataLoadSourceExtension,
     InspectionDataLoaderService,
     DiffPageDataSourceServer,
     GraphPageDataSourceServer,
@@ -140,16 +138,19 @@ import { environment } from 'src/environments/environment';
 })
 export class RootModule {
   constructor(
+    injector: Injector,
+    @Inject(EXTENSION_STORE) extensionStore: ExtensionStore,
     iconRegistry: MatIconRegistry,
     notificationManager: NotificationManager,
     @Optional()
     @Inject(KHI_FRONTEND_EXTENSION_BUNDLE)
     extensions: KHIExtensionBundle[] | null,
   ) {
+    extensionStore.injector = injector;
     if (!extensions) extensions = [];
     iconRegistry.setDefaultFontSetClass('material-symbols-outlined');
     extensions.forEach((extension) => {
-      extension.initializeExtension(GlobalExtensionStore);
+      extension.initializeExtension(extensionStore);
     });
     notificationManager.initialize();
   }

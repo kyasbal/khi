@@ -20,7 +20,13 @@ import (
 )
 
 // An interface to mock *http.Client
-type HttpClient[T any] interface {
+type HTTPClient[T any] interface {
 	// DoWithContext send request to
 	DoWithContext(ctx context.Context, request *http.Request) (T, error)
+}
+
+// HTTPHeaderProvider adds header on outgoing requests.
+type HTTPHeaderProvider interface {
+	// AddHeader adds headers on outgoing request.
+	AddHeader(req *http.Request) error
 }

@@ -19,6 +19,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/testutil"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -35,12 +36,12 @@ func TestServerParameters(t *testing.T) {
 			},
 			name: "default",
 			want: &ServerParameters{
-				ViewerMode:               wrapPointer(false),
-				Port:                     wrapPointer(8080),
-				Host:                     wrapPointer("localhost"),
-				BasePath:                 wrapPointer("/"),
-				FrontendResourceBasePath: wrapPointer("/"),
-				FrontendAssetFolder:      wrapPointer("./web"),
+				ViewerMode:               testutil.P(false),
+				Port:                     testutil.P(8080),
+				Host:                     testutil.P("localhost"),
+				BasePath:                 testutil.P("/"),
+				FrontendResourceBasePath: testutil.P("/"),
+				FrontendAssetFolder:      testutil.P("./web"),
 			},
 		},
 		{
@@ -50,12 +51,12 @@ func TestServerParameters(t *testing.T) {
 			},
 			name: "FrontendResourceBasePath uses BasePath when not set",
 			want: &ServerParameters{
-				ViewerMode:               wrapPointer(false),
-				Port:                     wrapPointer(8080),
-				Host:                     wrapPointer("localhost"),
-				BasePath:                 wrapPointer("/foo/bar/"),
-				FrontendResourceBasePath: wrapPointer("/foo/bar/"),
-				FrontendAssetFolder:      wrapPointer("./web"),
+				ViewerMode:               testutil.P(false),
+				Port:                     testutil.P(8080),
+				Host:                     testutil.P("localhost"),
+				BasePath:                 testutil.P("/foo/bar/"),
+				FrontendResourceBasePath: testutil.P("/foo/bar/"),
+				FrontendAssetFolder:      testutil.P("./web"),
 			},
 		},
 		{
@@ -65,12 +66,12 @@ func TestServerParameters(t *testing.T) {
 			},
 			name: "FrontendResourceBasePath should complement the last /",
 			want: &ServerParameters{
-				ViewerMode:               wrapPointer(false),
-				Port:                     wrapPointer(8080),
-				Host:                     wrapPointer("localhost"),
-				BasePath:                 wrapPointer("/foo/bar/"),
-				FrontendResourceBasePath: wrapPointer("/foo/"),
-				FrontendAssetFolder:      wrapPointer("./web"),
+				ViewerMode:               testutil.P(false),
+				Port:                     testutil.P(8080),
+				Host:                     testutil.P("localhost"),
+				BasePath:                 testutil.P("/foo/bar/"),
+				FrontendResourceBasePath: testutil.P("/foo/"),
+				FrontendAssetFolder:      testutil.P("./web"),
 			},
 		},
 	}
@@ -80,7 +81,9 @@ func TestServerParameters(t *testing.T) {
 			prepareFlagParsingTest(t)
 			store := &ServerParameters{}
 			tc.before()
-			err := Parse(store)
+			ResetStore()
+			AddStore(store)
+			err := Parse()
 			if err != nil {
 				t.Fatal(err)
 			}

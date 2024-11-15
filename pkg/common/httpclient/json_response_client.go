@@ -23,10 +23,10 @@ import (
 )
 
 type JSONReponseHttpClient[T any] struct {
-	client HttpClient[*http.Response]
+	client HTTPClient[*http.Response]
 }
 
-func NewJsonResponseHttpClient[T any](client HttpClient[*http.Response]) *JSONReponseHttpClient[T] {
+func NewJsonResponseHttpClient[T any](client HTTPClient[*http.Response]) *JSONReponseHttpClient[T] {
 	return &JSONReponseHttpClient[T]{
 		client: client,
 	}

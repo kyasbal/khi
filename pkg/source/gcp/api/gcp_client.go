@@ -123,10 +123,7 @@ var multicloudAPIEndpoints = []multicloudAPIEndpoint{
 }
 
 type GCPClientImpl struct {
-	BaseClient   httpclient.HttpClient[*http.Response]
-	AccessToken  token.TokenStore
-	IamToken     token.TokenStore
-	QuotaProject string
+	BaseClient httpclient.HTTPClient[*http.Response]
 	// This is a parameter for limiting the result length of List log entries api call for testing purpose.
 	MaxLogEntries int
 }
@@ -140,13 +137,10 @@ var _ task.CachableDependency = (*GCPClientImpl)(nil)
 
 var _ GCPClient = (*GCPClientImpl)(nil)
 
-func NewGCPClient(accessToken token.TokenStore, iamToken token.TokenStore, quotaProject string) (GCPClient, error) {
+func NewGCPClient(refresher token.TokenRefresher, headerProviders []httpclient.HTTPHeaderProvider) (GCPClient, error) {
 	return &GCPClientImpl{
-		BaseClient: httpclient.NewRetryHttpClient(httpclient.NewBasicHttpClient(), MinWaitTimeOnRetriableError, MaxWaitTimeOnRetriableError, MaxRetryCount, RetriableHttpResponseCodes, RetriableWithRefreshingTokenHttpResponseCodes,
-			token.NewMultiTokenStoreRefresher(accessToken, iamToken), NewGCPTokenApplier(accessToken, iamToken)),
-		AccessToken:   accessToken,
-		IamToken:      iamToken,
-		QuotaProject:  quotaProject,
+		BaseClient: httpclient.NewRetryHttpClient(httpclient.NewBasicHttpClient().WithHeaderProvider(headerProviders...), MinWaitTimeOnRetriableError, MaxWaitTimeOnRetriableError, MaxRetryCount, RetriableHttpResponseCodes, RetriableWithRefreshingTokenHttpResponseCodes,
+			refresher),
 		MaxLogEntries: math.MaxInt,
 	}, nil
 }
@@ -157,9 +151,6 @@ func (c *GCPClientImpl) CreateGCPHttpRequest(ctx context.Context, method string,
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if c.QuotaProject != "" {
-		req.Header.Set("X-Goog-User-Project", c.QuotaProject)
-	}
 	return req, nil
 }
 

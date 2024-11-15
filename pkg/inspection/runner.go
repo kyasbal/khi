@@ -23,8 +23,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/analytics"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/analytics/types"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/inspectiondata"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata"
 	error_metadata "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata/error"
@@ -35,6 +33,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata/progress"
 	inspection_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task/serializer"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/lifecycle"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task/taskid"
@@ -155,7 +154,6 @@ func (i *InspectionRunner) Run(ctx context.Context, req *inspection_task.Inspect
 	if i.runner != nil {
 		return fmt.Errorf("this task is already started")
 	}
-	analytics := analytics.NewAnalyticsReporter()
 	rid := generateInspectionId()
 	ctx = context.WithValue(ctx, "rid", rid)
 	ctx = context.WithValue(ctx, "iid", i.ID)
@@ -195,10 +193,8 @@ func (i *InspectionRunner) Run(ctx context.Context, req *inspection_task.Inspect
 		}})
 	i.MakeLoggers(ctx, getLogLevel(), m, runnableTaskGraph.GetAll())
 	i.metadata = m
-	analytics.ReportEvent(types.AnalyticsEventInspectionStart, map[string]any{
-		"rid":            rid,
-		"inspectionType": currentInspectionType.Name,
-	})
+	lifecycle.Default.NotifyInspectionStart(rid, currentInspectionType.Name)
+
 	err = i.runner.Run(cancelableCtx, inspection_task.TaskModeRun, i.generateInitialVariablesForRun(m, req))
 	if err != nil {
 		return err
@@ -237,12 +233,7 @@ func (i *InspectionRunner) Run(ctx context.Context, req *inspection_task.Inspect
 				return key != serializer.SerializerTaskId && key != inspection_task.MetadataVariableName
 			})
 		}
-		analytics.ReportEvent(types.AnalyticsEventInspectionEnd, map[string]any{
-			"rid":            rid,
-			"inspectionType": currentInspectionType.Name,
-			"status":         status,
-			"resultSize":     resultSize,
-		})
+		lifecycle.Default.NotifyInspectionEnd(rid, currentInspectionType.Name, status, resultSize)
 	}()
 	return nil
 }

@@ -19,6 +19,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/testutil"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -31,11 +32,11 @@ func TestJobParameters(t *testing.T) {
 		{
 			name: "default",
 			want: &JobParameters{
-				JobMode:            wrapPointer(false),
-				InspectionType:     wrapPointer(""),
-				InspectionFeatures: wrapPointer(""),
-				InspectionValues:   wrapPointer(""),
-				ExportDestination:  wrapPointer(""),
+				JobMode:            testutil.P(false),
+				InspectionType:     testutil.P(""),
+				InspectionFeatures: testutil.P(""),
+				InspectionValues:   testutil.P(""),
+				ExportDestination:  testutil.P(""),
 			},
 			before: func() {
 				os.Args = []string{os.Args[0]}
@@ -49,7 +50,9 @@ func TestJobParameters(t *testing.T) {
 			prepareFlagParsingTest(t)
 			tc.before()
 			store := &JobParameters{}
-			err := Parse(store)
+			ResetStore()
+			AddStore(store)
+			err := Parse()
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -150,18 +150,13 @@ export class GraphRoot extends GraphObjectWithElementType<SVGSVGElement> {
     this._currentScale = 1; // Calculate everything in scale=1 for easy calculation
     this._updateCanvas();
     this._elementDict = {};
-    console.time('resolveDomHierarchy');
     this.transform.resolveDomHierarchy(this);
 
-    console.timeEnd('resolveDomHierarchy');
     let layoutResult = true;
     for (let i = 0; i < this._layoutSteps.length; i++) {
-      console.time(`layout step ${i}`);
-      const updateCount = this.transform.invalidateLayoutRecursively();
-      console.log('Count of elemets require layout calculation:' + updateCount);
+      this.transform.invalidateLayoutRecursively();
       layoutResult = layoutResult && this.updateLayout();
       this._layoutSteps[i].forEach((action) => action());
-      console.timeEnd(`layout step ${i}`);
     }
     this._currentScale = scale;
     this._updateCanvas();

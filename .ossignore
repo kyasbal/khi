@@ -1,0 +1,15 @@
+# Files patterns written in here will be ignored on OSS repository
+
+app.yaml
+.gcloudignore
+.cloudbuild
+.ossignore
+Dockerfile-analytics
+cmd/analytics
+cmd/kubernetes-history-inspector/private.go
+pkg/private
+scripts/private
+scripts/make/private.mk
+web/src/environments/environment.*-internal*.ts
+web/src/app/extensions/google-drive
+web/src/app/extensions/private

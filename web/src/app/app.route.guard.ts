@@ -27,12 +27,10 @@ import {
   KHIPageType,
   WindowConnectorService,
 } from './services/frame-connection/window-connector.service';
-import {
-  FRONTEND_ANALYTICS,
-  KHIAnalyticsPageType,
-} from './services/analytics/types';
 import { DiffPageDataSource } from './services/frame-connection/frames/diff-page-datasource.service';
 import { GraphPageDataSource } from './services/frame-connection/frames/graph-page-datasource.service';
+import { PageType } from './extensions/extension-common/extension-types/lifecycle-hook';
+import { EXTENSION_STORE } from './extensions/extension-common/extension-store';
 
 const SESSION_ID_PARAM_KEY = 'sessionId';
 
@@ -170,10 +168,10 @@ export const DiffPageGuard = () => {
   );
 };
 
-export const FrontendAnalyticsServiceGuard = (page: KHIAnalyticsPageType) => {
+export const PageOpenLifecycleGuard = (page: PageType) => {
   return () => {
-    const analytics = inject(FRONTEND_ANALYTICS);
-    analytics.init(page);
+    const extension = inject(EXTENSION_STORE);
+    extension.notifyLifecycleOnPageOpen(page);
     return true;
   };
 };

@@ -32,20 +32,6 @@ type mockFailClient struct {
 	RequestCount int
 }
 
-type tokenApplierClientSpy struct {
-	CallCount int
-}
-
-// ApplyCurrentToken implements TokenApplier.
-func (t *tokenApplierClientSpy) ApplyCurrentToken(ctx context.Context, req *http.Request) (*TokenApplyResult, error) {
-	t.CallCount++
-	return &TokenApplyResult{
-		TokenObtainedAt: time.Now(),
-	}, nil
-}
-
-var _ TokenApplier = (*tokenApplierClientSpy)(nil)
-
 type tokenRefresherClientSpy struct {
 	CallCount int
 }
@@ -65,7 +51,7 @@ func (m *mockFailClient) DoWithContext(ctx context.Context, request *http.Reques
 	return m.Responses[m.RequestCount-1], nil
 }
 
-var _ HttpClient[*http.Response] = (*mockFailClient)(nil)
+var _ HTTPClient[*http.Response] = (*mockFailClient)(nil)
 
 func TestIsRetriable(t *testing.T) {
 	type testCase struct {
@@ -107,7 +93,6 @@ func TestRetryBehavior(t *testing.T) {
 		MaxWaitTime                 int
 		MaxRetryCount               int
 		ExpectedLastCurrentWaitTime int
-		ExpectedTokenApplierCall    int
 		ExpectedTokenRefresherCall  int
 	}
 	testCases := []testCase{
@@ -121,7 +106,6 @@ func TestRetryBehavior(t *testing.T) {
 			MinWaitTime:                 1,
 			MaxWaitTime:                 4,
 			ExpectedLastCurrentWaitTime: 1,
-			ExpectedTokenApplierCall:    1,
 			ExpectedTokenRefresherCall:  0,
 		},
 		{
@@ -134,7 +118,6 @@ func TestRetryBehavior(t *testing.T) {
 			MinWaitTime:                 1,
 			MaxWaitTime:                 4,
 			ExpectedLastCurrentWaitTime: 1,
-			ExpectedTokenApplierCall:    1,
 			ExpectedTokenRefresherCall:  0,
 		},
 		{
@@ -147,7 +130,6 @@ func TestRetryBehavior(t *testing.T) {
 			MinWaitTime:                 1,
 			MaxWaitTime:                 4,
 			ExpectedLastCurrentWaitTime: 1,
-			ExpectedTokenApplierCall:    3,
 			ExpectedTokenRefresherCall:  0,
 		},
 		{
@@ -160,7 +142,6 @@ func TestRetryBehavior(t *testing.T) {
 			MinWaitTime:                 1,
 			MaxWaitTime:                 3,
 			ExpectedLastCurrentWaitTime: 3,
-			ExpectedTokenApplierCall:    3,
 			ExpectedTokenRefresherCall:  0,
 		},
 		{
@@ -173,7 +154,6 @@ func TestRetryBehavior(t *testing.T) {
 			MinWaitTime:                 1,
 			MaxWaitTime:                 10,
 			ExpectedLastCurrentWaitTime: 4,
-			ExpectedTokenApplierCall:    2,
 			ExpectedTokenRefresherCall:  0,
 		},
 		{
@@ -186,7 +166,6 @@ func TestRetryBehavior(t *testing.T) {
 			MinWaitTime:                 1,
 			MaxWaitTime:                 10,
 			ExpectedLastCurrentWaitTime: 1,
-			ExpectedTokenApplierCall:    2,
 			ExpectedTokenRefresherCall:  1,
 		},
 	}
@@ -203,8 +182,7 @@ func TestRetryBehavior(t *testing.T) {
 				Requests:  make([]*http.Request, 0),
 			}
 			refresherSpy := tokenRefresherClientSpy{}
-			applierSpy := tokenApplierClientSpy{}
-			retryClient := NewRetryHttpClient(&baseClient, tc.MinWaitTime, tc.MaxWaitTime, tc.MaxRetryCount, []int{400}, []int{401}, &refresherSpy, &applierSpy)
+			retryClient := NewRetryHttpClient(&baseClient, tc.MinWaitTime, tc.MaxWaitTime, tc.MaxRetryCount, []int{400}, []int{401}, &refresherSpy)
 			retryClient.timeUnit = time.Millisecond
 			req, err := http.NewRequest("GET", "https://google.com", bytes.NewBuffer([]byte(tc.RequestBody)))
 			if err != nil {
@@ -241,9 +219,6 @@ func TestRetryBehavior(t *testing.T) {
 			}
 			if tc.ExpectedLastCurrentWaitTime != retryClient.currentWaitSeconds {
 				t.Errorf("got wait time %d, want %d", retryClient.currentWaitSeconds, tc.ExpectedLastCurrentWaitTime)
-			}
-			if tc.ExpectedTokenApplierCall != applierSpy.CallCount {
-				t.Errorf("got token applier call count %d, want %d", applierSpy.CallCount, tc.ExpectedTokenApplierCall)
 			}
 			if tc.ExpectedTokenRefresherCall != refresherSpy.CallCount {
 				t.Errorf("got token refresher call count %d, want %d", refresherSpy.CallCount, tc.ExpectedTokenRefresherCall)

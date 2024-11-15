@@ -17,7 +17,6 @@
 import { Inject, Injectable } from '@angular/core';
 import { InspectionDataStoreService } from './inspection-data-store.service';
 import { InspectionData, TimelineRange } from '../models/inspection-data';
-import { sha512FromArrayBuffer } from '../utils/hash';
 import {
   KHIFile,
   KHIFileResource,
@@ -30,12 +29,6 @@ import { ParentRelationship, RevisionState, RevisionVerb } from '../generated';
 import { lastValueFrom } from 'rxjs';
 import { BACKEND_API, BackendAPI } from './api/backend-api-interface';
 import {
-  FRONTEND_ANALYTICS,
-  FrontendAnalytics,
-  KHIAnalyticsActivityType,
-} from './analytics/types';
-import { randomString } from '../utils/random';
-import {
   PROGRESS_DIALOG_STATUS_UPDATOR,
   ProgressDialogStatusUpdator,
 } from './progress/progress-interface';
@@ -43,6 +36,10 @@ import { LogEntry } from '../store/log';
 import { ResourceEvent } from '../store/event';
 import { ResourceRevision } from '../store/revision';
 import { TimelineEntry } from '../store/timeline';
+import {
+  EXTENSION_STORE,
+  ExtensionStore,
+} from '../extensions/extension-common/extension-store';
 
 /**
  * TextBufferLoader load large text from compressed binary part of KHI data format.
@@ -85,7 +82,7 @@ export class InspectionDataLoaderService {
     private progress: ProgressDialogStatusUpdator,
     private inspectionDataStore: InspectionDataStoreService,
     @Inject(BACKEND_API) private backendService: BackendAPI,
-    @Inject(FRONTEND_ANALYTICS) private analytics: FrontendAnalytics,
+    @Inject(EXTENSION_STORE) private extension: ExtensionStore,
   ) {}
 
   private eventDataToViewEvents(
@@ -404,34 +401,22 @@ export class InspectionDataLoaderService {
         rawInspectionData,
         jsonDataOffset + metaDataPart,
       );
-      const bufferLoader = new TextBufferLoader(textBuffers);
+      const textBufferLoader = new TextBufferLoader(textBuffers);
       const khiInspectionViewModel = this.responseDataToViewInspection(
         parsedJsonData,
-        bufferLoader,
+        textBufferLoader,
         rawInspectionData,
       );
 
-      // analytics code to inspection data metrics
-      const hash = await sha512FromArrayBuffer(rawInspectionData);
-      const openId = randomString();
-      this.analytics.globalMetadata()['inspectionDataHash'] = hash;
-      this.analytics.globalMetadata()['openId'] = openId;
-      this.analytics.report(KHIAnalyticsActivityType.OpenInspectionData, {
-        logLength: rawInspectionData.byteLength,
-        decompressedTextBufferLength: bufferLoader.totalSize,
-        revisionCount: khiInspectionViewModel.timelines.reduce(
-          (prev, next) => next.revisions.length + prev,
-          0,
-        ),
-        eventCount: khiInspectionViewModel.timelines.reduce(
-          (prev, next) => next.events.length + prev,
-          0,
-        ),
-      });
+      this.extension.notifyLifecycleOnInspectionDataOpen(
+        khiInspectionViewModel,
+        textBufferLoader,
+        rawInspectionData,
+      );
 
       this.inspectionDataStore.setNewInspectionData(
         khiInspectionViewModel,
-        bufferLoader,
+        textBufferLoader,
       );
     } catch (e) {
       console.error(e);

@@ -19,6 +19,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/testutil"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -31,8 +32,8 @@ func TestCommonParameters(t *testing.T) {
 		{
 			name: "default",
 			want: &CommonParameters{
-				DataDestinationFolder: wrapPointer("./data"),
-				TemporaryFolder:       wrapPointer("/tmp"),
+				DataDestinationFolder: testutil.P("./data"),
+				TemporaryFolder:       testutil.P("/tmp"),
 			},
 			before: func() {
 				os.Args = []string{os.Args[0]}
@@ -46,7 +47,9 @@ func TestCommonParameters(t *testing.T) {
 			prepareFlagParsingTest(t)
 			tc.before()
 			store := &CommonParameters{}
-			err := Parse(store)
+			ResetStore()
+			AddStore(store)
+			err := Parse()
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -31,6 +31,10 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { BACKEND_API } from 'src/app/services/api/backend-api-interface';
 import { BACKEND_CONNECTION } from 'src/app/services/api/backend-connection.service';
 import { BackendConnectionService } from 'src/app/services/api/backend-connection-interface';
+import {
+  EXTENSION_STORE,
+  ExtensionStore,
+} from 'src/app/extensions/extension-common/extension-store';
 
 describe('NewInspectionDialogTest', () => {
   let component: NewInspectionDialogComponent;
@@ -70,6 +74,10 @@ describe('NewInspectionDialogTest', () => {
         {
           provide: BACKEND_CONNECTION,
           useValue: backendConnectionSpy,
+        },
+        {
+          provide: EXTENSION_STORE,
+          useValue: new ExtensionStore(),
         },
       ],
     }).compileComponents();

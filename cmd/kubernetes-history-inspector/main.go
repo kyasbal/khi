@@ -26,18 +26,19 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/analytics"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/analytics/types"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/flag"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/common"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/logger"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/lifecycle"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/k8s"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/server"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/api"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/api/accesstoken"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/api/quotaproject"
 
 	"cloud.google.com/go/profiler"
 )
@@ -61,17 +62,32 @@ func displayStartMessage(port int) {
 %[1]s`, reset, bold, green, cyan, port)
 }
 
+var taskSetRegistrer []inspection.PrepareInspectionServerFunc = make([]inspection.PrepareInspectionServerFunc, 0)
+
+func init() {
+	parameters.AddStore(parameters.Help)
+	parameters.AddStore(parameters.Common)
+	parameters.AddStore(parameters.Server)
+	parameters.AddStore(parameters.Job)
+	parameters.AddStore(parameters.Auth)
+	parameters.AddStore(parameters.Debug)
+
+	taskSetRegistrer = append(taskSetRegistrer, common.PrepareInspectionServer)
+	taskSetRegistrer = append(taskSetRegistrer, gcp.PrepareInspectionServer)
+}
+
+func handleTerminateSignal(terminateErrorCode int) {
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
+
+	s := <-sig
+	lifecycle.Default.NotifyTerminate(s)
+	os.Exit(terminateErrorCode)
+}
+
 func main() {
 	logger.InitGlobalKHILogger()
-	err := parameters.Parse(
-		parameters.Help,
-		parameters.Common,
-		parameters.Server,
-		parameters.Job,
-		parameters.Auth,
-		parameters.Debug,
-		parameters.Private,
-	)
+	err := parameters.Parse()
 	if err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
@@ -90,25 +106,23 @@ func main() {
 		}
 		slog.Info("Cloud Profiler is enabled")
 	}
-	reporter := analytics.NewAnalyticsReporter()
-	reporter.ReportEvent(types.AnalyticsEventKHIStart, map[string]any{})
+	lifecycle.Default.NotifyInit()
 	slog.Info("Initializing Kubernetes History Inspector...")
-	k8s.GenerateDefaultMergeConfig()
 
+	k8s.GenerateDefaultMergeConfig()
+	if *parameters.Auth.QuotaProjectID != "" {
+		api.DefaultGCPClientFactory.RegisterHeaderProvider(quotaproject.NewHeaderProvider(*parameters.Auth.QuotaProjectID))
+	}
 	inspectionServer, err := inspection.NewServer()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to construct the inspection server due to unexpected error\n%v", err))
 	}
 
 	if !*parameters.Server.ViewerMode {
-		addons := []inspection.PrepareInspectionServerFunc{
-			common.PrepareInspectionServer,
-			gcp.PrepareInspectionServer,
-		}
-		for i, addon := range addons {
-			err = addon(inspectionServer)
+		for i, taskSetRegistrer := range taskSetRegistrer {
+			err = taskSetRegistrer(inspectionServer)
 			if err != nil {
-				slog.Error(fmt.Sprintf("Failed to call initialize calls for addons(#%d)\n%v", i, err))
+				slog.Error(fmt.Sprintf("Failed to call initialize calls for taskSetRegistrer(#%d)\n%v", i, err))
 			}
 		}
 	}
@@ -139,32 +153,12 @@ func main() {
 			engine.Run(fmt.Sprintf("%s:%d", *parameters.Server.Host, *parameters.Server.Port))
 			grp.Done()
 		}()
-		// Catch termination signal and send the event to analytics backend
-		go func() {
-			sig := make(chan os.Signal, 1)
-			signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
-
-			s := <-sig
-			reporter.ReportEvent(types.AnalyticsEventKHITerminate, map[string]any{
-				"signal": s.String(),
-			})
-			os.Exit(0)
-		}()
+		go handleTerminateSignal(0)
 		displayStartMessage(*parameters.Server.Port)
 		grp.Wait()
 	} else {
 		slog.Info("Starting Kubernetes History Inspector as job mode...")
-		// Catch termination signal and send the event to analytics backend
-		go func() {
-			sig := make(chan os.Signal, 1)
-			signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
-
-			s := <-sig
-			reporter.ReportEvent(types.AnalyticsEventKHITerminate, map[string]any{
-				"signal": s.String(),
-			})
-			os.Exit(1)
-		}()
+		go handleTerminateSignal(1)
 		queryParametersInJson := *parameters.Job.InspectionValues
 		var values map[string]any
 		err := json.Unmarshal([]byte(queryParametersInJson), &values)

@@ -55,4 +55,4 @@ func (h *HttpClientSpy[T]) DoWithContext(ctx context.Context, request *http.Requ
 	return h.Results[callIndex].Response, h.Results[callIndex].Error
 }
 
-var _ httpclient.HttpClient[any] = (*HttpClientSpy[any])(nil)
+var _ httpclient.HTTPClient[any] = (*HttpClientSpy[any])(nil)

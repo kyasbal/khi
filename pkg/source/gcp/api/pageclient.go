@@ -25,10 +25,10 @@ type RequestGenerator = func(hasToken bool, nextPageToken string) (*http.Request
 
 // PageClient is utility to obtain all the resource from API returning page token.
 type PageClient[T any] struct {
-	client httpclient.HttpClient[*http.Response]
+	client httpclient.HTTPClient[*http.Response]
 }
 
-func NewPageClient[T any](client httpclient.HttpClient[*http.Response]) *PageClient[T] {
+func NewPageClient[T any](client httpclient.HTTPClient[*http.Response]) *PageClient[T] {
 	return &PageClient[T]{
 		client: client,
 	}

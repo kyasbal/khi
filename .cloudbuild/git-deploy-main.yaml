@@ -23,15 +23,25 @@ steps:
         npm ci
     waitFor:
       - "-"
+  - id: generate frontend codes
+    name: golang:1.21
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        apt-get update && apt-get install jq -y
+        make prepare-frontend
+    waitFor:
+      - npm install
   - id: build web
     name: node:18
     entrypoint: /bin/bash
     args:
       - -c
       - |
-        make build-web
+        make build-web-internal
     waitFor:
-      - npm install
+      - generate frontend codes
   - id: build latest container
     name: "gcr.io/cloud-builders/docker"
     entrypoint: /bin/bash
@@ -49,7 +59,7 @@ steps:
     args:
       - -c
       - |
-        NG_APP_GOOGLE_DRIVE_CLIENT_ID="173883494332-f5o6gkmpb5fku5u3vp43279mqbj24pe5.apps.googleusercontent.com" make build-web-viewer-mode
+        make build-web-internal-khi-ro
     waitFor:
       - build latest container # This overwrite the result from build web. Thus it can't be run parallel with building container
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
@@ -57,7 +67,7 @@ steps:
     args:
       - -c
       - |
-        gcloud app deploy --project="google.com:khi-ro" --ignore-file=.gcloudignore-khi-ro --version main
+        gcloud app deploy --project="google.com:khi-ro" --version main
     waitFor:
       - build web viewer mode
 images:

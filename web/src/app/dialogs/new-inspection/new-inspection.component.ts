@@ -42,6 +42,10 @@ import {
 } from 'src/app/services/api/backend-api-interface';
 import { BACKEND_CONNECTION } from 'src/app/services/api/backend-connection.service';
 import { BackendConnectionService } from 'src/app/services/api/backend-connection-interface';
+import {
+  EXTENSION_STORE,
+  ExtensionStore,
+} from 'src/app/extensions/extension-common/extension-store';
 
 export interface NewInspectionDialogResult {
   inspectionTaskStarted: boolean;
@@ -82,6 +86,7 @@ export class NewInspectionDialogComponent implements OnDestroy {
     @Inject(BACKEND_CONNECTION)
     private readonly backendConnection: BackendConnectionService,
     @Inject(BACKEND_API) private readonly apiClient: BackendAPI,
+    @Inject(EXTENSION_STORE) private readonly extension: ExtensionStore,
   ) {
     this.featureToggleRequest
       .pipe(
@@ -121,6 +126,7 @@ export class NewInspectionDialogComponent implements OnDestroy {
         switchMap(([, client, values]) => client.run(values)),
       )
       .subscribe(() => {
+        this.extension.notifyLifecycleOnInspectionStart();
         this.dialogRef.close({
           inspectionTaskStarted: true,
         });

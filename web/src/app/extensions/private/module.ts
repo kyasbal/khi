@@ -22,9 +22,16 @@ import {
   EveDashboardBindingForNode,
   PlaybookBindingWithComponentNameAnnotation,
 } from './timeline-navigator-extensions';
+import { FRONTEND_ANALYTICS } from './analytics/types';
+import { FrontendAnalyticsWithGA } from './analytics/ga';
+import { AnalyticsLifecycleExtension } from './analytics/analytics-lifecycle-extension';
 
 @NgModule({
-  providers: [KHIExtensionBundle.forExtension(initExtension)],
+  imports: [],
+  providers: [
+    { provide: FRONTEND_ANALYTICS, useValue: new FrontendAnalyticsWithGA() },
+    KHIExtensionBundle.forExtension(initExtension),
+  ],
 })
 export class PrivateKHIExtension {}
 
@@ -42,4 +49,5 @@ function initExtension(extension: KHIExtensionBundle) {
   extension.addTimelineNavigatorExtension(
     new EveDashboardBindingForComponent(),
   );
+  extension.addLifecycleHookExtension(AnalyticsLifecycleExtension);
 }

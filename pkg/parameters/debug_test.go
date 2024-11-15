@@ -19,6 +19,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/testutil"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -35,13 +36,11 @@ func TestDebugParameters(t *testing.T) {
 			},
 			name: "default",
 			want: &DebugParameters{
-				Profiler:         wrapPointer(false),
-				ProfilerService:  wrapPointer("khi"),
-				ProfilerProject:  wrapPointer(""),
-				DisableAnalytics: wrapPointer(false),
-				AnalyticsDebug:   wrapPointer(false),
-				Verbose:          wrapPointer(false),
-				NoColor:          wrapPointer(false),
+				Profiler:        testutil.P(false),
+				ProfilerService: testutil.P("khi"),
+				ProfilerProject: testutil.P(""),
+				Verbose:         testutil.P(false),
+				NoColor:         testutil.P(false),
 			},
 		},
 	}
@@ -51,7 +50,9 @@ func TestDebugParameters(t *testing.T) {
 			prepareFlagParsingTest(t)
 			store := &DebugParameters{}
 			tc.before()
-			err := Parse(store)
+			ResetStore()
+			AddStore(store)
+			err := Parse()
 			if err != nil {
 				t.Fatal(err)
 			}

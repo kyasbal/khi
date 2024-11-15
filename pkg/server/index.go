@@ -18,39 +18,12 @@ package server
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/server/index"
 )
 
 var IndexReplacePlaceholder = `<!--INJECT GENERATED CODE HERE FROM BACKEND-->`
-
-func generateGaMetaTags(gaLabels map[string]string) []string {
-	result := make([]string, 0)
-	for key, value := range gaLabels {
-		result = append(result, fmt.Sprintf(`<meta id="ga-meta-%s" content="%s">`, key, value))
-	}
-	slices.Sort(result)
-	return result
-}
-
-func getServerBasePathMetaTag() string {
-	basePath := ""
-	if parameters.Server.BasePath != nil {
-		basePath = *parameters.Server.BasePath
-	}
-	return fmt.Sprintf(`<meta id="server-base-path" content="%s">`, basePath)
-}
-
-// getBaseTag returns the `<base>` tag to rewrite the base url of resources accessed with relative path on frontend.
-func getBaseTag() string {
-	basePath := "/"
-	if parameters.Server.FrontendResourceBasePath != nil {
-		basePath = *parameters.Server.FrontendResourceBasePath
-	}
-	return fmt.Sprintf(`<base href="%s">`, basePath)
-}
 
 // replaceLocalDevServerOnlyTag removed tags only used in the local dev environment.
 func replaceLocalDevServerOnlyTag(source string) string {
@@ -62,15 +35,8 @@ func replaceDynamicPartOfIndex(originalIndexHTML string) (string, error) {
 	if !strings.Contains(originalIndexHTML, IndexReplacePlaceholder) {
 		return "", fmt.Errorf("inject taregt string was not found")
 	}
-	gaLabelsMap := map[string]string{}
-	if parameters.Private.GALabels != nil {
-		gaLabelsMap = parameters.Private.GetMapOfGALabels()
-	}
 
-	var injectedTags []string
-	injectedTags = append(injectedTags, getBaseTag())
-	injectedTags = append(injectedTags, generateGaMetaTags(gaLabelsMap)...)
-	injectedTags = append(injectedTags, getServerBasePathMetaTag())
+	generatedTags := index.GenerateTags()
 
-	return strings.Replace(replaceLocalDevServerOnlyTag(originalIndexHTML), IndexReplacePlaceholder, strings.Join(injectedTags, "\n"), 1), nil
+	return strings.Replace(replaceLocalDevServerOnlyTag(originalIndexHTML), IndexReplacePlaceholder, strings.Join(generatedTags, "\n"), 1), nil
 }

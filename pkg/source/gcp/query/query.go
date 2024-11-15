@@ -28,6 +28,7 @@ import (
 	inspection_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/log"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/api"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/query/queryutil"
 	gcp_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
@@ -43,8 +44,8 @@ type QueryGeneratorFunc = func(context.Context, int, *task.VariableSet) ([]strin
 var queryThreadPool = worker.NewPool(16)
 
 func NewQueryGeneratorTask(taskId string, readableQueryName string, logType enum.LogType, dependencies []string, generator QueryGeneratorFunc) task.Definition {
-	return inspection_task.NewInspectionProcessor(taskId, append(dependencies, gcp_task.GCPApiClientTaskId, gcp_task.InputProjectIdVariableName, gcp_task.InputStartTimeVariableName, gcp_task.InputEndTimeVariableName, inspection_task.ReaderFactoryGeneratorTaskId), func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (any, error) {
-		apiClient, err := gcp_task.GetGCPApiClientFromTaskVariable(v)
+	return inspection_task.NewInspectionProcessor(taskId, append(dependencies, gcp_task.InputProjectIdVariableName, gcp_task.InputStartTimeVariableName, gcp_task.InputEndTimeVariableName, inspection_task.ReaderFactoryGeneratorTaskId), func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (any, error) {
+		client, err := api.DefaultGCPClientFactory.NewClient()
 		if err != nil {
 			return "", err
 		}
@@ -92,7 +93,7 @@ func NewQueryGeneratorTask(taskId string, readableQueryName string, logType enum
 			// TODO: not to store whole logs on memory to avoid OOM
 			// Run query only when thetask mode is for running
 			if taskMode == inspection_task.TaskModeRun {
-				worker := queryutil.NewParallelQueryWorker(queryThreadPool, apiClient, queryString, startTime, endTime, 5)
+				worker := queryutil.NewParallelQueryWorker(queryThreadPool, client, queryString, startTime, endTime, 5)
 				logs, err := worker.Query(ctx, readerFactory, projectId, progress)
 				if err != nil {
 					if strings.HasPrefix(err.Error(), "401:") {

@@ -18,14 +18,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/config"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestParseKubernetesOperation(t *testing.T) {
-	config.DEFAULT_CONFIG_LOCATION = "resources/config.yml"
 	testCases := []struct {
 		ResourceName  string
 		MethodName    string
@@ -139,13 +137,11 @@ func TestParseKubernetesOperation(t *testing.T) {
 }
 
 func TestConvertToResourcePath(t *testing.T) {
-	config.DEFAULT_CONFIG_LOCATION = "resources/config.yml"
 	res := ParseKubernetesOperation("io.k8s.core/v1/namespaces/foo/pods/bar/status", "io.k8s.core.v1.pods.status.update")
 	if res.CovertToResourcePath() != "io.k8s.core/v1#pod#foo#bar#status" {
 		t.Errorf("Expected resource path mismatch, got %q want 'io.k8s.core/v1#pod#foo#bar#status'", res.CovertToResourcePath())
 	}
 
-	config.DEFAULT_CONFIG_LOCATION = "resources/config.yml"
 	res = ParseKubernetesOperation("io.k8s.core/v1/namespaces/foo/pods/bar", "io.k8s.core.v1.pods.update")
 	if res.CovertToResourcePath() != "io.k8s.core/v1#pod#foo#bar" {
 		t.Errorf("EExpected resource path mismatch, got %q want 'io.k8s.core/v1#pod#foo#bar'", res.CovertToResourcePath())

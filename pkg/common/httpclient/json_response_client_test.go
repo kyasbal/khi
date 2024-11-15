@@ -38,7 +38,7 @@ func (m *mockHttpClient) DoWithContext(ctx context.Context, request *http.Reques
 	}
 }
 
-var _ HttpClient[*http.Response] = (*mockHttpClient)(nil)
+var _ HTTPClient[*http.Response] = (*mockHttpClient)(nil)
 
 func TestDoWithContext(t *testing.T) {
 	type testJsonType struct {

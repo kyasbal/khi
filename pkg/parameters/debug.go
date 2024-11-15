@@ -31,12 +31,6 @@ type DebugParameters struct {
 	// ProfilerProject is the GCP project ID where the profiler sends the data to.
 	ProfilerProject *string
 
-	// DisableAnalytics
-	// If this flag is set, KHI won't send the usage data to the analytics backend.
-	DisableAnalytics *bool
-	// AnalyticsDebug is the flag included in the debug analytics data. This is for the analytics data to be excluded.
-	AnalyticsDebug *bool
-
 	// Verbose
 	// If this flag is set, KHI prints verbose logs.
 	Verbose *bool
@@ -59,8 +53,6 @@ func (d *DebugParameters) Prepare() error {
 	d.Profiler = flag.Bool("profiler", false, "Decides if KHI uses CloudProfiler or not.", "")
 	d.ProfilerProject = flag.String("profiler-project", "", "The GCP project ID where the profiler sends the data to.", "")
 	d.ProfilerService = flag.String("profiler-service", "khi", "The service name given to CloudProfiler.", "")
-	d.DisableAnalytics = flag.Bool("disable-analytics", false, "If this flag is set, KHI won't send the usage data to the analytics backend.", "")
-	d.AnalyticsDebug = flag.Bool("analytics-debug", false, "The flag included in the debug analytics data. This is for the analytics data to be excluded.", "")
 	d.Verbose = flag.Bool("verbose", false, "If this flag is set, KHI prints verbose logs.", "")
 	d.NoColor = flag.Bool("no-color", false, "If this flag is set, KHI prints logs without color.", "")
 	return nil

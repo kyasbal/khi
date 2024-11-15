@@ -17,6 +17,8 @@
 import { InjectionToken, Provider } from '@angular/core';
 import { ExtensionStore } from './extension-store';
 import { TimelineNavigatorExtension } from './extension-types/timeline-navigator';
+import { URLDataOpenerExtension } from './extension-types/url-data-opener';
+import { LifecycleHookExtension } from './extension-types/lifecycle-hook';
 
 /**
  * The injection token for KHIExtensionBundle
@@ -64,5 +66,22 @@ export class KHIExtensionBundle {
       throw new Error('KHIExtension is not initialized');
     }
     this.extensionStore.timelineNavigatorExtensions.push(extension);
+  }
+
+  /**
+   * Register the new extension to load data somewhere else with URL hash.
+   */
+  public addURLDataOpenerExtension(extension: URLDataOpenerExtension): void {
+    if (this.extensionStore === null) {
+      throw new Error('KHIExtension is not initialized');
+    }
+    this.extensionStore.urlDataOenerExtensions.push(extension);
+  }
+
+  public addLifecycleHookExtension(extension: LifecycleHookExtension): void {
+    if (this.extensionStore === null) {
+      throw new Error('KHIExtension is not initialized');
+    }
+    this.extensionStore.lifecycleHookExtensions.push(extension);
   }
 }

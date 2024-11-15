@@ -134,7 +134,6 @@ export class CommonFieldAnnotatorComponent {
     icon: string,
     label: string,
     fieldMapper: (tl: TimelineEntry) => string,
-    isGray = false,
   ): AnnotationDecider<TimelineEntry> {
     return (tl?: TimelineEntry | null) => {
       if (!tl) return DECISION_HIDDEN;
@@ -145,7 +144,6 @@ export class CommonFieldAnnotatorComponent {
           icon,
           label,
           value: of(result),
-          isGray,
         },
       };
     };
@@ -155,7 +153,6 @@ export class CommonFieldAnnotatorComponent {
     icon: string,
     label: string,
     fieldMapper: (tl: ResourceRevision) => string | undefined,
-    isGray = false,
   ): AnnotationDecider<TimelineEntry> {
     return (tl?: TimelineEntry | null) => {
       if (!tl) return DECISION_HIDDEN;
@@ -172,7 +169,6 @@ export class CommonFieldAnnotatorComponent {
           icon,
           label,
           value: of([...values].join(',')),
-          isGray,
         },
       };
     };

@@ -17,11 +17,7 @@ package api_test
 import (
 	"context"
 
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata/progress"
-	inspection_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/api"
-	gcp_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
 type MockApiClient struct {
@@ -87,9 +83,3 @@ func (m *MockApiClient) ListLogEntries(ctx context.Context, projectId string, fi
 }
 
 var _ api.GCPClient = (*MockApiClient)(nil)
-
-func CreateMockAPIClientTask(client *MockApiClient) task.Definition {
-	return inspection_task.NewInspectionProducer(gcp_task.GCPApiClientTaskId, func(ctx context.Context, taskMode int, progress *progress.TaskProgress) (any, error) {
-		return client, nil
-	})
-}
