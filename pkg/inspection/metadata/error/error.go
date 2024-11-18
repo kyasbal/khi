@@ -60,7 +60,6 @@ func NewPermissionErrorMessage(projectId string) *ErrorMessage {
 	return &ErrorMessage{
 		ErrorId: 0,
 		Message: fmt.Sprintf("Permission error to read logs from project `%s`", projectId),
-		Link:    "https://g3doc.corp.google.com/company/gfw/support/cloud/systems/khi/troubleshooting.md?cl=head",
 	}
 }
 
@@ -68,7 +67,6 @@ func NewNotFoundErrorMessage(projectId string) *ErrorMessage {
 	return &ErrorMessage{
 		ErrorId: 1,
 		Message: fmt.Sprintf("Project `%s` not found", projectId),
-		Link:    "https://g3doc.corp.google.com/company/gfw/support/cloud/systems/khi/troubleshooting.md?cl=head",
 	}
 }
 
@@ -76,7 +74,6 @@ func NewUnauthorizedErrorMessage() *ErrorMessage {
 	return &ErrorMessage{
 		ErrorId: 2,
 		Message: "Access token is not authorized. (Token expired?)",
-		Link:    "https://g3doc.corp.google.com/company/gfw/support/cloud/systems/khi/troubleshooting.md?cl=head",
 	}
 }
 
