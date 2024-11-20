@@ -23,7 +23,7 @@ import { LogEntry } from '../store/log';
 @Injectable({ providedIn: 'root' })
 export class TimelineSelectionService {
   private $logs: BehaviorSubject<LogEntry[]> =
-    this._inspectionDataStore.$allLogs;
+    this._inspectionDataStore.allLogs;
 
   private $currentTime: BehaviorSubject<number> = new BehaviorSubject(0);
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import {
   BehaviorSubject,
   Observable,
@@ -26,9 +26,12 @@ import {
   map,
   withLatestFrom,
 } from 'rxjs';
-import { InspectionDataStoreService } from '../services/inspection-data-store.service';
 import { TIMELINE_ITEM_HEIGHTS } from './canvas/types';
 import { TimelineEntry, TimelineLayer } from '../store/timeline';
+import {
+  DEFAULT_TIMELINE_FILTER,
+  TimelineFilter,
+} from '../services/timeline-filter.service';
 
 /**
  * Set of properties needed for scrolling behaviors and computed values of TimelineEntry.
@@ -97,7 +100,7 @@ export class TimelinesScrollStrategy {
   visibleItemRange = combineLatest([
     this.viewportHeight,
     this.viewportScrollOffset,
-    this._inspectioDataStore.$filteredTimelines,
+    this.timelineFilter.filteredTimeline,
     this.perRowScrollingProperties,
   ]).pipe(
     map(([height, offset, timelines, rows]) => ({
@@ -177,9 +180,11 @@ export class TimelinesScrollStrategy {
    */
   scrollToTimelineVerticallyCommand: Subject<TimelineEntry> = new Subject();
 
-  constructor(private _inspectioDataStore: InspectionDataStoreService) {
+  constructor(
+    @Inject(DEFAULT_TIMELINE_FILTER) private timelineFilter: TimelineFilter,
+  ) {
     // Calculate properties needed for scrolling behavior from updated timeline array.
-    this._inspectioDataStore.$filteredTimelines
+    this.timelineFilter.filteredTimeline
       .pipe(
         map((timelines) => {
           const result: PerRowScrollingProperty[] = [];
@@ -206,7 +211,7 @@ export class TimelinesScrollStrategy {
     this.scrollToTimelineVerticallyCommand
       .pipe(
         withLatestFrom(
-          this._inspectioDataStore.$filteredTimelines,
+          this.timelineFilter.filteredTimeline,
           this.perRowScrollingProperties,
           this.visibleItemRange,
         ),
@@ -233,7 +238,7 @@ export class TimelinesScrollStrategy {
 
   visibleTimelines: Observable<TimelineEntry[]> = combineLatest([
     this.visibleItemRange,
-    this._inspectioDataStore.$filteredTimelines,
+    this.timelineFilter.filteredTimeline,
   ]).pipe(
     map(([range, timelines]) => {
       return timelines.slice(range.start, range.end);
@@ -245,7 +250,7 @@ export class TimelinesScrollStrategy {
    */
   stickyTimelines: Observable<TimelineEntry[]> = combineLatest([
     this.visibleItemRange,
-    this._inspectioDataStore.$filteredTimelines,
+    this.timelineFilter.filteredTimeline,
   ]).pipe(
     filter(([, timelines]) => timelines.length > 0),
     map(([range, timelines]) => {

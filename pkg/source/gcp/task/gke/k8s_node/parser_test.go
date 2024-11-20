@@ -284,3 +284,39 @@ func TestRewroteContainerId(t *testing.T) {
 		})
 	}
 }
+
+func TestGetSyslogIdentifier(t *testing.T) {
+	testCases := []struct {
+		Name                     string
+		InputYaml                string
+		ExpectedSyslogIdentifier string
+	}{
+		{
+			Name: "jsonPayload.SYSLOG_IDENTIFIER exists without bracket",
+			InputYaml: `jsonPayload:
+  SYSLOG_IDENTIFIER: containerd`,
+			ExpectedSyslogIdentifier: "containerd",
+		},
+		{
+			Name: "jsonPayload.SYSLOG_IDENTIFIER exists with bracket",
+			InputYaml: `jsonPayload:
+  SYSLOG_IDENTIFIER: (dockerd)`,
+			ExpectedSyslogIdentifier: "dockerd",
+		},
+		{
+			Name:                     "jsonPayload.SYSLOG_IDENTIFIER doesn't exist",
+			InputYaml:                `jsonPayload: {}`,
+			ExpectedSyslogIdentifier: "Unknown",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			l := log_test.MustLogEntity(tc.InputYaml)
+			syslogIdentifier := (&k8sNodeParser{}).GetSyslogIdentifier(l)
+			if syslogIdentifier != tc.ExpectedSyslogIdentifier {
+				t.Errorf("GetSyslogIdentifier() = %q, want:%q", syslogIdentifier, tc.ExpectedSyslogIdentifier)
+			}
+		})
+
+	}
+}

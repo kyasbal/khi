@@ -18,6 +18,7 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
+  Inject,
   Input,
   OnDestroy,
   OnInit,
@@ -63,6 +64,10 @@ import {
   ParentRelationshipMetadataType,
   Severity,
 } from '../generated';
+import {
+  DEFAULT_TIMELINE_FILTER,
+  TimelineFilter,
+} from '../services/timeline-filter.service';
 
 interface HoverViewStateLog {
   time: number;
@@ -148,7 +153,7 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
   timeRange = this._inspectionDataStore.$timeRange;
   highlightLogs = this.selectionManager.highlightedLogs;
 
-  $filteredLog = this._inspectionDataStore.$filteredOutLogIndices;
+  $filteredLog = this._inspectionDataStore.filteredOutLogIndicesSet;
 
   private canvasMouseMoveEvent = new BehaviorSubject<MouseEvent | null>(null);
 
@@ -222,6 +227,7 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
     private timelineScrollStrategy: TimelinesScrollStrategy,
     private timelineRenderer: TimelineRendererService,
     private keyEventHandler: CanvasKeyEventHandler,
+    @Inject(DEFAULT_TIMELINE_FILTER) private timelineFilter: TimelineFilter,
   ) {}
   ngOnDestroy(): void {
     this.destoroyed.next();
@@ -410,6 +416,7 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
       this.canvasParentSizeSubject,
       this.timelineCoordinateCalculator,
       this._inspectionDataStore,
+      this.timelineFilter,
       this._viewStateService,
       this.selectionManager,
     );

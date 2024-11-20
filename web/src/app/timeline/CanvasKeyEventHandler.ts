@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { SelectionManagerService } from '../services/selection-manager.service';
 import { Subject, withLatestFrom } from 'rxjs';
-import { InspectionDataStoreService } from '../services/inspection-data-store.service';
 import { TimelineEntry, TimelineLayer } from '../store/timeline';
+import {
+  DEFAULT_TIMELINE_FILTER,
+  TimelineFilter,
+} from '../services/timeline-filter.service';
 
 interface MoveHorizontalSelectionCommand {
   direction: 'prev' | 'next';
@@ -49,7 +52,7 @@ export class CanvasKeyEventHandler {
 
   constructor(
     private selectionManager: SelectionManagerService,
-    dataStore: InspectionDataStoreService,
+    @Inject(DEFAULT_TIMELINE_FILTER) filter: TimelineFilter,
   ) {
     // For revision selection
     this.moveHorizontalSelectionCommand
@@ -111,7 +114,7 @@ export class CanvasKeyEventHandler {
     this.moveVerticalSelectionCommand
       .pipe(
         withLatestFrom(
-          dataStore.$filteredTimelines,
+          filter.filteredTimeline,
           selectionManager.selectedTimeline,
         ),
       )

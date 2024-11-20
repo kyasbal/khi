@@ -22,9 +22,12 @@ import { GraphDataConverterService } from '../../graph-converter.service';
 import { SelectionManagerService } from '../../selection-manager.service';
 import { WindowConnectorService } from '../window-connector.service';
 import { withLatestFrom } from 'rxjs';
-import { InspectionDataStoreService } from '../../inspection-data-store.service';
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { UpdateGraphMessage } from './graph-page-datasource.service';
+import {
+  DEFAULT_TIMELINE_FILTER,
+  TimelineFilter,
+} from '../../timeline-filter.service';
 
 @Injectable()
 export class GraphPageDataSourceServer {
@@ -32,7 +35,7 @@ export class GraphPageDataSourceServer {
     private graphConverter: GraphDataConverterService,
     private connector: WindowConnectorService,
     private selectionManager: SelectionManagerService,
-    private dataStore: InspectionDataStoreService,
+    @Inject(DEFAULT_TIMELINE_FILTER) private filter: TimelineFilter,
   ) {}
 
   public activate() {
@@ -41,7 +44,7 @@ export class GraphPageDataSourceServer {
       .pipe(
         withLatestFrom(
           this.selectionManager.selectedLog,
-          this.dataStore.$filteredTimelines,
+          this.filter.filteredTimeline,
         ),
       )
       .subscribe(([message, log, timeline]) => {

@@ -70,6 +70,14 @@ func (*k8sNodeParser) Grouper() grouper.LogGrouper {
 	return grouper.NewSingleStringFieldKeyLogGrouper("resource.labels.node_name")
 }
 
+func (*k8sNodeParser) GetSyslogIdentifier(l *log.LogEntity) string {
+	syslogIdentiefier := l.GetStringOrDefault("jsonPayload.SYSLOG_IDENTIFIER", "Unknown")
+	if strings.HasPrefix(syslogIdentiefier, "(") && strings.HasSuffix(syslogIdentiefier, ")") { // dockerd can be "(dockerd)" in SYSLOG_IDENTIFIER field.
+		syslogIdentiefier = strings.TrimPrefix(strings.TrimSuffix(syslogIdentiefier, ")"), "(")
+	}
+	return syslogIdentiefier
+}
+
 // Parse implements parser.Parser.
 func (p *k8sNodeParser) Parse(ctx context.Context, l *log.LogEntity, cs *history.ChangeSet, builder *history.Builder, v *task.VariableSet) error {
 	if !l.HasKLogField("") {
@@ -96,7 +104,7 @@ func (p *k8sNodeParser) Parse(ctx context.Context, l *log.LogEntity, cs *history
 	}
 
 	supportsLifetimeParse := false
-	syslogIdentifier := l.GetStringOrDefault("jsonPayload.SYSLOG_IDENTIFIER", "Unknown")
+	syslogIdentifier := p.GetSyslogIdentifier(l)
 	nodeComponentPath := resourcepath.NodeComponent(nodeName, syslogIdentifier)
 	if syslogIdentifier == "Unknown" {
 		// Check if the log is for kube-proxy. If it was true, the log event will be generated on the Pod resource.

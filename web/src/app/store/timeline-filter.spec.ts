@@ -16,7 +16,7 @@
 
 import { ParentRelationship } from '../generated';
 import { TimelineEntry } from './timeline';
-import { TimelineFilter } from './timeline-filter';
+import { TimelineFilterFacade } from './timeline-filter';
 
 interface TimelineFilterTestCase {
   name: string;
@@ -45,7 +45,7 @@ describe('TimelineFilter#isNodeOrNodeChildren', () => {
         [],
         ParentRelationship.RelationshipChild,
       );
-      expect(TimelineFilter.isNodeOrNodeChildren(timeline)).toBe(
+      expect(TimelineFilterFacade.isNodeOrNodeChildren(timeline)).toBe(
         testCase.expected,
       );
     });
@@ -73,7 +73,7 @@ describe('TimelineFilter#isPodOrChildren', () => {
         [],
         ParentRelationship.RelationshipChild,
       );
-      expect(TimelineFilter.isPodOrPodChildren(timeline)).toBe(
+      expect(TimelineFilterFacade.isPodOrPodChildren(timeline)).toBe(
         testCase.expected,
       );
     });
@@ -106,7 +106,7 @@ describe('TimelineFilter#isPodBindingForNode', () => {
         [],
         ParentRelationship.RelationshipChild,
       );
-      expect(TimelineFilter.isPodBindingForNode(timeline)).toBe(
+      expect(TimelineFilterFacade.isPodBindingForNode(timeline)).toBe(
         testCase.expected,
       );
     });

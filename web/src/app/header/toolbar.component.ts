@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import {
   BehaviorSubject,
@@ -31,6 +31,10 @@ import { ViewStateService } from '../services/view-state.service';
 import { nonEmptyOrDefaultString } from '../utils/state-util';
 import { SelectionManagerService } from '../services/selection-manager.service';
 import { BreakpointObserver } from '@angular/cdk/layout';
+import {
+  DEFAULT_TIMELINE_FILTER,
+  TimelineFilter,
+} from '../services/timeline-filter.service';
 
 @Component({
   selector: 'khi-header-toolbar',
@@ -52,11 +56,12 @@ export class ToolbarComponent implements OnInit, OnDestroy {
 
   timezoneShift$ = this.viewStateService.timezoneShift;
 
-  kinds$ = this.inspectionDataStore.$resourceKinds;
-  includedKinds$ = this.inspectionDataStore.$kindTimelineFilter;
-  namespaces$ = this.inspectionDataStore.$resourceNamespaces;
+  kinds$ = this.inspectionDataStore.availableKinds;
+  includedKinds$ = this.timelineFilter.kindTimelineFilter;
+  namespaces$ = this.inspectionDataStore.availableNamespaces;
+  includedNamespaces$ = this.timelineFilter.namespaceTimelineFilter;
   subresourceRelationships =
-    this.inspectionDataStore.subresourceRelationships.pipe(
+    this.inspectionDataStore.availableSubresourceParentRelationships.pipe(
       map((rels) => {
         const relationshipLabels = new Set<string>();
         for (const relationship of rels) {
@@ -68,7 +73,7 @@ export class ToolbarComponent implements OnInit, OnDestroy {
       }),
     );
   includedSubresourceRelationships =
-    this.inspectionDataStore.subresourceParentRelationshipFilter.pipe(
+    this.timelineFilter.subresourceParentRelationshipFilter.pipe(
       map((rels) => {
         const relationshipLabels = new Set<string>();
         for (const relationship of rels) {
@@ -79,7 +84,6 @@ export class ToolbarComponent implements OnInit, OnDestroy {
         return relationshipLabels;
       }),
     );
-  includedNamespaces$ = this.inspectionDataStore.$namespaceTimelineFilter;
   logTypes = new Set(generated.logTypes);
 
   logTypeFilterOpen = false;
@@ -99,6 +103,7 @@ export class ToolbarComponent implements OnInit, OnDestroy {
     private selectionManager: SelectionManagerService,
     private viewStateService: ViewStateService,
     private inspectionDataStore: InspectionDataStoreService,
+    @Inject(DEFAULT_TIMELINE_FILTER) private timelineFilter: TimelineFilter,
   ) {}
   ngOnDestroy(): void {
     this.destoroyed.next();
@@ -150,11 +155,11 @@ export class ToolbarComponent implements OnInit, OnDestroy {
   }
 
   onKindFilterCommit(kinds: Set<string>) {
-    this.inspectionDataStore.setKindFilter(kinds);
+    this.timelineFilter.setKindFilter(kinds);
   }
 
   onNamespaceFilterCommit(namespaces: Set<string>) {
-    this.inspectionDataStore.setNamespaceFilter(namespaces);
+    this.timelineFilter.setNamespaceFilter(namespaces);
   }
 
   onSubresourceRelationshipFilterCommit(
@@ -166,11 +171,13 @@ export class ToolbarComponent implements OnInit, OnDestroy {
         generated.ParseParentRelationshipLabel(relationshipLabel),
       );
     }
-    this.inspectionDataStore.setRelationshipFilter(new Set(relationships));
+    this.timelineFilter.setSubresourceParentRelationshipFilter(
+      new Set(relationships),
+    );
   }
 
   onNameFilterChange(filter: string) {
-    this.inspectionDataStore.setResourceNameRegexes(filter);
+    this.timelineFilter.setResourceNameRegexFilter(filter);
   }
 
   onLogFilterChange(filter: string) {

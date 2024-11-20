@@ -24,7 +24,6 @@ import {
 } from '../services/frame-connection/window-connector.service';
 import { InMemoryWindowConnectionProvider } from '../services/frame-connection/window-connection-provider.service';
 import { InspectionDataLoaderService } from '../services/data-loader.service';
-import { InspectionDataStoreService } from '../services/inspection-data-store.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { NgxEnvModule } from '@ngx-env/core';
@@ -45,7 +44,6 @@ describe('MainMenuComponent', () => {
           useValue: new InMemoryWindowConnectionProvider(),
         },
         InspectionDataLoaderService,
-        InspectionDataStoreService,
         provideHttpClient(),
       ],
     }).compileComponents();

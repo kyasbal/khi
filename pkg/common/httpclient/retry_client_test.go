@@ -87,6 +87,7 @@ func TestRetryBehavior(t *testing.T) {
 		Title                       string
 		ResponseCodes               []int
 		RequestBody                 string
+		RequestHeaders              map[string]string
 		ExpectedRequestCount        int
 		ExpectedError               string
 		MinWaitTime                 int
@@ -94,12 +95,17 @@ func TestRetryBehavior(t *testing.T) {
 		MaxRetryCount               int
 		ExpectedLastCurrentWaitTime int
 		ExpectedTokenRefresherCall  int
+		ExpectedHeaders             map[string]string
 	}
 	testCases := []testCase{
 		{
-			Title:                       "Simple success",
-			ResponseCodes:               []int{200},
-			RequestBody:                 "foo",
+			Title:         "Simple success",
+			ResponseCodes: []int{200},
+			RequestBody:   "foo",
+			RequestHeaders: map[string]string{
+				"Test-Header1": "test-value1",
+				"Test-Header2": "test-value2",
+			},
 			ExpectedRequestCount:        1,
 			ExpectedError:               "",
 			MaxRetryCount:               3,
@@ -107,11 +113,19 @@ func TestRetryBehavior(t *testing.T) {
 			MaxWaitTime:                 4,
 			ExpectedLastCurrentWaitTime: 1,
 			ExpectedTokenRefresherCall:  0,
+			ExpectedHeaders: map[string]string{
+				"Test-Header1": "test-value1",
+				"Test-Header2": "test-value2",
+			},
 		},
 		{
-			Title:                       "Non retriable",
-			ResponseCodes:               []int{500},
-			RequestBody:                 "foo",
+			Title:         "Non retriable",
+			ResponseCodes: []int{500},
+			RequestBody:   "foo",
+			RequestHeaders: map[string]string{
+				"Test-Header1": "test-value1",
+				"Test-Header2": "test-value2",
+			},
 			ExpectedRequestCount:        1,
 			ExpectedError:               "unretriable error returned(500):\nBODY:",
 			MaxRetryCount:               3,
@@ -119,11 +133,19 @@ func TestRetryBehavior(t *testing.T) {
 			MaxWaitTime:                 4,
 			ExpectedLastCurrentWaitTime: 1,
 			ExpectedTokenRefresherCall:  0,
+			ExpectedHeaders: map[string]string{
+				"Test-Header1": "test-value1",
+				"Test-Header2": "test-value2",
+			},
 		},
 		{
-			Title:                       "Multiple retries",
-			ResponseCodes:               []int{400, 400, 200},
-			RequestBody:                 "foo",
+			Title:         "Multiple retries",
+			ResponseCodes: []int{400, 400, 200},
+			RequestBody:   "foo",
+			RequestHeaders: map[string]string{
+				"Test-Header1": "test-value1",
+				"Test-Header2": "test-value2",
+			},
 			ExpectedRequestCount:        3,
 			ExpectedError:               "",
 			MaxRetryCount:               3,
@@ -131,11 +153,19 @@ func TestRetryBehavior(t *testing.T) {
 			MaxWaitTime:                 4,
 			ExpectedLastCurrentWaitTime: 1,
 			ExpectedTokenRefresherCall:  0,
+			ExpectedHeaders: map[string]string{
+				"Test-Header1": "test-value1",
+				"Test-Header2": "test-value2",
+			},
 		},
 		{
-			Title:                       "Multiple retries and exceed maximum",
-			ResponseCodes:               []int{400, 400, 400},
-			RequestBody:                 "foo",
+			Title:         "Multiple retries and exceed maximum",
+			ResponseCodes: []int{400, 400, 400},
+			RequestBody:   "foo",
+			RequestHeaders: map[string]string{
+				"Test-Header1": "test-value1",
+				"Test-Header2": "test-value2",
+			},
 			ExpectedRequestCount:        3,
 			ExpectedError:               "maximum retry count exceeded 3\nStatus codes:[400 400 400]",
 			MaxRetryCount:               3,
@@ -143,11 +173,19 @@ func TestRetryBehavior(t *testing.T) {
 			MaxWaitTime:                 3,
 			ExpectedLastCurrentWaitTime: 3,
 			ExpectedTokenRefresherCall:  0,
+			ExpectedHeaders: map[string]string{
+				"Test-Header1": "test-value1",
+				"Test-Header2": "test-value2",
+			},
 		},
 		{
-			Title:                       "Wait time should be increased as exponential",
-			ResponseCodes:               []int{400, 400},
-			RequestBody:                 "foo",
+			Title:         "Wait time should be increased as exponential",
+			ResponseCodes: []int{400, 400},
+			RequestBody:   "foo",
+			RequestHeaders: map[string]string{
+				"Test-Header1": "test-value1",
+				"Test-Header2": "test-value2",
+			},
 			ExpectedRequestCount:        2,
 			ExpectedError:               "maximum retry count exceeded 2\nStatus codes:[400 400]",
 			MaxRetryCount:               2,
@@ -155,11 +193,19 @@ func TestRetryBehavior(t *testing.T) {
 			MaxWaitTime:                 10,
 			ExpectedLastCurrentWaitTime: 4,
 			ExpectedTokenRefresherCall:  0,
+			ExpectedHeaders: map[string]string{
+				"Test-Header1": "test-value1",
+				"Test-Header2": "test-value2",
+			},
 		},
 		{
-			Title:                       "Refresh token when response code require refreshing token",
-			ResponseCodes:               []int{401, 200},
-			RequestBody:                 "foo",
+			Title:         "Refresh token when response code require refreshing token",
+			ResponseCodes: []int{401, 200},
+			RequestBody:   "foo",
+			RequestHeaders: map[string]string{
+				"Test-Header1": "test-value1",
+				"Test-Header2": "test-value2",
+			},
 			ExpectedRequestCount:        2,
 			ExpectedError:               "",
 			MaxRetryCount:               2,
@@ -167,6 +213,10 @@ func TestRetryBehavior(t *testing.T) {
 			MaxWaitTime:                 10,
 			ExpectedLastCurrentWaitTime: 1,
 			ExpectedTokenRefresherCall:  1,
+			ExpectedHeaders: map[string]string{
+				"Test-Header1": "test-value1",
+				"Test-Header2": "test-value2",
+			},
 		},
 	}
 	for _, tc := range testCases {
@@ -188,6 +238,9 @@ func TestRetryBehavior(t *testing.T) {
 			if err != nil {
 				t.Errorf("got error %v, want nil", err)
 			}
+			for headerKey, headerValue := range tc.RequestHeaders {
+				req.Header.Add(headerKey, headerValue)
+			}
 			response, err := retryClient.DoWithContext(context.Background(), req)
 			if tc.ExpectedError == "" {
 				if response == nil {
@@ -201,7 +254,7 @@ func TestRetryBehavior(t *testing.T) {
 				}
 			} else {
 				if err.Error() != tc.ExpectedError {
-					t.Errorf("got error %s, want %s", err.Error(), tc.ExpectedError)
+					t.Errorf("got error %q, want %q", err.Error(), tc.ExpectedError)
 				}
 				if baseClient.RequestCount != tc.ExpectedRequestCount {
 					t.Errorf("got retry count %d, want %d", baseClient.RequestCount, tc.ExpectedRequestCount)
@@ -214,7 +267,13 @@ func TestRetryBehavior(t *testing.T) {
 				}
 				requestBodyStr := string(requestBody)
 				if requestBodyStr != tc.RequestBody {
-					t.Errorf("got requestBody %s, want %s", requestBody, tc.RequestBody)
+					t.Errorf("got requestBody %q, want %q", requestBody, tc.RequestBody)
+				}
+				for key, wantHeader := range tc.ExpectedHeaders {
+					gotHeader := req.Header.Get(key)
+					if wantHeader != gotHeader {
+						t.Errorf("got unexpected header %q:%q, want %q:%q", key, gotHeader, key, wantHeader)
+					}
 				}
 			}
 			if tc.ExpectedLastCurrentWaitTime != retryClient.currentWaitSeconds {

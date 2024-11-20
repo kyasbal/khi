@@ -24,6 +24,7 @@ import * as generated from '../generated';
 import { SelectionManagerService } from '../services/selection-manager.service';
 import { LogEntry } from '../store/log';
 import { TimelineEntry } from '../store/timeline';
+import { TimelineFilter } from '../services/timeline-filter.service';
 
 const STRIDE_SIZE_CANDIDATES = [
   1000,
@@ -75,6 +76,7 @@ export class BackgroundCanvas {
     private canvasSizeObservable: Observable<CanvasSize>,
     private timelineCoordinateCalculator: TimelinenCoordinateCalculator,
     private _inspectionData: InspectionDataStoreService,
+    private timelineFilter: TimelineFilter,
     private _viewStateService: ViewStateService,
     private _selectionManagerService: SelectionManagerService,
   ) {
@@ -86,10 +88,10 @@ export class BackgroundCanvas {
       throw new Error("Couldn't get canvas context");
     }
 
-    this._inspectionData.$filteredLogs
+    this._inspectionData.filteredLogs
       .pipe(
         combineLatestWith(
-          this._inspectionData.$filteredTimelines,
+          this.timelineFilter.filteredTimeline,
           this._selectionManagerService.selectedTimelinesWithChildren,
         ),
       )
@@ -463,7 +465,7 @@ export class BackgroundCanvas {
         currentLogIndex++
       ) {
         const log = logs[currentLogIndex];
-        logCountsInBucket[log.severity] += 1;
+        logCountsInBucket[generated.severities[log.severity]] += 1;
         logsInBucket++;
       }
       logCounts.push(logCountsInBucket);

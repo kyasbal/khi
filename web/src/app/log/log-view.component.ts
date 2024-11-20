@@ -71,7 +71,7 @@ export class LogViewComponent implements OnInit, OnDestroy {
 
   selectedLog = this.selectionManager.selectedLog;
   shownLogs: Observable<LogEntry[]> = combineLatest([
-    this.inspectionDataStore.$filteredLogs,
+    this.inspectionDataStore.filteredLogs,
     this.filterByTimeline,
     this.selectionManager.selectedTimelinesWithChildren,
   ]).pipe(
@@ -81,7 +81,7 @@ export class LogViewComponent implements OnInit, OnDestroy {
     }),
     shareReplay(1),
   );
-  allLogsCount = this.inspectionDataStore.$allLogs.pipe(
+  allLogsCount = this.inspectionDataStore.allLogs.pipe(
     map((logs) => logs.length),
   );
   shownLogsCount = this.shownLogs.pipe(map((logs) => logs.length));

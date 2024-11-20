@@ -155,7 +155,7 @@ export class TimelineRendererService {
 
   private rowRenderers = combineLatest([
     this.glContext,
-    this.dataStore.$allTimelines,
+    this.dataStore.allTimelines,
     this.dataStore.$timeRange,
   ]).pipe(
     map(([gl, timelines, { begin }]) => {
@@ -285,7 +285,7 @@ export class TimelineRendererService {
       this.selectionManager.selectedTimeline,
       this.selectionManager.highlightedTimeline,
       this.selectionManager.highlightedChildrenOfSelectedTimeline,
-      this.dataStore.$allLogs,
+      this.dataStore.allLogs,
       this.selectionManager.selectedLogIndex,
       this.selectionManager.highlightLogIndices,
       this.viewState.pixelPerTime,

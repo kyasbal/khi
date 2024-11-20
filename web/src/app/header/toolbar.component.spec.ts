@@ -28,6 +28,11 @@ import {
   WindowConnectorService,
 } from '../services/frame-connection/window-connector.service';
 import { InMemoryWindowConnectionProvider } from '../services/frame-connection/window-connection-provider.service';
+import {
+  DEFAULT_TIMELINE_FILTER,
+  TimelineFilter,
+} from '../services/timeline-filter.service';
+import { InspectionDataStoreService } from '../services/inspection-data-store.service';
 
 describe('ToolbarComponent', () => {
   let component: ToolbarComponent;
@@ -49,6 +54,10 @@ describe('ToolbarComponent', () => {
         {
           provide: WINDOW_CONNECTION_PROVIDER,
           useValue: new InMemoryWindowConnectionProvider(),
+        },
+        {
+          provide: DEFAULT_TIMELINE_FILTER,
+          useValue: new TimelineFilter(new InspectionDataStoreService()),
         },
       ],
     }).compileComponents();

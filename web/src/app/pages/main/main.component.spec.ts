@@ -38,6 +38,11 @@ import {
   EXTENSION_STORE,
   ExtensionStore,
 } from 'src/app/extensions/extension-common/extension-store';
+import {
+  DEFAULT_TIMELINE_FILTER,
+  TimelineFilter,
+} from 'src/app/services/timeline-filter.service';
+import { InspectionDataStoreService } from 'src/app/services/inspection-data-store.service';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -66,6 +71,10 @@ describe('AppComponent', () => {
         {
           provide: POPUP_MANAGER,
           useValue: new MockPopupManager(),
+        },
+        {
+          provide: DEFAULT_TIMELINE_FILTER,
+          useValue: new TimelineFilter(new InspectionDataStoreService()),
         },
         provideHttpClient(),
         DiffPageDataSourceServer,

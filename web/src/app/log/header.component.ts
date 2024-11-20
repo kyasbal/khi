@@ -45,7 +45,7 @@ export class LogHeaderComponent {
 
   public logEntryObservable = this.logIndexObservable.pipe(
     startWith(0),
-    withLatestFrom(this._inspectionDataStore.$allLogs),
+    withLatestFrom(this._inspectionDataStore.allLogs),
     map(([i, all]) => all[i]),
     shareReplay(1),
   );

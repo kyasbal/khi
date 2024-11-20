@@ -21,7 +21,7 @@ import {
   TimelineNavigatorExtensionUtil,
 } from '../extension-common/extension-types/timeline-navigator';
 import { CommonReferenceListComponent } from 'src/app/annotator/common-reference-list.component';
-import { TimelineFilter } from 'src/app/store/timeline-filter';
+import { TimelineFilterFacade } from 'src/app/store/timeline-filter';
 
 /**
  * PlaybookBindingWithComponentNameAnnotation is a TimelineNavigatorExtension showing playbook link with matching `metadata.annotations."components.gke.io/component-name"` annotation.
@@ -67,7 +67,7 @@ export class EveDashboardBindingForNode implements TimelineNavigatorExtension {
   show(timeline: TimelineEntry): boolean {
     return (
       timeline.layer === TimelineLayer.Name &&
-      TimelineFilter.isNodeOrNodeChildren(timeline)
+      TimelineFilterFacade.isNodeOrNodeChildren(timeline)
     );
   }
   getDisplayable(

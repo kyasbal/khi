@@ -23,9 +23,9 @@ export const KIND_POD = 'pod';
 
 export const SUBRESOURCE_BINDING = 'binding';
 /**
- * TimelineFilter has static methods to check if the specified timeline is the timeline kind or not.
+ * TimelineFilterFacade has static methods to check if the specified timeline is the timeline kind or not.
  */
-export class TimelineFilter {
+export class TimelineFilterFacade {
   /**
    * Returns true if the timeline belongs to a node or a descendant of that node.
    */

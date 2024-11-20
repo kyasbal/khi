@@ -16,7 +16,6 @@
 
 import { Component } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { InspectionDataStoreService } from '../services/inspection-data-store.service';
 import { StartupDialogComponent } from '../dialogs/startup/startup.component';
 
 @Component({
@@ -25,10 +24,7 @@ import { StartupDialogComponent } from '../dialogs/startup/startup.component';
   styleUrls: ['./main-menu.component.sass'],
 })
 export class MainMenuComponent {
-  constructor(
-    private readonly dialog: MatDialog,
-    public readonly inspectionDataStore: InspectionDataStoreService,
-  ) {}
+  constructor(private readonly dialog: MatDialog) {}
 
   openStartupMenu() {
     this.dialog.open(StartupDialogComponent, {

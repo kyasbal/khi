@@ -72,10 +72,10 @@ func (a *AuthParameters) PostProcess() error {
 func (a *AuthParameters) Prepare() error {
 	a.AccessToken = flag.String("access-token", "", "The token used for GCP related requests.", "")
 	a.DisableMetadataServer = flag.Bool("disable-metadata-server", false, "If this flag is set, KHI won't try to get access token from metadata server.", "")
-	a.FixedProjectID = flag.String("fixed-project-id", "", "A GCP project ID prefilled in the form. User won't be able to edit it from the form.", "")
+	a.FixedProjectID = flag.String("fixed-project-id", "", "A GCP project ID prefilled in the form. User won't be able to edit it from the form.", "KHI_FIXED_PROJECT_ID")
 	a.QuotaProjectID = flag.String("quota-project-id", "", "A GCP project ID used as the quota project. This is useful when user wants to use KHI against a project with another project with larger logging read quota.", "")
-	a.OAuthClientID = flag.String("oauth-client-id", "", "The client ID used for getting access tokens via OAuth.", "")
-	a.OAuthClientSecret = flag.String("oauth-client-secret", "", "The client secret used for getting access tokens via OAuth.", "")
+	a.OAuthClientID = flag.String("oauth-client-id", "", "The client ID used for getting access tokens via OAuth.", "KHI_OAUTH_CLIENT_ID")
+	a.OAuthClientSecret = flag.String("oauth-client-secret", "", "The client secret used for getting access tokens via OAuth.", "KHI_OAUTH_CLIENT_SECRET")
 	a.OAuthRedirectURI = flag.String("oauth-redirect-uri", "", "The callback URI for OAuth. This must be provided as full qualified URL.", "")
 	a.OAuthRedirectTargetServingPath = flag.String("oauth-redirect-target-serving-path", "/oauth/callback", "The path to serve the callback target.", "")
 	a.OAuthStateSuffix = flag.String("oauth-state-suffix", "", "The suffix added to the state parameter in OAuth. The state will be generated in the format of `<random-string><suffix>`.", "")

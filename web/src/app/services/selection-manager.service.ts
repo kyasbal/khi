@@ -45,7 +45,7 @@ export class SelectionManagerService {
   /**
    * Return a selected LogEntity.
    */
-  public selectedLog = this._inspectionData.$allLogs.pipe(
+  public selectedLog = this._inspectionData.allLogs.pipe(
     combineLatestWith(this.logSelectionQuery),
     map(([logs, query]) => this._filterSelectedLog(logs, query)),
     startWith(null),
@@ -59,7 +59,7 @@ export class SelectionManagerService {
   /**
    * The list of logs highlighted.
    */
-  public highlightedLogs = this._inspectionData.$allLogs.pipe(
+  public highlightedLogs = this._inspectionData.allLogs.pipe(
     combineLatestWith(this.logHighlightQuery),
     map(([logs, query]) => this._filterHighlightedLogs(logs, query)),
     startWith([]),
@@ -175,7 +175,7 @@ export class SelectionManagerService {
   public highlightedChildrenOfSelectedTimeline = this.selectedTimeline.pipe(
     combineLatestWith(
       this.timelineSelectionShouldIncludeChildren,
-      this._inspectionData.$allTimelines,
+      this._inspectionData.allTimelines,
     ),
     map(([selectedTimeline, includeChildren, allTimelines]) => {
       if (!includeChildren) return [];
@@ -236,7 +236,7 @@ export class SelectionManagerService {
 
   public onSelectTimeline(timeline: TimelineEntry | string | null) {
     if (typeof timeline === 'string') {
-      const resolvedTimeline = this._inspectionData.$allTimelines.value.filter(
+      const resolvedTimeline = this._inspectionData.allTimelines.value.filter(
         (t) => t.resourcePath === timeline,
       );
       if (resolvedTimeline.length === 1) {
@@ -251,7 +251,7 @@ export class SelectionManagerService {
 
   public onHighlightTimeline(timeline: TimelineEntry | string | null) {
     if (typeof timeline === 'string') {
-      const resolvedTimeline = this._inspectionData.$allTimelines.value.filter(
+      const resolvedTimeline = this._inspectionData.allTimelines.value.filter(
         (t) => t.resourcePath === timeline,
       );
       if (resolvedTimeline.length === 1) {

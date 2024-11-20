@@ -20,6 +20,7 @@ import {
   NgModule,
   Optional,
   importProvidersFrom,
+  inject,
 } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
@@ -74,6 +75,10 @@ import {
   EXTENSION_STORE,
   ExtensionStore,
 } from './extensions/extension-common/extension-store';
+import {
+  DEFAULT_TIMELINE_FILTER,
+  TimelineFilter,
+} from './services/timeline-filter.service';
 @NgModule({
   declarations: [AppComponent, RootComponent],
   imports: [
@@ -130,6 +135,10 @@ import {
     {
       provide: POPUP_MANAGER,
       useClass: PopupManagerImpl,
+    },
+    {
+      provide: DEFAULT_TIMELINE_FILTER,
+      useFactory: () => new TimelineFilter(inject(InspectionDataStoreService)),
     },
     NotificationManager,
     DiffPageDataSource,

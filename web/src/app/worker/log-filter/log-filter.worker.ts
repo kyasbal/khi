@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-export function isKHIWorkerPacket(packet: any): packet is KHIWorkerPacket {
-  return 'isKHIWorkerPacket' in packet && packet['isKHIWorkerPacket'];
-}
+/// <reference lib="webworker" />
 
-export interface KHIWorkerPacket {
-  isKHIWorkerPacket: boolean;
-}
+import { FilterQuery, FilterResult } from '../worker-types';
+import { findNonMatchingLogIndices } from '../worker-utils';
 
-export interface FilterQuery extends KHIWorkerPacket {
-  taskId: string;
-  regexInStr: string;
-  logs: string[];
-}
-
-export interface FilterResult extends KHIWorkerPacket {
-  taskId: string;
-  notMatch: number[];
-}
+addEventListener('message', (data) => {
+  const query = data.data as FilterQuery;
+  postMessage({
+    notMatch: findNonMatchingLogIndices(query.regexInStr, query.logs),
+    taskId: query.taskId,
+    isKHIWorkerPacket: true,
+  } as FilterResult);
+});

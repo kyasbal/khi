@@ -42,7 +42,7 @@ export class LogBodyComponent {
 
   public logEntryObservable = this.logIndexObservable.pipe(
     startWith(0),
-    withLatestFrom(this.dataStore.$allLogs),
+    withLatestFrom(this.dataStore.allLogs),
     map(([i, all]) => all[i]),
     shareReplay(1),
   );

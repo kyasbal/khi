@@ -24,7 +24,7 @@ import { CommonFieldAnnotatorComponent } from 'src/app/annotator/common-field-an
 import { of } from 'rxjs';
 import {
   SUBRESOURCE_BINDING,
-  TimelineFilter,
+  TimelineFilterFacade,
 } from 'src/app/store/timeline-filter';
 
 /**
@@ -39,7 +39,7 @@ export class NodeNameBindingWithPod implements TimelineNavigatorExtension {
     if (!bindingTimeline) return false;
     return (
       timeline.layer === TimelineLayer.Name &&
-      TimelineFilter.isPodOrPodChildren(timeline)
+      TimelineFilterFacade.isPodOrPodChildren(timeline)
     );
   }
   getDisplayable(

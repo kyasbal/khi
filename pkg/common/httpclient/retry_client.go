@@ -69,6 +69,7 @@ func (r *RetryHttpClient) DoWithContext(ctx context.Context, originalRequest *ht
 		if err != nil {
 			return nil, err
 		}
+		request.Header = originalRequest.Header.Clone()
 		response, err := r.Client.DoWithContext(ctx, request)
 		if err != nil {
 			return nil, err
