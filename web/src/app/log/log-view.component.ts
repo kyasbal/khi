@@ -19,16 +19,25 @@ import {
   FixedSizeVirtualScrollStrategy,
   VIRTUAL_SCROLL_STRATEGY,
 } from '@angular/cdk/scrolling';
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import {
   BehaviorSubject,
   Observable,
+  ReplaySubject,
   Subject,
   combineLatest,
   delay,
   filter,
   map,
   shareReplay,
+  take,
   takeUntil,
   withLatestFrom,
 } from 'rxjs';
@@ -37,6 +46,7 @@ import { SelectionManagerService } from '../services/selection-manager.service';
 import { ObservableCSSClassBinder } from '../utils/observable-css-class-binder';
 import { LogEntry } from '../store/log';
 import { TimelineEntry } from '../store/timeline';
+import { monitorElementHeight } from '../utils/observable-util';
 
 class LogViewScrollingStrategy extends FixedSizeVirtualScrollStrategy {
   constructor() {
@@ -56,11 +66,38 @@ interface LogViewSelectionMoveCommand {
     { provide: VIRTUAL_SCROLL_STRATEGY, useClass: LogViewScrollingStrategy },
   ],
 })
-export class LogViewComponent implements OnInit, OnDestroy {
+export class LogViewComponent implements OnInit, AfterViewInit, OnDestroy {
+  /**
+   * The minimal size of log list.
+   */
+  private static MINIMUM_LOG_LIST_SIZE = 100;
+
+  /**
+   * The default size of log list.
+   */
+  private static DEFAULT_LOG_LIST_SIZE = 400;
+
+  /**
+   * The minimal size of log body view.
+   */
+  private static MINIMUM_LOG_BODY_VIEW_SIZE = 300;
+
+  /**
+   * An observable emits a value on destroying this component. This is used for ubsubscribe subscribers on destroying component.
+   */
   private destoroyed = new Subject<void>();
 
+  /**
+   * Reference to the root container element of this component.
+   */
+  @ViewChild('container')
+  private readonly container!: ElementRef<HTMLDivElement>;
+
+  /**
+   * Reference to CdkVirtualScrollViewport to show the list of logs.
+   */
   @ViewChild(CdkVirtualScrollViewport)
-  viewPort!: CdkVirtualScrollViewport;
+  private readonly viewPort!: CdkVirtualScrollViewport;
 
   filterByTimeline = new BehaviorSubject(true);
 
@@ -86,9 +123,7 @@ export class LogViewComponent implements OnInit, OnDestroy {
   );
   shownLogsCount = this.shownLogs.pipe(map((logs) => logs.length));
 
-  logViewHeight: BehaviorSubject<number> = new BehaviorSubject(
-    Math.max(document.body.clientHeight - 400, 300),
-  );
+  logBodyViewHeight: ReplaySubject<number> = new ReplaySubject(1);
 
   highlightLogBinder = new ObservableCSSClassBinder(
     'highlight',
@@ -111,6 +146,7 @@ export class LogViewComponent implements OnInit, OnDestroy {
     private inspectionDataStore: InspectionDataStoreService,
     private selectionManager: SelectionManagerService,
   ) {
+    this.logBodyViewHeight.next(LogViewComponent.MINIMUM_LOG_LIST_SIZE); // initial value of the log view size.
     this.logViewSelectionMoveCommand
       .pipe(
         takeUntil(this.destoroyed),
@@ -136,6 +172,53 @@ export class LogViewComponent implements OnInit, OnDestroy {
     this.initScrollEventOnScroll();
   }
 
+  ngAfterViewInit(): void {
+    // delay(0) is to trigger the following subscription handlers to be triggered in the next change detection cycle.
+    // This observable needs @ViewChild to be initialized to obtain, but ngAfterViewInit doesn't allow triggering change detection.
+    const containerHeight = monitorElementHeight(
+      this.container.nativeElement,
+    ).pipe(delay(0));
+    // Limit logBodyViewHeight by comparing with container height.
+    combineLatest([containerHeight, this.logBodyViewHeight])
+      .pipe(takeUntil(this.destoroyed))
+      .subscribe(([containerHeight, logBodyViewHeight]) => {
+        if (
+          containerHeight <
+          logBodyViewHeight + LogViewComponent.MINIMUM_LOG_LIST_SIZE
+        ) {
+          // Adjust the size to be container size - min size of log list to keep log list area.
+          this.logBodyViewHeight.next(
+            containerHeight - LogViewComponent.MINIMUM_LOG_LIST_SIZE,
+          );
+        } else {
+          if (logBodyViewHeight < LogViewComponent.MINIMUM_LOG_BODY_VIEW_SIZE) {
+            // give up adjusting size if minimum sizes can't fit in the container to prevent call this subscription recursively.
+            if (
+              containerHeight <
+              LogViewComponent.MINIMUM_LOG_LIST_SIZE +
+                LogViewComponent.MINIMUM_LOG_BODY_VIEW_SIZE
+            ) {
+              return;
+            }
+            this.logBodyViewHeight.next(
+              LogViewComponent.MINIMUM_LOG_BODY_VIEW_SIZE,
+            );
+          }
+        }
+      });
+    // update viewport size of the virtual scroll area for logs.
+    this.logBodyViewHeight.pipe(takeUntil(this.destoroyed)).subscribe(() => {
+      this.viewPort.checkViewportSize();
+    });
+
+    // set the default log body height.
+    containerHeight.pipe(take(1)).subscribe((containerHeight) => {
+      this.logBodyViewHeight.next(
+        containerHeight - LogViewComponent.DEFAULT_LOG_LIST_SIZE,
+      );
+    });
+  }
+
   _selectLog(logEntry: LogEntry) {
     this.disableScrollForNext = true;
     this.selectionManager.changeSelectionByLog(logEntry);
@@ -153,14 +236,9 @@ export class LogViewComponent implements OnInit, OnDestroy {
   }
 
   _resizeMove = (e: MouseEvent) => {
-    const current = this.logViewHeight.value;
-    this.logViewHeight.next(
-      Math.min(
-        Math.max(100, current - e.movementY),
-        document.body.clientHeight - 400,
-      ),
-    );
-    this.viewPort.checkViewportSize();
+    this.logBodyViewHeight.pipe(take(1)).subscribe((currentSize) => {
+      this.logBodyViewHeight.next(currentSize - e.movementY);
+    });
   };
 
   _onScroll() {

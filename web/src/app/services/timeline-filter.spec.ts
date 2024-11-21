@@ -41,28 +41,44 @@ describe('TimelineFilter', () => {
         new Set(['kind1', 'kind2']),
       ]);
     });
-
-    it('emit new kind timeline filter on the list of available kind names are changed', () => {
-      const store = <InspectionDataStore>{};
-      const availableKinds = new ReplaySubject<Set<string>>(1);
-      store.availableKinds = availableKinds;
-      store.allTimelines = NEVER;
-      const filter = new TimelineFilter(store);
-      const gotFilters: Set<string>[] = [];
-      filter.kindTimelineFilter.subscribe((kinds) => {
-        gotFilters.push(kinds);
-      });
-
-      availableKinds.next(new Set(['kind1', 'kind2', 'kind3']));
-      filter.setKindFilter(new Set(['kind1', 'kind2']));
-      availableKinds.next(new Set(['kind1', 'kind4', 'kind5']));
-
-      expect(gotFilters).toEqual([
-        new Set(['kind1', 'kind2', 'kind3']),
-        new Set(['kind1', 'kind2']),
-        new Set(['kind1', 'kind4', 'kind5']),
-      ]);
+  });
+  it('emit new kind timeline filter on the list of available kind names are changed', () => {
+    const store = <InspectionDataStore>{};
+    const availableKinds = new ReplaySubject<Set<string>>(1);
+    store.availableKinds = availableKinds;
+    store.allTimelines = NEVER;
+    const filter = new TimelineFilter(store);
+    const gotFilters: Set<string>[] = [];
+    filter.kindTimelineFilter.subscribe((kinds) => {
+      gotFilters.push(kinds);
     });
+
+    availableKinds.next(new Set(['kind1', 'kind2', 'kind3']));
+    filter.setKindFilter(new Set(['kind1', 'kind2']));
+    availableKinds.next(new Set(['kind1', 'kind4', 'kind5']));
+
+    expect(gotFilters).toEqual([
+      new Set(['kind1', 'kind2', 'kind3']),
+      new Set(['kind1', 'kind2']),
+      new Set(['kind1', 'kind4', 'kind5']),
+    ]);
+  });
+
+  it('emits kind timeline filter set before subscription', () => {
+    const store = <InspectionDataStore>{};
+    const availableKinds = new ReplaySubject<Set<string>>(1);
+    store.availableKinds = availableKinds;
+    store.allTimelines = NEVER;
+    const filter = new TimelineFilter(store);
+    const gotFilters: Set<string>[] = [];
+    availableKinds.next(new Set(['kind1', 'kind2', 'kind3']));
+    filter.setKindFilter(new Set(['kind1', 'kind2']));
+
+    filter.kindTimelineFilter.subscribe((kinds) => {
+      gotFilters.push(kinds);
+    });
+
+    expect(gotFilters).toEqual([new Set(['kind1', 'kind2'])]);
   });
 
   describe('namespaceTimelineFilter', () => {
@@ -106,6 +122,23 @@ describe('TimelineFilter', () => {
         new Set(['ns1', 'ns2']),
         new Set(['ns1', 'ns4', 'ns5']),
       ]);
+    });
+
+    it('emits namespace timeline filter set before subscription', () => {
+      const store = <InspectionDataStore>{};
+      const availableNamespaces = new ReplaySubject<Set<string>>(1);
+      store.allTimelines = NEVER;
+      store.availableNamespaces = availableNamespaces;
+      const filter = new TimelineFilter(store);
+      const gotFilters: Set<string>[] = [];
+      availableNamespaces.next(new Set(['ns1', 'ns2', 'ns3']));
+      filter.setNamespaceFilter(new Set(['ns1', 'ns2']));
+
+      filter.namespaceTimelineFilter.subscribe((namespaces) => {
+        gotFilters.push(namespaces);
+      });
+
+      expect(gotFilters).toEqual([new Set(['ns1', 'ns2'])]);
     });
   });
 
@@ -201,6 +234,42 @@ describe('TimelineFilter', () => {
         ]),
       ]);
     });
+
+    it('emits subresource parent relationship filter set before subscription', () => {
+      const store = <InspectionDataStore>{};
+      const availableSubresourceParentRelationships = new ReplaySubject<
+        Set<ParentRelationship>
+      >(1);
+      store.allTimelines = NEVER;
+      store.availableSubresourceParentRelationships =
+        availableSubresourceParentRelationships;
+      const filter = new TimelineFilter(store);
+      const gotFilters: Set<ParentRelationship>[] = [];
+      availableSubresourceParentRelationships.next(
+        new Set([
+          ParentRelationship.RelationshipChild,
+          ParentRelationship.RelationshipPodBinding,
+          ParentRelationship.RelationshipNodeComponent,
+        ]),
+      );
+      filter.setSubresourceParentRelationshipFilter(
+        new Set([
+          ParentRelationship.RelationshipPodBinding,
+          ParentRelationship.RelationshipNodeComponent,
+        ]),
+      );
+
+      filter.subresourceParentRelationshipFilter.subscribe((relationships) => {
+        gotFilters.push(relationships);
+      });
+
+      expect(gotFilters).toEqual([
+        new Set([
+          ParentRelationship.RelationshipPodBinding,
+          ParentRelationship.RelationshipNodeComponent,
+        ]),
+      ]);
+    });
   });
 
   describe('resourceNameTimelineRegexFilter', () => {
@@ -235,6 +304,22 @@ describe('TimelineFilter', () => {
       allTimelines.next([]);
 
       expect(gotFilters).toEqual(['', 'test', '']);
+    });
+
+    it('emits resource name timeline regex filter set before subscription', () => {
+      const store = <InspectionDataStore>{};
+      const allTimelines = new ReplaySubject<TimelineEntry[]>(1);
+      store.allTimelines = allTimelines;
+      const filter = new TimelineFilter(store);
+      const gotFilters: string[] = [];
+      allTimelines.next([]);
+      filter.setResourceNameRegexFilter('test');
+
+      filter.resourceNameTimelineRegexFilter.subscribe((regex) => {
+        gotFilters.push(regex);
+      });
+
+      expect(gotFilters).toEqual(['test']);
     });
   });
 

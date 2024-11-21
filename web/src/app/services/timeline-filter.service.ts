@@ -18,9 +18,11 @@ import { InjectionToken } from '@angular/core';
 import { InspectionDataStore } from './inspection-data-store.service';
 import {
   combineLatest,
+  connectable,
   debounceTime,
   map,
   merge,
+  ReplaySubject,
   shareReplay,
   Subject,
 } from 'rxjs';
@@ -39,7 +41,12 @@ export const DEFAULT_TIMELINE_FILTER = new InjectionToken(
  * It listen changes on inspection data store and filters timelines with given conditions.
  */
 export class TimelineFilter {
-  constructor(public readonly dataStore: InspectionDataStore) {}
+  constructor(public readonly dataStore: InspectionDataStore) {
+    this.kindTimelineFilter.connect();
+    this.namespaceTimelineFilter.connect();
+    this.subresourceParentRelationshipFilter.connect();
+    this.resourceNameTimelineRegexFilter.connect();
+  }
 
   /**
    * Observable for currently selected kind name set.
@@ -50,9 +57,12 @@ export class TimelineFilter {
    * Observable for currently selected kind name set.
    * This observable also emits the all kind names on the list of available kind names are changed.
    */
-  public readonly kindTimelineFilter = merge(
-    this.kindTimelineFilterSubject,
-    this.dataStore.availableKinds,
+  public readonly kindTimelineFilter = connectable(
+    merge(this.kindTimelineFilterSubject, this.dataStore.availableKinds),
+    {
+      connector: () => new ReplaySubject(1),
+      resetOnDisconnect: false,
+    },
   );
 
   /**
@@ -64,9 +74,15 @@ export class TimelineFilter {
    * Observable for currently selected namespace set.
    * This observable also emits the all namespaces on the list of available namespaces are changed.
    */
-  public readonly namespaceTimelineFilter = merge(
-    this.namespaceTimelineFilterSubject,
-    this.dataStore.availableNamespaces,
+  public readonly namespaceTimelineFilter = connectable(
+    merge(
+      this.namespaceTimelineFilterSubject,
+      this.dataStore.availableNamespaces,
+    ),
+    {
+      connector: () => new ReplaySubject(1),
+      resetOnDisconnect: false,
+    },
   );
 
   /**
@@ -80,9 +96,15 @@ export class TimelineFilter {
    * Observable for currently selected parent relationships of subresources.
    * This observable also emits the all parent relationships of subresource when the available parent relationships are changed.
    */
-  public readonly subresourceParentRelationshipFilter = merge(
-    this.subresourceParentRelationshipFilterSubject,
-    this.dataStore.availableSubresourceParentRelationships,
+  public readonly subresourceParentRelationshipFilter = connectable(
+    merge(
+      this.subresourceParentRelationshipFilterSubject,
+      this.dataStore.availableSubresourceParentRelationships,
+    ),
+    {
+      connector: () => new ReplaySubject(1),
+      resetOnDisconnect: false,
+    },
   );
 
   /**
@@ -95,9 +117,15 @@ export class TimelineFilter {
    * Observable for currently used regex filter for resource name.
    * This observable resets the filter when a new data loaded on the data store.
    */
-  public readonly resourceNameTimelineRegexFilter = merge(
-    this.resourceNameTimelineRegexFilterSubject,
-    this.dataStore.allTimelines.pipe(map(() => '')),
+  public readonly resourceNameTimelineRegexFilter = connectable(
+    merge(
+      this.resourceNameTimelineRegexFilterSubject,
+      this.dataStore.allTimelines.pipe(map(() => '')),
+    ),
+    {
+      connector: () => new ReplaySubject(1),
+      resetOnDisconnect: false,
+    },
   );
 
   /**

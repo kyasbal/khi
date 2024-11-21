@@ -14,7 +14,7 @@
  limitations under the License.
 -->
 
-<div class="container">
+<div class="container" #container>
   <div class="log-toolbar">
     <div class="timeline-filter-wrapper">
       <khi-icon-toggle-button
@@ -57,7 +57,7 @@
   <div class="resizer" (mousedown)="_resizeStart()"></div>
   <khi-log-body
     [logIndex]="(selectedLog | async)?.logIndex ?? 0"
-    [style.--log-body-view-height.px]="logViewHeight | async"
+    [style.--log-body-view-height.px]="logBodyViewHeight | async"
   >
   </khi-log-body>
 </div>

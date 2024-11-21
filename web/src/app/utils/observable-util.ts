@@ -18,8 +18,10 @@ import {
   BehaviorSubject,
   Observable,
   animationFrames,
+  distinctUntilChanged,
   endWith,
   map,
+  shareReplay,
   takeWhile,
 } from 'rxjs';
 
@@ -47,4 +49,22 @@ export function tweenNumber(start: number, end: number, duration: number) {
     endWith(1),
     map((v) => v * diff + start),
   );
+}
+
+/**
+ * Returns an observable that emits height of given element on its resize.
+ */
+export function monitorElementHeight(element: HTMLElement): Observable<number> {
+  return new Observable<number>((subscriber) => {
+    const box = element.getBoundingClientRect();
+    subscriber.next(box.height);
+    const observer = new ResizeObserver(() => {
+      const box = element.getBoundingClientRect();
+      subscriber.next(box.height);
+    });
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+    };
+  }).pipe(distinctUntilChanged(), shareReplay(1));
 }

@@ -79,6 +79,10 @@ import {
   DEFAULT_TIMELINE_FILTER,
   TimelineFilter,
 } from './services/timeline-filter.service';
+import {
+  MAT_TOOLTIP_DEFAULT_OPTIONS,
+  MatTooltipDefaultOptions,
+} from '@angular/material/tooltip';
 @NgModule({
   declarations: [AppComponent, RootComponent],
   imports: [
@@ -139,6 +143,14 @@ import {
     {
       provide: DEFAULT_TIMELINE_FILTER,
       useFactory: () => new TimelineFilter(inject(InspectionDataStoreService)),
+    },
+    {
+      provide: MAT_TOOLTIP_DEFAULT_OPTIONS,
+      useValue: {
+        disableTooltipInteractivity: true,
+        showDelay: 0,
+        hideDelay: 0,
+      } as MatTooltipDefaultOptions,
     },
     NotificationManager,
     DiffPageDataSource,
