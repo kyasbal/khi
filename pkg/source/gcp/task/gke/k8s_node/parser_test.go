@@ -16,8 +16,15 @@ package k8s_node
 
 import (
 	"testing"
+	"time"
 
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/ioconfig"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourceinfo/resourcelease"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourcepath"
 	log_test "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/testutil/log"
+	parser_test "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/testutil/parser"
+
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -318,5 +325,182 @@ func TestGetSyslogIdentifier(t *testing.T) {
 			}
 		})
 
+	}
+}
+
+func TestK8sNodeParser_ParseKubeletLogWithPodNameButNotWithContainerName(t *testing.T) {
+	builder := history.NewBuilder(&ioconfig.IOConfig{
+		ApplicationRoot: "/",
+		DataDestination: "/tmp/",
+		TemporaryFolder: "/tmp/",
+	})
+	wantLogSummary := "MountVolume.SetUp succeeded for volume \"kube-dns-config\" (UniqueName: \"kubernetes.io/configmap/34a3f9e5-4363-47a9-8bd9-3b37c60d107b-kube-dns-config\") pod \"kube-dns-58f547fd74-swzzt\" (UID: \"34a3f9e5-4363-47a9-8bd9-3b37c60d107b\") 【 in kube-system/kube-dns-58f547fd74-swzzt】"
+	cs, err := parser_test.ParseFromYamlLogFile("test/logs/k8s_node/kubelet_only_pod_name.yaml", &k8sNodeParser{}, builder, nil)
+	if err != nil {
+		t.Errorf("got error %v, want nil", err)
+	}
+
+	event := cs.GetEvents(resourcepath.NodeComponent("gke-sample-cluster-default-abcdefgh-abcd", "kubelet"))
+	if len(event) != 1 {
+		t.Errorf("got %d events, want 1", len(event))
+	}
+	event = cs.GetEvents(resourcepath.Pod("kube-system", "kube-dns-58f547fd74-swzzt"))
+	if len(event) != 1 {
+		t.Errorf("got %d events, want 1", len(event))
+	}
+
+	gotLogSummary := cs.GetLogSummary()
+	if gotLogSummary != wantLogSummary {
+		t.Errorf("got %q log summary, want %q", gotLogSummary, wantLogSummary)
+	}
+}
+
+func TestK8sNodeParser_ParseKubeletLogWithPodNameAndContainerName(t *testing.T) {
+	builder := history.NewBuilder(&ioconfig.IOConfig{
+		ApplicationRoot: "/",
+		DataDestination: "/tmp/",
+		TemporaryFolder: "/tmp/",
+	})
+	wantLogSummary := "Killing container with a grace period(gracePeriod=30s)【kube-system/kube-dns-58f547fd74-swzzt】"
+	cs, err := parser_test.ParseFromYamlLogFile("test/logs/k8s_node/kubelet_pod_and_container_name.yaml", &k8sNodeParser{}, builder, nil)
+	if err != nil {
+		t.Errorf("got error %v, want nil", err)
+	}
+
+	event := cs.GetEvents(resourcepath.NodeComponent("gke-sample-cluster-default-abcdefgh-abcd", "kubelet"))
+	if len(event) != 1 {
+		t.Errorf("got %d events, want 1", len(event))
+	}
+	event = cs.GetEvents(resourcepath.Container("kube-system", "kube-dns-58f547fd74-swzzt", "sidecar"))
+	if len(event) != 1 {
+		t.Errorf("got %d events, want 1", len(event))
+	}
+
+	gotLogSummary := cs.GetLogSummary()
+	if gotLogSummary != wantLogSummary {
+		t.Errorf("got %q log summary, want %q", gotLogSummary, wantLogSummary)
+	}
+}
+
+func TestK8sNodeParser_ParseContainerdRunPod(t *testing.T) {
+	builder := history.NewBuilder(&ioconfig.IOConfig{
+		ApplicationRoot: "/",
+		DataDestination: "/tmp/",
+		TemporaryFolder: "/tmp/",
+	})
+	podSandboxId := "e4b03e280958b847e92e22b7a1570bdf63cb35432514b9a8f12f4b9adfe49714"
+	wantLogSummary := "RunPodSandbox for &PodSandboxMetadata{Name:kube-dns-58f547fd74-swzzt,Uid:34a3f9e5-4363-47a9-8bd9-3b37c60d107b,Namespace:kube-system,Attempt:0,} returns sandbox id \"e4b03e2...(kube-system/kube-dns-58f547fd74-swzzt)\""
+	wantLeaseHolderKind := "pod"
+	wantLeaseHolderNamespace := "kube-system"
+	wantLeaseHolderName := "kube-dns-58f547fd74-swzzt"
+	cs, err := parser_test.ParseFromYamlLogFile("test/logs/k8s_node/containerd_run_pod_sandbox.yaml", &k8sNodeParser{}, builder, nil)
+	if err != nil {
+		t.Errorf("got error %v, want nil", err)
+	}
+
+	event := cs.GetEvents(resourcepath.NodeComponent("gke-sample-cluster-default-abcdefgh-abcd", "containerd"))
+	if len(event) != 1 {
+		t.Errorf("got %d events, want 1", len(event))
+	}
+
+	gotLogSummary := cs.GetLogSummary()
+	if gotLogSummary != wantLogSummary {
+		t.Errorf("got %q log summary, want %q", gotLogSummary, wantLogSummary)
+	}
+
+	lease, err := builder.ClusterResource.PodSandboxIds.GetResourceLeaseHolderAt(podSandboxId, time.Date(2024, time.January, 1, 1, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Errorf("got error %v, want nil", err)
+	} else {
+		if lease.Holder.Kind != wantLeaseHolderKind {
+			t.Errorf("got lease holder kind %q, want %q", lease.Holder.Kind, wantLeaseHolderKind)
+		}
+		if lease.Holder.Namespace != wantLeaseHolderNamespace {
+			t.Errorf("got lease holder namespace %q, want %q", lease.Holder.Namespace, wantLeaseHolderNamespace)
+		}
+		if lease.Holder.Name != wantLeaseHolderName {
+			t.Errorf("got lease holder name %q, want %q", lease.Holder.Name, wantLeaseHolderName)
+		}
+	}
+}
+
+func TestK8sNodeParser_ParseCreateContainer(t *testing.T) {
+	builder := history.NewBuilder(&ioconfig.IOConfig{
+		ApplicationRoot: "/",
+		DataDestination: "/tmp/",
+		TemporaryFolder: "/tmp/",
+	})
+	podSandboxId := "e4b03e280958b847e92e22b7a1570bdf63cb35432514b9a8f12f4b9adfe49714"
+	wantLeaseHolderKind := "pod"
+	wantLeaseHolderNamespace := "kube-system"
+	wantLeaseHolderName := "kube-dns-58f547fd74-swzzt"
+	wantContainerName := "kubedns"
+	wantContainerId := "eea48bce362bdf290ff0d41655c9e580a41acd354cc845c7b7163d9dd9980bd9"
+	builder.ClusterResource.PodSandboxIds.TouchResourceLease(podSandboxId, time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewK8sResourceLeaseHolder(wantLeaseHolderKind, wantLeaseHolderNamespace, wantLeaseHolderName))
+	wantLogSummary := "CreateContainer within sandbox \"e4b03e2...(kubedns in kube-system/kube-dns-58f547fd74-swzzt)\" for &ContainerMetadata{Name:kubedns,Attempt:0,} returns container id \"eea48bce362bdf290ff0d41655c9e580a41acd354cc845c7b7163d9dd9980bd9\""
+	cs, err := parser_test.ParseFromYamlLogFile("test/logs/k8s_node/containerd_create_container.yaml", &k8sNodeParser{}, builder, nil)
+	if err != nil {
+		t.Errorf("got error %v, want nil", err)
+	}
+
+	event := cs.GetEvents(resourcepath.NodeComponent("gke-sample-cluster-default-abcdefgh-abcd", "containerd"))
+	if len(event) != 1 {
+		t.Errorf("got %d events, want 1", len(event))
+	}
+	event = cs.GetEvents(resourcepath.Container(wantLeaseHolderNamespace, wantLeaseHolderName, wantContainerName))
+	if len(event) != 1 {
+		t.Errorf("got %d events, want 1", len(event))
+	}
+
+	gotLogSummary := cs.GetLogSummary()
+	if gotLogSummary != wantLogSummary {
+		t.Errorf("got %q log summary, want %q", gotLogSummary, wantLogSummary)
+	}
+
+	lease, err := builder.ClusterResource.ContainerIds.GetResourceLeaseHolderAt(wantContainerId, time.Date(2024, time.January, 1, 1, 1, 0, 0, time.UTC))
+	if err != nil {
+		t.Errorf("got error %v, want nil", err)
+	} else {
+		if lease.Holder.PodSandboxId != podSandboxId {
+			t.Errorf("got lease holder podSandboxId %q, want %q", lease.Holder.PodSandboxId, podSandboxId)
+		}
+		if lease.Holder.ContainerName != wantContainerName {
+			t.Errorf("got lease holder containerName %q, want %q", lease.Holder.ContainerName, wantContainerName)
+		}
+	}
+}
+
+func TestK8sNodeParser_ParseContainerdIncludingContainerIdOnly(t *testing.T) {
+	builder := history.NewBuilder(&ioconfig.IOConfig{
+		ApplicationRoot: "/",
+		DataDestination: "/tmp/",
+		TemporaryFolder: "/tmp/",
+	})
+	podSandboxId := "e4b03e280958b847e92e22b7a1570bdf63cb35432514b9a8f12f4b9adfe49714"
+	containerId := "eea48bce362bdf290ff0d41655c9e580a41acd354cc845c7b7163d9dd9980bd9"
+	wantLeaseHolderKind := "pod"
+	wantLeaseHolderNamespace := "kube-system"
+	wantLeaseHolderName := "kube-dns-58f547fd74-swzzt"
+	wantContainerName := "kubedns"
+	builder.ClusterResource.PodSandboxIds.TouchResourceLease(podSandboxId, time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewK8sResourceLeaseHolder(wantLeaseHolderKind, wantLeaseHolderNamespace, wantLeaseHolderName))
+	builder.ClusterResource.ContainerIds.TouchResourceLease(containerId, time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewContainerLeaseHolder(podSandboxId, wantContainerName))
+	wantLogSummary := "Stop container \"eea48bc...(kubedns in kube-system/kube-dns-58f547fd74-swzzt)\" with signal terminated"
+	cs, err := parser_test.ParseFromYamlLogFile("test/logs/k8s_node/containerd_only_container_id.yaml", &k8sNodeParser{}, builder, nil)
+	if err != nil {
+		t.Errorf("got error %v, want nil", err)
+	}
+
+	event := cs.GetEvents(resourcepath.NodeComponent("gke-sample-cluster-default-abcdefgh-abcd", "containerd"))
+	if len(event) != 1 {
+		t.Errorf("got %d events, want 1", len(event))
+	}
+	event = cs.GetEvents(resourcepath.Container(wantLeaseHolderNamespace, wantLeaseHolderName, wantContainerName))
+	if len(event) != 1 {
+		t.Errorf("got %d events, want 1", len(event))
+	}
+
+	gotLogSummary := cs.GetLogSummary()
+	if gotLogSummary != wantLogSummary {
+		t.Errorf("got %q log summary, want %q", gotLogSummary, wantLogSummary)
 	}
 }

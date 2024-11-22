@@ -270,7 +270,7 @@ func (p *k8sNodeParser) Parse(ctx context.Context, l *log.LogEntity, cs *history
 			podName = podNameSplitted[1]
 		}
 		containerName, err := l.KLogField("containerName")
-		if err != nil || containerName == "" {
+		if err == nil && containerName != "" {
 			cs.RecordEvent(resourcepath.Container(podNamespace, podName, containerName))
 			cs.RecordLogSummary(fmt.Sprintf("%s【%s】", summary, toReadablePodSandboxName(podNamespace, podName)))
 		} else {
@@ -363,7 +363,7 @@ func (*k8sNodeParser) handleContainerdSandboxLogs(ctx context.Context, l *log.Lo
 		}
 		return nil
 	}
-	if strings.HasPrefix(mainMessage, "ContainerStatus") || strings.HasPrefix(mainMessage, "StartContainer") || strings.HasPrefix(mainMessage, "StopContainer") || strings.HasPrefix(mainMessage, "RemoveContainer") {
+	if strings.HasPrefix(mainMessage, "ContainerStatus") || strings.HasPrefix(mainMessage, "StartContainer") || strings.HasPrefix(mainMessage, "StopContainer") || strings.HasPrefix(mainMessage, "Stop container") || strings.HasPrefix(mainMessage, "RemoveContainer") {
 		containerId := readNextQuotedString(mainMessage)
 		if containerId != "" {
 			containerIdLease, err := builder.ClusterResource.ContainerIds.GetResourceLeaseHolderAt(containerId, l.Timestamp())

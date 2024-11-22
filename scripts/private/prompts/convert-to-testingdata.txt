@@ -1,0 +1,13 @@
+The following input is a JSON data representing logs in Cloud Logging.
+I need to use it as a test code input. Please output the JSON with replacing the following data for test data purpose.
+
+* Project IDs (Use `sample-project` as the replacement.)
+* Project numbers (Use `123456789012` as the replacement.)
+* Cluster name (Use `sample-cluster` as the replacement.)
+* Node name (Use `gke-sample-cluster-default-abcdefgh-abcd` as the replacement.)
+* Email addresses
+* External IPs
+* Change the timestamp of the log to be `2024-01-01T01:00:00Z`
+
+Log data in JSON:
+
