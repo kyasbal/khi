@@ -64,6 +64,14 @@ func NodeComponent(nodeName string, syslogIdentifier string) ResourcePath {
 	return node
 }
 
+// NodeSerialport returns a ResourcePath for the pseudo serial port timeline under nodes.
+func NodeSerialport(nodeName string) ResourcePath {
+	node := Node(nodeName)
+	node.ParentRelationship = enum.RelationshipSerialPort
+	node.Path = fmt.Sprintf("%s#serialport", node.Path)
+	return node
+}
+
 // NodeBinding returns a ResourcePath for the pseudo binding timeline under nodes.
 func NodeBinding(nodeName string, podNamespace string, podName string) ResourcePath {
 	if podName == "" {
@@ -127,7 +135,7 @@ func Status(statusOwner ResourcePath, statusName string) ResourcePath {
 	}
 	return ResourcePath{
 		Path:               fmt.Sprintf("%s#%s", statusOwner.Path, statusName),
-		ParentRelationship: enum.RelationshipResourceStatus,
+		ParentRelationship: enum.RelationshipResourceCondition,
 	}
 }
 

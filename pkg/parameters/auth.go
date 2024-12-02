@@ -70,7 +70,7 @@ func (a *AuthParameters) PostProcess() error {
 
 // Prepare implements ParameterStore.
 func (a *AuthParameters) Prepare() error {
-	a.AccessToken = flag.String("access-token", "", "The token used for GCP related requests.", "")
+	a.AccessToken = flag.String("access-token", "", "The token used for GCP related requests.", "GCP_ACCESS_TOKEN")
 	a.DisableMetadataServer = flag.Bool("disable-metadata-server", false, "If this flag is set, KHI won't try to get access token from metadata server.", "")
 	a.FixedProjectID = flag.String("fixed-project-id", "", "A GCP project ID prefilled in the form. User won't be able to edit it from the form.", "KHI_FIXED_PROJECT_ID")
 	a.QuotaProjectID = flag.String("quota-project-id", "", "A GCP project ID used as the quota project. This is useful when user wants to use KHI against a project with another project with larger logging read quota.", "")

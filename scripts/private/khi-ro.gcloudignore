@@ -1,0 +1,11 @@
+# khi-ro.gcloudignore
+# This file is used as a .gcloudignore file on deploying artifacts to khi-ro
+
+data
+scripts
+.vscode
+.git
+.envrc
+go-cover*
+test
+web

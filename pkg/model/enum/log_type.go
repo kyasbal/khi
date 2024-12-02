@@ -30,6 +30,7 @@ const (
 	LogTypeAutoscaler            LogType = 10
 	LogTypeComposerEnvironment   LogType = 11
 	LogTypeControlPlaneComponent LogType = 12
+	LogTypeSerialPort            LogType = 13
 
 	logTypeUnusedEnd
 )
@@ -108,5 +109,10 @@ var LogTypes = map[LogType]LogTypeFrontendMetadata{
 		EnumKeyName:          "LogTypeControlPlaneComponent",
 		Label:                "control_plane_component",
 		LabelBackgroundColor: "#FF3333",
+	},
+	LogTypeSerialPort: {
+		EnumKeyName:          "LogTypeSerialPort",
+		Label:                "serial_port",
+		LabelBackgroundColor: "#333333",
 	},
 }

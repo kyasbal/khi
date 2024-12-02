@@ -1,0 +1,165 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+steps:
+  - id: remove internal codes
+    name: ubuntu
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        mv ./scripts/private/remove-internal-codes.sh /tmp/remove-internal-codes.sh
+        chmod +x /tmp/remove-internal-codes.sh
+        /tmp/remove-internal-codes.sh .ossignore
+        ls
+    waitFor:
+      - "-"
+  - id: npm install
+    name: node:18
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        cd ./web
+        npm ci
+    waitFor:
+      - remove internal codes
+  - id: generate frontend codes
+    name: golang:1.21
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        apt-get update && apt-get install jq -y
+        make prepare-frontend
+    waitFor:
+      - npm install
+  - id: angular test
+    name: node:18
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        wget -nv https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        apt-get -qq update > /dev/null && apt-get -qq install -y libappindicator1 fonts-liberation jq ./google-chrome-stable_current_amd64.deb > /dev/null
+        make coverage-web
+    waitFor:
+      - generate frontend codes
+  - id: upload coverage result
+    name: "gcr.io/cloud-builders/gcloud-slim"
+    args:
+    - "storage"
+    - "cp"
+    - "--recursive"
+    - "./web/coverage/frontend"
+    - "gs://kubernetes-history-inspector_cloudbuild/artifacts/$COMMIT_SHA/frontend"
+  - id: lint web
+    name: node:18
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        make lint-web
+    waitFor:
+      - generate frontend codes
+  - id: check format web
+    name: node:18
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        make check-format-web
+    waitFor:
+      - generate frontend codes
+  - id: get gcloud token
+    name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        gcloud auth print-access-token >> ./.token
+  - id: test go
+    name: golang:1.21
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        echo "#!/bin/bash\necho \"`cat ./.token`\"" > /usr/bin/gcloud
+        chmod +x /usr/bin/gcloud
+        mkdir dist
+        # A placeholder frontend code read from backend test
+        mv ./dist/index.html > ./dist/index.html.bak
+        echo "<!--INJECT GENERATED CODE HERE FROM BACKEND-->" > ./dist/index.html
+        GCP_ACCESS_TOKEN=`cat ./.token` make coverage-go
+        test_exit_code=$?
+        rm ./.token
+        mv ./dist/index.html.bak ./dist/index.html
+        exit "$test_exit_code"
+    waitFor:
+      - "get gcloud token"
+  - id: qa backend
+    name: golang:1.21
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        make check-format-go
+        make lint-go
+    waitFor:
+      - "-"
+  - id: build web oss
+    name: node:18
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        make build-web
+    waitFor:
+      - generate frontend codes
+      - test go
+      - qa backend
+      - check format web
+      - lint web
+      - angular test
+  - id: build oss container
+    name: "gcr.io/cloud-builders/docker"
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        docker build --progress=plain --file=./Dockerfile \
+          -t gcr.io/kubernetes-history-inspector/standalone:oss \
+          -t gcr.io/kubernetes-history-inspector/standalone:oss-$(cat ./VERSION) \
+          -t gcr.io/kubernetes-history-inspector/standalone:$COMMIT_SHA \
+          -t gcr.io/khi-image/standalone:latest \
+          -t gcr.io/khi-image/standalone:$(cat ./VERSION) \
+          -t gcr.io/khi-image/standalone:$COMMIT_SHA \
+          -t us-docker.pkg.dev/kubernetes-history-inspector/khi-for-partners/standalone:latest \
+          -t us-docker.pkg.dev/kubernetes-history-inspector/khi-for-partners/standalone:$(cat ./VERSION) \
+          -t us-docker.pkg.dev/kubernetes-history-inspector/khi-for-partners/standalone:$COMMIT_SHA \
+          .
+        docker push gcr.io/khi-image/standalone:oss-$(cat ./VERSION)
+        docker push gcr.io/khi-image/standalone:$COMMIT_SHA
+        docker push gcr.io/kubernetes-history-inspector/standalone:$COMMIT_SHA
+        docker push gcr.io/kubernetes-history-inspector/standalone:oss-$(cat ./VERSION)
+        docker push us-docker.pkg.dev/kubernetes-history-inspector/khi-for-partners/standalone:$(cat ./VERSION)
+        docker push us-docker.pkg.dev/kubernetes-history-inspector/khi-for-partners/standalone:$COMMIT_SHA
+    waitFor:
+      - build web oss
+images:
+  - gcr.io/khi-image/standalone:latest
+  - gcr.io/kubernetes-history-inspector/standalone:oss
+  - us-docker.pkg.dev/kubernetes-history-inspector/khi-for-partners/standalone:latest
+options:
+  machineType: E2_HIGHCPU_32

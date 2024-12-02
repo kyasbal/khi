@@ -21,6 +21,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourcepath"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/manifestutil"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/recorder"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_audit/types"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
@@ -55,6 +56,9 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 			break
 		}
 	}
+
+	deletionStatus := manifestutil.ParseDeletionStatus(ctx, log.ResourceBodyReader, log.Operation)
+	isDeletionRequest := deletionStatus == manifestutil.DeletionStatusDeleted
 	statuses := []corev1.ContainerStatus{}
 	statuses = append(statuses, pod.Status.ContainerStatuses...)
 	statuses = append(statuses, pod.Status.InitContainerStatuses...)
@@ -140,6 +144,17 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 					State:      enum.RevisionStateContainerWaiting,
 				})
 			}
+		}
+
+		if isDeletionRequest {
+			cs.RecordRevision(cpath, &history.StagingResourceRevision{
+				Verb:       enum.RevisionVerbDelete,
+				Body:       "",
+				Requestor:  "",
+				Partial:    false,
+				ChangeTime: log.Log.Timestamp(),
+				State:      enum.RevisionStateDeleted,
+			})
 		}
 	}
 	return &pod, nil

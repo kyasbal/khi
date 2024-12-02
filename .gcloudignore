@@ -1,8 +1,10 @@
 data
-scripts
+dist
 .vscode
 .git
 .envrc
 go-cover*
-test
-web
+web/node_modules
+web/coverage
+web/dist
+web/.angular

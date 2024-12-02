@@ -49,8 +49,8 @@ func (n *NameSortStrategy) SortChunk(builder *Builder, parents []*Resource, grou
 	sort.Slice(sortResult, func(i, j int) bool {
 		a := priority(sortResult[i].ResourceName)
 		b := priority(sortResult[j].ResourceName)
-		reltypeA := sortResult[i].Relationship
-		relTypeB := sortResult[j].Relationship
+		reltypeA := prorityByRelationship(sortResult[i].Relationship)
+		relTypeB := prorityByRelationship(sortResult[j].Relationship)
 		switch {
 		case a != b:
 			return a < b
@@ -61,6 +61,10 @@ func (n *NameSortStrategy) SortChunk(builder *Builder, parents []*Resource, grou
 		}
 	})
 	return sortResult, nil
+}
+
+func prorityByRelationship(rel enum.ParentRelationship) int {
+	return enum.ParentRelationships[rel].SortPriority
 }
 
 var _ ResourceChunkSortStrategy = (*NameSortStrategy)(nil)

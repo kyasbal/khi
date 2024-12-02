@@ -33,6 +33,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_event"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/k8s_node"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/network_api"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke/serialport"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/multicloud_api"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/onprem_api"
 )
@@ -165,12 +166,12 @@ func commonPreparation(inspectionServer *inspection.InspectionTaskServer) error 
 	if err != nil {
 		return err
 	}
+	err = inspectionServer.AddTaskDefinition(serialport.GKESerialPortLogQueryTask)
+	if err != nil {
+		return err
+	}
 
 	// Parse related tasks
-	// err = inspectionServer.AddTaskDefinition(k8s_audit.GKEK8sAuditLogParseJob)
-	// if err != nil {
-	// 	return err
-	// }
 	err = k8s_audit.PrepareK8sAuditTasks(inspectionServer)
 	if err != nil {
 		return err
@@ -212,6 +213,10 @@ func commonPreparation(inspectionServer *inspection.InspectionTaskServer) error 
 		return err
 	}
 	err = inspectionServer.AddTaskDefinition(k8scontrolplanecomponent.GKEK8sControlPlaneComponentLogParseTask)
+	if err != nil {
+		return err
+	}
+	err = inspectionServer.AddTaskDefinition(serialport.GKESerialPortLogParseTask)
 	if err != nil {
 		return err
 	}

@@ -212,23 +212,6 @@ func (p *k8sNodeParser) Parse(ctx context.Context, l *log.LogEntity, cs *history
 		supportsLifetimeParse = true
 	}
 	if syslogIdentifier == "kubelet" {
-		containerId, err := l.KLogField("containerID")
-		if err == nil && containerId != "" {
-			containerId := safeParseContainerId(containerId)
-			containerIdLeaseHolder, err := builder.ClusterResource.ContainerIds.GetResourceLeaseHolderAt(containerId, l.Timestamp())
-			if err != nil {
-				slog.DebugContext(ctx, fmt.Sprintf("container %s was not found. It would be created before the log query start time", containerId), logger.LogKind("container-not-found"))
-			} else {
-				podSandboxIdLeaseHolder, err := builder.ClusterResource.PodSandboxIds.GetResourceLeaseHolderAt(containerIdLeaseHolder.Holder.PodSandboxId, l.Timestamp())
-				if err != nil {
-					slog.DebugContext(ctx, fmt.Sprintf("pod %s associated to %s was not found. It would be created before the log query start time", containerIdLeaseHolder.Holder.PodSandboxId, containerId))
-				} else {
-					containerResourcePath := resourcepath.Container(podSandboxIdLeaseHolder.Holder.Namespace, podSandboxIdLeaseHolder.Holder.Name, containerIdLeaseHolder.Holder.ContainerName)
-					cs.RecordEvent(containerResourcePath)
-					cs.RecordLogSummary(fmt.Sprintf("%s【%s】", summary, toReadableContainerName(podSandboxIdLeaseHolder.Holder.Namespace, podSandboxIdLeaseHolder.Holder.Name, containerIdLeaseHolder.Holder.ContainerName)))
-				}
-			}
-		}
 		klogExitCode, err := l.KLogField("exitCode")
 		if err == nil && klogExitCode != "" && klogExitCode != "0" {
 			if klogExitCode == "137" {
@@ -272,10 +255,28 @@ func (p *k8sNodeParser) Parse(ctx context.Context, l *log.LogEntity, cs *history
 		containerName, err := l.KLogField("containerName")
 		if err == nil && containerName != "" {
 			cs.RecordEvent(resourcepath.Container(podNamespace, podName, containerName))
-			cs.RecordLogSummary(fmt.Sprintf("%s【%s】", summary, toReadablePodSandboxName(podNamespace, podName)))
-		} else {
-			cs.RecordEvent(resourcepath.Pod(podNamespace, podName))
 			cs.RecordLogSummary(fmt.Sprintf("%s【%s】", summary, toReadableContainerName(podNamespace, podName, containerName)))
+		} else {
+			containerId, err := l.KLogField("containerID")
+			if err == nil && containerId != "" {
+				containerId := safeParseContainerId(containerId)
+				containerIdLeaseHolder, err := builder.ClusterResource.ContainerIds.GetResourceLeaseHolderAt(containerId, l.Timestamp())
+				if err != nil {
+					slog.DebugContext(ctx, fmt.Sprintf("container %s was not found. It would be created before the log query start time", containerId), logger.LogKind("container-not-found"))
+				} else {
+					podSandboxIdLeaseHolder, err := builder.ClusterResource.PodSandboxIds.GetResourceLeaseHolderAt(containerIdLeaseHolder.Holder.PodSandboxId, l.Timestamp())
+					if err != nil {
+						slog.DebugContext(ctx, fmt.Sprintf("pod %s associated to %s was not found. It would be created before the log query start time", containerIdLeaseHolder.Holder.PodSandboxId, containerId))
+					} else {
+						containerResourcePath := resourcepath.Container(podSandboxIdLeaseHolder.Holder.Namespace, podSandboxIdLeaseHolder.Holder.Name, containerIdLeaseHolder.Holder.ContainerName)
+						cs.RecordEvent(containerResourcePath)
+						cs.RecordLogSummary(fmt.Sprintf("%s【%s】", summary, toReadableContainerName(podSandboxIdLeaseHolder.Holder.Namespace, podSandboxIdLeaseHolder.Holder.Name, containerIdLeaseHolder.Holder.ContainerName)))
+					}
+				}
+			} else {
+				cs.RecordEvent(resourcepath.Pod(podNamespace, podName))
+				cs.RecordLogSummary(fmt.Sprintf("%s【%s】", summary, toReadablePodSandboxName(podNamespace, podName)))
+			}
 		}
 	}
 	return nil

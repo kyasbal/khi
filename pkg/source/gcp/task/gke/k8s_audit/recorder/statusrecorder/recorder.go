@@ -51,6 +51,9 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 		// This resource has no status field or no conditions in status field
 		return &resourceContainingStatus, nil
 	}
+
+	deletionStatus := manifestutil.ParseDeletionStatus(ctx, log.ResourceBodyReader, log.Operation)
+	isDeletionRequest := deletionStatus == manifestutil.DeletionStatusDeleted
 	for _, condition := range resourceContainingStatus.Status.Conditions {
 		lastTransitionTime, err := time.Parse(time.RFC3339, condition.LastTransitionTime)
 		if err != nil {
@@ -114,6 +117,19 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 				State:      conditionStateToRevisionState(condition.Status),
 			})
 		}
+		if isDeletionRequest {
+			cs.RecordRevision(statusPath, &history.StagingResourceRevision{
+				Verb:       enum.RevisionVerbDelete,
+				Body:       "",
+				Partial:    false,
+				Requestor:  log.PrincipalEmail,
+				ChangeTime: log.Log.Timestamp(),
+				State:      enum.RevisionStateDeleted,
+			})
+		}
+	}
+	if isDeletionRequest {
+		return nil, nil
 	}
 	return &resourceContainingStatus, nil
 }

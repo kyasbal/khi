@@ -334,7 +334,7 @@ func TestK8sNodeParser_ParseKubeletLogWithPodNameButNotWithContainerName(t *test
 		DataDestination: "/tmp/",
 		TemporaryFolder: "/tmp/",
 	})
-	wantLogSummary := "MountVolume.SetUp succeeded for volume \"kube-dns-config\" (UniqueName: \"kubernetes.io/configmap/34a3f9e5-4363-47a9-8bd9-3b37c60d107b-kube-dns-config\") pod \"kube-dns-58f547fd74-swzzt\" (UID: \"34a3f9e5-4363-47a9-8bd9-3b37c60d107b\") 【 in kube-system/kube-dns-58f547fd74-swzzt】"
+	wantLogSummary := "MountVolume.SetUp succeeded for volume \"kube-dns-config\" (UniqueName: \"kubernetes.io/configmap/34a3f9e5-4363-47a9-8bd9-3b37c60d107b-kube-dns-config\") pod \"kube-dns-58f547fd74-swzzt\" (UID: \"34a3f9e5-4363-47a9-8bd9-3b37c60d107b\") 【kube-system/kube-dns-58f547fd74-swzzt】"
 	cs, err := parser_test.ParseFromYamlLogFile("test/logs/k8s_node/kubelet_only_pod_name.yaml", &k8sNodeParser{}, builder, nil)
 	if err != nil {
 		t.Errorf("got error %v, want nil", err)
@@ -361,7 +361,9 @@ func TestK8sNodeParser_ParseKubeletLogWithPodNameAndContainerName(t *testing.T) 
 		DataDestination: "/tmp/",
 		TemporaryFolder: "/tmp/",
 	})
-	wantLogSummary := "Killing container with a grace period(gracePeriod=30s)【kube-system/kube-dns-58f547fd74-swzzt】"
+	builder.ClusterResource.PodSandboxIds.TouchResourceLease("foo", time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewK8sResourceLeaseHolder("pod", "foo", "bar"))
+	builder.ClusterResource.ContainerIds.TouchResourceLease("5e0d5f0eab7a1ee243894fe769d690840243de4d53f5cb139094c395d8186881", time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewContainerLeaseHolder("foo", "sidecar"))
+	wantLogSummary := "Killing container with a grace period(gracePeriod=30s)【sidecar in kube-system/kube-dns-58f547fd74-swzzt】"
 	cs, err := parser_test.ParseFromYamlLogFile("test/logs/k8s_node/kubelet_pod_and_container_name.yaml", &k8sNodeParser{}, builder, nil)
 	if err != nil {
 		t.Errorf("got error %v, want nil", err)

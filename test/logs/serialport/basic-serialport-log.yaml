@@ -1,0 +1,15 @@
+insertId: "5940"
+labels:
+  compute.googleapis.com/resource_name: gke-sample-cluster-default-abcdefgh-abcd
+  is_text_escaped: "true"
+logName: projects/sample-project/logs/serialconsole.googleapis.com%2Fserial_port_1_output
+receiveTimestamp: "2024-01-01T01:00:00Z"
+resource:
+  labels:
+    instance_id: "123456789012"
+    project_id: sample-project
+    zone: us-central1-a
+  type: gce_instance
+severity: INFO
+textPayload: '[\x1b[0;32m OK \x1b[0m] Stopped \x1b[0;1;39mgetty@tty1.service\x1b[0m.\r\n'
+timestamp: "2024-01-01T01:00:00Z"

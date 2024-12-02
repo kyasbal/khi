@@ -52,8 +52,7 @@ func redirectMiddleware(exactPath string, redirectTo string) gin.HandlerFunc {
 }
 
 func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, config *ServerConfig) *gin.Engine {
-	engine := gin.New()
-	configureDebugMode(engine, parameters.Debug.Verbose != nil && *parameters.Debug.Verbose)
+	engine := instanciateGinServer(parameters.Debug.Verbose != nil && *parameters.Debug.Verbose)
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 
@@ -325,12 +324,16 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, config *
 	return engine
 }
 
-// configureDebugMode configure the given gin.Engine to respect the debugMode flag.
-func configureDebugMode(engine *gin.Engine, debugMode bool) {
+// instanciateGinServer generates a new instance of *gin.Engine with provided debug mode flag.
+func instanciateGinServer(debugMode bool) *gin.Engine {
 	if debugMode {
 		gin.SetMode(gin.DebugMode)
-		engine.Use(gin.Logger())
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
+	engine := gin.New()
+	if debugMode {
+		engine.Use(gin.Logger())
+	}
+	return engine
 }

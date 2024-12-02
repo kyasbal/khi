@@ -43,23 +43,32 @@ import (
 	"cloud.google.com/go/profiler"
 )
 
-const (
-	bold  = "\033[1m"
-	green = "\033[32m"
-	cyan  = "\033[36m"
-	reset = "\033[0m"
-)
-
-func displayStartMessage(port int) {
-	fmt.Printf(`
-%[1]s%[2]s%[3]sKHI server now listening on port %[5]d%[1]s
-
+func displayStartMessage(host string, port int) {
+	var (
+		bold  = "\033[1m"
+		green = "\033[32m"
+		cyan  = "\033[36m"
+		reset = "\033[0m"
+	)
+	if parameters.Debug.NoColor != nil && *parameters.Debug.NoColor {
+		bold = ""
+		green = ""
+		cyan = ""
+		reset = ""
+	}
+	hostInHintText := host
+	if host == "0.0.0.0" || host == "127.0.0.1" {
+		hostInHintText = "localhost"
+	}
+	fmt.Printf(`%[1]s%[2]s%[3]s Starting KHI server with listening %[4]s:%[5]d%[1]s`, reset, bold, green, host, port)
+	if hostInHintText == "localhost" {
+		fmt.Printf(`
 %[4]s%[2]sFor Cloud Shell users:
-	Click this address >> %[3]shttp://localhost:%[5]d%[1]s%[2]s%[4]s << Click this address
+	Click this address >> %[3]shttp://%[5]s:%[6]d%[1]s%[2]s%[4]s << Click this address
 
-
-%[1]s%[4]s(For users of the other environments: Access %[3]shttp://localhost:%[5]d%[1]s%[4]s with your browser.)
-%[1]s`, reset, bold, green, cyan, port)
+%[1]s%[4]s(For users of the other environments: Access %[3]shttp://%[5]s:%[6]d%[1]s%[4]s with your browser. Consider SSH port-forwarding when you run KHI over SSH.)
+%[1]s`, reset, bold, green, cyan, hostInHintText, port)
+	}
 }
 
 var taskSetRegistrer []inspection.PrepareInspectionServerFunc = make([]inspection.PrepareInspectionServerFunc, 0)
@@ -150,11 +159,15 @@ func main() {
 		grp := sync.WaitGroup{}
 		grp.Add(1)
 		go func() {
-			engine.Run(fmt.Sprintf("%s:%d", *parameters.Server.Host, *parameters.Server.Port))
+			err = engine.Run(fmt.Sprintf("%s:%d", *parameters.Server.Host, *parameters.Server.Port))
+			if err != nil {
+				slog.Error(fmt.Sprintf("Failed to start server\n%s", err.Error()))
+				os.Exit(1)
+			}
 			grp.Done()
 		}()
 		go handleTerminateSignal(0)
-		displayStartMessage(*parameters.Server.Port)
+		displayStartMessage(*parameters.Server.Host, *parameters.Server.Port)
 		grp.Wait()
 	} else {
 		slog.Info("Starting Kubernetes History Inspector as job mode...")

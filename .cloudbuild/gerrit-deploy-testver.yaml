@@ -66,6 +66,8 @@ steps:
     args:
       - -c
       - |
+        rm .gcloudignore
+        mv ./scripts/private/khi-ro.gcloudignore .gcloudignore
         gcloud app deploy --project="google.com:khi-ro" --no-promote --version $COMMIT_SHA
     waitFor:
       - build web for internal khi-ro version

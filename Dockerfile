@@ -26,12 +26,12 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /built/khi cmd/kuberne
 RUN mkdir /built/data
 COPY ./dist /built/web
 
-FROM alpine
-ENV ROOT=/go/src/app
-WORKDIR ${ROOT}
-COPY --from=builder /built ${ROOT}
+FROM scratch
+WORKDIR /go/src/app
+COPY --from=builder /built /go/src/app
 COPY --from=alpine:latest /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 ENV GOMEMLIMIT=10000MiB
 EXPOSE 8080
-CMD /go/src/app/khi --host=0.0.0.0 --temporary-folder=/ --data-destination-folder=/ --iam-token=${IAM_TOKEN} --access-token=${GCP_ACCESS_TOKEN} --fixed-project-id=${KHI_FIXED_PROJECT_ID} --ga-labels=${KHI_GA_LABELS}
+ENTRYPOINT [ "/go/src/app/khi" ]
+CMD ["--host=0.0.0.0","--temporary-folder=/","--data-destination-folder=/","--frontend-asset-folder=/go/src/app/web"]

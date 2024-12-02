@@ -54,8 +54,8 @@ func (p *PrivateParameters) PostProcess() error {
 // Prepare implements ParameterStore.
 func (p *PrivateParameters) Prepare() error {
 	p.InspectionMode = flag.Bool("inspection-mode", false, "If this flag is set, KHI use the inspection token to access APIs.", "")
-	p.IAMToken = flag.String("iam-token", "", "The initial IAM token used for accessing APIs. InspectionMode will be true when only this value is specified.", "")
-	p.GALabels = flag.String("ga-labels", "", "The additional labels sent with the other labels. This flag is needed for taking analytics.", "")
+	p.IAMToken = flag.String("iam-token", "", "The initial IAM token used for accessing APIs. InspectionMode will be true when only this value is specified.", "IAM_TOKEN")
+	p.GALabels = flag.String("ga-labels", "", "The additional labels sent with the other labels. This flag is needed for taking analytics.", "KHI_GA_LABELS")
 	p.DisableAnalytics = flag.Bool("disable-analytics", false, "If this flag is set, KHI won't send the usage data to the analytics backend.", "")
 	p.AnalyticsDebug = flag.Bool("analytics-debug", false, "The flag included in the debug analytics data. This is for the analytics data to be excluded.", "")
 	return nil

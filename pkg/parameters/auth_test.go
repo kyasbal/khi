@@ -27,6 +27,12 @@ import (
 )
 
 func TestAuthParameters(t *testing.T) {
+	// Test environment gives the token from environment variable and it can affect this test case.
+	// The value will be kept in the variable and restored after testing them.
+	accessTokenBefore := os.Getenv("GCP_ACCESS_TOKEN")
+	os.Setenv("GCP_ACCESS_TOKEN", "")
+	defer os.Setenv("GCP_ACCESS_TOKEN", accessTokenBefore)
+
 	testCases := []struct {
 		name   string
 		want   *AuthParameters

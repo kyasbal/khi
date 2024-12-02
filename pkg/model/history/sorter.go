@@ -54,7 +54,9 @@ func (r *ResourceSorter) sortLayer(builder *Builder, parents []*Resource, childr
 	for prs := range grouped {
 		keys = append(keys, prs)
 	}
-	slices.Sort(keys)
+	slices.SortFunc(keys, func(a, b enum.ParentRelationship) int {
+		return enum.ParentRelationships[a].SortPriority - enum.ParentRelationships[b].SortPriority
+	})
 
 	for _, key := range keys {
 		resource, err := r.sortGroupInLayer(builder, parents, key, grouped[key])

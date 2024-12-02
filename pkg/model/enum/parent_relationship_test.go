@@ -16,8 +16,11 @@ package enum
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestParentRelationshipMetadataIsFilled(t *testing.T) {
@@ -51,5 +54,47 @@ func TestParentRelationshipMetadataIsValid(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestParentRelationshipOrderIsValid(t *testing.T) {
+	testCase := []struct {
+		name          string
+		expectedOrder []ParentRelationship
+	}{
+		{
+			name: "order of node subresources",
+			expectedOrder: []ParentRelationship{
+				RelationshipChild,
+				RelationshipSerialPort,
+				RelationshipResourceCondition,
+				RelationshipOperation,
+				RelationshipNodeComponent,
+				RelationshipOwnerReference,
+				RelationshipPodBinding,
+			},
+		},
+		{
+			name: "order of pod subresources",
+			expectedOrder: []ParentRelationship{
+				RelationshipChild,
+				RelationshipResourceCondition,
+				RelationshipContainer,
+				RelationshipEndpointSlice,
+				RelationshipNetworkEndpointGroup,
+			},
+		},
+	}
+	for _, tc := range testCase {
+		t.Run(tc.name, func(t *testing.T) {
+			original := slices.Clone(tc.expectedOrder)
+			slices.Reverse(original)
+			slices.SortFunc(original, func(a, b ParentRelationship) int {
+				return ParentRelationships[a].SortPriority - ParentRelationships[b].SortPriority
+			})
+			if diff := cmp.Diff(tc.expectedOrder, original); diff != "" {
+				t.Errorf("unexpected result (-want +got)\n%s", diff)
+			}
+		})
 	}
 }

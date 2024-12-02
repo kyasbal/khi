@@ -153,6 +153,30 @@ func TestNodeComponent(t *testing.T) {
 	}
 }
 
+func TestNodeSerialport(t *testing.T) {
+	expectedParentRelationship := enum.RelationshipSerialPort
+	testCases := []struct {
+		name     string
+		nodeName string
+		expected string
+	}{
+		{"Node name specified", "my-node", "core/v1#node#cluster-scope#my-node#serialport"},
+		{"Empty node name", "", "core/v1#node#cluster-scope#unknown#serialport"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := NodeSerialport(tc.nodeName)
+			if result.Path != tc.expected {
+				t.Errorf("NodeSerialport(%v).Path = %v, want %v", tc.nodeName, result.Path, tc.expected)
+			}
+			if result.ParentRelationship != expectedParentRelationship {
+				t.Errorf("NodeSerialport(%v).ParentRelationship = %v, want %v", tc.nodeName, result.ParentRelationship, expectedParentRelationship)
+			}
+		})
+	}
+}
+
 func TestNodeBinding(t *testing.T) {
 	expectedParentRelationship := enum.RelationshipPodBinding
 	testCases := []struct {
@@ -277,7 +301,7 @@ func TestOperation(t *testing.T) {
 }
 
 func TestStatus(t *testing.T) {
-	expectedParentRelationship := enum.RelationshipResourceStatus
+	expectedParentRelationship := enum.RelationshipResourceCondition
 	testCases := []struct {
 		name        string
 		statusOwner ResourcePath
