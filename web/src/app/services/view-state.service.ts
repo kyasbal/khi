@@ -32,9 +32,10 @@ import {
 export class ViewStateService {
   /**
    * Rendering small sharp shapes with WebGL in the default pixel ratio can be blurry result in high resolution display like Mac's retina display.
-   * Scale the value by 1.5 by default. TODO: change this value with regarding the performance.
+   * Higher value seems to cause scaling issue on high resoluition display because it can easily hit the maximum canvas width.
+   * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#maximum_canvas_size
    */
-  public static DEVICE_PIXEL_RATIO_SCALE = 1.5;
+  public static DEVICE_PIXEL_RATIO_SCALE = 1;
 
   private timezoneShiftSubject: BehaviorSubject<number> = new BehaviorSubject(
     -new Date().getTimezoneOffset() / 60,
