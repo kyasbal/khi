@@ -21,7 +21,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import * as jsyaml from 'js-yaml';
-import { NEVER, Observable, filter, map, of, withLatestFrom } from 'rxjs';
+import {
+  NEVER,
+  Observable,
+  filter,
+  map,
+  of,
+  switchMap,
+  withLatestFrom,
+} from 'rxjs';
 import { LongTimestampFormatPipe } from 'src/app/common/timestamp-format.pipe';
 import { InspectionDataStoreService } from 'src/app/services/inspection-data-store.service';
 import { ViewStateService } from 'src/app/services/view-state.service';
@@ -85,7 +93,7 @@ export class CommonFieldAnnotatorComponent {
             withLatestFrom(
               dataStore.textBufferSource.pipe(filter((tb) => !!tb)),
             ),
-            map(([tr, loader]) => loader!.getText(tr)),
+            switchMap(([tr, loader]) => loader!.getText(tr)),
             map((yamlStr) => fieldMapper(jsyaml.load(yamlStr))),
           ),
         },
@@ -121,7 +129,7 @@ export class CommonFieldAnnotatorComponent {
         inputs: {
           icon,
           label,
-          value: of([l.message]),
+          value: of([l.summary]),
         },
       };
     };

@@ -21,19 +21,22 @@ import {
   NEVER,
   Observable,
   filter,
+  forkJoin,
   map,
   of,
   shareReplay,
+  switchMap,
   withLatestFrom,
 } from 'rxjs';
 import {
   KHIFileTextReference,
   LogAnnotationTypeResourceRef,
 } from 'src/app/common/schema/khi-file-types';
-import { InspectionDataStoreService } from 'src/app/services/inspection-data-store.service';
 import { SelectionManagerService } from 'src/app/services/selection-manager.service';
 import { AnnotationDecider, DECISION_HIDDEN } from '../annotator';
 import { LogEntry } from 'src/app/store/log';
+import { InspectionDataStoreService } from 'src/app/services/inspection-data-store.service';
+import { ToTextReferenceFromKHIFileBinary } from 'src/app/common/loader/reference-type';
 
 interface ResourceRefAnnotationViewModel {
   label: string;
@@ -85,16 +88,20 @@ export class RelationshipAnnotatorComponent {
         refs: of(pathReferences).pipe(
           withLatestFrom(dataStore.textBufferSource.pipe(filter((tb) => !!tb))),
           map(([refs, bufferLoader]) =>
-            [...new Set(refs.map((ref) => bufferLoader!.getText(ref)))].map(
-              (refPath) => {
-                const splittedPath = refPath.split('#');
-                const resourceRefLabel = `${splittedPath[splittedPath.length - 1]} of ${splittedPath[splittedPath.length - 2]}`;
-                return {
-                  label: resourceRefLabel,
-                  path: refPath,
-                } as ResourceRefAnnotationViewModel;
-              },
+            refs.map((ref) =>
+              bufferLoader!.getText(ToTextReferenceFromKHIFileBinary(ref)),
             ),
+          ),
+          switchMap((refs) => forkJoin(refs)),
+          map((refs) =>
+            [...new Set(refs)].map((path) => {
+              const splittedPath = path.split('#');
+              const resourceRefLabel = `${splittedPath[splittedPath.length - 1]} of ${splittedPath[splittedPath.length - 2]}`;
+              return {
+                label: resourceRefLabel,
+                path,
+              } as ResourceRefAnnotationViewModel;
+            }),
           ),
         ),
       },

@@ -22,6 +22,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/inspectiondata"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/ioconfig"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata/header"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata/progress"
 	inspection_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
@@ -59,7 +60,7 @@ var SerializeTask = inspection_task.NewInspectionProcessor(SerializerTaskId, []s
 	if err != nil {
 		return nil, err
 	}
-	err = builder.Finalize(ctx, resultMetadata, writer, progress)
+	fileSize, err := builder.Finalize(ctx, resultMetadata, writer, progress)
 	if err != nil {
 		return nil, err
 	}
@@ -67,5 +68,6 @@ var SerializeTask = inspection_task.NewInspectionProcessor(SerializerTaskId, []s
 	if err != nil {
 		return nil, err
 	}
+	metadataSet.LoadOrStore(header.HeaderMetadataKey, &header.HeaderMetadataFactory{}).(*header.Header).FileSize = fileSize
 	return store, nil
 })

@@ -20,7 +20,7 @@
   (mouseover)="onHover()"
   [ngClass]="'log-view-log-index-' + log.logIndex"
   (click)="onClick()"
-  [matTooltip]="log.message"
+  [matTooltip]="log.summary"
   matTooltipPosition="left"
 >
   <td
@@ -39,5 +39,5 @@
     </div>
   </td>
   <td class="ts">{{ log.time | tsf | async }}</td>
-  <td class="message">{{ log.message }}</td>
+  <td class="message">{{ log.summary }}</td>
 </tr>

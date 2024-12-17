@@ -32,6 +32,7 @@ type Header struct {
 	InspectTimeUnixSeconds int64  `json:"inspectTimeUnixSeconds"`
 	// KHI frontend uses this metadata value for the default value of khi file name on download.
 	SuggestedFileName string `json:"suggestedFilename"`
+	FileSize          int    `json:"fileSize,omitempty"`
 }
 
 var _ metadata.Metadata = (*Header)(nil)

@@ -81,15 +81,9 @@ describe('Path related class specs', () => {
         v2Pipe2.connectPoint(v2p1, AnchorPoints.CENTER_LEFT);
         v2Pipe2.connectPoint(v2p2, AnchorPoints.CENTER_LEFT);
         hPipe.connectPoint(h1p2, AnchorPoints.TOP);
-        console.log(
-          hPipe.registerPath('h1-p2/h-pipe/v-pipe-1/v1-p1', 'arrow', 10, 90),
-        );
-        console.log(
-          hPipe.registerPath('h1-p2/h-pipe/v-pipe-1/v1-p2', 'arrow', 10, 90),
-        );
-        console.log(
-          hPipe.registerPath('h1-p1/h-pipe/v-pipe-2/v2-p2', 'circle', 10, 90),
-        );
+        hPipe.registerPath('h1-p2/h-pipe/v-pipe-1/v1-p1', 'arrow', 10, 90);
+        hPipe.registerPath('h1-p2/h-pipe/v-pipe-1/v1-p2', 'arrow', 10, 90);
+        hPipe.registerPath('h1-p1/h-pipe/v-pipe-2/v2-p2', 'circle', 10, 90);
       })
       .render();
   });

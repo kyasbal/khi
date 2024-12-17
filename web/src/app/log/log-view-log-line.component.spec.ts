@@ -18,9 +18,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LogViewLogLineComponent } from './log-view-log-line.component';
 import { KHICommonModule } from '../common/common.module';
 import { LogType, Severity } from '../generated';
-import { KHIFileTextReference } from '../common/schema/khi-file-types';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { LogEntry } from '../store/log';
+import { ReferenceType } from '../common/loader/interface';
 
 describe('LogViewLogLineComponent', () => {
   let component: LogViewLogLineComponent;
@@ -41,7 +41,7 @@ describe('LogViewLogLineComponent', () => {
       Severity.SeverityInfo,
       0,
       'foo',
-      {} as unknown as KHIFileTextReference,
+      { type: ReferenceType.NullReference },
       [],
     );
     fixture.detectChanges();

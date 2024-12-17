@@ -68,6 +68,7 @@ import {
   DEFAULT_TIMELINE_FILTER,
   TimelineFilter,
 } from '../services/timeline-filter.service';
+import { ToTextReferenceFromKHIFileBinary } from '../common/loader/reference-type';
 
 interface HoverViewStateLog {
   time: number;
@@ -270,7 +271,7 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
         ) {
           const eventLog = highlightLogs[i];
           logs.push({
-            message: eventLog.message,
+            message: eventLog.summary,
             logIndex: eventLog.logIndex,
             time: eventLog.time,
             logTypeCss: eventLog.logTypeLabel,
@@ -302,11 +303,11 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
               Severity.SeverityUnknown,
               revision.startAt,
               '',
-              {
+              ToTextReferenceFromKHIFileBinary({
                 offset: 0,
                 len: 0,
                 buffer: 0,
-              },
+              }),
               [],
             );
           }
@@ -315,7 +316,7 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
               ? logs[logs.length - 1].revisionPair!.current
               : null;
           logs.push({
-            message: associatedLog.message,
+            message: associatedLog.summary,
             logIndex: associatedLog.logIndex,
             time: revision.startAt,
             logTypeCss: associatedLog.logTypeLabel,

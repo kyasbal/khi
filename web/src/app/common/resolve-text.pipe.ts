@@ -16,8 +16,8 @@
 
 import { Pipe, PipeTransform } from '@angular/core';
 import { InspectionDataStoreService } from '../services/inspection-data-store.service';
-import { Observable, map } from 'rxjs';
-import { KHIFileTextReference } from './schema/khi-file-types';
+import { Observable, switchMap } from 'rxjs';
+import { TextReference } from './loader/interface';
 
 /**
  * A pipe to resolve KHIFileTextReference type with data store.
@@ -28,9 +28,9 @@ import { KHIFileTextReference } from './schema/khi-file-types';
 })
 export class ResolveTextPipe implements PipeTransform {
   constructor(private dataStore: InspectionDataStoreService) {}
-  transform(value: KHIFileTextReference): Observable<string> {
+  transform(value: TextReference): Observable<string> {
     return this.dataStore.textBufferSource.pipe(
-      map((bs) => bs?.getText(value) ?? 'error'),
+      switchMap((bs) => bs?.getText(value) ?? 'error'),
     );
   }
 }

@@ -82,7 +82,7 @@ func TestBuilder(t *testing.T) {
 		}
 		var result bytes.Buffer
 
-		err := b.Build(context.Background(), &result, progress.NewTaskProgress("foo"))
+		_, err := b.Build(context.Background(), &result, progress.NewTaskProgress("foo"))
 		bufferCount := 0
 		for {
 			_, err = result.Read(sizeReadBuffer)
@@ -133,9 +133,12 @@ func TestBuilder(t *testing.T) {
 			<-time.After(time.Millisecond * 100)
 			cancel()
 		}()
-		err = b.Build(ctx, &buf, progress.NewTaskProgress("foo"))
+		size, err := b.Build(ctx, &buf, progress.NewTaskProgress("foo"))
 		if !errors.Is(err, context.Canceled) {
 			t.Errorf("Build didn't returned the Canceled error after the cancel")
+		}
+		if size != 0 {
+			t.Errorf("b.Build() returns size=%d,want %d", size, 0)
 		}
 	})
 

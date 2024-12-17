@@ -64,6 +64,7 @@ export type InspectionMetadataHeader = {
   startTimeUnixSeconds: number;
   endTimeUnixSeconds: number;
   suggestedFilename: string;
+  fileSize?: number;
 };
 
 export type InspectionMetadataProgressPhase =

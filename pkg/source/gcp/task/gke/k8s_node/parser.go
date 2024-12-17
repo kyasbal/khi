@@ -25,6 +25,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/grouper"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourceinfo"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourceinfo/resourcelease"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parser"
@@ -260,11 +261,11 @@ func (p *k8sNodeParser) Parse(ctx context.Context, l *log.LogEntity, cs *history
 			containerId, err := l.KLogField("containerID")
 			if err == nil && containerId != "" {
 				containerId := safeParseContainerId(containerId)
-				containerIdLeaseHolder, err := builder.ClusterResource.ContainerIds.GetResourceLeaseHolderAt(containerId, l.Timestamp())
+				containerIdLeaseHolder, err := builder.ClusterResource.ContainerIDs.GetResourceLeaseHolderAt(containerId, l.Timestamp())
 				if err != nil {
 					slog.DebugContext(ctx, fmt.Sprintf("container %s was not found. It would be created before the log query start time", containerId), logger.LogKind("container-not-found"))
 				} else {
-					podSandboxIdLeaseHolder, err := builder.ClusterResource.PodSandboxIds.GetResourceLeaseHolderAt(containerIdLeaseHolder.Holder.PodSandboxId, l.Timestamp())
+					podSandboxIdLeaseHolder, err := builder.ClusterResource.PodSandboxIDs.GetResourceLeaseHolderAt(containerIdLeaseHolder.Holder.PodSandboxId, l.Timestamp())
 					if err != nil {
 						slog.DebugContext(ctx, fmt.Sprintf("pod %s associated to %s was not found. It would be created before the log query start time", containerIdLeaseHolder.Holder.PodSandboxId, containerId))
 					} else {
@@ -326,21 +327,10 @@ func (*k8sNodeParser) handleContainerdSandboxLogs(ctx context.Context, l *log.Lo
 		}
 		cs.RecordEvent(resourcepath.Pod(podSandbox.PodNamespace, podSandbox.PodName))
 		if podSandbox.PodSandboxId != "" {
-			builder.ClusterResource.PodSandboxIds.TouchResourceLease(podSandbox.PodSandboxId, l.Timestamp(),
+			builder.ClusterResource.PodSandboxIDs.TouchResourceLease(podSandbox.PodSandboxId, l.Timestamp(),
 				resourcelease.NewK8sResourceLeaseHolder("pod", podSandbox.PodNamespace, podSandbox.PodName))
 			cs.RecordLogSummary(rewriteIdWithReadableName(podSandbox.PodSandboxId, toReadablePodSandboxName(podSandbox.PodNamespace, podSandbox.PodName), summary))
 		}
-		return nil
-	}
-	if strings.HasPrefix(mainMessage, "PodSandboxStatus") || strings.HasPrefix(mainMessage, "StopPodSandbox") || strings.HasPrefix(mainMessage, "RemovePodSandbox") {
-		sandboxId := readNextQuotedString(mainMessage)
-		podSandbox, err := builder.ClusterResource.PodSandboxIds.GetResourceLeaseHolderAt(sandboxId, l.Timestamp())
-		if err != nil {
-			slog.DebugContext(ctx, fmt.Sprintf("pod sandbox %s was not found. It would be created before the log query start time", sandboxId), logger.LogKind("pod-sandbox-not-found"))
-			return nil
-		}
-		cs.RecordEvent(resourcepath.Pod(podSandbox.Holder.Namespace, podSandbox.Holder.Name))
-		cs.RecordLogSummary(rewriteIdWithReadableName(sandboxId, toReadablePodSandboxName(podSandbox.Holder.Namespace, podSandbox.Holder.Name), summary))
 		return nil
 	}
 
@@ -351,7 +341,7 @@ func (*k8sNodeParser) handleContainerdSandboxLogs(ctx context.Context, l *log.Lo
 		if err != nil {
 			return err
 		}
-		podSandboxIdLease, err := builder.ClusterResource.PodSandboxIds.GetResourceLeaseHolderAt(container.PodSandboxId, l.Timestamp())
+		podSandboxIdLease, err := builder.ClusterResource.PodSandboxIDs.GetResourceLeaseHolderAt(container.PodSandboxId, l.Timestamp())
 		if err != nil {
 			slog.DebugContext(ctx, fmt.Sprintf("pod sandbox %s was not found. It would be created before the log query start time", container.PodSandboxId), logger.LogKind("pod-sandbox-not-found"))
 			return nil
@@ -360,19 +350,31 @@ func (*k8sNodeParser) handleContainerdSandboxLogs(ctx context.Context, l *log.Lo
 		cs.RecordEvent(containerResourcePath)
 		cs.RecordLogSummary(rewriteIdWithReadableName(container.PodSandboxId, toReadableContainerName(podSandboxIdLease.Holder.Namespace, podSandboxIdLease.Holder.Name, container.ContainerName), summary))
 		if container.ContainerId != "" {
-			builder.ClusterResource.ContainerIds.TouchResourceLease(container.ContainerId, l.Timestamp(), resourcelease.NewContainerLeaseHolder(container.PodSandboxId, container.ContainerName))
+			builder.ClusterResource.ContainerIDs.TouchResourceLease(container.ContainerId, l.Timestamp(), resourcelease.NewContainerLeaseHolder(container.PodSandboxId, container.ContainerName))
 		}
 		return nil
 	}
-	if strings.HasPrefix(mainMessage, "ContainerStatus") || strings.HasPrefix(mainMessage, "StartContainer") || strings.HasPrefix(mainMessage, "StopContainer") || strings.HasPrefix(mainMessage, "Stop container") || strings.HasPrefix(mainMessage, "RemoveContainer") {
+
+	id := readNextQuotedString(mainMessage)
+	idType := builder.ClusterResource.GetNodeResourceIDTypeFromID(id, l.Timestamp())
+	if idType == resourceinfo.NodeResourceIDTypePodSandbox {
+		podSandbox, err := builder.ClusterResource.PodSandboxIDs.GetResourceLeaseHolderAt(id, l.Timestamp())
+		if err != nil {
+			slog.DebugContext(ctx, fmt.Sprintf("pod sandbox %s was not found. It would be created before the log query start time", id), logger.LogKind("pod-sandbox-not-found"))
+			return nil
+		}
+		cs.RecordEvent(resourcepath.Pod(podSandbox.Holder.Namespace, podSandbox.Holder.Name))
+		cs.RecordLogSummary(rewriteIdWithReadableName(id, toReadablePodSandboxName(podSandbox.Holder.Namespace, podSandbox.Holder.Name), summary))
+		return nil
+	} else if idType == resourceinfo.NodeResourceIDTypeContainer {
 		containerId := readNextQuotedString(mainMessage)
 		if containerId != "" {
-			containerIdLease, err := builder.ClusterResource.ContainerIds.GetResourceLeaseHolderAt(containerId, l.Timestamp())
+			containerIdLease, err := builder.ClusterResource.ContainerIDs.GetResourceLeaseHolderAt(containerId, l.Timestamp())
 			if err != nil {
 				slog.DebugContext(ctx, fmt.Sprintf("container %s was not found. It would be created before the log query start time", containerId), logger.LogKind("container-not-found"))
 				return nil
 			}
-			podIdLease, err := builder.ClusterResource.PodSandboxIds.GetResourceLeaseHolderAt(containerIdLease.Holder.PodSandboxId, l.Timestamp())
+			podIdLease, err := builder.ClusterResource.PodSandboxIDs.GetResourceLeaseHolderAt(containerIdLease.Holder.PodSandboxId, l.Timestamp())
 			if err != nil {
 				slog.DebugContext(ctx, fmt.Sprintf("pod %s associated to container %s was not found. It would be created before the log query start time", containerIdLease.Holder.PodSandboxId, containerId))
 				return nil

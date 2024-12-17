@@ -35,9 +35,9 @@ import {
   Observable,
   ReplaySubject,
   Subject,
-  combineLatest,
   concat,
   debounceTime,
+  forkJoin,
   last,
   map,
   of,
@@ -48,6 +48,8 @@ import {
 } from 'rxjs';
 import { ViewStateService } from '../view-state.service';
 import { BackendAPI, DownloadProgressReporter } from './backend-api-interface';
+import { ProgressDialogStatusUpdator } from '../progress/progress-interface';
+import { ProgressUtil } from '../progress/progress-util';
 
 /**
  * An implementation of BackendAPI interface.
@@ -165,7 +167,7 @@ export class BackendAPIImpl implements BackendAPI {
     return this.http.request<Blob>(httpRequest).pipe(
       tap((event) => {
         if (event.type === HttpEventType.DownloadProgress) {
-          reporter(event.loaded, event.total ?? 0);
+          reporter(event.loaded);
         }
       }),
       last(),
@@ -289,13 +291,26 @@ export class BackendAPIUtil {
   /**
    * Save the inspection data as a file
    */
-  public static downloadInspectionDataAsFile(api: BackendAPI, taskId: string) {
-    return combineLatest([
-      api.getInspectionMetadata(taskId),
-      api.getInspectionData(taskId, (done, all) => {
-        console.log(`Downloading inspection data ${done}/${all}`);
-      }),
-    ]).pipe(
+  public static downloadInspectionDataAsFile(
+    api: BackendAPI,
+    taskId: string,
+    progress: ProgressDialogStatusUpdator,
+  ) {
+    progress.show();
+    return api.getInspectionMetadata(taskId).pipe(
+      switchMap((metadata) =>
+        forkJoin([
+          of(metadata),
+          api.getInspectionData(taskId, (done) => {
+            const fileSize = metadata.header.fileSize ?? 0;
+            progress.updateProgress({
+              message: `Downloading inspection data (${ProgressUtil.formatPogressMessageByBytes(done, fileSize)})`,
+              percent: (done / fileSize) * 100,
+              mode: 'determinate',
+            });
+          }),
+        ]),
+      ),
       map(([metadata, blob]) => {
         if (blob === null) return;
         const link = document.createElement('a');
@@ -305,6 +320,7 @@ export class BackendAPIUtil {
         document.body.appendChild(link);
         link.click();
         link.remove();
+        progress.dismiss();
         return metadata.header.suggestedFilename;
       }),
     );

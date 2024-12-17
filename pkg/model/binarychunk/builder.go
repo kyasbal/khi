@@ -96,8 +96,9 @@ func (b *Builder) Read(ref *BinaryReference) ([]byte, error) {
 	return bw.Read(ref)
 }
 
-// Build amends all the binary buffers to the given writer in KHI format.
-func (b *Builder) Build(ctx context.Context, writer io.Writer, progress *progress.TaskProgress) error {
+// Build amends all the binary buffers to the given writer in KHI format. Returns the written byte size.
+func (b *Builder) Build(ctx context.Context, writer io.Writer, progress *progress.TaskProgress) (int, error) {
+	allBinarySize := 0
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	for i, binaryWriter := range b.bufferWriters {
@@ -106,37 +107,39 @@ func (b *Builder) Build(ctx context.Context, writer io.Writer, progress *progres
 			if err := ctx.Err(); err != nil {
 				binaryWriter.Dispose()
 				b.compressor.Dispose()
-				return err
+				return 0, err
 			}
 		default:
 			progress.Update(float32(i)/float32(len(b.bufferWriters)), fmt.Sprintf("Compressing binary part... %d of %d", i, len(b.bufferWriters)))
 			binaryReader, err := binaryWriter.GetBinary()
 			if err != nil {
-				return err
+				return 0, err
 			}
 			compressedReader, err := b.compressor.CompressAll(ctx, binaryReader)
 			if err != nil {
-				return err
+				return 0, err
 			}
 			readResult, err := io.ReadAll(compressedReader)
 			if err != nil {
-				return err
+				return 0, err
 			}
 			sizeInBytesBinary := make([]byte, 4)
 			binary.BigEndian.PutUint32(sizeInBytesBinary, uint32(len(readResult)))
-			_, err = writer.Write(sizeInBytesBinary)
-			if err != nil {
-				return err
+			if writtenSize, err := writer.Write(sizeInBytesBinary); err != nil {
+				return 0, err
+			} else {
+				allBinarySize += writtenSize
 			}
-			_, err = writer.Write(readResult)
-			if err != nil {
-				return err
+			if writtenSize, err := writer.Write(readResult); err != nil {
+				return 0, err
+			} else {
+				allBinarySize += writtenSize
 			}
 			binaryWriter.Dispose()
 		}
 	}
 	b.compressor.Dispose()
-	return nil
+	return allBinarySize, nil
 }
 
 func (b *Builder) calcStringHash(source []byte) string {

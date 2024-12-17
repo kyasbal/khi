@@ -22,7 +22,6 @@ import {
   KHIFileResource,
   KHIFileResourceEvent,
   KHIFileResourceRevision,
-  KHIFileTextReference,
   KHIFileTimeline,
 } from '../common/schema/khi-file-types';
 import { ParentRelationship, RevisionState, RevisionVerb } from '../generated';
@@ -40,40 +39,13 @@ import {
   EXTENSION_STORE,
   ExtensionStore,
 } from '../extensions/extension-common/extension-store';
-
-/**
- * TextBufferLoader load large text from compressed binary part of KHI data format.
- */
-export class TextBufferLoader {
-  private decoder = new TextDecoder();
-
-  constructor(private sourceBuffers: ArrayBuffer[]) {}
-
-  /**
-   * Sum of text buffer in bytes.
-   */
-  get totalSize(): number {
-    return this.sourceBuffers.reduce(
-      (prev, buffer) => prev + buffer.byteLength,
-      0,
-    );
-  }
-
-  /**
-   * Read text from a reference(offset,length,bufferIndex).
-   */
-  getText(reference: KHIFileTextReference): string {
-    if (reference === null) {
-      return '(empty)';
-    }
-    const bufferView = new Uint8Array(
-      this.sourceBuffers[reference.buffer],
-      reference.offset,
-      reference.len,
-    );
-    return this.decoder.decode(bufferView);
-  }
-}
+import {
+  KHIFileReferenceResolver,
+  NullReferenceResolver,
+  ReferenceResolverStore,
+} from '../common/loader/reference-resolver';
+import { ToTextReferenceFromKHIFileBinary } from '../common/loader/reference-type';
+import { ProgressUtil } from './progress/progress-util';
 
 @Injectable()
 export class InspectionDataLoaderService {
@@ -101,14 +73,14 @@ export class InspectionDataLoaderService {
     });
   }
 
-  private revisionDataToViewRevisions(
+  private async revisionDataToViewRevisions(
     resource: KHIFileResource,
     revisions: KHIFileResourceRevision[],
     idToIndexTable: { [logId: string]: number },
     startTime: number,
     endTime: number,
-    textSource: TextBufferLoader,
-  ): ResourceRevision[] {
+    textSource: ReferenceResolverStore,
+  ): Promise<ResourceRevision[]> {
     const result: ResourceRevision[] = [];
     if (
       revisions.length === 0 &&
@@ -169,8 +141,14 @@ export class InspectionDataLoaderService {
           end,
           revisions[ri].state,
           revision.verb,
-          textSource.getText(revision.body),
-          textSource.getText(revision.requestor),
+          await lastValueFrom(
+            textSource.getText(ToTextReferenceFromKHIFileBinary(revision.body)),
+          ),
+          await lastValueFrom(
+            textSource.getText(
+              ToTextReferenceFromKHIFileBinary(revision.requestor),
+            ),
+          ),
           revision.verb === RevisionVerb.RevisionVerbDelete,
           false,
           idToIndexTable[revision.log],
@@ -180,11 +158,11 @@ export class InspectionDataLoaderService {
     return result;
   }
 
-  private responseDataToViewInspection(
+  private async responseDataToViewInspection(
     response: KHIFile,
-    textSource: TextBufferLoader,
+    textSource: ReferenceResolverStore,
     rawInspectionData: ArrayBuffer,
-  ): InspectionData {
+  ): Promise<InspectionData> {
     if (typeof response.version === 'undefined') {
       const errorMessage =
         'Unsupported KHI version schema. Maybe this file was exported for older KHI version. Please use older version to use the file or query the range again with this newer version';
@@ -218,8 +196,10 @@ export class InspectionDataLoaderService {
           l.type,
           l.severity,
           time,
-          textSource.getText(l.summary),
-          l.body,
+          await lastValueFrom(
+            textSource.getText(ToTextReferenceFromKHIFileBinary(l.summary)),
+          ),
+          ToTextReferenceFromKHIFileBinary(l.body),
           l.annotations,
         ),
       );
@@ -278,7 +258,7 @@ export class InspectionDataLoaderService {
               timelineIdToTimeline[nameResource.timeline] ?? null;
             const nameTimeline = new TimelineEntry(
               nameResource.path,
-              this.revisionDataToViewRevisions(
+              await this.revisionDataToViewRevisions(
                 nameResource,
                 timeline?.revisions ?? [],
                 logIdToLogIndex,
@@ -308,7 +288,7 @@ export class InspectionDataLoaderService {
                 timelineIdToTimeline[subResourceResource.timeline] ?? null;
               const subresourceTimeline = new TimelineEntry(
                 subResourceResource.path,
-                this.revisionDataToViewRevisions(
+                await this.revisionDataToViewRevisions(
                   subResourceResource,
                   timeline?.revisions ?? [],
                   logIdToLogIndex,
@@ -401,22 +381,26 @@ export class InspectionDataLoaderService {
         rawInspectionData,
         jsonDataOffset + metaDataPart,
       );
-      const textBufferLoader = new TextBufferLoader(textBuffers);
-      const khiInspectionViewModel = this.responseDataToViewInspection(
+
+      const resolver = new ReferenceResolverStore([
+        new KHIFileReferenceResolver(textBuffers),
+        new NullReferenceResolver(),
+      ]);
+      const khiInspectionViewModel = await this.responseDataToViewInspection(
         parsedJsonData,
-        textBufferLoader,
+        resolver,
         rawInspectionData,
       );
 
       this.extension.notifyLifecycleOnInspectionDataOpen(
         khiInspectionViewModel,
-        textBufferLoader,
+        resolver,
         rawInspectionData,
       );
 
       this.inspectionDataStore.setNewInspectionData(
         khiInspectionViewModel,
-        textBufferLoader,
+        resolver,
       );
     } catch (e) {
       console.error(e);
@@ -458,14 +442,18 @@ export class InspectionDataLoaderService {
       percent: 0,
       mode: 'determinate',
     });
+    const metadata = await lastValueFrom(
+      this.backendService.getInspectionMetadata(taskId),
+    );
+    const allSize = metadata.header.fileSize ?? 0;
     const data = await lastValueFrom(
-      this.backendService.getInspectionData(taskId, (done, all) => {
+      this.backendService.getInspectionData(taskId, (done) => {
         this.progress.updateProgress({
-          message: `Downloading inspection data...(${this.formatDownloadProgress(
+          message: `Downloading inspection data...(${ProgressUtil.formatPogressMessageByBytes(
             done,
-            all,
+            allSize,
           )})`,
-          percent: (done / all) * 100,
+          percent: (done / allSize) * 100,
           mode: 'determinate',
         });
       }),
@@ -497,12 +485,5 @@ export class InspectionDataLoaderService {
       .stream()
       .pipeThrough(decompressionStream);
     return new Response(textDecompressionStream).arrayBuffer();
-  }
-
-  private formatDownloadProgress(done: number, all: number): string {
-    const percentage = ((done / all) * 100).toFixed(1);
-    const doneBytesInString = done.toLocaleString();
-    const allBytesInString = all.toLocaleString();
-    return `${doneBytesInString} Bytes of ${allBytesInString} Bytes(${percentage}%)`;
   }
 }

@@ -16,9 +16,19 @@ package resourceinfo
 
 import (
 	"sync"
+	"time"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourceinfo/resourcelease"
 	v1 "k8s.io/api/core/v1"
+)
+
+// NodeResourceIDType is enums to represent the type of ids.
+type NodeResourceIDType int
+
+const (
+	NodeResourceIDTypeUnknown    NodeResourceIDType = 0
+	NodeResourceIDTypeContainer  NodeResourceIDType = 1
+	NodeResourceIDTypePodSandbox NodeResourceIDType = 2
 )
 
 // Cluster stores resource information(node name, Pod IP,Host IP...etc) used from another parser.
@@ -30,8 +40,8 @@ type Cluster struct {
 	IPs            *resourcelease.ResourceLeaseHistory[*resourcelease.K8sResourceLeaseHolder]
 	// records lease history of NEG id to ServiceNetworkEndpointGroup
 	NEGs          *resourcelease.ResourceLeaseHistory[*resourcelease.K8sResourceLeaseHolder]
-	PodSandboxIds *resourcelease.ResourceLeaseHistory[*resourcelease.K8sResourceLeaseHolder]
-	ContainerIds  *resourcelease.ResourceLeaseHistory[*resourcelease.ContainerLeaseHolder]
+	PodSandboxIDs *resourcelease.ResourceLeaseHistory[*resourcelease.K8sResourceLeaseHolder]
+	ContainerIDs  *resourcelease.ResourceLeaseHistory[*resourcelease.ContainerLeaseHolder]
 	// CRIResource       *CRIResourceBinder
 	ContainerStatuses *ContainerStatuses
 }
@@ -44,8 +54,8 @@ func NewClusterResourceInfo() *Cluster {
 		EndpointSlices: newEndpointSliceInfo(ips),
 		IPs:            ips,
 		NEGs:           resourcelease.NewResourceLeaseHistory[*resourcelease.K8sResourceLeaseHolder](),
-		PodSandboxIds:  resourcelease.NewResourceLeaseHistory[*resourcelease.K8sResourceLeaseHolder](),
-		ContainerIds:   resourcelease.NewResourceLeaseHistory[*resourcelease.ContainerLeaseHolder](),
+		PodSandboxIDs:  resourcelease.NewResourceLeaseHistory[*resourcelease.K8sResourceLeaseHolder](),
+		ContainerIDs:   resourcelease.NewResourceLeaseHistory[*resourcelease.ContainerLeaseHolder](),
 		ContainerStatuses: &ContainerStatuses{
 			lastObservedStatus: make(map[string]v1.ContainerStatus),
 		},
@@ -66,4 +76,17 @@ func (c *Cluster) GetNodes() []string {
 		result = append(result, key)
 	}
 	return result
+}
+
+// GetNodeResourceIDTypeFromID tries to find if the given id is for a pod sandbox or container at the given time.
+func (c *Cluster) GetNodeResourceIDTypeFromID(id string, t time.Time) NodeResourceIDType {
+	_, err := c.PodSandboxIDs.GetResourceLeaseHolderAt(id, t)
+	if err == nil {
+		return NodeResourceIDTypePodSandbox
+	}
+	_, err = c.ContainerIDs.GetResourceLeaseHolderAt(id, t)
+	if err == nil {
+		return NodeResourceIDTypeContainer
+	}
+	return NodeResourceIDTypeUnknown
 }

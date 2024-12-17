@@ -45,6 +45,10 @@ import {
 import { BACKEND_CONNECTION } from 'src/app/services/api/backend-connection.service';
 import { BackendConnectionService } from 'src/app/services/api/backend-connection-interface';
 import { environment } from 'src/environments/environment';
+import {
+  PROGRESS_DIALOG_STATUS_UPDATOR,
+  ProgressDialogStatusUpdator,
+} from 'src/app/services/progress/progress-interface';
 
 export type ProgressBarViewModel = {
   id: string;
@@ -162,6 +166,8 @@ export class StartupDialogComponent {
     @Inject(BACKEND_CONNECTION)
     private readonly backendConnection: BackendConnectionService,
     private readonly loader: InspectionDataLoaderService,
+    @Inject(PROGRESS_DIALOG_STATUS_UPDATOR)
+    private readonly progress: ProgressDialogStatusUpdator,
   ) {}
 
   private durationToTimeSeconds(duration: number): string {
@@ -214,6 +220,7 @@ export class StartupDialogComponent {
           return BackendAPIUtil.downloadInspectionDataAsFile(
             this.backendAPI,
             id,
+            this.progress,
           );
         }),
         withLatestFrom(this.taskListViewModel),

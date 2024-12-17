@@ -23,7 +23,11 @@ import { FRONTEND_ANALYTICS, KHIAnalyticsActivityType } from './types';
 import { InspectionData } from 'src/app/models/inspection-data';
 import { randomString } from 'src/app/utils/random';
 import { sha512FromArrayBuffer } from 'src/app/utils/hash';
-import { TextBufferLoader } from 'src/app/services/data-loader.service';
+import { ReferenceType } from 'src/app/common/loader/interface';
+import {
+  KHIFileReferenceResolver,
+  ReferenceResolverStore,
+} from 'src/app/common/loader/reference-resolver';
 
 /**
  * AnalyticsLifecycleExtension reports event on lifecycle events with the injected FRONTEND_ANALYTICS service.
@@ -36,7 +40,7 @@ export const AnalyticsLifecycleExtension: LifecycleHookExtension = {
   },
   onInspectionDataOpen: (
     inspectionData: InspectionData,
-    textBufferSource: TextBufferLoader,
+    textBufferSource: ReferenceResolverStore,
     rawData: ArrayBuffer,
   ) => {
     const analytics = inject(FRONTEND_ANALYTICS);
@@ -46,9 +50,21 @@ export const AnalyticsLifecycleExtension: LifecycleHookExtension = {
       const openId = randomString();
       analytics.globalMetadata()['inspectionDataHash'] = hash;
       analytics.globalMetadata()['openId'] = openId;
+
+      // Calculate the total text data size
+      const binaryPartReader = textBufferSource.resolvers.find((r) =>
+        r.isSupportedReferenceType(ReferenceType.KHIFileBinary),
+      );
+      let binaryPartSize = 0;
+      if (binaryPartReader) {
+        binaryPartSize = (
+          binaryPartReader as KHIFileReferenceResolver
+        ).sourceBuffers.reduce((prev, next) => next.byteLength + prev, 0);
+      }
+
       analytics.report(KHIAnalyticsActivityType.OpenInspectionData, {
         logLength: rawData.byteLength,
-        decompressedTextBufferLength: textBufferSource.totalSize,
+        decompressedTextBufferLength: binaryPartSize,
         revisionCount: inspectionData.timelines.reduce(
           (prev, next) => next.revisions.length + prev,
           0,

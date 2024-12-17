@@ -331,35 +331,48 @@ func (builder *Builder) sortData() error {
 	return nil
 }
 
-func (builder *Builder) Finalize(ctx context.Context, serializedMetadata map[string]interface{}, writer io.Writer, progress *progress.TaskProgress) error {
+// Finalize flushes the binary chunk data and serialized metadata to the given io.Writer. Returns the written data size in bytes and error.
+func (builder *Builder) Finalize(ctx context.Context, serializedMetadata map[string]interface{}, writer io.Writer, progress *progress.TaskProgress) (int, error) {
+	fileSize := 0
 	progress.Update(0, "Sorting log entries")
 	progress.MarkIndeterminate()
 	builder.history.Metadata = serializedMetadata
 	err := builder.sortData()
 	if err != nil {
-		return err
+		return 0, err
 	}
 	jsonString, err := json.Marshal(builder.history)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	jsonBytes := []byte(jsonString)
 
-	if _, err = writer.Write([]byte("KHI")); err != nil {
-		return err
+	if writtenSize, err := writer.Write([]byte("KHI")); err != nil {
+		return 0, err
+	} else {
+		fileSize += writtenSize
 	}
 
 	metaFieldJsonSize := make([]byte, 4)
 	binary.LittleEndian.PutUint32(metaFieldJsonSize, uint32(len(jsonBytes)))
-	if _, err = writer.Write(metaFieldJsonSize); err != nil {
-		return err
+	if writtenSize, err := writer.Write(metaFieldJsonSize); err != nil {
+		return 0, err
+	} else {
+		fileSize += writtenSize
 	}
 
-	if _, err = writer.Write(jsonBytes); err != nil {
-		return err
+	if writtenSize, err := writer.Write(jsonBytes); err != nil {
+		return 0, err
+	} else {
+		fileSize += writtenSize
 	}
 
-	return builder.binaryChunk.Build(ctx, writer, progress)
+	if writtenSize, err := builder.binaryChunk.Build(ctx, writer, progress); err != nil {
+		return 0, err
+	} else {
+		fileSize += writtenSize
+	}
+	return fileSize, nil
 }
 
 func (builder *Builder) generateTimelineID() string {

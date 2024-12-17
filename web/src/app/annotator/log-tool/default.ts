@@ -19,7 +19,7 @@ import { CommonToolbarButtonComponent } from '../common-toolbar-button.component
 import { LogAnnotatorResolver } from '../log/resolver';
 import { inject } from '@angular/core';
 import { InspectionDataStoreService } from 'src/app/services/inspection-data-store.service';
-import { filter, map, of, withLatestFrom } from 'rxjs';
+import { filter, map, of, switchMap, withLatestFrom } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Clipboard } from '@angular/cdk/clipboard';
 import * as jsyaml from 'js-yaml';
@@ -53,9 +53,9 @@ function copyLogEntryContentMapper(
               withLatestFrom(
                 dataStore.textBufferSource.pipe(filter((tb) => !!tb)),
               ),
-              map(([lr, tbs]) => {
-                const copyText = tbs!.getText(lr);
-                if (clipboard.copy(copyText)) {
+              switchMap(([lr, tbs]) => tbs!.getText(lr)),
+              map((text) => {
+                if (clipboard.copy(text)) {
                   return 'Copied!';
                 } else {
                   return 'Copy failed';
@@ -100,14 +100,14 @@ function copyLogQueryContentMapper(
               withLatestFrom(
                 dataStore.textBufferSource.pipe(filter((tb) => !!tb)),
               ),
-              map(([l, textSource]) => {
-                const logBody = textSource!.getText(l.body);
+              switchMap(([l, source]) => source!.getText(l.body)),
+              map((logBody) => {
                 const parsedLog = jsyaml.load(logBody) as {
                   [key: string]: string;
                 };
                 const timestamp = parsedLog['timestamp'];
                 return `(
--- Log query for "${l.message}"
+-- Log query for "${l.summary}"
 insertId="${l.insertId}"
 timestamp="${timestamp}"
 )`;

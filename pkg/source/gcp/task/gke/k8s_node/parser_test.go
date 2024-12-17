@@ -361,8 +361,8 @@ func TestK8sNodeParser_ParseKubeletLogWithPodNameAndContainerName(t *testing.T) 
 		DataDestination: "/tmp/",
 		TemporaryFolder: "/tmp/",
 	})
-	builder.ClusterResource.PodSandboxIds.TouchResourceLease("foo", time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewK8sResourceLeaseHolder("pod", "foo", "bar"))
-	builder.ClusterResource.ContainerIds.TouchResourceLease("5e0d5f0eab7a1ee243894fe769d690840243de4d53f5cb139094c395d8186881", time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewContainerLeaseHolder("foo", "sidecar"))
+	builder.ClusterResource.PodSandboxIDs.TouchResourceLease("foo", time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewK8sResourceLeaseHolder("pod", "foo", "bar"))
+	builder.ClusterResource.ContainerIDs.TouchResourceLease("5e0d5f0eab7a1ee243894fe769d690840243de4d53f5cb139094c395d8186881", time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewContainerLeaseHolder("foo", "sidecar"))
 	wantLogSummary := "Killing container with a grace period(gracePeriod=30s)【sidecar in kube-system/kube-dns-58f547fd74-swzzt】"
 	cs, err := parser_test.ParseFromYamlLogFile("test/logs/k8s_node/kubelet_pod_and_container_name.yaml", &k8sNodeParser{}, builder, nil)
 	if err != nil {
@@ -410,7 +410,7 @@ func TestK8sNodeParser_ParseContainerdRunPod(t *testing.T) {
 		t.Errorf("got %q log summary, want %q", gotLogSummary, wantLogSummary)
 	}
 
-	lease, err := builder.ClusterResource.PodSandboxIds.GetResourceLeaseHolderAt(podSandboxId, time.Date(2024, time.January, 1, 1, 0, 0, 0, time.UTC))
+	lease, err := builder.ClusterResource.PodSandboxIDs.GetResourceLeaseHolderAt(podSandboxId, time.Date(2024, time.January, 1, 1, 0, 0, 0, time.UTC))
 	if err != nil {
 		t.Errorf("got error %v, want nil", err)
 	} else {
@@ -438,7 +438,7 @@ func TestK8sNodeParser_ParseCreateContainer(t *testing.T) {
 	wantLeaseHolderName := "kube-dns-58f547fd74-swzzt"
 	wantContainerName := "kubedns"
 	wantContainerId := "eea48bce362bdf290ff0d41655c9e580a41acd354cc845c7b7163d9dd9980bd9"
-	builder.ClusterResource.PodSandboxIds.TouchResourceLease(podSandboxId, time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewK8sResourceLeaseHolder(wantLeaseHolderKind, wantLeaseHolderNamespace, wantLeaseHolderName))
+	builder.ClusterResource.PodSandboxIDs.TouchResourceLease(podSandboxId, time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewK8sResourceLeaseHolder(wantLeaseHolderKind, wantLeaseHolderNamespace, wantLeaseHolderName))
 	wantLogSummary := "CreateContainer within sandbox \"e4b03e2...(kubedns in kube-system/kube-dns-58f547fd74-swzzt)\" for &ContainerMetadata{Name:kubedns,Attempt:0,} returns container id \"eea48bce362bdf290ff0d41655c9e580a41acd354cc845c7b7163d9dd9980bd9\""
 	cs, err := parser_test.ParseFromYamlLogFile("test/logs/k8s_node/containerd_create_container.yaml", &k8sNodeParser{}, builder, nil)
 	if err != nil {
@@ -459,7 +459,7 @@ func TestK8sNodeParser_ParseCreateContainer(t *testing.T) {
 		t.Errorf("got %q log summary, want %q", gotLogSummary, wantLogSummary)
 	}
 
-	lease, err := builder.ClusterResource.ContainerIds.GetResourceLeaseHolderAt(wantContainerId, time.Date(2024, time.January, 1, 1, 1, 0, 0, time.UTC))
+	lease, err := builder.ClusterResource.ContainerIDs.GetResourceLeaseHolderAt(wantContainerId, time.Date(2024, time.January, 1, 1, 1, 0, 0, time.UTC))
 	if err != nil {
 		t.Errorf("got error %v, want nil", err)
 	} else {
@@ -484,8 +484,8 @@ func TestK8sNodeParser_ParseContainerdIncludingContainerIdOnly(t *testing.T) {
 	wantLeaseHolderNamespace := "kube-system"
 	wantLeaseHolderName := "kube-dns-58f547fd74-swzzt"
 	wantContainerName := "kubedns"
-	builder.ClusterResource.PodSandboxIds.TouchResourceLease(podSandboxId, time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewK8sResourceLeaseHolder(wantLeaseHolderKind, wantLeaseHolderNamespace, wantLeaseHolderName))
-	builder.ClusterResource.ContainerIds.TouchResourceLease(containerId, time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewContainerLeaseHolder(podSandboxId, wantContainerName))
+	builder.ClusterResource.PodSandboxIDs.TouchResourceLease(podSandboxId, time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewK8sResourceLeaseHolder(wantLeaseHolderKind, wantLeaseHolderNamespace, wantLeaseHolderName))
+	builder.ClusterResource.ContainerIDs.TouchResourceLease(containerId, time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC), resourcelease.NewContainerLeaseHolder(podSandboxId, wantContainerName))
 	wantLogSummary := "Stop container \"eea48bc...(kubedns in kube-system/kube-dns-58f547fd74-swzzt)\" with signal terminated"
 	cs, err := parser_test.ParseFromYamlLogFile("test/logs/k8s_node/containerd_only_container_id.yaml", &k8sNodeParser{}, builder, nil)
 	if err != nil {

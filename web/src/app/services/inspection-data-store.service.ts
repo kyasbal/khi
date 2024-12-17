@@ -30,10 +30,10 @@ import {
 import { InspectionData, TimelineRange } from '../models/inspection-data';
 import { asBehaviorSubject } from '../utils/observable-util';
 import { FilterWorkerService } from './filter-worker.service';
-import { TextBufferLoader } from './data-loader.service';
 import { ParentRelationship } from '../generated';
 import { TimelineEntry } from '../store/timeline';
 import { LogEntry } from '../store/log';
+import { ReferenceResolverStore } from '../common/loader/reference-resolver';
 
 /**
  * InspectionDataStore provides observable to the inspection data loaded.
@@ -81,7 +81,9 @@ export class InspectionDataStoreService implements InspectionDataStore {
     filter((d) => !!d),
   ) as Observable<InspectionData>;
 
-  public textBufferSource = new BehaviorSubject<TextBufferLoader | null>(null);
+  public textBufferSource = new BehaviorSubject<ReferenceResolverStore | null>(
+    null,
+  );
 
   /**
    * Timeline related inspection sub data
@@ -165,7 +167,7 @@ export class InspectionDataStoreService implements InspectionDataStore {
 
   public setNewInspectionData(
     data: InspectionData,
-    textBufferSource: TextBufferLoader,
+    textBufferSource: ReferenceResolverStore,
   ) {
     this.$inspectionData.next(data);
     this.textBufferSource.next(textBufferSource);

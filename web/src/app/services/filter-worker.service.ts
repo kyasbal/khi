@@ -18,8 +18,8 @@ import * as LogFilterWorker from '../worker/worker-types';
 import { InspectionDataStoreService } from './inspection-data-store.service';
 import { randomString } from '../utils/random';
 import { LogEntry } from '../store/log';
-import { mergeMap, Observable, of, Subject } from 'rxjs';
-import { TextBufferLoader } from './data-loader.service';
+import { forkJoin, map, mergeMap, Observable, of, Subject, take } from 'rxjs';
+import { ReferenceResolverStore } from '../common/loader/reference-resolver';
 
 /**
  * FilterWorkerService provides log filter feature with regex.
@@ -131,7 +131,7 @@ export class FilterWorkerService {
    */
   private requestFilterSubset(
     logs: LogEntry[],
-    textLoader: TextBufferLoader,
+    textLoader: ReferenceResolverStore,
     regexInStr: string,
     startIndex: number,
     length: number,
@@ -139,19 +139,48 @@ export class FilterWorkerService {
     const taskId = randomString();
     const taskLoader = new Subject<number[]>();
     this._taskCompletionHandler[taskId] = taskLoader;
-    const transferrableLog = logs
-      .slice(startIndex, startIndex + length)
-      .map((log) => ({
-        index: log.logIndex,
-        logBody: textLoader.getText(log.body),
-      }));
-    this.logFilterWorkers[this.nextWorker].postMessage({
-      taskId,
-      regexInStr,
-      logs: transferrableLog,
+
+    // Get the body of the logs for subset of logs and send them to the worker.
+    FilterWorkerServieUtil.logEntriesToFilterWorkerLogs(
+      textLoader,
+      logs.slice(startIndex, startIndex + length),
+    ).subscribe((transferrableLog) => {
+      this.logFilterWorkers[this.nextWorker].postMessage({
+        taskId,
+        regexInStr,
+        logs: transferrableLog,
+      });
     });
+
     this.nextWorker =
       (this.nextWorker + 1) % FilterWorkerService.LOG_FILTER_WORKER_POOL_COUNT;
     return taskLoader;
+  }
+}
+
+/**
+ * Provides utility functions used from FilterWorkerService.
+ */
+export class FilterWorkerServieUtil {
+  /**
+   * Convert an array of LogEntry to an array of LogFilterWorker.FilterWorkerLog with resolving its body text.
+   */
+  public static logEntriesToFilterWorkerLogs(
+    referenceResolverStore: ReferenceResolverStore,
+    logs: LogEntry[],
+  ): Observable<LogFilterWorker.FilterWorkerLog[]> {
+    return forkJoin(
+      logs.map((l) =>
+        referenceResolverStore.getText(l.body).pipe(
+          map(
+            (logBody) =>
+              ({
+                index: l.logIndex,
+                logBody: logBody,
+              }) as LogFilterWorker.FilterWorkerLog,
+          ),
+        ),
+      ),
+    ).pipe(take(1));
   }
 }

@@ -543,7 +543,6 @@ describe('ResizingCalculator', () => {
       },
     ]);
     r.areaStates.pipe(take(4), toArray()).subscribe((states) => {
-      console.log(states);
       expect(states[0].map((state) => state.currentSize)).toEqual([
         100, 100, 100,
       ]);

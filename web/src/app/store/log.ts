@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  KHIFileTextReference,
-  KHILogAnnotation,
-} from '../common/schema/khi-file-types';
+import { KHILogAnnotation } from '../common/schema/khi-file-types';
 import {
   LogType,
   LogTypeMetadata,
@@ -25,6 +22,8 @@ import {
   SeverityMetadata,
 } from '../generated';
 import { TimelineEntry } from './timeline';
+import { TextReference } from '../common/loader/interface';
+import { ToTextReferenceFromKHIFileBinary } from '../common/loader/reference-type';
 
 export class LogEntry {
   /**
@@ -42,8 +41,8 @@ export class LogEntry {
     public readonly logType: LogType,
     public readonly severity: Severity,
     public readonly time: number,
-    public readonly message: string,
-    public readonly body: KHIFileTextReference,
+    public readonly summary: string,
+    public readonly body: TextReference,
     public readonly annotations: KHILogAnnotation[],
   ) {}
 
@@ -54,7 +53,7 @@ export class LogEntry {
       entry.logType,
       entry.severity,
       entry.time,
-      entry.message,
+      entry.summary,
       entry.body,
       entry.annotations,
     );
@@ -71,6 +70,6 @@ export const NullLog = new LogEntry(
   Severity.SeverityUnknown,
   0,
   '',
-  { offset: 0, len: 0, buffer: 0 },
+  ToTextReferenceFromKHIFileBinary({ offset: 0, len: 0, buffer: 0 }),
   [],
 );

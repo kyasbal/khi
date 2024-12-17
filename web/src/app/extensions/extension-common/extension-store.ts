@@ -26,7 +26,7 @@ import {
   PageType,
 } from './extension-types/lifecycle-hook';
 import { InspectionData } from 'src/app/models/inspection-data';
-import { TextBufferLoader } from 'src/app/services/data-loader.service';
+import { ReferenceResolverStore } from 'src/app/common/loader/reference-resolver';
 
 /**
  * An injectio toke to get the instnce of ExtensionStore.
@@ -112,7 +112,7 @@ export class ExtensionStore {
    */
   public notifyLifecycleOnInspectionDataOpen(
     inspectionData: InspectionData,
-    textBufferSource: TextBufferLoader,
+    textBufferSource: ReferenceResolverStore,
     rawData: ArrayBuffer,
   ): void {
     return runInInjectionContext(this.injector, () => {

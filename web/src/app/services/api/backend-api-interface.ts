@@ -33,10 +33,7 @@ import { InjectionToken } from '@angular/core';
 /**
  * A function type to report the progress of download.
  */
-export type DownloadProgressReporter = (
-  doneBytes: number,
-  allBytes: number,
-) => void;
+export type DownloadProgressReporter = (doneBytes: number) => void;
 
 export const BACKEND_API = new InjectionToken<BackendAPI>('BACKEND_API');
 
