@@ -86,3 +86,9 @@ export type InspectionMetadataProgressElement = {
   percentage: number;
   indeterminate: boolean;
 };
+
+export type InspectionMetadataLog = {
+  id: string;
+  name: string;
+  log: string;
+};

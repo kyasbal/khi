@@ -25,7 +25,7 @@ import {
   LifecycleHookExtension,
   PageType,
 } from './extension-types/lifecycle-hook';
-import { InspectionData } from 'src/app/models/inspection-data';
+import { InspectionData } from 'src/app/store/inspection-data';
 import { ReferenceResolverStore } from 'src/app/common/loader/reference-resolver';
 
 /**

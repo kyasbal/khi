@@ -68,6 +68,16 @@ export class ViewStateService {
     shareReplay(1),
   );
 
+  /**
+   * Whether KHI hides a subresource layer timeline without any matching with the log filter.
+   */
+  public hideSubresourcesWithoutMatchingLogs = new BehaviorSubject(false);
+
+  /**
+   * Whether KHI hides a resource layer timeline without any matching with the log filter.
+   */
+  public hideResourcesWithoutMatchingLogs = new BehaviorSubject(true);
+
   public devicePixelRatio = animationFrames().pipe(
     map(
       () => window.devicePixelRatio * ViewStateService.DEVICE_PIXEL_RATIO_SCALE,
@@ -106,6 +116,22 @@ export class ViewStateService {
 
   public getVisibleWidth(): number {
     return this.visibleWidthSubject.value;
+  }
+
+  public setHideSubresourcesWithoutMatchingLogs(
+    hideSubresourcesWithoutMatchingLogs: boolean,
+  ): void {
+    this.hideSubresourcesWithoutMatchingLogs.next(
+      hideSubresourcesWithoutMatchingLogs,
+    );
+  }
+
+  public setHideResourcesWithoutMatchingLogs(
+    hideREsourcesWithoutMatchingLogs: boolean,
+  ): void {
+    this.hideResourcesWithoutMatchingLogs.next(
+      hideREsourcesWithoutMatchingLogs,
+    );
   }
 
   /**

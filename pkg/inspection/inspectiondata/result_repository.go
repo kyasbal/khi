@@ -26,6 +26,7 @@ import (
 type Store interface {
 	GetWriter() (io.Writer, error)
 	GetReader() (io.Reader, error)
+	GetRangeReader(start, maxLength int64) (io.Reader, error)
 	Close() error
 	GetInspectionResultSizeInBytes() (int, error)
 }
@@ -65,6 +66,17 @@ func (r *FileSystemStore) GetReader() (io.Reader, error) {
 	}
 	r.file = file
 	return r.file, nil
+}
+
+// GetRangeReader returns a reader only reading specified range.
+func (r *FileSystemStore) GetRangeReader(start int64, maxLength int64) (io.Reader, error) {
+	r.lock.Lock()
+	file, err := os.Open(r.filePath)
+	if err != nil {
+		return nil, err
+	}
+	r.file = file
+	return io.NewSectionReader(file, start, maxLength), nil
 }
 
 func (r *FileSystemStore) Close() error {

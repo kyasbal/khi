@@ -25,6 +25,6 @@ export function findNonMatchingLogIndices(
 ): number[] {
   const regexp = new RegExp(regexInStr);
   return logs
-    .filter((log) => !regexp.test(log.logBody))
+    .filter((log) => !regexp.test(log.logBody) && !regexp.test(log.logSummary))
     .map((log) => log.index);
 }

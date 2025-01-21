@@ -26,8 +26,16 @@ describe('FilterWorkerServiceUtil', () => {
         'ReferenceResolverStore',
         ['getText'],
       );
-      const logEntry1 = { logIndex: 1, body: { type: 0 } } as LogEntry;
-      const logEntry2 = { logIndex: 2, body: { type: 0 } } as LogEntry;
+      const logEntry1 = {
+        logIndex: 1,
+        body: { type: 0 },
+        summary: 'bar',
+      } as LogEntry;
+      const logEntry2 = {
+        logIndex: 2,
+        body: { type: 0 },
+        summary: 'bar',
+      } as LogEntry;
       resolver.getText.and.returnValue(of('foo'));
 
       FilterWorkerServieUtil.logEntriesToFilterWorkerLogs(resolver, [
@@ -35,8 +43,8 @@ describe('FilterWorkerServiceUtil', () => {
         logEntry2,
       ]).subscribe((result) => {
         expect(result).toEqual([
-          { index: 1, logBody: 'foo' },
-          { index: 2, logBody: 'foo' },
+          { index: 1, logBody: 'foo', logSummary: 'bar' },
+          { index: 2, logBody: 'foo', logSummary: 'bar' },
         ]);
         done();
       });

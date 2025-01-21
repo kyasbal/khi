@@ -14,7 +14,11 @@
 
 package worker
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/errorreport"
+)
 
 // Pool enables running a goroutine with max parallel count limit.
 type Pool struct {
@@ -33,6 +37,7 @@ func (t *Pool) Run(f func()) {
 	t.waitGroup.Add(1)
 	t.semaphore <- struct{}{}
 	go func() {
+		defer errorreport.CheckAndReportPanic()
 		defer func() {
 			<-t.semaphore
 			t.waitGroup.Done()

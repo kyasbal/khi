@@ -18,7 +18,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
-var AutocompleteClusterNamesTaskId = GCPPrefix + "autocomplete/cluster-names"
+var AutocompleteClusterNamesTaskID = GCPPrefix + "autocomplete/cluster-names"
 
 type AutocompleteClusterNameList struct {
 	ClusterNames []string
@@ -26,5 +26,5 @@ type AutocompleteClusterNameList struct {
 }
 
 func GetAutocompleteClusterNamesFromTaskVariable(v *task.VariableSet) (*AutocompleteClusterNameList, error) {
-	return task.GetTypedVariableFromTaskVariable[*AutocompleteClusterNameList](v, AutocompleteClusterNamesTaskId, nil)
+	return task.GetTypedVariableFromTaskVariable[*AutocompleteClusterNameList](v, AutocompleteClusterNamesTaskID, nil)
 }

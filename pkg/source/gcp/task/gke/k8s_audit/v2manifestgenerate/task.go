@@ -37,15 +37,15 @@ import (
 
 var bodyPlaceholderForMetadataLevelAuditLog = "# Resource data is unavailable. Audit logs for this resource is recorded at metadata level."
 
-var Task = inspection_task.NewInspectionProcessor(k8saudittask.ManifestGenerateTaskId, []string{
-	inspection_task.ReaderFactoryGeneratorTaskId,
-	k8saudittask.TimelineGroupingTaskId,
+var Task = inspection_task.NewInspectionProcessor(k8saudittask.ManifestGenerateTaskID, []string{
+	inspection_task.ReaderFactoryGeneratorTaskID,
+	k8saudittask.TimelineGroupingTaskID,
 	gcp_task.GCPDefaultK8sResourceMergeConfigTask.ID().ReferenceId().String(),
 }, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
 	if taskMode == inspection_task.TaskModeDryRun {
 		return struct{}{}, nil
 	}
-	groups, err := task.GetTypedVariableFromTaskVariable[[]*types.TimelineGrouperResult](v, k8saudittask.TimelineGroupingTaskId, nil)
+	groups, err := task.GetTypedVariableFromTaskVariable[[]*types.TimelineGrouperResult](v, k8saudittask.TimelineGroupingTaskID, nil)
 	if err != nil {
 		return nil, err
 	}

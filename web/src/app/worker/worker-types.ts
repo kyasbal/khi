@@ -20,11 +20,11 @@ export function isKHIWorkerPacket(packet: any): packet is KHIWorkerPacket {
 }
 
 export interface KHIWorkerPacket {
-  isKHIWorkerPacket: boolean;
+  isKHIWorkerPacket?: boolean;
+  taskId?: string;
 }
 
 export interface FilterQuery extends KHIWorkerPacket {
-  taskId: string;
   regexInStr: string;
   logs: FilterWorkerLog[];
 }
@@ -35,6 +35,7 @@ export interface FilterQuery extends KHIWorkerPacket {
 export interface FilterWorkerLog {
   index: number;
   logBody: string;
+  logSummary: string;
 }
 
 export interface FilterResult extends KHIWorkerPacket {

@@ -33,11 +33,11 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
-var availableForAllGCPInspectionTypes = inspection_task.InspectionTaskLabel(gke.InspectionTypeId, aws.InspectionTypeId, azure.InspectionTypeId, baremetal.InspectionTypeId, vmware.InspectionTypeId)
+var availableForAllGCPInspectionTypes = inspection_task.InspectionTypeLabel(gke.InspectionTypeId, aws.InspectionTypeId, azure.InspectionTypeId, baremetal.InspectionTypeId, vmware.InspectionTypeId)
 
-const justificationFormTaskId = gcp_task.GCPPrefix + "private/justification"
+const justificationFormTaskID = gcp_task.GCPPrefix + "private/justification"
 
-var JustificationFormTask = inspection_task.NewInspectionProcessor(justificationFormTaskId, []string{}, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (any, error) {
+var JustificationFormTask = inspection_task.NewInspectionProcessor(justificationFormTaskID, []string{}, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (any, error) {
 	gaLabelsMap := map[string]string{}
 	if parameters.Private.GALabels != nil {
 		gaLabelsMap = parameters.Private.GetMapOfGALabels()
@@ -49,7 +49,7 @@ var JustificationFormTask = inspection_task.NewInspectionProcessor(justification
 		}
 		formFields := m.LoadOrStore(form_metadata.FormFieldSetMetadataKey, &form_metadata.FormFieldSetMetadataFactory{}).(*form_metadata.FormFieldSet)
 		formFields.SetField(&form_metadata.FormField{
-			Id:        justificationFormTaskId,
+			Id:        justificationFormTaskID,
 			Priority:  math.MaxInt32,
 			Type:      "Text",
 			Label:     "Justification",
@@ -63,13 +63,13 @@ var JustificationFormTask = inspection_task.NewInspectionProcessor(justification
 	availableForAllGCPInspectionTypes,
 	inspection_task.NewRequiredTaskLabel())
 
-const filenameHeaderMetadataGeneratorTaskId = gcp_task.GCPPrefix + "private/header-metadata-filename"
+const filenameHeaderMetadataGeneratorTaskID = gcp_task.GCPPrefix + "private/header-metadata-filename"
 
-var FilenameHeaderMetadataGeneratorTask = inspection_task.NewInspectionProcessor(filenameHeaderMetadataGeneratorTaskId, []string{
-	justificationFormTaskId,
-	gcp_task.InputClusterName,
-	gcp_task.InputEndTimeVariableName,
-	gcp_task.InputStartTimeVariableName,
+var FilenameHeaderMetadataGeneratorTask = inspection_task.NewInspectionProcessor(filenameHeaderMetadataGeneratorTaskID, []string{
+	justificationFormTaskID,
+	gcp_task.InputClusterNameTaskID,
+	gcp_task.InputEndTimeTaskID,
+	gcp_task.InputStartTimeTaskID,
 }, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (any, error) {
 	m, err := inspection_task.GetMetadataSetFromVariable(v)
 	if err != nil {
@@ -88,7 +88,7 @@ var FilenameHeaderMetadataGeneratorTask = inspection_task.NewInspectionProcessor
 		return nil, err
 	}
 	header := m.LoadOrStore(header.HeaderMetadataKey, &header.HeaderMetadataFactory{}).(*header.Header)
-	justification, err := task.GetTypedVariableFromTaskVariable[string](v, justificationFormTaskId, "")
+	justification, err := task.GetTypedVariableFromTaskVariable[string](v, justificationFormTaskID, "")
 	if err != nil {
 		return nil, err
 	}

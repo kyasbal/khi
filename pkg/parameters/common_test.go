@@ -34,6 +34,7 @@ func TestCommonParameters(t *testing.T) {
 			want: &CommonParameters{
 				DataDestinationFolder: testutil.P("./data"),
 				TemporaryFolder:       testutil.P("/tmp"),
+				Version:               testutil.P(false),
 			},
 			before: func() {
 				os.Args = []string{os.Args[0]}

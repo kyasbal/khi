@@ -39,8 +39,8 @@ func TestStripSpecialSequences(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			breaklineStripper := NewSequenceStripper("\\r", "\\n")
-			actual := StripSpecialSequences(tc.input, breaklineStripper)
+			breaklineStripper := &SequenceConverter{From: []string{"\\r", "\\n"}}
+			actual := ConvertSpecialSequences(tc.input, breaklineStripper)
 			if diff := cmp.Diff(tc.expected, actual); diff != "" {
 				t.Errorf("the result is not matching with the expected result\n%s", diff)
 			}
@@ -77,10 +77,38 @@ func TestANSIEscapeSequenceStripper(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			stripper := NewANSIEscapeSequenceStripper()
-			actual := stripper.Strip(tc.input)
+			stripper := ANSIEscapeSequenceStripper{}
+			actual := stripper.Convert(tc.input)
 			if diff := cmp.Diff(tc.expected, actual); diff != "" {
 				t.Errorf("the result is not matching with the expected result\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestUnicodeUnquoteConverter_Convert(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "empty",
+			input: "",
+			want:  "",
+		},
+		{
+			name:  "simple",
+			input: "Job cri-containerd-06a622d26bbe9788\\xe2\\x80\\xa6/stop running (1min 7s / 1min 30s)",
+			want:  "Job cri-containerd-06a622d26bbe9788…/stop running (1min 7s / 1min 30s)",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			u := &UnicodeUnquoteConverter{}
+			got := u.Convert(tt.input)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("UnicodeUnquoteConverter.Convert() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

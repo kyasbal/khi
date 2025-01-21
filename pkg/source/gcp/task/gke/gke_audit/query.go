@@ -30,10 +30,10 @@ logName="projects/%s/logs/cloudaudit.googleapis.com%%2Factivity"
 resource.labels.cluster_name="%s"`, projectName, clusterName)
 }
 
-var GKEAuditLogQueryTaskId = query.GKEQueryPrefix + "gke-audit"
-var GKEAuditQueryTask = query.NewQueryGeneratorTask(GKEAuditLogQueryTaskId, "GKE Audit logs", enum.LogTypeGkeAudit, []string{
-	gcp_task.InputProjectIdVariableName,
-	gcp_task.InputClusterName,
+var GKEAuditLogQueryTaskID = query.GKEQueryPrefix + "gke-audit"
+var GKEAuditQueryTask = query.NewQueryGeneratorTask(GKEAuditLogQueryTaskID, "GKE Audit logs", enum.LogTypeGkeAudit, []string{
+	gcp_task.InputProjectIdTaskID,
+	gcp_task.InputClusterNameTaskID,
 }, func(ctx context.Context, i int, vs *task.VariableSet) ([]string, error) {
 	projectId, err := gcp_task.GetInputProjectIdFromTaskVariable(vs)
 	if err != nil {

@@ -143,7 +143,7 @@ func (s *DefinitionSet) WrapGraph(subgraphId taskid.TaskImplementationId, subgra
 		doneTaskDependencies = append(doneTaskDependencies, taskid.NewTaskReference(k))
 	}
 	// Sort to make result stable
-	slices.SortFunc(doneTaskDependencies, func(a, b taskid.TaskReferenceId) bool { return strings.Compare(a.String(), b.String()) > 0 })
+	slices.SortFunc(doneTaskDependencies, func(a, b taskid.TaskReferenceId) int { return strings.Compare(a.String(), b.String()) })
 	initTask := NewDefinitionFromFunc(taskid.NewTaskImplementationId(initTaskId), subgraphDependency, func(taskMode int) Runnable {
 		return NewRunnableFunc(func(ctx context.Context, v *VariableSet) error {
 			return nil
@@ -358,7 +358,7 @@ func sortedMapKeys[T any](inputMap map[string]T) []string {
 	for key := range inputMap {
 		result = append(result, key)
 	}
-	slices.SortFunc(result, func(a, b string) bool { return strings.Compare(a, b) < 0 })
+	slices.SortFunc(result, func(a, b string) int { return strings.Compare(a, b) })
 	return result
 }
 

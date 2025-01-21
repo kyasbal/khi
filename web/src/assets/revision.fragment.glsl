@@ -2,6 +2,11 @@
 precision highp float;
 precision highp int;
 
+#define SELECTION_STATUS_FILTERED_OUT 0
+#define SELECTION_STATUS_DEFAULT 1
+#define SELECTION_STATUS_HIGHLIGHTED 2
+#define SELECTION_STATUS_SELECTED 3
+
 layout(std140) uniform ViewState {
     // Resolution of the canvas (not viewport)
     vec2 resolution;
@@ -18,13 +23,14 @@ layout(std140) uniform ViewState {
 out vec4 outColor;
 
 in vec2 originalPosition;
+
 // Revision rectangle size in pixels
 in vec2 actualSize;
 in vec3 revisionBaseColor;
 flat in int revisionIndex;
 flat in int selectionStatus;
 
-const vec2 edgeThickness = vec2(2.f, 1.f);
+const vec4 edgeThickness = vec4(2.0f, 1.0f, 2.0f, 1.0f);
 // To avoid using large empty space around digit in uv space, the uv will be scaled to use only the center part of this width.
 const float fontExtractWidth = 0.58f;
 const vec2 fontSize = vec2(fontExtractWidth, 1.0f) * .6f;
@@ -34,6 +40,8 @@ const vec2 fontPadding = vec2(12, 8);
 const float loge10 = 2.302585092994046f;
 const float epsilon = 0.00001f;
 
+uniform float timelineHeight;
+uniform float devicePixelRatio;
 uniform sampler2D numberTexture;
 
 float number(vec2 uv, int num) {
@@ -48,14 +56,15 @@ float log10(float x) {
     return log(x) / loge10;
 }
 
+vec3 correctGamma(vec3 linearColor) {
+    return pow(linearColor, vec3(1.0f / 2.2f));
+}
+
 void main() {
     // Draw border of revision rectangle
     // edgeSize is the thickness in uv coordinate.
-    vec2 edgeSize = vec2(2.f / actualSize) * edgeThickness;
-    // Border become 1 on fragments on the border.
-    float border = max(max(step(originalPosition.x, -1.0f + edgeSize.x), step(1.f - edgeSize.x, originalPosition.x)), // horizontal edge
-    max(step(originalPosition.y, -1.0f + edgeSize.y), step(1.f - edgeSize.y, originalPosition.y)));
-
+    vec4 edgeSize = 2.0f * edgeThickness / actualSize.yxyx * devicePixelRatio;
+    float edgeScaling = 1.0f;
     vec3 baseColor = revisionBaseColor;
 
     vec2 uvPadding = fontPadding / actualSize;
@@ -70,14 +79,24 @@ void main() {
     float isDigit = number(clamp(numberUv, vec2(0), vec2(1)), currentDigit % 10);
     isDigit *= step(originalUvx, digitCount);
 
-    float baseAlpha = 0.6f;
+    float baseAlpha = 0.75f;
     vec3 digitColor = vec3(0);
-    if(selectionStatus == 2) {
+    if(selectionStatus == SELECTION_STATUS_FILTERED_OUT) {
+        edgeScaling = .5f;
+        baseAlpha = 0.6f;
+    } else if(selectionStatus == SELECTION_STATUS_HIGHLIGHTED) {
+        baseAlpha = 0.85f;
+        edgeScaling = 1.5f;
+    } else if(selectionStatus == SELECTION_STATUS_SELECTED) {
         baseAlpha = 0.9f;
         digitColor = vec3(1);
-    } else if(selectionStatus == 1) {
-        baseAlpha = 0.5f;
+        edgeScaling = 2.0f;
     }
+    // Border become 1 on fragments on the border.
+    edgeSize *= edgeScaling;
+    float border = max(max(step(originalPosition.x, -1.0f + edgeSize.w), step(1.f - edgeSize.y, originalPosition.x)), // horizontal edge
+    max(step(originalPosition.y, -1.0f + edgeSize.x), step(1.f - edgeSize.z, originalPosition.y)));
 
-    outColor = mix(vec4(baseColor, baseAlpha + 0.2f * border), vec4(digitColor, 1), isDigit);
+    outColor = mix(vec4(baseColor, baseAlpha + border), vec4(digitColor, baseAlpha * 1.3f), isDigit);
+    outColor.rgb = correctGamma(outColor.rgb);
 }

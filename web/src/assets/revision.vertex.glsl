@@ -5,7 +5,7 @@ precision highp int;
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 duration; // duration.x is revision beginning point, and duration.y is the end point.
 layout(location = 2) in vec2 meta; // meta.x: revision state
-layout(location = 3) in ivec2 intInstanceInfo; // intInstanceInfo.x = revisionIndex; intInstanceInfo.y = (0: none, 1: highlight, 2:selected)
+layout(location = 3) in ivec2 intInstanceInfo; // intInstanceInfo.x = revisionIndex; intInstanceInfo.y = (0:filtered, 1: default, 2: highlight, 3:selected)
 
 layout(std140) uniform ViewState {
     // Resolution of the canvas (not viewport)

@@ -462,4 +462,160 @@ describe('TimelineEntry', () => {
       expect(pair).toBeNull();
     });
   });
+
+  describe('hasNonFilteredOutIndices', () => {
+    it('returns true when there is a revision not included in the filtered indices', () => {
+      const timeline = new TimelineEntry(
+        'core/v1',
+        [
+          new ResourceRevision(
+            0,
+            1,
+            RevisionState.RevisionStateExisting,
+            RevisionVerb.RevisionVerbUpdate,
+            '',
+            '',
+            false,
+            false,
+            0,
+          ),
+          new ResourceRevision(
+            1,
+            2,
+            RevisionState.RevisionStateExisting,
+            RevisionVerb.RevisionVerbUpdate,
+            '',
+            '',
+            false,
+            false,
+            1,
+          ),
+        ],
+        [],
+        ParentRelationship.RelationshipChild,
+      );
+      const filteredOut = new Set([0]);
+      expect(timeline.hasNonFilteredOutIndices(filteredOut)).toBeTrue();
+    });
+    it('returns false when all revisions are included in the filtered indices', () => {
+      const timeline = new TimelineEntry(
+        'core/v1',
+        [
+          new ResourceRevision(
+            0,
+            1,
+            RevisionState.RevisionStateExisting,
+            RevisionVerb.RevisionVerbUpdate,
+            '',
+            '',
+            false,
+            false,
+            0,
+          ),
+          new ResourceRevision(
+            1,
+            2,
+            RevisionState.RevisionStateExisting,
+            RevisionVerb.RevisionVerbUpdate,
+            '',
+            '',
+            false,
+            false,
+            1,
+          ),
+        ],
+        [],
+        ParentRelationship.RelationshipChild,
+      );
+      const filteredOut = new Set([0, 1]);
+      expect(timeline.hasNonFilteredOutIndices(filteredOut)).toBeFalse();
+    });
+    it('returns true when there is an event not included in the filtered indices', () => {
+      const timeline = new TimelineEntry(
+        'core/v1',
+        [],
+        [
+          new ResourceEvent(0, 0, LogType.LogTypeAudit, Severity.SeverityError),
+          new ResourceEvent(1, 1, LogType.LogTypeAudit, Severity.SeverityError),
+        ],
+        ParentRelationship.RelationshipChild,
+      );
+      const filteredOut = new Set([0]);
+      expect(timeline.hasNonFilteredOutIndices(filteredOut)).toBeTrue();
+    });
+    it('returns false when all events are included in the filtered indices', () => {
+      const timeline = new TimelineEntry(
+        'core/v1',
+        [],
+        [
+          new ResourceEvent(0, 0, LogType.LogTypeAudit, Severity.SeverityError),
+          new ResourceEvent(1, 1, LogType.LogTypeAudit, Severity.SeverityError),
+        ],
+        ParentRelationship.RelationshipChild,
+      );
+      const filteredOut = new Set([0, 1]);
+      expect(timeline.hasNonFilteredOutIndices(filteredOut)).toBeFalse();
+    });
+    it('returns false when there is no revision and event', () => {
+      const timeline = new TimelineEntry(
+        'core/v1',
+        [],
+        [],
+        ParentRelationship.RelationshipChild,
+      );
+      const filteredOut = new Set([0, 1]);
+      expect(timeline.hasNonFilteredOutIndices(filteredOut)).toBeFalse();
+    });
+  });
+
+  describe('hasNonFilteredOutIndicesRecursive', () => {
+    it('returns true when there is a revision not included in the filtered indices in its children', () => {
+      const p1 = generateTestTimeline('core/v1');
+      const p1c1 = new TimelineEntry(
+        'core/v1#pod',
+        [
+          new ResourceRevision(
+            0,
+            1,
+            RevisionState.RevisionStateExisting,
+            RevisionVerb.RevisionVerbUpdate,
+            '',
+            '',
+            false,
+            false,
+            0,
+          ),
+        ],
+        [],
+        ParentRelationship.RelationshipChild,
+      );
+      p1.addChildTimeline(p1c1);
+      const filteredOut = new Set([1]);
+      expect(p1.hasNonFilteredOutIndicesRecursive(filteredOut)).toBeTrue();
+    });
+    it('returns false when all revisions are included in the filtered indices in its children', () => {
+      const p1 = generateTestTimeline('core/v1');
+      const p1c1 = new TimelineEntry(
+        'core/v1#pod',
+        [
+          new ResourceRevision(
+            0,
+            1,
+            RevisionState.RevisionStateExisting,
+            RevisionVerb.RevisionVerbUpdate,
+            '',
+            '',
+            false,
+            false,
+            0,
+          ),
+        ],
+        [],
+        ParentRelationship.RelationshipChild,
+      );
+      p1.addChildTimeline(p1c1);
+      const filteredOut = new Set([0]);
+      expect(p1.hasNonFilteredOutIndicesRecursive(filteredOut)).toBeFalse();
+    });
+  });
 });

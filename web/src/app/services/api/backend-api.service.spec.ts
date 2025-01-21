@@ -29,7 +29,7 @@ import {
   GetInspectionTypesResponse,
   InspectionDryRunRequest,
   InspectionDryRunResponse,
-  InspectionMetadataResponse,
+  InspectionMetadataOfRunResult,
   InspectionRunRequest,
   PopupAnswerResponse,
   PopupAnswerValidationResult,
@@ -145,7 +145,7 @@ describe('BackendAPIImpl testing', () => {
   });
 
   it('can call getInspectionMetadata', () => {
-    const testData: InspectionMetadataResponse = {
+    const testData: InspectionMetadataOfRunResult = {
       header: {
         inspectionType: 'test',
         inspectionTypeIconPath: 'test',

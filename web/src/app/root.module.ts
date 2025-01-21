@@ -83,6 +83,7 @@ import {
   MAT_TOOLTIP_DEFAULT_OPTIONS,
   MatTooltipDefaultOptions,
 } from '@angular/material/tooltip';
+import { ViewStateService } from './services/view-state.service';
 @NgModule({
   declarations: [AppComponent, RootComponent],
   imports: [
@@ -142,7 +143,11 @@ import {
     },
     {
       provide: DEFAULT_TIMELINE_FILTER,
-      useFactory: () => new TimelineFilter(inject(InspectionDataStoreService)),
+      useFactory: () =>
+        new TimelineFilter(
+          inject(InspectionDataStoreService),
+          inject(ViewStateService),
+        ),
     },
     {
       provide: MAT_TOOLTIP_DEFAULT_OPTIONS,

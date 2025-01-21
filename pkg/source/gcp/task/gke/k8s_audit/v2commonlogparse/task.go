@@ -90,13 +90,13 @@ func ParseResourceSpecificParserInputWithoutResourceBody(ctx context.Context, l 
 	}, nil
 }
 
-var Task = inspection_task.NewInspectionProcessor(k8saudittask.CommonLogParseTaskId, []string{
-	k8saudittask.K8sAuditQueryTaskId,
+var Task = inspection_task.NewInspectionProcessor(k8saudittask.CommonLogParseTaskID, []string{
+	k8saudittask.K8sAuditQueryTaskID,
 }, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
 	if taskMode == inspection_task.TaskModeDryRun {
 		return struct{}{}, nil
 	}
-	logs, err := task.GetTypedVariableFromTaskVariable[[]*log.LogEntity](v, k8saudittask.K8sAuditQueryTaskId, nil)
+	logs, err := task.GetTypedVariableFromTaskVariable[[]*log.LogEntity](v, k8saudittask.K8sAuditQueryTaskID, nil)
 	if err != nil {
 		return nil, err
 	}

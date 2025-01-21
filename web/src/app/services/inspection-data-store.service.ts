@@ -27,13 +27,10 @@ import {
   startWith,
   switchMap,
 } from 'rxjs';
-import { InspectionData, TimelineRange } from '../models/inspection-data';
-import { asBehaviorSubject } from '../utils/observable-util';
+import { InspectionData, TimeRange } from '../store/inspection-data';
 import { FilterWorkerService } from './filter-worker.service';
 import { ParentRelationship } from '../generated';
 import { TimelineEntry } from '../store/timeline';
-import { LogEntry } from '../store/log';
-import { ReferenceResolverStore } from '../common/loader/reference-resolver';
 
 /**
  * InspectionDataStore provides observable to the inspection data loaded.
@@ -60,6 +57,8 @@ export interface InspectionDataStore {
    * availableSubresourceParentRelationships emits the set of all parent relationships of subresources in the inspection data.
    */
   availableSubresourceParentRelationships: Observable<Set<ParentRelationship>>;
+
+  filteredOutLogIndicesSet: Observable<Set<number>>;
 }
 
 /**
@@ -71,38 +70,32 @@ export class InspectionDataStoreService implements InspectionDataStore {
   /**
    * Source of the inspection data
    */
-  public $inspectionData: BehaviorSubject<InspectionData | null> =
-    new BehaviorSubject<InspectionData | null>(null);
+  public inspectionData = new BehaviorSubject<InspectionData | null>(null);
 
   /**
    * Inspectiondata with null check.
    */
-  public currentValidInspectionData = this.$inspectionData.pipe(
+  public currentValidInspectionData = this.inspectionData.pipe(
     filter((d) => !!d),
-  ) as Observable<InspectionData>;
+    shareReplay({
+      bufferSize: 1,
+      // This reference must be kept when all subscriber removed its subscription because it takes relative longer time to load this data from the source again.
+      refCount: false,
+    }),
+  ) as unknown as Observable<InspectionData>;
 
-  public textBufferSource = new BehaviorSubject<ReferenceResolverStore | null>(
-    null,
+  public referenceResolver = this.currentValidInspectionData.pipe(
+    map((data) => data.referenceResolver),
   );
 
-  /**
-   * Timeline related inspection sub data
-   */
-  public allTimelines: BehaviorSubject<TimelineEntry[]> = asBehaviorSubject(
-    this.currentValidInspectionData.pipe(
-      map((t) => t.timelines),
-      startWith([]),
-      shareReplay(1),
-    ),
-    [],
+  public allTimelines = this.currentValidInspectionData.pipe(
+    map((data) => data.timelines),
+    startWith([] as TimelineEntry[]),
   );
 
-  public $timeRange: BehaviorSubject<TimelineRange> = asBehaviorSubject(
-    this.currentValidInspectionData.pipe(
-      map((t) => t.range),
-      startWith(new TimelineRange(0, 0)),
-    ),
-    new TimelineRange(0, 0),
+  public $timeRange = this.currentValidInspectionData.pipe(
+    map((t) => t.range),
+    startWith(new TimeRange(0, 0)),
   );
   public availableKinds = this.currentValidInspectionData.pipe(
     map((t) => t.kinds),
@@ -112,25 +105,16 @@ export class InspectionDataStoreService implements InspectionDataStore {
     map((t) => t.namespaces),
     startWith(new Set<string>()),
   );
+
   public availableSubresourceParentRelationships =
     this.currentValidInspectionData.pipe(
-      filter((data) => data !== null),
-      map((data) => data.relationships),
-      shareReplay(1),
+      map((t) => t.relationships),
       startWith(new Set<ParentRelationship>()),
-      map((relationshipSet) => {
-        // Unknown type is not used in subresources. Ignore this type to be included in the applicable filter.
-        relationshipSet.delete(ParentRelationship.Unknown);
-        return relationshipSet;
-      }),
     );
 
-  public allLogs: BehaviorSubject<LogEntry[]> = asBehaviorSubject(
-    this.currentValidInspectionData.pipe(
-      map((t) => t.logs),
-      startWith([]),
-    ),
-    [],
+  public allLogs = this.currentValidInspectionData.pipe(
+    map((t) => t.logs),
+    startWith([]),
   );
   private logFilter = new ReplaySubject<string>(1);
 
@@ -145,7 +129,10 @@ export class InspectionDataStoreService implements InspectionDataStore {
     switchMap(([allLogs, filter]) =>
       this.filterWorker.filterLogs(allLogs, filter),
     ),
-    shareReplay(1),
+    shareReplay({
+      bufferSize: 1,
+      refCount: true,
+    }),
     startWith(new Set<number>()),
   );
 
@@ -160,17 +147,16 @@ export class InspectionDataStoreService implements InspectionDataStore {
     map(([allLogs, filteredOutLogs]) =>
       allLogs.filter((_, index) => !filteredOutLogs.has(index)),
     ),
-    shareReplay(1),
+    shareReplay({
+      bufferSize: 1,
+      refCount: true,
+    }),
   );
 
   private filterWorker: FilterWorkerService = new FilterWorkerService(this);
 
-  public setNewInspectionData(
-    data: InspectionData,
-    textBufferSource: ReferenceResolverStore,
-  ) {
-    this.$inspectionData.next(data);
-    this.textBufferSource.next(textBufferSource);
+  public setNewInspectionData(data: InspectionData) {
+    this.inspectionData.next(data);
   }
 
   public async setLogRegexFilter(filter: string) {

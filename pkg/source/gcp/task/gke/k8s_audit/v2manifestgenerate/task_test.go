@@ -194,8 +194,8 @@ timestamp: 2024-01-01T00:00:00+09:00`,
 				gcp_task.GCPDefaultK8sResourceMergeConfigTask,
 			}, task.TaskModeRun,
 				testtask.PriorTaskResultFromID(task.MetadataVariableName, metadata.NewSet()),
-				testtask.PriorTaskResultFromID(task.ReaderFactoryGeneratorTaskId, structure.NewReaderFactory(&structuredatastore.OnMemoryStructureDataStore{})),
-				testtask.PriorTaskResultFromID(k8saudittask.K8sAuditQueryTaskId, logs))
+				testtask.PriorTaskResultFromID(task.ReaderFactoryGeneratorTaskID, structure.NewReaderFactory(&structuredatastore.OnMemoryStructureDataStore{})),
+				testtask.PriorTaskResultFromID(k8saudittask.K8sAuditQueryTaskID, logs))
 
 			if err != nil {
 				t.Error(err)

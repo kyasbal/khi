@@ -204,6 +204,32 @@ export class TimelineEntry {
     ];
   }
 
+  /**
+   * Returns if this TimelineEntry is related to any of logs in the given set.
+   */
+  public hasNonFilteredOutIndices(filteredOut: Set<number>): boolean {
+    for (const revision of this.revisions) {
+      if (revision.logIndex === -1) continue;
+      if (!filteredOut.has(revision.logIndex)) return true;
+    }
+    for (const event of this.events) {
+      if (event.logIndex === -1) continue;
+      if (!filteredOut.has(event.logIndex)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Returns if this TimelineEntry or any of its children is related to any of logs in the given set.
+   */
+  public hasNonFilteredOutIndicesRecursive(filtereOut: Set<number>): boolean {
+    if (this.hasNonFilteredOutIndices(filtereOut)) return true;
+    for (const child of this.children) {
+      if (child.hasNonFilteredOutIndicesRecursive(filtereOut)) return true;
+    }
+    return false;
+  }
+
   public static clone(timeline: TimelineEntry): TimelineEntry {
     const p = new TimelineEntry(
       timeline.resourcePath,

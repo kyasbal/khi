@@ -68,12 +68,12 @@ func generateK8sEventNamespaceFilter(filter *queryutil.SetFilterParseResult) str
 	}
 }
 
-const GKEK8sEventLogQueryTaskId = query.GKEQueryPrefix + "k8s-event"
+const GKEK8sEventLogQueryTaskID = query.GKEQueryPrefix + "k8s-event"
 
-var GKEK8sEventLogQueryTask = query.NewQueryGeneratorTask(GKEK8sEventLogQueryTaskId, "K8s event logs", enum.LogTypeEvent, []string{
-	gcp_task.InputProjectIdVariableName,
-	gcp_task.InputClusterName,
-	gcp_task.InputNamespaceFilterVariableName,
+var GKEK8sEventLogQueryTask = query.NewQueryGeneratorTask(GKEK8sEventLogQueryTaskID, "K8s event logs", enum.LogTypeEvent, []string{
+	gcp_task.InputProjectIdTaskID,
+	gcp_task.InputClusterNameTaskID,
+	gcp_task.InputNamespaceFilterTaskID,
 }, func(ctx context.Context, i int, vs *task.VariableSet) ([]string, error) {
 	clusterName, err := gcp_task.GetInputClusterNameFromTaskVariable(vs)
 	if err != nil {

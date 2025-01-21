@@ -31,13 +31,13 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
-var Task = inspection_task.NewInspectionProcessor(k8saudittask.TimelineGroupingTaskId, []string{
-	k8saudittask.CommonLogParseTaskId,
+var Task = inspection_task.NewInspectionProcessor(k8saudittask.TimelineGroupingTaskID, []string{
+	k8saudittask.CommonLogParseTaskID,
 }, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
 	if taskMode == inspection_task.TaskModeDryRun {
 		return struct{}{}, nil
 	}
-	preStepParseResult, err := task.GetTypedVariableFromTaskVariable[[]*types.ResourceSpecificParserInput](v, k8saudittask.CommonLogParseTaskId, nil)
+	preStepParseResult, err := task.GetTypedVariableFromTaskVariable[[]*types.ResourceSpecificParserInput](v, k8saudittask.CommonLogParseTaskID, nil)
 	if err != nil {
 		return nil, err
 	}

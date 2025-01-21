@@ -28,9 +28,9 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
-const SerializerTaskId = inspection_task.InspectionTaskPrefix + "serialize"
+const SerializerTaskID = inspection_task.InspectionTaskPrefix + "serialize"
 
-var SerializeTask = inspection_task.NewInspectionProcessor(SerializerTaskId, []string{inspection_task.InspectionMainSubgraphName + "-done", ioconfig.IOConfigTaskName, inspection_task.BuilderGeneratorTaskId}, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (any, error) {
+var SerializeTask = inspection_task.NewInspectionProcessor(SerializerTaskID, []string{inspection_task.InspectionMainSubgraphName + "-done", ioconfig.IOConfigTaskName, inspection_task.BuilderGeneratorTaskID}, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (any, error) {
 	if taskMode == inspection_task.TaskModeDryRun {
 		slog.DebugContext(ctx, "Skipping because this is in dryrun mode")
 		return nil, nil

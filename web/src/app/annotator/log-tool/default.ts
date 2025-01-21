@@ -51,7 +51,7 @@ function copyLogEntryContentMapper(
           of(l.body)
             .pipe(
               withLatestFrom(
-                dataStore.textBufferSource.pipe(filter((tb) => !!tb)),
+                dataStore.referenceResolver.pipe(filter((tb) => !!tb)),
               ),
               switchMap(([lr, tbs]) => tbs!.getText(lr)),
               map((text) => {
@@ -98,7 +98,7 @@ function copyLogQueryContentMapper(
           of(l)
             .pipe(
               withLatestFrom(
-                dataStore.textBufferSource.pipe(filter((tb) => !!tb)),
+                dataStore.referenceResolver.pipe(filter((tb) => !!tb)),
               ),
               switchMap(([l, source]) => source!.getText(l.body)),
               map((logBody) => {

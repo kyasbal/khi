@@ -64,7 +64,7 @@ func (*k8sNodeParser) Dependencies() []string {
 }
 
 func (*k8sNodeParser) LogTask() string {
-	return GKENodeLogQueryTaskId
+	return GKENodeLogQueryTaskID
 }
 
 func (*k8sNodeParser) Grouper() grouper.LogGrouper {

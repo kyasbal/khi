@@ -16,10 +16,19 @@
 
 import * as LogFilterWorker from '../worker/worker-types';
 import { InspectionDataStoreService } from './inspection-data-store.service';
-import { randomString } from '../utils/random';
 import { LogEntry } from '../store/log';
-import { forkJoin, map, mergeMap, Observable, of, Subject, take } from 'rxjs';
+import {
+  forkJoin,
+  map,
+  mergeMap,
+  Observable,
+  of,
+  take,
+  withLatestFrom,
+} from 'rxjs';
 import { ReferenceResolverStore } from '../common/loader/reference-resolver';
+import { ConnectorPool } from './worker/pool';
+import { WebWorkerConnector } from './worker/connector';
 
 /**
  * FilterWorkerService provides log filter feature with regex.
@@ -36,69 +45,34 @@ export class FilterWorkerService {
    */
   private static MAX_LOG_COUNT_PER_SINGLE_FILTER_SUBTASK: number = 5000;
 
-  /**
-   * Index of the next worker to be used.
-   */
-  private nextWorker: number = 0;
+  private readonly workerPool: ConnectorPool;
 
-  /**
-   * The list of workers.
-   */
-  private logFilterWorkers: Worker[] = [];
-
-  /**
-   * Map of subjects to receive the result from worker.
-   *
-   */
-  private _taskCompletionHandler: { [taskId: string]: Subject<number[]> } = {};
   constructor(private dataStore: InspectionDataStoreService) {
+    const workerConnectors = [];
     for (let i = 0; i < FilterWorkerService.LOG_FILTER_WORKER_POOL_COUNT; i++) {
-      this.logFilterWorkers.push(
-        new Worker(
-          new URL('../worker/log-filter/log-filter.worker', import.meta.url),
+      workerConnectors.push(
+        new WebWorkerConnector(
+          new Worker(
+            new URL('../worker/log-filter/log-filter.worker', import.meta.url),
+          ),
         ),
       );
-      this.logFilterWorkers[i].onmessage = (d) => this._onMessage(d);
     }
+    this.workerPool = new ConnectorPool(workerConnectors);
   }
 
   public filterLogs(
     allLogs: LogEntry[],
     regexInStr: string,
   ): Observable<Set<number>> {
-    const bufferResolver = this.dataStore.textBufferSource.value;
-    if (bufferResolver === null) {
-      return of();
-    }
-
-    const taskResultSubject = new Subject<Set<number>>();
-    const filteredIndexSet = new Set<number>();
-    const filterSubRequests = new Subject<{ start: number; length: number }>();
-    filterSubRequests
-      .pipe(
-        mergeMap(({ start, length }) =>
-          this.requestFilterSubset(
-            allLogs,
-            bufferResolver,
-            regexInStr,
-            start,
-            length,
-          ),
-        ),
-      )
-      .subscribe((subsetIndicesOfFilteredOutLogs) => {
-        subsetIndicesOfFilteredOutLogs.forEach((index) =>
-          filteredIndexSet.add(index),
-        );
-        taskResultSubject.next(filteredIndexSet);
-      });
-
+    // Split a regex filtering task into multiple smaller tasks.
+    const tasks = [] as { start: number; length: number }[];
     for (
       let i = 0;
       i < allLogs.length;
       i += FilterWorkerService.MAX_LOG_COUNT_PER_SINGLE_FILTER_SUBTASK
     ) {
-      filterSubRequests.next({
+      tasks.push({
         start: i,
         length: Math.min(
           FilterWorkerService.MAX_LOG_COUNT_PER_SINGLE_FILTER_SUBTASK,
@@ -106,55 +80,34 @@ export class FilterWorkerService {
         ),
       });
     }
-    filterSubRequests.complete();
-    return taskResultSubject;
-  }
-
-  private _onMessage(d: MessageEvent) {
-    const filterResult = d.data;
-    if (!LogFilterWorker.isKHIWorkerPacket(filterResult)) return;
-
-    const filterResultTyped = filterResult as LogFilterWorker.FilterResult;
-    if (filterResultTyped.taskId in this._taskCompletionHandler) {
-      this._taskCompletionHandler[filterResultTyped.taskId].next(
-        filterResultTyped.notMatch,
+    const filteredIndexSet = new Set<number>();
+    return this.workerPool
+      .requestSeriesOfTasks(tasks, (task) =>
+        of(task).pipe(
+          withLatestFrom(this.dataStore.referenceResolver),
+          mergeMap(([task, referenceResolver]) =>
+            FilterWorkerServieUtil.logEntriesToFilterWorkerLogs(
+              referenceResolver,
+              allLogs.slice(task.start, task.start + task.length),
+            ),
+          ),
+          map(
+            (value) =>
+              ({
+                regexInStr: regexInStr,
+                logs: value,
+              }) as LogFilterWorker.FilterQuery,
+          ),
+        ),
+      )
+      .pipe(
+        map((indexedResponse) => {
+          const payload =
+            indexedResponse.response as LogFilterWorker.FilterResult;
+          payload.notMatch.forEach((index) => filteredIndexSet.add(index));
+          return filteredIndexSet;
+        }),
       );
-      this._taskCompletionHandler[filterResultTyped.taskId].complete();
-      delete this._taskCompletionHandler[filterResultTyped.taskId];
-    } else {
-      console.error(`Unknown task ID ${filterResultTyped.taskId}`);
-    }
-  }
-
-  /**
-   * Send subset of logs to the log filter WebWorker to get log ids not matching with given regex.
-   */
-  private requestFilterSubset(
-    logs: LogEntry[],
-    textLoader: ReferenceResolverStore,
-    regexInStr: string,
-    startIndex: number,
-    length: number,
-  ): Observable<number[]> {
-    const taskId = randomString();
-    const taskLoader = new Subject<number[]>();
-    this._taskCompletionHandler[taskId] = taskLoader;
-
-    // Get the body of the logs for subset of logs and send them to the worker.
-    FilterWorkerServieUtil.logEntriesToFilterWorkerLogs(
-      textLoader,
-      logs.slice(startIndex, startIndex + length),
-    ).subscribe((transferrableLog) => {
-      this.logFilterWorkers[this.nextWorker].postMessage({
-        taskId,
-        regexInStr,
-        logs: transferrableLog,
-      });
-    });
-
-    this.nextWorker =
-      (this.nextWorker + 1) % FilterWorkerService.LOG_FILTER_WORKER_POOL_COUNT;
-    return taskLoader;
   }
 }
 
@@ -177,6 +130,7 @@ export class FilterWorkerServieUtil {
               ({
                 index: l.logIndex,
                 logBody: logBody,
+                logSummary: l.summary,
               }) as LogFilterWorker.FilterWorkerLog,
           ),
         ),

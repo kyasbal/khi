@@ -37,7 +37,7 @@ func generateFakeVariableSet(taskId string, value string) *common_task.VariableS
 		task.InspectionRequestVariableName: &task.InspectionRequest{
 			Values: requestMap,
 		},
-		common_task.TaskCacheVariableName: common_task.NewLocalTaskVariableCache(),
+		common_task.TaskCacheTaskID: common_task.NewLocalTaskVariableCache(),
 	})
 
 	return vs

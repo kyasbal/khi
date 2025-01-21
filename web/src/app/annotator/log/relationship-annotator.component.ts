@@ -86,7 +86,9 @@ export class RelationshipAnnotatorComponent {
     return {
       inputs: {
         refs: of(pathReferences).pipe(
-          withLatestFrom(dataStore.textBufferSource.pipe(filter((tb) => !!tb))),
+          withLatestFrom(
+            dataStore.referenceResolver.pipe(filter((tb) => !!tb)),
+          ),
           map(([refs, bufferLoader]) =>
             refs.map((ref) =>
               bufferLoader!.getText(ToTextReferenceFromKHIFileBinary(ref)),

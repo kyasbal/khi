@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-import { last, NEVER, ReplaySubject, take } from 'rxjs';
+import { debounceTime, NEVER, ReplaySubject, take } from 'rxjs';
 import { InspectionDataStore } from './inspection-data-store.service';
 import { TimelineFilter } from './timeline-filter.service';
 import { ParentRelationship } from '../generated';
 import { TimelineEntry } from '../store/timeline';
+import { ViewStateService } from './view-state.service';
 
 describe('TimelineFilter', () => {
   describe('kindTimelineFilter', () => {
@@ -27,7 +28,7 @@ describe('TimelineFilter', () => {
       const availableKinds = new ReplaySubject<Set<string>>(1);
       store.availableKinds = availableKinds;
       store.allTimelines = NEVER;
-      const filter = new TimelineFilter(store);
+      const filter = new TimelineFilter(store, new ViewStateService());
       const gotFilters: Set<string>[] = [];
       filter.kindTimelineFilter.subscribe((kinds) => {
         gotFilters.push(kinds);
@@ -47,7 +48,7 @@ describe('TimelineFilter', () => {
     const availableKinds = new ReplaySubject<Set<string>>(1);
     store.availableKinds = availableKinds;
     store.allTimelines = NEVER;
-    const filter = new TimelineFilter(store);
+    const filter = new TimelineFilter(store, new ViewStateService());
     const gotFilters: Set<string>[] = [];
     filter.kindTimelineFilter.subscribe((kinds) => {
       gotFilters.push(kinds);
@@ -69,7 +70,7 @@ describe('TimelineFilter', () => {
     const availableKinds = new ReplaySubject<Set<string>>(1);
     store.availableKinds = availableKinds;
     store.allTimelines = NEVER;
-    const filter = new TimelineFilter(store);
+    const filter = new TimelineFilter(store, new ViewStateService());
     const gotFilters: Set<string>[] = [];
     availableKinds.next(new Set(['kind1', 'kind2', 'kind3']));
     filter.setKindFilter(new Set(['kind1', 'kind2']));
@@ -87,7 +88,7 @@ describe('TimelineFilter', () => {
       const availableNamespaces = new ReplaySubject<Set<string>>(1);
       store.allTimelines = NEVER;
       store.availableNamespaces = availableNamespaces;
-      const filter = new TimelineFilter(store);
+      const filter = new TimelineFilter(store, new ViewStateService());
       const gotFilters: Set<string>[] = [];
       filter.namespaceTimelineFilter.subscribe((namespaces) => {
         gotFilters.push(namespaces);
@@ -107,7 +108,7 @@ describe('TimelineFilter', () => {
       const availableNamespaces = new ReplaySubject<Set<string>>(1);
       store.allTimelines = NEVER;
       store.availableNamespaces = availableNamespaces;
-      const filter = new TimelineFilter(store);
+      const filter = new TimelineFilter(store, new ViewStateService());
       const gotFilters: Set<string>[] = [];
       filter.namespaceTimelineFilter.subscribe((namespaces) => {
         gotFilters.push(namespaces);
@@ -129,7 +130,7 @@ describe('TimelineFilter', () => {
       const availableNamespaces = new ReplaySubject<Set<string>>(1);
       store.allTimelines = NEVER;
       store.availableNamespaces = availableNamespaces;
-      const filter = new TimelineFilter(store);
+      const filter = new TimelineFilter(store, new ViewStateService());
       const gotFilters: Set<string>[] = [];
       availableNamespaces.next(new Set(['ns1', 'ns2', 'ns3']));
       filter.setNamespaceFilter(new Set(['ns1', 'ns2']));
@@ -151,7 +152,7 @@ describe('TimelineFilter', () => {
       store.allTimelines = NEVER;
       store.availableSubresourceParentRelationships =
         availableSubresourceParentRelationships;
-      const filter = new TimelineFilter(store);
+      const filter = new TimelineFilter(store, new ViewStateService());
       const gotFilters: Set<ParentRelationship>[] = [];
       filter.subresourceParentRelationshipFilter.subscribe((relationships) => {
         gotFilters.push(relationships);
@@ -192,7 +193,7 @@ describe('TimelineFilter', () => {
       store.allTimelines = NEVER;
       store.availableSubresourceParentRelationships =
         availableSubresourceParentRelationships;
-      const filter = new TimelineFilter(store);
+      const filter = new TimelineFilter(store, new ViewStateService());
       const gotFilters: Set<ParentRelationship>[] = [];
       filter.subresourceParentRelationshipFilter.subscribe((relationships) => {
         gotFilters.push(relationships);
@@ -243,7 +244,7 @@ describe('TimelineFilter', () => {
       store.allTimelines = NEVER;
       store.availableSubresourceParentRelationships =
         availableSubresourceParentRelationships;
-      const filter = new TimelineFilter(store);
+      const filter = new TimelineFilter(store, new ViewStateService());
       const gotFilters: Set<ParentRelationship>[] = [];
       availableSubresourceParentRelationships.next(
         new Set([
@@ -277,7 +278,7 @@ describe('TimelineFilter', () => {
       const store = <InspectionDataStore>{};
       const allTimelines = new ReplaySubject<TimelineEntry[]>(1);
       store.allTimelines = allTimelines;
-      const filter = new TimelineFilter(store);
+      const filter = new TimelineFilter(store, new ViewStateService());
       const gotFilters: string[] = [];
       filter.resourceNameTimelineRegexFilter.subscribe((regex) => {
         gotFilters.push(regex);
@@ -293,7 +294,7 @@ describe('TimelineFilter', () => {
       const store = <InspectionDataStore>{};
       const allTimelines = new ReplaySubject<TimelineEntry[]>(1);
       store.allTimelines = allTimelines;
-      const filter = new TimelineFilter(store);
+      const filter = new TimelineFilter(store, new ViewStateService());
       const gotFilters: string[] = [];
       filter.resourceNameTimelineRegexFilter.subscribe((regex) => {
         gotFilters.push(regex);
@@ -310,7 +311,7 @@ describe('TimelineFilter', () => {
       const store = <InspectionDataStore>{};
       const allTimelines = new ReplaySubject<TimelineEntry[]>(1);
       store.allTimelines = allTimelines;
-      const filter = new TimelineFilter(store);
+      const filter = new TimelineFilter(store, new ViewStateService());
       const gotFilters: string[] = [];
       allTimelines.next([]);
       filter.setResourceNameRegexFilter('test');
@@ -400,6 +401,7 @@ describe('TimelineFilter', () => {
     let availableSubresourceParentRelationships: ReplaySubject<
       Set<ParentRelationship>
     >;
+    let filteredOutLogIndicesSet: ReplaySubject<Set<number>>;
     beforeEach(() => {
       store = <InspectionDataStore>{};
       allTimelines = new ReplaySubject<TimelineEntry[]>(1);
@@ -411,6 +413,8 @@ describe('TimelineFilter', () => {
       availableSubresourceParentRelationships = new ReplaySubject<
         Set<ParentRelationship>
       >(1);
+      filteredOutLogIndicesSet = new ReplaySubject<Set<number>>(1);
+      filteredOutLogIndicesSet.next(new Set());
       availableSubresourceParentRelationships.next(
         new Set([
           ParentRelationship.RelationshipChild,
@@ -422,10 +426,16 @@ describe('TimelineFilter', () => {
       store.availableNamespaces = availableNamespaces;
       store.availableSubresourceParentRelationships =
         availableSubresourceParentRelationships;
+      store.filteredOutLogIndicesSet = filteredOutLogIndicesSet;
     });
-
+    it('must emit filteredOutLogIndicesSet at first', (done) => {
+      store.filteredOutLogIndicesSet.subscribe((set) => {
+        console.log(set);
+        done();
+      });
+    });
     it('should emit filter result on subscribe', (done) => {
-      const filter = new TimelineFilter(store);
+      const filter = new TimelineFilter(store, new ViewStateService());
       filter.filteredTimeline.subscribe((timelines) => {
         expect(timelines).toEqual(timelines);
         done();
@@ -433,192 +443,200 @@ describe('TimelineFilter', () => {
     });
 
     it('filters timelines with regex filter', (done) => {
-      const filter = new TimelineFilter(store);
-      filter.filteredTimeline.pipe(take(1), last()).subscribe((timelines) => {
-        expect(timelines).toEqual([
-          new TimelineEntry(
-            'apiVersion1#kind1',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind1#namespace1',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind1#namespace1#name1',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind2',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind2#namespace2',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind2#namespace2#name3',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-        ]);
-        done();
-      });
+      const filter = new TimelineFilter(store, new ViewStateService());
+      filter.filteredTimeline
+        .pipe(debounceTime(10), take(1))
+        .subscribe((timelines) => {
+          expect(timelines).toEqual([
+            new TimelineEntry(
+              'apiVersion1#kind1',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind1#namespace1',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind1#namespace1#name1',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind2',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind2#namespace2',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind2#namespace2#name3',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+          ]);
+          done();
+        });
       filter.setResourceNameRegexFilter('name1|name3');
     });
 
     it('filters timelines with kind', (done) => {
-      const filter = new TimelineFilter(store);
-      filter.filteredTimeline.pipe(take(1), last()).subscribe((timelines) => {
-        expect(timelines).toEqual([
-          new TimelineEntry(
-            'apiVersion1#kind2',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind2#namespace2',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind2#namespace2#name3',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-        ]);
-        done();
-      });
+      const filter = new TimelineFilter(store, new ViewStateService());
+      filter.filteredTimeline
+        .pipe(debounceTime(10), take(1))
+        .subscribe((timelines) => {
+          expect(timelines).toEqual([
+            new TimelineEntry(
+              'apiVersion1#kind2',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind2#namespace2',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind2#namespace2#name3',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+          ]);
+          done();
+        });
       filter.setKindFilter(new Set(['kind2']));
     });
 
     it('filters result with namespace', (done) => {
-      const filter = new TimelineFilter(store);
-      filter.filteredTimeline.pipe(take(1), last()).subscribe((timelines) => {
-        expect(timelines).toEqual([
-          new TimelineEntry(
-            'apiVersion1#kind1',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind1#namespace2',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind1#namespace2#name2',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind2',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind2#namespace2',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind2#namespace2#name3',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-        ]);
-        done();
-      });
+      const filter = new TimelineFilter(store, new ViewStateService());
+      filter.filteredTimeline
+        .pipe(debounceTime(10), take(1))
+        .subscribe((timelines) => {
+          expect(timelines).toEqual([
+            new TimelineEntry(
+              'apiVersion1#kind1',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind1#namespace2',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind1#namespace2#name2',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind2',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind2#namespace2',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind2#namespace2#name3',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+          ]);
+          done();
+        });
       filter.setNamespaceFilter(new Set(['namespace2']));
     });
 
     it('filters result with parent relationship of subresource', (done) => {
-      const filter = new TimelineFilter(store);
-      filter.filteredTimeline.pipe(take(1), last()).subscribe((timelines) => {
-        expect(timelines).toEqual([
-          new TimelineEntry(
-            'apiVersion1#kind1',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind1#namespace1',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind1#namespace1#name1',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind1#namespace1#name2',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind1#namespace1#name2#subresource-bidning',
-            [],
-            [],
-            ParentRelationship.RelationshipPodBinding,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind1#namespace2',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind1#namespace2#name2',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind2',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind2#namespace2',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-          new TimelineEntry(
-            'apiVersion1#kind2#namespace2#name3',
-            [],
-            [],
-            ParentRelationship.RelationshipChild,
-          ),
-        ]);
-        done();
-      });
+      const filter = new TimelineFilter(store, new ViewStateService());
+      filter.filteredTimeline
+        .pipe(debounceTime(10), take(1))
+        .subscribe((timelines) => {
+          expect(timelines).toEqual([
+            new TimelineEntry(
+              'apiVersion1#kind1',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind1#namespace1',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind1#namespace1#name1',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind1#namespace1#name2',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind1#namespace1#name2#subresource-bidning',
+              [],
+              [],
+              ParentRelationship.RelationshipPodBinding,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind1#namespace2',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind1#namespace2#name2',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind2',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind2#namespace2',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+            new TimelineEntry(
+              'apiVersion1#kind2#namespace2#name3',
+              [],
+              [],
+              ParentRelationship.RelationshipChild,
+            ),
+          ]);
+          done();
+        });
       filter.setSubresourceParentRelationshipFilter(
         new Set([ParentRelationship.RelationshipPodBinding]),
       );

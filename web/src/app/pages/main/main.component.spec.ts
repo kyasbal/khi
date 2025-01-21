@@ -43,6 +43,7 @@ import {
   TimelineFilter,
 } from 'src/app/services/timeline-filter.service';
 import { InspectionDataStoreService } from 'src/app/services/inspection-data-store.service';
+import { ViewStateService } from 'src/app/services/view-state.service';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -74,7 +75,10 @@ describe('AppComponent', () => {
         },
         {
           provide: DEFAULT_TIMELINE_FILTER,
-          useValue: new TimelineFilter(new InspectionDataStoreService()),
+          useValue: new TimelineFilter(
+            new InspectionDataStoreService(),
+            new ViewStateService(),
+          ),
         },
         provideHttpClient(),
         DiffPageDataSourceServer,

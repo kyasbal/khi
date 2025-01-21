@@ -18,8 +18,10 @@ package main
 // This file is only included only for our internal build.
 
 import (
+	"fmt"
 	"log/slog"
 
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/errorreport"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/lifecycle"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
 	privateLifecycle "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/lifecycle"
@@ -31,8 +33,16 @@ import (
 func init() {
 	slog.Info("You are using internal build of Kubernetes History Inspector")
 
+	writer, err := errorreport.NewCloudErrorReportWriter("kubernetes-history-inspector", "AIzaSyDs5n1loDhJzlhMlNqkVCxvsLTGeA3uoc8") // 2nd argument is API key restricted only for error reporting. It's not sensitive value and this initialization happened before reading arguments thus this value is hard coded.
+	if err != nil {
+		slog.Warn(fmt.Sprintf("KHI fails to initialize Cloud Error Reporting feature with the following error. Please report this error message to khi-dev@google.com\n%s", err.Error()))
+	} else {
+		errorreport.DefaultErrorReporter = errorreport.NewReporter(writer)
+	}
+
 	lifecycle.Default.AddHandler(privateLifecycle.NewAnalyticsLifecycleHandler())
 	lifecycle.Default.AddHandler(privateLifecycle.NewIAMTokenSetupLifecycleHandler())
+	lifecycle.Default.AddHandler(privateLifecycle.NewErrorReportLifecycleHandler())
 
 	parameters.AddStore(privateParameters.Private)
 

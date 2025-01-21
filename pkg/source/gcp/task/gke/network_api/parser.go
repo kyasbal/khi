@@ -53,7 +53,7 @@ func (*gceNetworkParser) GetParserName() string {
 
 // LogTask implements parser.Parser.
 func (*gceNetworkParser) LogTask() string {
-	return GCPNetworkLogQueryTaskId
+	return GCPNetworkLogQueryTaskID
 }
 
 func (*gceNetworkParser) Grouper() grouper.LogGrouper {
@@ -147,4 +147,4 @@ func (*gceNetworkParser) Parse(ctx context.Context, l *log.LogEntity, cs *histor
 
 var _ parser.Parser = (*gceNetworkParser)(nil)
 
-var NetowrkAPIParserTask = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/network-api-parser", &gceNetworkParser{}, true, inspection_task.InspectionTaskLabel(gke.InspectionTypeId, composer_task.InspectionTypeId))
+var NetowrkAPIParserTask = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/network-api-parser", &gceNetworkParser{}, true, inspection_task.InspectionTypeLabel(gke.InspectionTypeId, composer_task.InspectionTypeId))

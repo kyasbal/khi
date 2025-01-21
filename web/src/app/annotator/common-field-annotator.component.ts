@@ -91,7 +91,7 @@ export class CommonFieldAnnotatorComponent {
           label,
           value: of(l.body).pipe(
             withLatestFrom(
-              dataStore.textBufferSource.pipe(filter((tb) => !!tb)),
+              dataStore.referenceResolver.pipe(filter((tb) => !!tb)),
             ),
             switchMap(([tr, loader]) => loader!.getText(tr)),
             map((yamlStr) => fieldMapper(jsyaml.load(yamlStr))),

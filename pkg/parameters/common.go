@@ -14,7 +14,14 @@
 
 package parameters
 
-import "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/flag"
+import (
+	"fmt"
+	"log/slog"
+	"os"
+
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/constants"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/flag"
+)
 
 var Common *CommonParameters = &CommonParameters{}
 
@@ -23,10 +30,16 @@ type CommonParameters struct {
 	DataDestinationFolder *string
 	// TemporaryFolder is the folder path where be used as a working directory to generate the final khi file.
 	TemporaryFolder *string
+	// Version is the flag to show the version name and exit.
+	Version *bool
 }
 
 // PostProcess implements ParameterStore.
 func (c *CommonParameters) PostProcess() error {
+	if *c.Version {
+		slog.Info(fmt.Sprintf("Kubernetes History Inspector (version: %s)", constants.VERSION))
+		os.Exit(0)
+	}
 	return nil
 }
 
@@ -34,6 +47,7 @@ func (c *CommonParameters) PostProcess() error {
 func (c *CommonParameters) Prepare() error {
 	c.DataDestinationFolder = flag.String("data-destination-folder", "./data", "The folder path where the final khi file to be stored for serving.", "")
 	c.TemporaryFolder = flag.String("temporary-folder", "/tmp", "The folder path where be used as a working directory to generate the final khi file.", "")
+	c.Version = flag.Bool("version", false, "Show the version.", "")
 	return nil
 }
 

@@ -20,7 +20,7 @@ import (
 	"strings"
 )
 
-func DedupeStringArray(arr []string) []string {
+func DedupStringArray(arr []string) []string {
 	arrByMap := map[string]struct{}{}
 	for _, v := range arr {
 		arrByMap[v] = struct{}{}

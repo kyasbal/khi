@@ -28,7 +28,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
-const GCPNetworkLogQueryTaskId = query.GKEQueryPrefix + "network-api"
+const GCPNetworkLogQueryTaskID = query.GKEQueryPrefix + "network-api"
 
 func GenerateGCPNetworkAPIQuery(taskMode int, negNames []string) []string {
 	nodeNamesWithNetworkEndpointGroups := []string{}
@@ -55,8 +55,8 @@ func queryFromNegNameFilter(negNameFilter string) string {
 `, negNameFilter)
 }
 
-var GCPNetworkLogQueryTask = query.NewQueryGeneratorTask(GCPNetworkLogQueryTaskId, "GCP network log", enum.LogTypeNetworkAPI, []string{
-	k8saudittask.K8sAuditParseTaskId,
+var GCPNetworkLogQueryTask = query.NewQueryGeneratorTask(GCPNetworkLogQueryTaskID, "GCP network log", enum.LogTypeNetworkAPI, []string{
+	k8saudittask.K8sAuditParseTaskID,
 }, func(ctx context.Context, i int, vs *task.VariableSet) ([]string, error) {
 	builder, err := inspection_task.GetHistoryBuilderFromTaskVariable(vs)
 	if err != nil {

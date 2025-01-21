@@ -25,7 +25,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
-var OnPremCloudAPIQueryTaskId = query.GKEQueryPrefix + "onprem-api"
+var OnPremCloudAPIQueryTaskID = query.GKEQueryPrefix + "onprem-api"
 
 func GenerateOnPremAPIQuery(clusterNameWithPrefix string) string {
 	return fmt.Sprintf(`resource.type="audited_resource"
@@ -35,8 +35,8 @@ protoPayload.resourceName:"%s"
 `, clusterNameWithPrefix)
 }
 
-var OnPremAPIQueryTask = query.NewQueryGeneratorTask(OnPremCloudAPIQueryTaskId, "OnPrem API Logs", enum.LogTypeOnPremAPI, []string{
-	gcp_task.InputClusterName,
+var OnPremAPIQueryTask = query.NewQueryGeneratorTask(OnPremCloudAPIQueryTaskID, "OnPrem API Logs", enum.LogTypeOnPremAPI, []string{
+	gcp_task.InputClusterNameTaskID,
 }, func(ctx context.Context, i int, vs *task.VariableSet) ([]string, error) {
 	clusterName, err := gcp_task.GetInputClusterNameFromTaskVariable(vs)
 	if err != nil {

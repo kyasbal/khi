@@ -34,12 +34,12 @@ resource.labels.project_id="%s"
 %s`, clusterName, projectId, generateK8sControlPlaneComponentFilter(controlplaneComponentFilter))
 }
 
-const GKEK8sControlPlaneComponentQueryTaskId = query.GKEQueryPrefix + "k8s-controlplane"
+const GKEK8sControlPlaneComponentQueryTaskID = query.GKEQueryPrefix + "k8s-controlplane"
 
-var GKEK8sControlPlaneLogQueryTask = query.NewQueryGeneratorTask(GKEK8sControlPlaneComponentQueryTaskId, "K8s control plane logs", enum.LogTypeControlPlaneComponent, []string{
-	gcp_task.InputProjectIdVariableName,
-	gcp_task.InputClusterName,
-	InputControlPlaneComponentNameFilterTaskId,
+var GKEK8sControlPlaneLogQueryTask = query.NewQueryGeneratorTask(GKEK8sControlPlaneComponentQueryTaskID, "K8s control plane logs", enum.LogTypeControlPlaneComponent, []string{
+	gcp_task.InputProjectIdTaskID,
+	gcp_task.InputClusterNameTaskID,
+	InputControlPlaneComponentNameFilterTaskID,
 }, func(ctx context.Context, i int, vs *task.VariableSet) ([]string, error) {
 	clusterName, err := gcp_task.GetInputClusterNameFromTaskVariable(vs)
 	if err != nil {

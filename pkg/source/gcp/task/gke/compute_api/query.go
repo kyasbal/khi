@@ -27,7 +27,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
-var ComputeAPIQueryTaskId = query.GKEQueryPrefix + "compute-api"
+var ComputeAPIQueryTaskID = query.GKEQueryPrefix + "compute-api"
 
 func GenerateComputeAPIQuery(taskMode int, nodeNames []string) []string {
 	if taskMode == inspection_task.TaskModeDryRun {
@@ -56,8 +56,8 @@ func generateComputeAPIQueryWithInstanceNameFilter(instanceNameFilter string) st
 	`, instanceNameFilter)
 }
 
-var ComputeAPIQueryTask = query.NewQueryGeneratorTask(ComputeAPIQueryTaskId, "Compute API Logs", enum.LogTypeComputeApi, []string{
-	k8saudittask.K8sAuditParseTaskId,
+var ComputeAPIQueryTask = query.NewQueryGeneratorTask(ComputeAPIQueryTaskID, "Compute API Logs", enum.LogTypeComputeApi, []string{
+	k8saudittask.K8sAuditParseTaskID,
 }, func(ctx context.Context, i int, vs *task.VariableSet) ([]string, error) {
 	builder, err := inspection_task.GetHistoryBuilderFromTaskVariable(vs)
 	if err != nil {

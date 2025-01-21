@@ -15,7 +15,7 @@
  */
 
 import * as yaml from 'js-yaml';
-import { K8sResource } from '../models/k8s/k8s-types';
+import { K8sResource } from './k8s-types';
 import {
   RevisionState,
   RevisionStateMetadata,

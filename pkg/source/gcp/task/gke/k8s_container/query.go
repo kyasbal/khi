@@ -84,11 +84,11 @@ func generatePodNamesFilter(podNamesFilter *queryutil.SetFilterParseResult) stri
 	return fmt.Sprintf(`resource.labels.pod_name:(%s)`, strings.Join(podNamesWithQuotes, " OR "))
 }
 
-var GKEContainerLogQueryTaskId = query.GKEQueryPrefix + "k8s-container"
-var GKEContainerQueryTask = query.NewQueryGeneratorTask(GKEContainerLogQueryTaskId, "K8s container logs", enum.LogTypeContainer, []string{
-	gcp_task.InputClusterName,
-	InputContainerQueryNamespacesVariableName,
-	InputContainerQueryPodNamesVariableName,
+var GKEContainerLogQueryTaskID = query.GKEQueryPrefix + "k8s-container"
+var GKEContainerQueryTask = query.NewQueryGeneratorTask(GKEContainerLogQueryTaskID, "K8s container logs", enum.LogTypeContainer, []string{
+	gcp_task.InputClusterNameTaskID,
+	InputContainerQueryNamespacesTaskID,
+	InputContainerQueryPodNamesTaskID,
 }, func(ctx context.Context, i int, vs *task.VariableSet) ([]string, error) {
 	clusterName, err := gcp_task.GetInputClusterNameFromTaskVariable(vs)
 	if err != nil {

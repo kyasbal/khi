@@ -26,8 +26,20 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parser"
 	gcp_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task"
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/gke"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
+
+	inspection_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task"
+	composer_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task/cloud-composer"
 )
+
+var serialportSequenceConverters = []parserutil.SpecialSequenceConverter{
+	&parserutil.ANSIEscapeSequenceStripper{},
+	&parserutil.SequenceConverter{From: []string{"\\r", "\\n", "\\x1bM"}},
+	&parserutil.UnicodeUnquoteConverter{},
+	&parserutil.SequenceConverter{From: []string{"\\x2d"}, To: "-"},
+	&parserutil.SequenceConverter{From: []string{"\t"}, To: " "},
+}
 
 type SerialPortLogParser struct {
 }
@@ -47,7 +59,7 @@ func (*SerialPortLogParser) Dependencies() []string {
 }
 
 func (*SerialPortLogParser) LogTask() string {
-	return SerialPortLogQueryTaskId
+	return SerialPortLogQueryTaskID
 }
 
 func (*SerialPortLogParser) Grouper() grouper.LogGrouper {
@@ -76,7 +88,7 @@ func (*SerialPortLogParser) Parse(ctx context.Context, l *log.LogEntity, cs *his
 		slog.WarnContext(ctx, fmt.Sprintf("Failed to extract main message from serial port log.\nError: %s\n\nLog content: %s", err.Error(), yaml))
 		mainMessage = "(unknown)"
 	}
-	mainMessage = parserutil.StripSpecialSequences(mainMessage, parserutil.NewANSIEscapeSequenceStripper(), parserutil.NewSequenceStripper("\\r", "\\n"))
+	mainMessage = parserutil.ConvertSpecialSequences(mainMessage, serialportSequenceConverters...)
 	serialPortResourcePath := resourcepath.NodeSerialport(nodeName)
 	cs.RecordEvent(serialPortResourcePath)
 	cs.RecordLogSummary(mainMessage)
@@ -85,4 +97,4 @@ func (*SerialPortLogParser) Parse(ctx context.Context, l *log.LogEntity, cs *his
 
 var _ parser.Parser = (*SerialPortLogParser)(nil)
 
-var GKESerialPortLogParseTask = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/serialport", &SerialPortLogParser{}, false)
+var GKESerialPortLogParseTask = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/serialport", &SerialPortLogParser{}, false, inspection_task.InspectionTypeLabel(gke.InspectionTypeId, composer_task.InspectionTypeId))

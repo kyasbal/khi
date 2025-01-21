@@ -2,11 +2,16 @@
 precision highp float;
 // Vertex shader for drawing events
 
+#define SELECTION_STATUS_FILTERED_OUT 0
+#define SELECTION_STATUS_DEFAULT 1
+#define SELECTION_STATUS_HIGHLIGHTED 2
+#define SELECTION_STATUS_SELECTED 3
+
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 event; // event.x = time offset from left, event.y = event type index,event.z = log severity index / log severity count
-layout(location = 2) in int status; // interaction status 0 = none, 1 = hover, 2 = selected
+layout(location = 2) in int status; // interaction status 0 = filtered,1 = default, 2 = hover, 3 = selected
 
-const int MAX_STATUS = 2;
+const int MAX_STATUS = 3;
 
 layout(std140) uniform ViewState {
     // Resolution of the canvas (not viewport)
@@ -47,7 +52,7 @@ void main() {
     float clipSpaceCoordinate = screenSpaceFromLeft / viewportSize.x * 2.0f - 1.0f;
 
     float sizeScale = 1.3f;
-    if(status == 0) {
+    if(status <= SELECTION_STATUS_DEFAULT) {
         sizeScale = 1.f;
     }
     vec2 clipSpaceHalfSize = sizeScale * size * timelineHeight / viewportSize;

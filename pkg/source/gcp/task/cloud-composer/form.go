@@ -26,13 +26,11 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
-const InputProjectIdVariableName = gcp_task.GCPPrefix + "input/location"
+var AutocompleteComposerEnvironmentNamesTaskID = gcp_task.GCPPrefix + "autocomplete/composer-environment-names"
 
-var AutocompleteComposerEnvironmentNamesTaskId = gcp_task.GCPPrefix + "autocomplete/composer-environment-names"
-
-var AutocompleteComposerEnvironmentNames = task.NewCachedProcessor(AutocompleteComposerEnvironmentNamesTaskId, []string{
-	gcp_task.InputLocationsVariableName,
-	gcp_task.InputProjectIdVariableName,
+var AutocompleteComposerEnvironmentNames = task.NewCachedProcessor(AutocompleteComposerEnvironmentNamesTaskID, []string{
+	gcp_task.InputLocationsTaskID,
+	gcp_task.InputProjectIdTaskID,
 }, func(ctx context.Context, taskMode int, v *task.VariableSet) (any, error) {
 	client, err := api.DefaultGCPClientFactory.NewClient()
 	if err != nil {
@@ -59,13 +57,13 @@ var AutocompleteComposerEnvironmentNames = task.NewCachedProcessor(AutocompleteC
 })
 
 func GetAutocompleteComposerEnvironmentNamesTaskVariable(v *task.VariableSet) ([]string, error) {
-	return task.GetTypedVariableFromTaskVariable[[]string](v, AutocompleteComposerEnvironmentNamesTaskId, nil)
+	return task.GetTypedVariableFromTaskVariable[[]string](v, AutocompleteComposerEnvironmentNamesTaskID, nil)
 }
 
-const InputComposerEnvironmentVariableName = gcp_task.GCPPrefix + "input/composer/environment_name"
+const InputComposerEnvironmentTaskID = gcp_task.GCPPrefix + "input/composer/environment_name"
 
-var InputComposerEnvironmentNameTask = form.NewInputFormDefinitionBuilder(InputComposerEnvironmentVariableName, gcp_task.PriorityForResourceIdentifierGroup+5000, "Composer Environment Name").WithDependencies(
-	[]string{AutocompleteComposerEnvironmentNamesTaskId},
+var InputComposerEnvironmentNameTask = form.NewInputFormDefinitionBuilder(InputComposerEnvironmentTaskID, gcp_task.PriorityForResourceIdentifierGroup+5000, "Composer Environment Name").WithDependencies(
+	[]string{AutocompleteComposerEnvironmentNamesTaskID},
 ).WithSuggestionsFunc(func(ctx context.Context, value string, variables *task.VariableSet, previousValues []string) ([]string, error) {
 	environments, err := GetAutocompleteComposerEnvironmentNamesTaskVariable(variables)
 	if err != nil {

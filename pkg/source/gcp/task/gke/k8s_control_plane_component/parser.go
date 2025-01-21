@@ -51,7 +51,7 @@ func (k *k8sControlPlaneComponentParser) Grouper() grouper.LogGrouper {
 
 // LogTask implements parser.Parser.
 func (k *k8sControlPlaneComponentParser) LogTask() string {
-	return GKEK8sControlPlaneComponentQueryTaskId
+	return GKEK8sControlPlaneComponentQueryTaskID
 }
 
 // Parse implements parser.Parser.

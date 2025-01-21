@@ -73,19 +73,20 @@ func FeatureTaskLabel(title string, description string, isDefaultFeature bool) *
 	}
 }
 
-type InspectionTaskLabelImpl struct {
+type InspectionTypeLabelImpl struct {
 	inspectionTypes []string
 }
 
 // Write implements task.LabelOpt.
-func (itl *InspectionTaskLabelImpl) Write(label *common_task.LabelSet) {
+func (itl *InspectionTypeLabelImpl) Write(label *common_task.LabelSet) {
 	label.Set(LabelKeyInspectionTypes, itl.inspectionTypes)
 }
 
-var _ common_task.LabelOpt = (*InspectionTaskLabelImpl)(nil)
+var _ common_task.LabelOpt = (*InspectionTypeLabelImpl)(nil)
 
-func InspectionTaskLabel(types ...string) *InspectionTaskLabelImpl {
-	return &InspectionTaskLabelImpl{
+// InspectionTypeLabel returns a LabelOpt to mark the task only to be used in the specified inspection types.
+func InspectionTypeLabel(types ...string) *InspectionTypeLabelImpl {
+	return &InspectionTypeLabelImpl{
 		inspectionTypes: types,
 	}
 }
@@ -96,6 +97,7 @@ func (r *RequriredTaskLabelImpl) Write(label *common_task.LabelSet) {
 	label.Set(LabelKeyInspectionRequiredFlag, true)
 }
 
+// InspectionTypeLabel returns a LabelOpt to mark the task is always included in the result task graph.
 func NewRequiredTaskLabel() *RequriredTaskLabelImpl {
 	return &RequriredTaskLabelImpl{}
 }

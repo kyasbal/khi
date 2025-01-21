@@ -33,6 +33,8 @@ import {
   TimelineFilter,
 } from '../services/timeline-filter.service';
 import { InspectionDataStoreService } from '../services/inspection-data-store.service';
+import { ViewStateService } from '../services/view-state.service';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 describe('ToolbarComponent', () => {
   let component: ToolbarComponent;
@@ -48,6 +50,7 @@ describe('ToolbarComponent', () => {
         MatInputModule,
         FormsModule,
         ReactiveFormsModule,
+        MatButtonToggleModule,
       ],
       providers: [
         WindowConnectorService,
@@ -57,7 +60,10 @@ describe('ToolbarComponent', () => {
         },
         {
           provide: DEFAULT_TIMELINE_FILTER,
-          useValue: new TimelineFilter(new InspectionDataStoreService()),
+          useValue: new TimelineFilter(
+            new InspectionDataStoreService(),
+            new ViewStateService(),
+          ),
         },
       ],
     }).compileComponents();

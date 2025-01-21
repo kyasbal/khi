@@ -216,7 +216,7 @@ func (i *InspectionRunner) Run(ctx context.Context, req *inspection_task.Inspect
 		} else {
 			progress.Done()
 			status = "done"
-			history, err := task.GetTypedVariableFromTaskVariable[inspectiondata.Store](result, serializer.SerializerTaskId, nil)
+			history, err := task.GetTypedVariableFromTaskVariable[inspectiondata.Store](result, serializer.SerializerTaskID, nil)
 			if err != nil {
 				slog.ErrorContext(ctx, fmt.Sprintf("Failed to get generated history after the completion\n%s", err))
 			}
@@ -230,7 +230,7 @@ func (i *InspectionRunner) Run(ctx context.Context, req *inspection_task.Inspect
 			}
 			// Remove unnecessary variables stored in the result to release memory
 			result.DeleteItems(func(key string) bool {
-				return key != serializer.SerializerTaskId && key != inspection_task.MetadataVariableName
+				return key != serializer.SerializerTaskID && key != inspection_task.MetadataVariableName
 			})
 		}
 		lifecycle.Default.NotifyInspectionEnd(rid, currentInspectionType.Name, status, resultSize)
@@ -248,7 +248,7 @@ func (i *InspectionRunner) Result() (*InspectionRunResult, error) {
 		return nil, err
 	}
 
-	inspectionResultAny, err := v.Get(serializer.SerializerTaskId)
+	inspectionResultAny, err := v.Get(serializer.SerializerTaskID)
 	if err != nil {
 		return nil, err
 	}

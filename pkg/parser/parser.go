@@ -21,6 +21,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/errorreport"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/metadata/progress"
 	inspection_task "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/task"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/log"
@@ -54,7 +55,7 @@ type Parser interface {
 }
 
 func NewParserTaskFromParser(taskId string, parser Parser, isDefaultFeature bool, labelOpts ...task.LabelOpt) task.Definition {
-	return inspection_task.NewInspectionProcessor(taskId, append(parser.Dependencies(), parser.LogTask(), inspection_task.BuilderGeneratorTaskId), func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
+	return inspection_task.NewInspectionProcessor(taskId, append(parser.Dependencies(), parser.LogTask(), inspection_task.BuilderGeneratorTaskID), func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
 		if taskMode == inspection_task.TaskModeDryRun {
 			slog.DebugContext(ctx, "Skipping task because this is dry run mode")
 			return struct{}{}, nil
@@ -137,7 +138,8 @@ func NewParserTaskFromParser(taskId string, parser Parser, isDefaultFeature bool
 				limitChannel <- struct{}{}
 				groupedLogs := groups[groupNames[currentGroup]]
 				threadCount += 1
-				wg.Go(func() error {
+				wg.Go(func() error { // TODO: replace this with pkg/common/worker/pool
+					defer errorreport.CheckAndReportPanic()
 					err = builder.ParseLogsByGroups(ctx, groupedLogs, func(logIndex int, l *log.LogEntity) *history.ChangeSet {
 						cs := history.NewChangeSet(l)
 						err := parser.Parse(ctx, l, cs, builder, v)

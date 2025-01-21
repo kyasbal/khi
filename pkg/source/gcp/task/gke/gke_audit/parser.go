@@ -52,7 +52,7 @@ func (*gkeAuditLogParser) GetParserName() string {
 
 // LogTask implements parser.Parser.
 func (*gkeAuditLogParser) LogTask() string {
-	return GKEAuditLogQueryTaskId
+	return GKEAuditLogQueryTaskID
 }
 
 func (*gkeAuditLogParser) Grouper() grouper.LogGrouper {
@@ -190,4 +190,4 @@ func getRelatedNodepool(l *log.LogEntity) (string, error) {
 
 var _ parser.Parser = (*gkeAuditLogParser)(nil)
 
-var GKEAuditLogParseJob = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/gke-audit-parser", &gkeAuditLogParser{}, true, inspection_task.InspectionTaskLabel(gke.InspectionTypeId, composer_task.InspectionTypeId))
+var GKEAuditLogParseJob = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/gke-audit-parser", &gkeAuditLogParser{}, true, inspection_task.InspectionTypeLabel(gke.InspectionTypeId, composer_task.InspectionTypeId))

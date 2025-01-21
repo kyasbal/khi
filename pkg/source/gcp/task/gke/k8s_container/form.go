@@ -25,12 +25,12 @@ import (
 
 const priorityForContainerGroup = gcp_task.FormBasePriority + 20000
 
-const InputContainerQueryNamespacesVariableName = gcp_task.GCPPrefix + "input/container-query-namespaces"
+const InputContainerQueryNamespacesTaskID = gcp_task.GCPPrefix + "input/container-query-namespaces"
 
 var inputNamespacesAliasMap queryutil.SetFilterAliasToItemsMap = map[string][]string{
 	"managed": {"kube-system", "gke-system", "istio-system", "asm-system", "gmp-system", "gke-mcs", "configconnector-operator-system", "cnrm-system"},
 }
-var InputContainerQueryNamespaceFilterTask = form.NewInputFormDefinitionBuilder(InputContainerQueryNamespacesVariableName, priorityForContainerGroup+1000, "Namespaces(Container logs)").
+var InputContainerQueryNamespaceFilterTask = form.NewInputFormDefinitionBuilder(InputContainerQueryNamespacesTaskID, priorityForContainerGroup+1000, "Namespaces(Container logs)").
 	WithDefaultValueConstant("@managed", true).
 	WithDescription(`Container logs tend to be a lot and take very long time to query.
 Specify the space splitted namespace lists to query container logs only in the specific namespaces.`).
@@ -51,13 +51,13 @@ Specify the space splitted namespace lists to query container logs only in the s
 	Build()
 
 func GetInputContainerQueryNamespacesFilterFromTaskVariable(tv *task.VariableSet) (*queryutil.SetFilterParseResult, error) {
-	return task.GetTypedVariableFromTaskVariable[*queryutil.SetFilterParseResult](tv, InputContainerQueryNamespacesVariableName, nil)
+	return task.GetTypedVariableFromTaskVariable[*queryutil.SetFilterParseResult](tv, InputContainerQueryNamespacesTaskID, nil)
 }
 
-const InputContainerQueryPodNamesVariableName = gcp_task.GCPPrefix + "input/container-query-podnames"
+const InputContainerQueryPodNamesTaskID = gcp_task.GCPPrefix + "input/container-query-podnames"
 
 var inputPodNamesAliasMap queryutil.SetFilterAliasToItemsMap = map[string][]string{}
-var InputContainerQueryPodNamesFilterMask = form.NewInputFormDefinitionBuilder(InputContainerQueryPodNamesVariableName, priorityForContainerGroup+2000, "Pod names(Container logs)").
+var InputContainerQueryPodNamesFilterMask = form.NewInputFormDefinitionBuilder(InputContainerQueryPodNamesTaskID, priorityForContainerGroup+2000, "Pod names(Container logs)").
 	WithDefaultValueConstant("@any", true).
 	WithDescription(`Container logs tend to be a lot and take very long time to query.
 	Specify the space splitted pod names lists to query container logs only in the specific pods.
@@ -79,5 +79,5 @@ var InputContainerQueryPodNamesFilterMask = form.NewInputFormDefinitionBuilder(I
 	Build()
 
 func GetInputContainerQueryPodNamesFilterFromTaskVariable(tv *task.VariableSet) (*queryutil.SetFilterParseResult, error) {
-	return task.GetTypedVariableFromTaskVariable[*queryutil.SetFilterParseResult](tv, InputContainerQueryPodNamesVariableName, nil)
+	return task.GetTypedVariableFromTaskVariable[*queryutil.SetFilterParseResult](tv, InputContainerQueryPodNamesTaskID, nil)
 }

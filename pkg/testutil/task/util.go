@@ -21,7 +21,7 @@ import (
 )
 
 // Deprecated. Use testtask package instead.
-func MockProcessorTaskFromTaskId(taskId string, value any) task.Definition {
+func MockProcessorTaskFromTaskID(taskId string, value any) task.Definition {
 	return task.NewProcessorTask(taskId, []string{}, func(ctx context.Context, taskMode int, v *task.VariableSet) (any, error) {
 		return value, nil
 	})

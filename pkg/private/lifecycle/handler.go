@@ -17,6 +17,7 @@ package lifecycle
 import (
 	"os"
 
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/errorreport"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/lifecycle"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/analytics"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/analytics/types"
@@ -53,6 +54,20 @@ func NewAnalyticsLifecycleHandler() *lifecycle.LifecycleEventHandler {
 				"status":         status,
 				"resultSize":     size,
 			})
+		},
+	}
+}
+
+// NewErrorReportLifecycleHandler returns a new LifecycleEventHandler to register GA metadata labels to the error reporter.
+func NewErrorReportLifecycleHandler() *lifecycle.LifecycleEventHandler {
+	return &lifecycle.LifecycleEventHandler{
+		OnInit: func() {
+			if parameters.Private.GALabels != nil {
+				metadata := parameters.Private.GetMapOfGALabels()
+				for key, value := range metadata {
+					errorreport.DefaultErrorReporter.SetMetadataEntry(key, value)
+				}
+			}
 		},
 	}
 }

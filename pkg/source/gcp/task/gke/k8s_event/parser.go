@@ -49,7 +49,7 @@ func (*k8sEventParser) Dependencies() []string {
 }
 
 func (*k8sEventParser) LogTask() string {
-	return GKEK8sEventLogQueryTaskId
+	return GKEK8sEventLogQueryTaskID
 }
 
 func (*k8sEventParser) Grouper() grouper.LogGrouper {

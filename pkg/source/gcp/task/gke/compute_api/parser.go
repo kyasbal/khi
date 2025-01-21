@@ -52,7 +52,7 @@ func (*computeAPIParser) GetParserName() string {
 
 // LogTask implements parser.Parser.
 func (*computeAPIParser) LogTask() string {
-	return ComputeAPIQueryTaskId
+	return ComputeAPIQueryTaskID
 }
 func (*computeAPIParser) Grouper() grouper.LogGrouper {
 	return grouper.AllDependentLogGrouper
@@ -104,4 +104,4 @@ func (*computeAPIParser) Parse(ctx context.Context, l *log.LogEntity, cs *histor
 
 var _ parser.Parser = (*computeAPIParser)(nil)
 
-var ComputeAPIParserTask = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/compute-api-parser", &computeAPIParser{}, true, inspection_task.InspectionTaskLabel(gke.InspectionTypeId, composer_task.InspectionTypeId))
+var ComputeAPIParserTask = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/compute-api-parser", &computeAPIParser{}, true, inspection_task.InspectionTypeLabel(gke.InspectionTypeId, composer_task.InspectionTypeId))

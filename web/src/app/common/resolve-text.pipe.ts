@@ -29,7 +29,7 @@ import { TextReference } from './loader/interface';
 export class ResolveTextPipe implements PipeTransform {
   constructor(private dataStore: InspectionDataStoreService) {}
   transform(value: TextReference): Observable<string> {
-    return this.dataStore.textBufferSource.pipe(
+    return this.dataStore.referenceResolver.pipe(
       switchMap((bs) => bs?.getText(value) ?? 'error'),
     );
   }

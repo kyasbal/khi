@@ -16,7 +16,7 @@
 
 import { Inject, Injectable } from '@angular/core';
 import { InspectionDataStoreService } from './inspection-data-store.service';
-import { InspectionData, TimelineRange } from '../models/inspection-data';
+import { InspectionData, TimeRange } from '../store/inspection-data';
 import {
   KHIFile,
   KHIFileResource,
@@ -24,7 +24,7 @@ import {
   KHIFileResourceRevision,
   KHIFileTimeline,
 } from '../common/schema/khi-file-types';
-import { ParentRelationship, RevisionState, RevisionVerb } from '../generated';
+import { ParentRelationship, RevisionVerb } from '../generated';
 import { lastValueFrom } from 'rxjs';
 import { BACKEND_API, BackendAPI } from './api/backend-api-interface';
 import {
@@ -87,47 +87,7 @@ export class InspectionDataLoaderService {
       resource.relationship === ParentRelationship.RelationshipChild &&
       !resource.name.endsWith('unknown')
     ) {
-      // Assume there is a resource because other events happening
-      result.push(
-        new ResourceRevision(
-          startTime,
-          endTime,
-          RevisionState.RevisionStateInferred,
-          RevisionVerb.RevisionVerbUnknown,
-          '',
-          '-',
-          false,
-          true,
-          -1,
-        ),
-      );
       return result;
-    }
-    if (
-      revisions.length > 0 &&
-      resource.relationship === ParentRelationship.RelationshipChild
-    ) {
-      const firstVerb = revisions[0].verb;
-      // KHI assumes there is a resource when the first observed request is not `create`
-      if (
-        firstVerb === RevisionVerb.RevisionVerbDelete ||
-        firstVerb === RevisionVerb.RevisionVerbUpdate ||
-        firstVerb === RevisionVerb.RevisionVerbPatch
-      ) {
-        result.push(
-          new ResourceRevision(
-            startTime,
-            Date.parse(revisions[0].changeTime),
-            RevisionState.RevisionStateInferred,
-            RevisionVerb.RevisionVerbUnknown,
-            '',
-            '-',
-            false,
-            true,
-            -1,
-          ),
-        );
-      }
     }
     for (let ri = 0; ri < revisions.length; ri++) {
       const revision = revisions[ri];
@@ -160,8 +120,7 @@ export class InspectionDataLoaderService {
 
   private async responseDataToViewInspection(
     response: KHIFile,
-    textSource: ReferenceResolverStore,
-    rawInspectionData: ArrayBuffer,
+    referenceResolver: ReferenceResolverStore,
   ): Promise<InspectionData> {
     if (typeof response.version === 'undefined') {
       const errorMessage =
@@ -171,7 +130,6 @@ export class InspectionDataLoaderService {
     }
 
     const logs: LogEntry[] = [];
-    const relationships: Set<ParentRelationship> = new Set();
     const startTime = response.metadata.header.startTimeUnixSeconds * 1000;
     const endTime = response.metadata.header.endTimeUnixSeconds * 1000;
     const logIdToLogIndex: { [logId: string]: number } = {
@@ -197,7 +155,9 @@ export class InspectionDataLoaderService {
           l.severity,
           time,
           await lastValueFrom(
-            textSource.getText(ToTextReferenceFromKHIFileBinary(l.summary)),
+            referenceResolver.getText(
+              ToTextReferenceFromKHIFileBinary(l.summary),
+            ),
           ),
           ToTextReferenceFromKHIFileBinary(l.body),
           l.annotations,
@@ -264,7 +224,7 @@ export class InspectionDataLoaderService {
                 logIdToLogIndex,
                 startTime,
                 endTime,
-                textSource,
+                referenceResolver,
               ),
               this.eventDataToViewEvents(
                 timeline?.events ?? [],
@@ -282,7 +242,6 @@ export class InspectionDataLoaderService {
             ) {
               const subResourceResource =
                 nameResource.children[subresoruceIndex];
-              relationships.add(subResourceResource.relationship);
               // timeline can be null when the children is defined but no event/revisions are included
               const timeline =
                 timelineIdToTimeline[subResourceResource.timeline] ?? null;
@@ -294,7 +253,7 @@ export class InspectionDataLoaderService {
                   logIdToLogIndex,
                   startTime,
                   endTime,
-                  textSource,
+                  referenceResolver,
                 ),
                 this.eventDataToViewEvents(
                   timeline?.events ?? [],
@@ -324,10 +283,9 @@ export class InspectionDataLoaderService {
 
     return new InspectionData(
       response.metadata.header,
-      rawInspectionData,
-      new TimelineRange(startTime, endTime),
+      new TimeRange(startTime, endTime),
+      referenceResolver,
       timelines,
-      relationships,
       logs,
     );
   }
@@ -389,7 +347,6 @@ export class InspectionDataLoaderService {
       const khiInspectionViewModel = await this.responseDataToViewInspection(
         parsedJsonData,
         resolver,
-        rawInspectionData,
       );
 
       this.extension.notifyLifecycleOnInspectionDataOpen(
@@ -398,10 +355,7 @@ export class InspectionDataLoaderService {
         rawInspectionData,
       );
 
-      this.inspectionDataStore.setNewInspectionData(
-        khiInspectionViewModel,
-        resolver,
-      );
+      this.inspectionDataStore.setNewInspectionData(khiInspectionViewModel);
     } catch (e) {
       console.error(e);
       alert(

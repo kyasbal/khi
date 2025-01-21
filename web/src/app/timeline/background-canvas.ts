@@ -16,7 +16,6 @@
 
 import { ViewStateService } from '../services/view-state.service';
 import { TimelinenCoordinateCalculator } from './timeline-coordinate-calculator';
-import { asBehaviorSubject } from '../utils/observable-util';
 import { InspectionDataStoreService } from '../services/inspection-data-store.service';
 import { Observable, combineLatestWith, debounceTime, delay } from 'rxjs';
 import { CanvasSize } from './canvas/types';
@@ -25,6 +24,7 @@ import { SelectionManagerService } from '../services/selection-manager.service';
 import { LogEntry } from '../store/log';
 import { TimelineEntry } from '../store/timeline';
 import { TimelineFilter } from '../services/timeline-filter.service';
+import { TimeRange } from '../store/inspection-data';
 
 const STRIDE_SIZE_CANDIDATES = [
   1000,
@@ -49,6 +49,36 @@ interface SeverityLogGroupingResult {
   logsBySeverity: { [severity: string]: number }[];
 }
 
+/**
+ * A ViewModel type used in BackgroundCanvas.
+ */
+interface BackendCanvasRendererViewModel {
+  /**
+   * All the logs remained after the filtering step.
+   */
+  allLogsAfterFilteringStep: LogEntry[];
+
+  /**
+   * All the logs within highlighted timeline.
+   */
+  logsOnHighlightedTimelines: LogEntry[];
+
+  /**
+   * The timestamp of selected log.
+   */
+  selectionTimestamp: number;
+
+  /**
+   * The range of log gathering range.
+   */
+  logQueryRange: TimeRange;
+
+  /**
+   * Number of hours shifted from UTC.
+   */
+  timezoneShiftHour: number;
+}
+
 export class BackgroundCanvas {
   private canvas: HTMLCanvasElement;
 
@@ -56,20 +86,38 @@ export class BackgroundCanvas {
 
   private _invalidate = true;
 
-  private _timezoneShift$ = asBehaviorSubject(
-    this._viewStateService.timezoneShift,
-    0,
-  );
+  /**
+   * The stride of ruler maintained not to be smaller than this size in pixels.
+   */
+  public MINIMUM_STRIDE_OF_RULER_IN_PIXELS = 5;
 
-  public MINIMUM_DISTANT = 5;
-
+  /**
+   * The line thickness of ruler.
+   */
   public MAX_RULER_THICKNESS = 5;
 
-  selectedLogTimestamp = 0;
+  /**
+   * The height of triangle cursor pointing selected log time.
+   */
+  private readonly CURSOR_SIZE_IN_PIXELS = 12;
 
-  currentAllFilteredLogs: LogEntry[] = [];
+  /**
+   * The margin of Y coordinate between the top of the triangle cursor and time label.
+   */
+  private readonly CURSOR_MARGIN_BETWEEN_TIME_LABEL = 5;
 
-  currentHighlightedLogs: LogEntry[] = [];
+  /**
+   * The font size of label placed on the selection cursor.
+   */
+  private readonly CURSOR_TIME_LABEL_FONT_SIZE = 15;
+
+  private readonly viewModel: BackendCanvasRendererViewModel = {
+    allLogsAfterFilteringStep: [],
+    logsOnHighlightedTimelines: [],
+    selectionTimestamp: 0,
+    logQueryRange: new TimeRange(0, 0),
+    timezoneShiftHour: 0,
+  };
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -88,6 +136,14 @@ export class BackgroundCanvas {
       throw new Error("Couldn't get canvas context");
     }
 
+    this._inspectionData.inspectionData.subscribe((data) => {
+      if (data) {
+        this.viewModel.logQueryRange = data.range;
+      } else {
+        this.viewModel.logQueryRange = new TimeRange(0, 0);
+      }
+      this.invalidate();
+    });
     this._inspectionData.filteredLogs
       .pipe(
         combineLatestWith(
@@ -96,14 +152,12 @@ export class BackgroundCanvas {
         ),
       )
       .subscribe(([logs, filteredTimelines, selectedTimelines]) => {
-        this.currentAllFilteredLogs = this.filterLogsWithTimelines(
+        this.viewModel.allLogsAfterFilteringStep = this.filterLogsWithTimelines(
           logs,
           filteredTimelines,
         );
-        this.currentHighlightedLogs = this.filterLogsWithTimelines(
-          logs,
-          selectedTimelines,
-        );
+        this.viewModel.logsOnHighlightedTimelines =
+          this.filterLogsWithTimelines(logs, selectedTimelines);
         this.invalidate();
       });
     this.canvasSizeObservable.pipe(debounceTime(5)).subscribe((size) => {
@@ -114,8 +168,11 @@ export class BackgroundCanvas {
     this._viewStateService.devicePixelRatio.pipe(delay(1)).subscribe(() => {
       this.invalidate();
     });
+    this._viewStateService.timezoneShift.subscribe((offsetHour) => {
+      this.viewModel.timezoneShiftHour = offsetHour;
+      this.invalidate();
+    });
     this.invalidate();
-    this._timezoneShift$.subscribe(() => this.invalidate());
   }
 
   private _render() {
@@ -131,9 +188,14 @@ export class BackgroundCanvas {
     }
   }
 
+  public setSelectedTimeStamp(time: number) {
+    this.viewModel.selectionTimestamp = time;
+    this.invalidate();
+  }
+
   public invalidate() {
     this._invalidate = true;
-    this._render();
+    requestAnimationFrame(this._render.bind(this));
   }
 
   private _fitCanvasSize(width: number, height: number) {
@@ -237,7 +299,7 @@ export class BackgroundCanvas {
     for (
       let rulerTimeStride = largestRulerStride;
       this.timelineCoordinateCalculator.durationToWidth(rulerTimeStride) >=
-      this.MINIMUM_DISTANT;
+      this.MINIMUM_STRIDE_OF_RULER_IN_PIXELS;
       rulerTimeStride /= 5
     ) {
       this.ctx.lineWidth = thickness;
@@ -287,7 +349,7 @@ export class BackgroundCanvas {
   }
 
   private _drawDataRegion() {
-    const range = this._inspectionData.$timeRange.value;
+    const range = this.viewModel.logQueryRange;
     const minimumFromLeftTime =
       range.begin - this.timelineCoordinateCalculator.leftMostTime();
     if (minimumFromLeftTime > 0) {
@@ -313,10 +375,10 @@ export class BackgroundCanvas {
   }
 
   private _drawHistgram() {
-    if (this.currentAllFilteredLogs.length === 0) {
+    if (this.viewModel.allLogsAfterFilteringStep.length === 0) {
       return;
     }
-    const range = this._inspectionData.$timeRange.value;
+    const range = this.viewModel.logQueryRange;
     const histogramMaxSizeInPx = 50;
     const secondStride = this._calcStrideSizeAt(0) / 50;
     const boxWidth =
@@ -333,7 +395,7 @@ export class BackgroundCanvas {
 
     // Count logs by severity with spliting timerange by secondStride
     const logCountsForAll = this.countLogsBySeverity(
-      this.currentAllFilteredLogs,
+      this.viewModel.allLogsAfterFilteringStep,
       histgramLeftTime,
       Math.min(
         this.canvas.width,
@@ -342,7 +404,7 @@ export class BackgroundCanvas {
       secondStride,
     );
     const logCountsForHighlights = this.countLogsBySeverity(
-      this.currentHighlightedLogs,
+      this.viewModel.logsOnHighlightedTimelines,
       histgramLeftTime,
       Math.min(
         this.canvas.width,
@@ -496,22 +558,60 @@ export class BackgroundCanvas {
   }
 
   private _drawSelectedLogLine() {
-    this.ctx.strokeStyle = '#33CC33';
-    this.ctx.lineWidth = 4;
+    // Draw the cursor triangle
+    this.ctx.strokeStyle = '#33CC33FF';
+    this.ctx.fillStyle = '#33333AA';
+    this.ctx.lineWidth = this.timelineCoordinateCalculator.adjustPixelScale(2);
     this.ctx.beginPath();
-    this.ctx.moveTo(
-      this.timelineCoordinateCalculator.timeToLeftOffset(
-        this.selectedLogTimestamp,
-      ),
-      this.timelineCoordinateCalculator.adjustPixelScale(20),
+    const xCenterInPixels = this.timelineCoordinateCalculator.timeToLeftOffset(
+      this.viewModel.selectionTimestamp,
+    );
+    const yBottomInPixels =
+      this.timelineCoordinateCalculator.adjustPixelScale(60);
+    this.ctx.moveTo(xCenterInPixels, yBottomInPixels);
+    this.ctx.lineTo(
+      xCenterInPixels -
+        this.timelineCoordinateCalculator.adjustPixelScale(
+          this.CURSOR_SIZE_IN_PIXELS / 2,
+        ),
+      yBottomInPixels -
+        this.timelineCoordinateCalculator.adjustPixelScale(
+          this.CURSOR_SIZE_IN_PIXELS,
+        ),
     );
     this.ctx.lineTo(
-      this.timelineCoordinateCalculator.timeToLeftOffset(
-        this.selectedLogTimestamp,
-      ),
-      this.timelineCoordinateCalculator.adjustPixelScale(60),
+      xCenterInPixels +
+        this.timelineCoordinateCalculator.adjustPixelScale(
+          this.CURSOR_SIZE_IN_PIXELS / 2,
+        ),
+      yBottomInPixels -
+        this.timelineCoordinateCalculator.adjustPixelScale(
+          this.CURSOR_SIZE_IN_PIXELS,
+        ),
     );
+    this.ctx.closePath();
+    this.ctx.fill();
     this.ctx.stroke();
+
+    // Draw the timestamp label on triangle
+    this.ctx.fillStyle = '#11AA11';
+    const fontSize = this.timelineCoordinateCalculator.adjustPixelScale(
+      this.CURSOR_TIME_LABEL_FONT_SIZE,
+    );
+    this.ctx.font = `${fontSize}px serif`;
+    const timeLabel = this.toTimeLabelString(
+      this.viewModel.selectionTimestamp,
+      true,
+    );
+    const labelRect = this.ctx.measureText(timeLabel);
+    this.ctx.fillText(
+      timeLabel,
+      xCenterInPixels - labelRect.width / 2,
+      yBottomInPixels -
+        this.timelineCoordinateCalculator.adjustPixelScale(
+          this.CURSOR_SIZE_IN_PIXELS + this.CURSOR_MARGIN_BETWEEN_TIME_LABEL,
+        ),
+    );
   }
 
   private toNearestMidnightBefore(time: number) {
@@ -523,17 +623,22 @@ export class BackgroundCanvas {
       date.getUTCDate(),
     );
     const nearDateInCurrentTimezone = new Date(
-      nearDate - this._timezoneShift$.value * hourInMs,
+      nearDate - this.viewModel.timezoneShiftHour * hourInMs,
     );
     return nearDateInCurrentTimezone;
   }
 
-  private toTimeLabelString(time: number) {
+  private toTimeLabelString(time: number, withMillis = false) {
     const date = this.timeToDate(time);
     const hour = ('' + date.getUTCHours()).padStart(2, '0');
     const minute = ('' + date.getUTCMinutes()).padStart(2, '0');
     const second = ('' + date.getUTCSeconds()).padStart(2, '0');
-    return `${hour}:${minute}:${second}`;
+    if (withMillis) {
+      const millisecond = ('' + date.getUTCMilliseconds()).padStart(3, '0');
+      return `${hour}:${minute}:${second}.${millisecond}`;
+    } else {
+      return `${hour}:${minute}:${second}`;
+    }
   }
 
   private toDateLabelString(time: number) {
@@ -544,7 +649,7 @@ export class BackgroundCanvas {
   }
 
   private timeToDate(time: number) {
-    return new Date(time + this._timezoneShift$.value * 60 * 60 * 1000);
+    return new Date(time + this.viewModel.timezoneShiftHour * 60 * 60 * 1000);
   }
 
   private filterLogsWithTimelines(

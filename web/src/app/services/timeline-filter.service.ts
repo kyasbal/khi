@@ -17,9 +17,7 @@
 import { InjectionToken } from '@angular/core';
 import { InspectionDataStore } from './inspection-data-store.service';
 import {
-  combineLatest,
   connectable,
-  debounceTime,
   map,
   merge,
   ReplaySubject,
@@ -27,7 +25,19 @@ import {
   Subject,
 } from 'rxjs';
 import { ParentRelationship } from '../generated';
-import { TimelineEntry, TimelineLayer } from '../store/timeline';
+import {
+  FilterChain,
+  PropertyMatchRegexFilterChainElement,
+  PropertyMatchSetFilterChainElement,
+} from './filter/chain';
+import { TimelineLayer } from '../store/timeline';
+import {
+  FilterNamepaceOrKindWithoutResource,
+  FilterSubresourceTimelinesOnlyWithFilteredLogs,
+  FilterSubresourceWithoutParent,
+  FilterTimelinesOnlyWithFilteredLogs,
+} from './filter/timeline-filter-chain';
+import { ViewStateService } from './view-state.service';
 
 /**
  * Injection token for the default TimelineFilter.
@@ -41,11 +51,61 @@ export const DEFAULT_TIMELINE_FILTER = new InjectionToken(
  * It listen changes on inspection data store and filters timelines with given conditions.
  */
 export class TimelineFilter {
-  constructor(public readonly dataStore: InspectionDataStore) {
+  constructor(
+    public readonly dataStore: InspectionDataStore,
+    public readonly viewStateStore: ViewStateService,
+  ) {
     this.kindTimelineFilter.connect();
     this.namespaceTimelineFilter.connect();
     this.subresourceParentRelationshipFilter.connect();
     this.resourceNameTimelineRegexFilter.connect();
+
+    this.timelineFilterChain.addFilterElement(
+      new PropertyMatchSetFilterChainElement(
+        (t) => t.getNameOfLayer(TimelineLayer.Kind),
+        this.kindTimelineFilter,
+      ),
+    );
+    this.timelineFilterChain.addFilterElement(
+      new PropertyMatchSetFilterChainElement(
+        (t) => t.getNameOfLayer(TimelineLayer.Namespace),
+        this.namespaceTimelineFilter,
+        (t) => t.layer >= TimelineLayer.Namespace,
+      ),
+    );
+    this.timelineFilterChain.addFilterElement(
+      new PropertyMatchSetFilterChainElement(
+        (t) => t.parentRelationship,
+        this.subresourceParentRelationshipFilter,
+        (t) => t.layer >= TimelineLayer.Subresource,
+      ),
+    );
+    this.timelineFilterChain.addFilterElement(
+      new PropertyMatchRegexFilterChainElement(
+        (t) => t.getNameOfLayer(TimelineLayer.Name),
+        this.resourceNameTimelineRegexFilterInRegExpList,
+        (t) => t.layer >= TimelineLayer.Name,
+      ),
+    );
+    this.timelineFilterChain.addFilterElement(
+      new FilterTimelinesOnlyWithFilteredLogs(
+        dataStore.filteredOutLogIndicesSet,
+        viewStateStore.hideResourcesWithoutMatchingLogs,
+      ),
+    );
+    this.timelineFilterChain.addFilterElement(
+      new FilterSubresourceTimelinesOnlyWithFilteredLogs(
+        dataStore.filteredOutLogIndicesSet,
+        viewStateStore.hideSubresourcesWithoutMatchingLogs,
+      ),
+    );
+
+    this.timelineFilterChainPostprocess.addFilterElement(
+      new FilterNamepaceOrKindWithoutResource(),
+    );
+    this.timelineFilterChainPostprocess.addFilterElement(
+      new FilterSubresourceWithoutParent(),
+    );
   }
 
   /**
@@ -131,7 +191,7 @@ export class TimelineFilter {
   /**
    * Observable emitting RegExp list parsed from resourceNameTimelineRegexFilter. This allows user to use multiple filter with splitting regex filter with white space.
    */
-  private readonly resourceNameTimelineRegexFilterInRegExpList =
+  readonly resourceNameTimelineRegexFilterInRegExpList =
     this.resourceNameTimelineRegexFilter.pipe(
       map((regex) =>
         regex
@@ -142,35 +202,21 @@ export class TimelineFilter {
       map((regexps) => (regexps.length == 0 ? [/.*/] : regexps)), // return a regex matching anything when no filter provided.
     );
 
+  private readonly timelineFilterChain = new FilterChain(
+    this.dataStore.allTimelines,
+  );
+
+  private readonly timelineFilterChainPostprocess = new FilterChain(
+    this.timelineFilterChain.filtered,
+  );
+
   /**
    * The list of timelines filtered by this TimelineFilter.
    */
-  public readonly filteredTimeline = combineLatest([
-    this.dataStore.allTimelines,
-    this.kindTimelineFilter,
-    this.namespaceTimelineFilter,
-    this.subresourceParentRelationshipFilter,
-    this.resourceNameTimelineRegexFilterInRegExpList,
-  ]).pipe(
-    debounceTime(0),
-    map(
-      ([
-        timelines,
-        kindSet,
-        namespaceSet,
-        subresourceParentRelationshipSet,
-        regexList,
-      ]) =>
-        this.filterTimelines(
-          timelines,
-          kindSet,
-          namespaceSet,
-          subresourceParentRelationshipSet,
-          regexList,
-        ),
-    ),
-    shareReplay(1),
-  );
+  public readonly filteredTimeline =
+    this.timelineFilterChainPostprocess.filtered.pipe(
+      shareReplay({ bufferSize: 1, refCount: false }),
+    );
 
   /**
    * setKindFilter limits the filteredTimeline by kind names.
@@ -200,68 +246,5 @@ export class TimelineFilter {
    */
   public setResourceNameRegexFilter(regexFilter: string) {
     this.resourceNameTimelineRegexFilterSubject.next(regexFilter);
-  }
-
-  private filterTimelines(
-    timelines: TimelineEntry[],
-    kindFilter: Set<string>,
-    namespaceFilter: Set<string>,
-    parentRelationshipFilter: Set<ParentRelationship>,
-    regexFilter: RegExp[],
-  ): TimelineEntry[] {
-    const filteredTimelines: TimelineEntry[] = [];
-    let lastProcessedKind: TimelineEntry | null = null;
-    let lastProcessedNamespace: TimelineEntry | null = null;
-    for (const timeline of timelines) {
-      if (!kindFilter.has(timeline.getNameOfLayer(TimelineLayer.Kind))) {
-        // timeline is filtered by kind name.
-        continue;
-      }
-      if (
-        timeline.layer >= TimelineLayer.Namespace &&
-        !namespaceFilter.has(timeline.getNameOfLayer(TimelineLayer.Namespace))
-      ) {
-        // timeline is filtered by namespace name and the timeline is not a kind.
-        continue;
-      }
-      const resourceName = timeline.getNameOfLayer(TimelineLayer.Name);
-      if (
-        timeline.layer >= TimelineLayer.Name &&
-        !regexFilter.some((regex) => regex.test(resourceName))
-      ) {
-        // timeline is filtered by name filter and the timeline is not a kind or a namespace.
-        continue;
-      }
-      if (
-        timeline.layer >= TimelineLayer.Subresource &&
-        !parentRelationshipFilter.has(timeline.parentRelationship)
-      ) {
-        // timeline is filtered by subresource parent relationship filter, and the timeline is not a kind,a namespace or a resource.
-        continue;
-      }
-
-      if (timeline.layer === TimelineLayer.Kind) {
-        // if the timeline is at kind layer, the timeline will be ignored when there is no child timelines are included in the filter result.
-        // Deferring including kind timeline until the next namespace layer timeline being included.
-        lastProcessedKind = timeline;
-        continue;
-      } else if (timeline.layer === TimelineLayer.Namespace) {
-        // if the timeline is at namespace layer, the timeline will be ignored when there is no child timelines are included in the filter result.
-        // Deferring including namespace timeline until the next resource layer timeline being included.
-        lastProcessedNamespace = timeline;
-        continue;
-      } else if (timeline.layer === TimelineLayer.Name) {
-        if (lastProcessedNamespace) {
-          if (lastProcessedKind) {
-            filteredTimelines.push(lastProcessedKind);
-            lastProcessedKind = null;
-          }
-          filteredTimelines.push(lastProcessedNamespace);
-          lastProcessedNamespace = null;
-        }
-      }
-      filteredTimelines.push(timeline);
-    }
-    return filteredTimelines;
   }
 }

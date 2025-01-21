@@ -46,8 +46,7 @@ import { SharedGLResources } from './shared_gl_resource';
 import { SelectionManagerService } from 'src/app/services/selection-manager.service';
 import { TimelineRowWebGLRenderer } from './timeline_gl_row_renderer';
 import { GLVerticalLineRenderer } from './gl_vertical_line_renderer';
-import { TimelineRange } from 'src/app/models/inspection-data';
-import { calcInteractionDigest } from './util';
+import { TimeRange } from 'src/app/store/inspection-data';
 import { LogEntry } from 'src/app/store/log';
 import { TimelineEntry } from 'src/app/store/timeline';
 import { TimelineGLResourceManager } from './timeline_gl_resource_manager';
@@ -288,6 +287,7 @@ export class TimelineRendererService {
       this.dataStore.allLogs,
       this.selectionManager.selectedLogIndex,
       this.selectionManager.highlightLogIndices,
+      this.dataStore.filteredOutLogIndicesSet,
       this.viewState.pixelPerTime,
       this.viewState.timeOffset,
       this.viewState.devicePixelRatio,
@@ -307,6 +307,7 @@ export class TimelineRendererService {
         logs,
         selectedLog,
         highlightLogs,
+        filteredLogs,
         pixelPerTime,
         timeOffset,
         pixelRatio,
@@ -325,6 +326,7 @@ export class TimelineRendererService {
           highlightedByParent,
           logs,
           selectedLog,
+          filteredLogs,
           highlightLogs,
           pixelPerTime,
           timeOffset,
@@ -399,13 +401,14 @@ export class TimelineRendererService {
     visibleItemRange: ListRange,
     perRowScrollingProperties: PerRowScrollingProperty[],
     rowRenderers: Map<TimelineEntry, TimelineRowWebGLRenderer>,
-    timeRange: TimelineRange,
+    timeRange: TimeRange,
     stickyTimelines: TimelineEntry[],
     selectedTimeline: TimelineEntry | null,
     highlightedTimeline: TimelineEntry | null,
     highlightedByParentSelection: Set<TimelineEntry>,
     logs: LogEntry[],
     selectedLog: number,
+    filteredLog: Set<number>,
     highlightLogs: Set<number>,
     pixelPerTime: number,
     timeOffset: number,
@@ -421,7 +424,6 @@ export class TimelineRendererService {
       return;
     }
 
-    const interactionDigest = calcInteractionDigest(selectedLog, highlightLogs);
     this.sharedGLResources!.updateViewState(
       canvasSize.width * pixelRatio,
       canvasSize.height * pixelRatio,
@@ -459,11 +461,7 @@ export class TimelineRendererService {
         height: row.height * pixelRatio,
       };
       renderer.loadGLResources();
-      renderer.updateInteractiveBuffer(
-        interactionDigest,
-        selectedLog,
-        highlightLogs,
-      );
+      renderer.updateInteractiveBuffer(selectedLog, highlightLogs, filteredLog);
       renderer.render(
         pixelRatio,
         region,
@@ -496,11 +494,7 @@ export class TimelineRendererService {
         height: row.height * pixelRatio,
       };
       renderer.loadGLResources();
-      renderer.updateInteractiveBuffer(
-        interactionDigest,
-        selectedLog,
-        highlightLogs,
-      );
+      renderer.updateInteractiveBuffer(selectedLog, highlightLogs, filteredLog);
       renderer.render(
         pixelRatio,
         region,
@@ -517,7 +511,7 @@ export class TimelineRendererService {
         pixelRatio,
         this.sharedGLResources!,
         logs[selectedLog].time - timeRange.begin,
-        8,
+        4,
         [0, 1, 0, 0.9],
       );
     }

@@ -23,9 +23,9 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
-var TimeZoneShiftInputTaskId = GCPPrefix + "input/timezone-shift"
+var TimeZoneShiftInputTaskID = GCPPrefix + "input/timezone-shift"
 
-var TimeZoneShiftInputTask = inspection_task.NewInspectionProcessor(TimeZoneShiftInputTaskId, []string{}, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (any, error) {
+var TimeZoneShiftInputTask = inspection_task.NewInspectionProcessor(TimeZoneShiftInputTaskID, []string{}, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (any, error) {
 	req, err := inspection_task.GetInspectionRequestFromVariable(v)
 	if err != nil {
 		return nil, err
@@ -42,5 +42,5 @@ var TimeZoneShiftInputTask = inspection_task.NewInspectionProcessor(TimeZoneShif
 })
 
 func GetTimezoneShiftInput(tv *task.VariableSet) (*time.Location, error) {
-	return task.GetTypedVariableFromTaskVariable[*time.Location](tv, TimeZoneShiftInputTaskId, time.UTC)
+	return task.GetTypedVariableFromTaskVariable[*time.Location](tv, TimeZoneShiftInputTaskID, time.UTC)
 }

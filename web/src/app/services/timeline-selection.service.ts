@@ -15,15 +15,13 @@
  */
 
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, filter, map } from 'rxjs';
+import { BehaviorSubject, filter, firstValueFrom, map } from 'rxjs';
 import { InspectionDataStoreService } from './inspection-data-store.service';
 import { SelectionManagerService } from './selection-manager.service';
-import { LogEntry } from '../store/log';
 
 @Injectable({ providedIn: 'root' })
 export class TimelineSelectionService {
-  private $logs: BehaviorSubject<LogEntry[]> =
-    this._inspectionDataStore.allLogs;
+  private logs = this._inspectionDataStore.allLogs;
 
   private $currentTime: BehaviorSubject<number> = new BehaviorSubject(0);
 
@@ -47,8 +45,8 @@ export class TimelineSelectionService {
     }
   }
 
-  public seekToBefore(time: number) {
-    const logs = this.$logs.value;
+  public async seekToBefore(time: number) {
+    const logs = await firstValueFrom(this.logs);
     if (logs.length == 0) return;
     if (logs[logs.length - 1].time < time) {
       this._logSelectionManager.changeSelectionByLog(logs.length - 1);
@@ -67,8 +65,8 @@ export class TimelineSelectionService {
     }
   }
 
-  public seekToAfter(time: number) {
-    const logs = this.$logs.value;
+  public async seekToAfter(time: number) {
+    const logs = await firstValueFrom(this.logs);
     if (logs.length == 0) return;
     if (logs[0].time > time) {
       this._logSelectionManager.changeSelectionByLog(0);

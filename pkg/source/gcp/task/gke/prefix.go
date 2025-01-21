@@ -22,6 +22,6 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/source/gcp/task"
 )
 
-var GKEClusterNamePrefixTask = inspection_task.NewInspectionProducer(task.ClusterNamePrefixTaskId+"#gke", func(ctx context.Context, taskMode int, progress *progress.TaskProgress) (any, error) {
+var GKEClusterNamePrefixTask = inspection_task.NewInspectionProducer(task.ClusterNamePrefixTaskID+"#gke", func(ctx context.Context, taskMode int, progress *progress.TaskProgress) (any, error) {
 	return "", nil
-}, inspection_task.InspectionTaskLabel(InspectionTypeId))
+}, inspection_task.InspectionTypeLabel(InspectionTypeId))

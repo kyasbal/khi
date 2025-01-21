@@ -80,7 +80,7 @@ func (r *LocalRunner) Run(ctx context.Context, taskMode int, initialVariables ma
 	go func() {
 		defer r.markDone()
 		r.resultVariable = NewVariableSet(initialVariables)
-		r.resultVariable.Set(TaskCacheVariableName, r.cache)
+		r.resultVariable.Set(TaskCacheTaskID, r.cache)
 		definitions := r.resolvedDefinitionSet.GetAll()
 		cancelableCtx, cancel := context.WithCancel(ctx)
 		currentErrGrp, currentErrCtx := errgroup.WithContext(cancelableCtx)

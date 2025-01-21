@@ -17,9 +17,11 @@ package server
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection"
@@ -249,12 +251,35 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, config *
 				ctx.String(http.StatusNotFound, fmt.Sprintf("task %s was not found", taskId))
 				return
 			}
+
+			// parse range queries
+			var rangeStart int64
+			var maxSize int64 = math.MaxInt64
+			startQueryStr := ctx.Query("start")
+			maxSizeQueryStr := ctx.Query("maxSize")
+			if startQueryStr != "" {
+				var err error
+				rangeStart, err = strconv.ParseInt(startQueryStr, 10, 64)
+				if err != nil {
+					ctx.String(http.StatusBadRequest, err.Error())
+					return
+				}
+			}
+			if maxSizeQueryStr != "" {
+				var err error
+				maxSize, err = strconv.ParseInt(maxSizeQueryStr, 10, 64)
+				if err != nil {
+					ctx.String(http.StatusBadRequest, err.Error())
+					return
+				}
+			}
+
 			result, err := currentTask.Result()
 			if err != nil {
 				ctx.String(http.StatusBadRequest, err.Error())
 				return
 			}
-			inspectionDataReader, err := result.ResultStore.GetReader()
+			inspectionDataReader, err := result.ResultStore.GetRangeReader(rangeStart, maxSize)
 			if err != nil {
 				ctx.String(http.StatusInternalServerError, err.Error())
 				return
@@ -264,7 +289,7 @@ func CreateKHIServer(inspectionServer *inspection.InspectionTaskServer, config *
 				ctx.String(http.StatusInternalServerError, err.Error())
 				return
 			}
-			ctx.DataFromReader(http.StatusOK, int64(fileSize), "application/octet-stream", inspectionDataReader, map[string]string{})
+			ctx.DataFromReader(http.StatusOK, int64(math.Min(float64(maxSize), float64(fileSize-int(rangeStart)))), "application/octet-stream", inspectionDataReader, map[string]string{})
 			result.ResultStore.Close()
 		})
 

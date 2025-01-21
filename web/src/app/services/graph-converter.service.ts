@@ -28,8 +28,8 @@ import {
   PodConnectionGraphData,
   GraphPodOwnerOwner,
 } from '../common/schema/graph-schema';
-import * as k8s from '../models/k8s/k8s-types';
-import { isConditionPositive } from '../models/k8s/condition-positive-map';
+import * as k8s from '../store/k8s-types';
+import { isConditionPositive } from '../store/condition-positive-map';
 import { LongTimestampFormatPipe } from '../common/timestamp-format.pipe';
 import { ViewStateService } from '../services/view-state.service';
 import { asBehaviorSubject } from '../utils/observable-util';

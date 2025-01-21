@@ -20,7 +20,7 @@ import {
   PageType,
 } from '../../extension-common/extension-types/lifecycle-hook';
 import { FRONTEND_ANALYTICS, KHIAnalyticsActivityType } from './types';
-import { InspectionData } from 'src/app/models/inspection-data';
+import { InspectionData } from 'src/app/store/inspection-data';
 import { randomString } from 'src/app/utils/random';
 import { sha512FromArrayBuffer } from 'src/app/utils/hash';
 import { ReferenceType } from 'src/app/common/loader/interface';

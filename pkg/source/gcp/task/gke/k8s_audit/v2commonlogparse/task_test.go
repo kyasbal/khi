@@ -141,7 +141,7 @@ timestamp: 2024-01-01T00:00:00+09:00`
 	}
 
 	res, err := testtask.RunSingleTask[[]*types.ResourceSpecificParserInput](Task, task.TaskModeRun,
-		testtask.PriorTaskResultFromID(k8saudittask.K8sAuditQueryTaskId, logs))
+		testtask.PriorTaskResultFromID(k8saudittask.K8sAuditQueryTaskID, logs))
 	if err != nil {
 		t.Errorf(err.Error())
 	}
@@ -190,7 +190,7 @@ timestamp: 2024-01-01T00:00:00+09:00`
 	}
 
 	res, err := testtask.RunSingleTask[[]*types.ResourceSpecificParserInput](Task, task.TaskModeRun,
-		testtask.PriorTaskResultFromID(k8saudittask.K8sAuditQueryTaskId, logs))
+		testtask.PriorTaskResultFromID(k8saudittask.K8sAuditQueryTaskID, logs))
 	if err != nil {
 		t.Errorf(err.Error())
 	}

@@ -24,18 +24,22 @@ describe('worker-utils', () => {
         {
           logBody: 'foo1',
           index: 10,
+          logSummary: 'qux',
         },
         {
           logBody: 'foo2',
           index: 20,
+          logSummary: 'qux',
         },
         {
           logBody: 'bar',
           index: 30,
+          logSummary: 'qux',
         },
         {
           logBody: 'foo3',
           index: 40,
+          logSummary: 'qux',
         },
       ];
 

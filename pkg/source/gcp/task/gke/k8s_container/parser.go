@@ -49,7 +49,7 @@ func (*k8sContainerParser) Dependencies() []string {
 }
 
 func (*k8sContainerParser) LogTask() string {
-	return GKEContainerLogQueryTaskId
+	return GKEContainerLogQueryTaskID
 }
 
 func (*k8sContainerParser) Grouper() grouper.LogGrouper {

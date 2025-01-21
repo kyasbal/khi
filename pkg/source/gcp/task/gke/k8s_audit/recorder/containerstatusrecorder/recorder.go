@@ -119,20 +119,22 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 					// Use timestamp log in the case.
 					terminated.FinishedAt.Time = log.Log.Timestamp()
 				}
-				verb := enum.RevisionVerbContainerSuccess
-				state := enum.RevisionStateContainerTerminatedWithSuccess
-				if terminated.ExitCode != 0 {
-					verb = enum.RevisionVerbContainerError
-					state = enum.RevisionStateContainerTerminatedWithError
+				if last == nil || terminated.FinishedAt.Time.Sub(last.ChangeTime) > 0 { // If this is the first log for the container or termination time is later than the last revision change timing.
+					verb := enum.RevisionVerbContainerSuccess
+					state := enum.RevisionStateContainerTerminatedWithSuccess
+					if terminated.ExitCode != 0 {
+						verb = enum.RevisionVerbContainerError
+						state = enum.RevisionStateContainerTerminatedWithError
+					}
+					cs.RecordRevision(cpath, &history.StagingResourceRevision{
+						Verb:       verb,
+						Body:       string(statusYaml),
+						Requestor:  "",
+						Partial:    false,
+						ChangeTime: terminated.FinishedAt.Time,
+						State:      state,
+					})
 				}
-				cs.RecordRevision(cpath, &history.StagingResourceRevision{
-					Verb:       verb,
-					Body:       string(statusYaml),
-					Requestor:  "",
-					Partial:    false,
-					ChangeTime: terminated.FinishedAt.Time,
-					State:      state,
-				})
 
 			} else if status.State.Waiting != nil { // Current container is waiting
 				cs.RecordRevision(cpath, &history.StagingResourceRevision{

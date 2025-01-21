@@ -53,7 +53,7 @@ func (*onpremCloudAuditLogParser) GetParserName() string {
 
 // LogTask implements parser.Parser.
 func (*onpremCloudAuditLogParser) LogTask() string {
-	return OnPremCloudAPIQueryTaskId
+	return OnPremCloudAPIQueryTaskID
 }
 
 func (*onpremCloudAuditLogParser) Grouper() grouper.LogGrouper {
@@ -191,7 +191,7 @@ func (*onpremCloudAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, c
 
 var _ parser.Parser = (*onpremCloudAuditLogParser)(nil)
 
-var OnPremCloudAuditLogParseTask = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/onprem-audit-parser", &onpremCloudAuditLogParser{}, true, inspection_task.InspectionTaskLabel(baremetal.InspectionTypeId, vmware.InspectionTypeId))
+var OnPremCloudAuditLogParseTask = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/onprem-audit-parser", &onpremCloudAuditLogParser{}, true, inspection_task.InspectionTypeLabel(baremetal.InspectionTypeId, vmware.InspectionTypeId))
 
 type onpremResource struct {
 	ClusterType  string // aws or azure

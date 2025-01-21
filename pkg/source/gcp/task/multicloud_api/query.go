@@ -25,7 +25,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
-var MultiCloudAPIQueryTaskId = query.GKEQueryPrefix + "multicloud-api"
+var MultiCloudAPIQueryTaskID = query.GKEQueryPrefix + "multicloud-api"
 
 func GenerateMultiCloudAPIQuery(clusterNameWithPrefix string) string {
 	return fmt.Sprintf(`resource.type="audited_resource"
@@ -35,8 +35,8 @@ protoPayload.resourceName:"%s"
 `, clusterNameWithPrefix)
 }
 
-var MultiCloudAPIQueryTask = query.NewQueryGeneratorTask(MultiCloudAPIQueryTaskId, "Multicloud API Logs", enum.LogTypeMulticloudAPI, []string{
-	gcp_task.InputClusterName,
+var MultiCloudAPIQueryTask = query.NewQueryGeneratorTask(MultiCloudAPIQueryTaskID, "Multicloud API Logs", enum.LogTypeMulticloudAPI, []string{
+	gcp_task.InputClusterNameTaskID,
 }, func(ctx context.Context, i int, vs *task.VariableSet) ([]string, error) {
 	clusterName, err := gcp_task.GetInputClusterNameFromTaskVariable(vs)
 	if err != nil {

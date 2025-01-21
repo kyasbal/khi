@@ -125,6 +125,30 @@
       </div>
       <div class="center-control"></div>
       <div class="right-control">
+        <mat-button-toggle-group multiple>
+          <mat-button-toggle
+            value="filter_subresource"
+            [checked]="
+              viewStateService.hideSubresourcesWithoutMatchingLogs | async
+            "
+            matTooltip="hide subresource timelines without any logs matched by the log filter"
+            (change)="onToggleHideSubresourcesWithoutMatchingLogs()"
+          >
+            <mat-icon color="primary">page_info</mat-icon>
+            <mat-icon color="primary">search_off</mat-icon></mat-button-toggle
+          >
+          <mat-button-toggle
+            value="filter_resource"
+            matTooltip="hide resource timelines without any logs matched by the log filter on it or its children"
+            [checked]="
+              viewStateService.hideResourcesWithoutMatchingLogs | async
+            "
+            (change)="onToggleHideResourcesWithoutMatchingLogs()"
+          >
+            <mat-icon color="primary">description</mat-icon>
+            <mat-icon color="primary">search_off</mat-icon>
+          </mat-button-toggle>
+        </mat-button-toggle-group>
         <khi-header-regex-input
           class="log-filter"
           label="Log body(regex)"

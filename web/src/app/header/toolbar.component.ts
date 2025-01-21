@@ -101,7 +101,7 @@ export class ToolbarComponent implements OnInit, OnDestroy {
 
   constructor(
     private selectionManager: SelectionManagerService,
-    private viewStateService: ViewStateService,
+    public readonly viewStateService: ViewStateService,
     private inspectionDataStore: InspectionDataStoreService,
     @Inject(DEFAULT_TIMELINE_FILTER) private timelineFilter: TimelineFilter,
   ) {}
@@ -188,6 +188,18 @@ export class ToolbarComponent implements OnInit, OnDestroy {
     this.logTypeFilterOpen = true;
     this.kindFilterOpen = false;
     this.namespaceFilterOpen = false;
+  }
+
+  onToggleHideSubresourcesWithoutMatchingLogs() {
+    this.viewStateService.setHideSubresourcesWithoutMatchingLogs(
+      !this.viewStateService.hideSubresourcesWithoutMatchingLogs.value,
+    );
+  }
+
+  onToggleHideResourcesWithoutMatchingLogs() {
+    this.viewStateService.setHideResourcesWithoutMatchingLogs(
+      !this.viewStateService.hideResourcesWithoutMatchingLogs.value,
+    );
   }
 
   onDrawDiagram() {

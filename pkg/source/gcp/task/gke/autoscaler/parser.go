@@ -39,7 +39,7 @@ type autoscalerLogParser struct {
 // Dependencies implements parser.Parser.
 func (*autoscalerLogParser) Dependencies() []string {
 	return []string{
-		gcp_task.InputClusterName,
+		gcp_task.InputClusterNameTaskID,
 	}
 }
 
@@ -56,7 +56,7 @@ func (*autoscalerLogParser) GetParserName() string {
 
 // LogTask implements parser.Parser.
 func (*autoscalerLogParser) LogTask() string {
-	return AutoscalerQueryTaskId
+	return AutoscalerQueryTaskID
 }
 
 func (*autoscalerLogParser) Grouper() grouper.LogGrouper {
@@ -119,7 +119,7 @@ func parseDecision(ctx context.Context, clusterName string, l *log.LogEntity, cs
 		for _, pod := range scaleUp.TriggeringPods {
 			cs.RecordEvent(resourcepath.Pod(pod.Namespace, pod.Name))
 		}
-		cs.RecordLogSummary(fmt.Sprintf("Scaling up nodepools by autoscaler: %s (requested: %d in total)", strings.Join(common.DedupeStringArray(nodepoolNames), ","), requestedSum))
+		cs.RecordLogSummary(fmt.Sprintf("Scaling up nodepools by autoscaler: %s (requested: %d in total)", strings.Join(common.DedupStringArray(nodepoolNames), ","), requestedSum))
 	}
 	// Parse scale down event
 	if decision.ScaleDown != nil {
@@ -134,7 +134,7 @@ func parseDecision(ctx context.Context, clusterName string, l *log.LogEntity, cs
 			}
 			nodepoolNames = append(nodepoolNames, nodeToBeRemoved.Node.Mig.Nodepool)
 		}
-		cs.RecordLogSummary(fmt.Sprintf("Scaling down nodepools by autoscaler: %s (Removing %d nodes in total)", strings.Join(common.DedupeStringArray(nodepoolNames), ","), len(scaleDown.NodesToBeRemoved)))
+		cs.RecordLogSummary(fmt.Sprintf("Scaling down nodepools by autoscaler: %s (Removing %d nodes in total)", strings.Join(common.DedupStringArray(nodepoolNames), ","), len(scaleDown.NodesToBeRemoved)))
 	}
 	// Nodepool creation event
 	if decision.NodePoolCreated != nil {
@@ -223,4 +223,4 @@ func parseResultInfo(ctx context.Context, clusterName string, l *log.LogEntity, 
 
 var _ parser.Parser = (*autoscalerLogParser)(nil)
 
-var AutoscalerParserTask = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/autoscaler-parser", &autoscalerLogParser{}, true, inspection_task.InspectionTaskLabel(gke.InspectionTypeId, composer_task.InspectionTypeId))
+var AutoscalerParserTask = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/autoscaler-parser", &autoscalerLogParser{}, true, inspection_task.InspectionTypeLabel(gke.InspectionTypeId, composer_task.InspectionTypeId))

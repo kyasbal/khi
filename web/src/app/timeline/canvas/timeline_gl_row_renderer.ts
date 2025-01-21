@@ -26,6 +26,16 @@ import { TimelineGLResourceManager } from './timeline_gl_resource_manager';
 import { Subject, takeUntil } from 'rxjs';
 
 /**
+ * A enum type representing the selection status of each revision/event and this value is directly passed to shader side.
+ */
+enum SelectionStatusForShader {
+  FilteredOut = 0,
+  Default = 1,
+  Highlighted = 2,
+  Selected = 3,
+}
+
+/**
  * TimelineRowWebGLRenderer draws a single row of timeline.
  */
 export class TimelineRowWebGLRenderer extends GLResource {
@@ -43,7 +53,7 @@ export class TimelineRowWebGLRenderer extends GLResource {
 
   /**
    * Int typed metadata per revision instance.
-   * x = revisonIndex, y = interaction status(0:none,1:hightlight,2:selected)
+   * x = revisonIndex, y = interaction status(SelectionStatusForShader)
    */
   private revisionIntMetaBuffer!: WebGLBuffer;
 
@@ -62,11 +72,6 @@ export class TimelineRowWebGLRenderer extends GLResource {
   private eventIntMetaBufferSource!: Int32Array;
 
   private initialized = false;
-
-  /**
-   * The digest of selected/highlighted log indices. Used for reducing updating buffer calls.
-   */
-  private lastInteractionDigest = NaN;
 
   private isGLResourceLoaded = false;
 
@@ -221,30 +226,27 @@ export class TimelineRowWebGLRenderer extends GLResource {
    * Update buffers in response to the change of (selected|highlighted) log indices.
    */
   public updateInteractiveBuffer(
-    interactionDigest: number,
     selectedLogIndex: number,
     highlightedLogIndices: Set<number>,
+    filteredLogIndices: Set<number>,
   ) {
-    if (interactionDigest === this.lastInteractionDigest) {
-      return;
-    }
     this.ignoreGLContextLostException(() => {
       for (const [index, revision] of this.timeline.revisions.entries()) {
-        let status = 0;
-        if (revision.revisionStateCssSelector !== 'inferred') {
+        let status = SelectionStatusForShader.Default;
+        if (filteredLogIndices.has(revision.logIndex)) {
+          status = SelectionStatusForShader.FilteredOut;
+        } else if (revision.revisionStateCssSelector !== 'inferred') {
           // When the timeline is `inferred`, there are no actual related log. shouldn't be highlighted/selected.
           if (
             selectedLogIndex !== -1 &&
             revision.logIndex === selectedLogIndex
           ) {
-            status = 2;
+            status = SelectionStatusForShader.Selected;
           } else if (highlightedLogIndices.has(revision.logIndex)) {
-            status = 1;
+            status = SelectionStatusForShader.Highlighted;
           }
         }
-        if (this.revisionIntMetaBufferSource[index * 2 + 1] !== status) {
-          this.revisionIntMetaBufferSource[index * 2 + 1] = status;
-        }
+        this.revisionIntMetaBufferSource[index * 2 + 1] = status;
       }
       this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.revisionIntMetaBuffer);
       this.gl.bufferData(
@@ -254,15 +256,17 @@ export class TimelineRowWebGLRenderer extends GLResource {
       );
 
       for (const [index, event] of this.timeline.events.entries()) {
-        let status = 0;
-        if (selectedLogIndex !== -1 && event.logIndex === selectedLogIndex) {
-          status = 2;
-        } else if (highlightedLogIndices.has(event.logIndex)) {
-          status = 1;
+        let status = SelectionStatusForShader.Default;
+        if (filteredLogIndices.has(event.logIndex)) {
+          status = SelectionStatusForShader.FilteredOut;
+        } else {
+          if (selectedLogIndex !== -1 && event.logIndex === selectedLogIndex) {
+            status = SelectionStatusForShader.Selected;
+          } else if (highlightedLogIndices.has(event.logIndex)) {
+            status = SelectionStatusForShader.Highlighted;
+          }
         }
-        if (this.eventIntMetaBufferSource[index] !== status) {
-          this.eventIntMetaBufferSource[index] = status;
-        }
+        this.eventIntMetaBufferSource[index] = status;
       }
       this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.eventIntMetaBuffer);
       this.gl.bufferData(
@@ -270,7 +274,6 @@ export class TimelineRowWebGLRenderer extends GLResource {
         this.eventIntMetaBufferSource,
         this.gl.DYNAMIC_DRAW,
       );
-      this.lastInteractionDigest = interactionDigest;
     });
   }
 
@@ -324,7 +327,7 @@ export class TimelineRowWebGLRenderer extends GLResource {
       );
       gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
 
-      gl.blendFunc(gl.ONE, gl.ZERO);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
       // Draw revision rectangles
       const TIME_BUFFER_LOCATION = 1;
@@ -375,6 +378,13 @@ export class TimelineRowWebGLRenderer extends GLResource {
           'timelineHeight',
         ),
         timelineHeight,
+      );
+      gl.uniform1f(
+        gl.getUniformLocation(
+          this.sharedResources.revisionShaderProgram,
+          'devicePixelRatio',
+        ),
+        window.devicePixelRatio,
       );
 
       gl.bindBufferBase(

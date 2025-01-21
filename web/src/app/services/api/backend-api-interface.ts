@@ -21,7 +21,7 @@ import {
   GetInspectionTypesResponse,
   InspectionDryRunRequest,
   InspectionDryRunResponse,
-  InspectionMetadataResponse,
+  InspectionMetadataOfRunResult,
   InspectionRunRequest,
   PopupAnswerResponse,
   PopupAnswerValidationResult,
@@ -83,7 +83,9 @@ export interface BackendAPI {
    *
    * @param taskId inspection task ID to download the metadata
    */
-  getInspectionMetadata(taskId: string): Observable<InspectionMetadataResponse>;
+  getInspectionMetadata(
+    taskId: string,
+  ): Observable<InspectionMetadataOfRunResult>;
 
   /**
    * Request running a task.

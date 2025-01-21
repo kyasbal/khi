@@ -53,7 +53,7 @@ func (*multiCloudAuditLogParser) GetParserName() string {
 
 // LogTask implements parser.Parser.
 func (*multiCloudAuditLogParser) LogTask() string {
-	return MultiCloudAPIQueryTaskId
+	return MultiCloudAPIQueryTaskID
 }
 
 func (*multiCloudAuditLogParser) Grouper() grouper.LogGrouper {
@@ -166,7 +166,7 @@ func (*multiCloudAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, cs
 
 var _ parser.Parser = (*multiCloudAuditLogParser)(nil)
 
-var MultiCloudAuditLogParseJob = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/multicloud-audit-parser", &multiCloudAuditLogParser{}, true, inspection_task.InspectionTaskLabel(aws.InspectionTypeId, azure.InspectionTypeId))
+var MultiCloudAuditLogParseJob = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/multicloud-audit-parser", &multiCloudAuditLogParser{}, true, inspection_task.InspectionTypeLabel(aws.InspectionTypeId, azure.InspectionTypeId))
 
 type multiCloudResource struct {
 	ClusterType  string // aws or azure

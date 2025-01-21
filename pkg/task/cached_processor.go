@@ -25,10 +25,10 @@ type CachableDependency interface {
 	Digest() string
 }
 
-const TaskCacheVariableName = KHISystemPrefix + "cache"
+const TaskCacheTaskID = KHISystemPrefix + "cache"
 
 func GetCacheStoreFromTaskVariable(tv *VariableSet) (TaskVariableCache, error) {
-	return GetTypedVariableFromTaskVariable[TaskVariableCache](tv, TaskCacheVariableName, nil)
+	return GetTypedVariableFromTaskVariable[TaskVariableCache](tv, TaskCacheTaskID, nil)
 }
 
 func NewCachedProcessor(taskId string, dependencies []string, processorFunc ProcessorFunc, labelOpt ...LabelOpt) Definition {

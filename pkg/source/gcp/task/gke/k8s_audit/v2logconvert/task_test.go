@@ -59,8 +59,8 @@ timestamp: "2024-01-01T00:00:00+09:00"`
 	}
 
 	_, err := testtask.RunSingleTask[struct{}](Task, inspection_task.TaskModeRun,
-		testtask.PriorTaskResultFromID(inspection_task.BuilderGeneratorTaskId, builder),
-		testtask.PriorTaskResultFromID(k8saudittask.K8sAuditQueryTaskId, logs),
+		testtask.PriorTaskResultFromID(inspection_task.BuilderGeneratorTaskID, builder),
+		testtask.PriorTaskResultFromID(k8saudittask.K8sAuditQueryTaskID, logs),
 	)
 	if err != nil {
 		t.Fatal(err.Error())

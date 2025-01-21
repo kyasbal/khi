@@ -22,7 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestDedupeStringArray(t *testing.T) {
+func TestDedupStringArray(t *testing.T) {
 	testCases := []struct {
 		name     string
 		input    []string
@@ -36,7 +36,7 @@ func TestDedupeStringArray(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := DedupeStringArray(tc.input)
+			result := DedupStringArray(tc.input)
 
 			// Sort expected output for consistent comparison
 			sort.Strings(tc.expected)

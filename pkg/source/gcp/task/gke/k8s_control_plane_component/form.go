@@ -25,12 +25,12 @@ import (
 
 const priorityForControlPlaneGroup = gcp_task.FormBasePriority + 30000
 
-const InputControlPlaneComponentNameFilterTaskId = gcp_task.GCPPrefix + "input/component-names"
+const InputControlPlaneComponentNameFilterTaskID = gcp_task.GCPPrefix + "input/component-names"
 
 var inputControlPlaneComponentNameAliasMap map[string][]string = map[string][]string{}
 
 var InputControlPlaneComponentNameFilterTask = form.NewInputFormDefinitionBuilder(
-	InputControlPlaneComponentNameFilterTaskId,
+	InputControlPlaneComponentNameFilterTaskID,
 	priorityForControlPlaneGroup+1000,
 	"Control plane component names",
 ).
@@ -58,5 +58,5 @@ var InputControlPlaneComponentNameFilterTask = form.NewInputFormDefinitionBuilde
 	Build()
 
 func GetInputControlPlaneComponentNameFilterFromTaskVariable(tv *task.VariableSet) (*queryutil.SetFilterParseResult, error) {
-	return task.GetTypedVariableFromTaskVariable[*queryutil.SetFilterParseResult](tv, InputControlPlaneComponentNameFilterTaskId, nil)
+	return task.GetTypedVariableFromTaskVariable[*queryutil.SetFilterParseResult](tv, InputControlPlaneComponentNameFilterTaskID, nil)
 }

@@ -26,6 +26,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/errorreport"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/flag"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection"
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection/common"
@@ -95,6 +96,7 @@ func handleTerminateSignal(terminateErrorCode int) {
 }
 
 func main() {
+	defer errorreport.CheckAndReportPanic()
 	logger.InitGlobalKHILogger()
 	err := parameters.Parse()
 	if err != nil {

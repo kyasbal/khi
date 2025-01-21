@@ -23,68 +23,197 @@ import {
   InspectionMetadataErrorSet,
   InspectionMetadataFormField,
   InspectionMetadataHeader,
+  InspectionMetadataLog,
   InspectionMetadataPlan,
   InspectionMetadataProgress,
   InspectionMetadataQuery,
 } from './metadata-types';
 
+/**
+ * Representing a type of inspection. This usually represents a cluster type(e.g GKE, Cloud Composer ...etc).
+ */
 export interface InspectionType {
+  /**
+   * Unique ID of this inspection type.
+   */
   id: string;
+
+  /**
+   * Name of this inspection type. (e.g. Google Kubernetes Engine ...etc) .
+   */
   name: string;
+
+  /**
+   * Description of this inspection type.
+   */
   description: string;
+
+  /**
+   * Address pointing icon image.
+   */
   icon: string;
 }
 
+/**
+ * The response schema of GET /api/v2/inspection/types .
+ */
 export interface GetInspectionTypesResponse {
+  /**
+   * List of types supporting on this environment.
+   */
   types: InspectionType[];
 }
 
+/**
+ * The response schema of POST /api/v2/inspection/types/<InspectionType.id> .
+ */
 export interface CreateInspectionTaskResponse {
+  /**
+   * ID of the inspection task created.
+   */
   inspectionId: string;
 }
 
+/**
+ * Representing  a feature of inspection. This usually represents a log type(e.g. Kubernetes Audit Log, Kubernetes Event log ...etc).
+ */
 export interface InspectionFeature {
+  /**
+   * Unique ID of this inspection feature.
+   */
   id: string;
+
+  /**
+   * Label of this inspection feature. Label must be a short descriptive name for the feature.
+   */
   label: string;
+
+  /**
+   * Description of this inspection feature.
+   */
   description: string;
+
+  /**
+   * Whether if this feature is turned on or not.
+   */
   enabled: boolean;
 }
 
+/**
+ * Response schema of GET /api/v2/inspection/tasks/<task-id>/features .
+ */
+export interface GetInspectionTaskFeatureResponse {
+  /**
+   * List of features for the inspection task.
+   */
+  features: InspectionFeature[];
+}
+
+/**
+ * Request schema of PUT /api/v2/inspection/tasks/<task-id>/features .
+ */
+export interface PutInspectionTaskFeatureRequest {
+  /**
+   * List of IDs to be enabled.
+   */
+  features: string[];
+}
+
+/**
+ * Response schema of POST /api/v2/inspection/tasks/<inspection task id>/dryrun .
+ */
 export type InspectionDryRunResponse = {
+  /**
+   * Metadata of the dryrun result.
+   * Metadata in KHI inspection context is that the data generated along with executing the inspection task graph.
+   * It usually contains the validation error or the other field but not containing the main inspection main data.
+   */
   metadata: InspectionMetadataInDryrun;
 };
 
-export type InspectionDryRunRequest = InspectionRunRequest;
-export type InspectionRunRequest = { [key: string]: unknown };
+/**
+ * Representing a set of parameters given to the inspection task graph.
+ */
+type InspectionTaskGraphArgument = { [key: string]: unknown };
 
-export type InspectionMetadataLog = {
-  id: string;
-  name: string;
-  log: string;
-};
+/**
+ * Request schema of POST /api/v2/inspection/tasks/<inspection task id>/dryrun .
+ */
+export type InspectionDryRunRequest = InspectionTaskGraphArgument;
 
-export type InspectionMetadataResponse = InspectionMetadataOfRunResult;
+/**
+ * Request schema of POST /api/v/inspection/tasks/<inspection task id>/run .
+ */
+export type InspectionRunRequest = InspectionTaskGraphArgument;
 
+/**
+ * Set of metadata generated for a task not having run yet.
+ */
 export type InspectionMetadataInDryrun = {
+  /**
+   * List of form fields to be filled to run this inspection task.
+   */
   form: InspectionMetadataFormField[];
+
+  /**
+   * List of queries to be run with this inspection task.
+   */
   query: InspectionMetadataQuery[];
+
+  /**
+   * The inspection task graph to be run with inspection task.
+   */
   plan: InspectionMetadataPlan;
 };
 
+/**
+ * Set of metadata generated for tasks in the task list.
+ */
 export type InspectionMetadataInTaskList = {
+  /**
+   * Current progress of this inspection task.
+   */
   progress: InspectionMetadataProgress;
+  /**
+   * Summary of this inspection task like name, data size ...etc.
+   */
   header: InspectionMetadataHeader;
+  /**
+   * Set of error logs for this inspection task.
+   */
   error: InspectionMetadataErrorSet;
 };
 
+/**
+ * Set of metadata generated for tasks completed.
+ */
 export type InspectionMetadataOfRunResult = {
+  /**
+   * Summary of this inspection task like name, data size ...etc.
+   */
   header: InspectionMetadataHeader;
+  /**
+   * List of queries having run with this inspection task.
+   */
   query: InspectionMetadataQuery[];
+  /**
+   * The inspection task graph having run with inspection task.
+   */
   plan: InspectionMetadataPlan;
+  /**
+   * The logs generated from the inspection task itself.
+   */
   log: InspectionMetadataLog[];
+
+  /**
+   * Set of error logs for this inspection task.
+   */
   error: InspectionMetadataErrorSet;
 };
 
+/**
+ * Response schema of /api/v2/inspection/tasks .
+ */
 export type GetInspectionTasksResponse = {
   tasks: {
     [taskId: string]: InspectionMetadataInTaskList;
@@ -93,14 +222,6 @@ export type GetInspectionTasksResponse = {
     totalMemoryAvailable: number;
   };
 };
-
-export interface GetInspectionTaskFeatureResponse {
-  features: InspectionFeature[];
-}
-
-export interface PutInspectionTaskFeatureRequest {
-  features: string[];
-}
 
 export type PopupFormType = 'text' | 'popup_redirect';
 

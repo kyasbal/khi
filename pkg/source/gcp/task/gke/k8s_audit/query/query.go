@@ -28,10 +28,10 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
-var Task = query.NewQueryGeneratorTask(k8saudittask.K8sAuditQueryTaskId, "K8s audit logs", enum.LogTypeAudit, []string{
-	gcp_task.InputClusterName,
-	gcp_task.InputKindFilterVariableName,
-	gcp_task.InputNamespaceFilterVariableName,
+var Task = query.NewQueryGeneratorTask(k8saudittask.K8sAuditQueryTaskID, "K8s audit logs", enum.LogTypeAudit, []string{
+	gcp_task.InputClusterNameTaskID,
+	gcp_task.InputKindFilterTaskID,
+	gcp_task.InputNamespaceFilterTaskID,
 }, func(ctx context.Context, i int, vs *task.VariableSet) ([]string, error) {
 	clusterName, err := gcp_task.GetInputClusterNameFromTaskVariable(vs)
 	if err != nil {

@@ -23,27 +23,34 @@ import {
   InspectionFeature,
   InspectionDryRunResponse,
   GetInspectionTasksResponse,
-  InspectionMetadataResponse,
   InspectionDryRunRequest,
   InspectionRunRequest,
   PopupAnswerResponse,
   PopupAnswerValidationResult,
   PopupFormRequest,
+  InspectionMetadataOfRunResult,
 } from '../../common/schema/api-types';
-import { HttpClient, HttpEventType, HttpRequest } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpEventType,
+  HttpRequest,
+  HttpResponse,
+} from '@angular/common/http';
 import {
   Observable,
   ReplaySubject,
   Subject,
   concat,
   debounceTime,
+  filter,
   forkJoin,
   last,
   map,
+  mergeMap,
   of,
   shareReplay,
   switchMap,
-  tap,
+  takeWhile,
   withLatestFrom,
 } from 'rxjs';
 import { ViewStateService } from '../view-state.service';
@@ -59,6 +66,8 @@ import { ProgressUtil } from '../progress/progress-util';
   providedIn: 'root',
 })
 export class BackendAPIImpl implements BackendAPI {
+  private readonly MAX_INSPECTION_DATA_DOWNLOAD_CHUNK_SIZE = 16 * 1024 * 1024;
+
   /**
    * The base address of the backend server.
    *
@@ -137,7 +146,7 @@ export class BackendAPIImpl implements BackendAPI {
 
   public getInspectionMetadata(taskId: string) {
     const url = this.baseUrl + `/api/v2/inspection/tasks/${taskId}/metadata`;
-    return this.http.get<InspectionMetadataResponse>(url);
+    return this.http.get<InspectionMetadataOfRunResult>(url);
   }
 
   public runTask(
@@ -159,26 +168,76 @@ export class BackendAPIImpl implements BackendAPI {
   }
 
   public getInspectionData(taskId: string, reporter: DownloadProgressReporter) {
-    const url = this.baseUrl + `/api/v2/inspection/tasks/${taskId}/data`;
-    const httpRequest = new HttpRequest('GET', url, null, {
-      reportProgress: true,
-      responseType: 'blob',
-    });
-    return this.http.request<Blob>(httpRequest).pipe(
-      tap((event) => {
-        if (event.type === HttpEventType.DownloadProgress) {
-          reporter(event.loaded);
-        }
-      }),
-      last(),
-      map((event) => {
-        if (event.type === HttpEventType.Response) {
-          return event.body;
-        } else {
-          throw new Error('unreachable. Unexpected last event of http request');
-        }
-      }),
+    const receivedBuffers = [] as ArrayBuffer[];
+    let loadedBytes = 0;
+    const responseSubject = new ReplaySubject<Blob | null>(1);
+    const partialRequestsSubject = new Subject<HttpRequest<ArrayBuffer>>();
+    partialRequestsSubject
+      .pipe(
+        mergeMap((request) =>
+          this.http.request<ArrayBuffer>(request).pipe(
+            filter((event) => event.type === HttpEventType.Response),
+            map((response) => response as HttpResponse<ArrayBuffer>),
+            last(),
+          ),
+        ),
+        takeWhile((response) => {
+          if (!response.body)
+            throw new Error('unexpected response. body is null.');
+          return response.body.byteLength > 0;
+        }),
+      )
+      .subscribe({
+        next: (chunk) => {
+          receivedBuffers.push(chunk.body!);
+          loadedBytes += chunk.body!.byteLength;
+          // request the next chunk
+          partialRequestsSubject.next(
+            new HttpRequest<ArrayBuffer>(
+              'GET',
+              this.getRangedDataURL(
+                taskId,
+                loadedBytes,
+                this.MAX_INSPECTION_DATA_DOWNLOAD_CHUNK_SIZE,
+              ),
+              null,
+              { responseType: 'arraybuffer' },
+            ),
+          );
+          reporter(loadedBytes);
+        },
+        complete: () => {
+          responseSubject.next(
+            new Blob(receivedBuffers, { type: 'application/octet-stream' }),
+          );
+          responseSubject.complete();
+        },
+      });
+
+    // request the initial chunk
+    partialRequestsSubject.next(
+      new HttpRequest<ArrayBuffer>(
+        'GET',
+        this.getRangedDataURL(
+          taskId,
+          0,
+          this.MAX_INSPECTION_DATA_DOWNLOAD_CHUNK_SIZE,
+        ),
+        null,
+        { responseType: 'arraybuffer' },
+      ),
     );
+
+    return responseSubject;
+  }
+
+  private getRangedDataURL(
+    taskId: string,
+    startInBytes: number,
+    maxSizeInBytes: number,
+  ): string {
+    const url = this.baseUrl + `/api/v2/inspection/tasks/${taskId}/data`;
+    return url + `?start=${startInBytes}&maxSize=${maxSizeInBytes}`;
   }
 
   public getPopup(): Observable<PopupFormRequest | null> {

@@ -74,6 +74,19 @@ func (cs *ChangeSet) RecordRevision(resourcePath resourcepath.ResourcePath, revi
 	cs.recordResourceRelationship(resourcePath)
 }
 
+// GetAllResourcePaths returns the all of resource paths included in this ChangeSet.
+func (cs *ChangeSet) GetAllResourcePaths() []string {
+	paths := []string{}
+	for k := range cs.revisions {
+		paths = append(paths, k)
+	}
+	for k := range cs.events {
+		paths = append(paths, k)
+	}
+	return common.DedupStringArray(paths)
+
+}
+
 // GetRevisions returns every StagingResourceRevisions at the specified resource path.
 func (cs *ChangeSet) GetRevisions(resourcePath resourcepath.ResourcePath) []*StagingResourceRevision {
 	if revisions, exist := cs.revisions[resourcePath.Path]; exist {
@@ -173,5 +186,5 @@ func (cs *ChangeSet) FlushToHistory(builder *Builder) ([]string, error) {
 			return nil, err
 		}
 	}
-	return common.DedupeStringArray(changedPaths), nil
+	return common.DedupStringArray(changedPaths), nil
 }

@@ -37,6 +37,7 @@ import {
   scan,
   startWith,
   switchMap,
+  take,
   takeUntil,
   withLatestFrom,
 } from 'rxjs';
@@ -373,9 +374,7 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
       )
       .subscribe((log) => {
         const currentSelectedTime = log.time;
-        this.backgroundCanvasRenderer.selectedLogTimestamp =
-          currentSelectedTime;
-
+        this.backgroundCanvasRenderer.setSelectedTimeStamp(currentSelectedTime);
         this.backgroundCanvasRenderer.invalidate();
       });
 
@@ -500,19 +499,26 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
 
   resetTimelineScaleAndOffset() {
     // Returns if there is no elements included in the timeline data
-    const range = this.timeRange.value;
-    if (range.begin === range.end) return;
-    const timeMargin = range.duration * 0.05;
-    this._viewStateService.setTimeOffset(range.begin - timeMargin);
-    if (this.scrollViewport) {
-      const explorerSize = this.resizer.getAreaSize('explorer-view');
-      const chartBodyElement = this.scrollViewport.nativeElement;
-      const chartBodyRect = chartBodyElement.getBoundingClientRect();
-      const timelineChartWidthInPx = chartBodyRect.width - explorerSize - 5;
-      this._viewStateService.setPixelPerTime(
-        timelineChartWidthInPx / (range.duration + 2 * timeMargin),
-      );
-    }
+    this._inspectionDataStore.inspectionData
+      .pipe(take(1))
+      .subscribe((inspectionData) => {
+        if (!!inspectionData) {
+          const range = inspectionData.range;
+          if (range.begin === range.end) return;
+          const timeMargin = range.duration * 0.05;
+          this._viewStateService.setTimeOffset(range.begin - timeMargin);
+          if (this.scrollViewport) {
+            const explorerSize = this.resizer.getAreaSize('explorer-view');
+            const chartBodyElement = this.scrollViewport.nativeElement;
+            const chartBodyRect = chartBodyElement.getBoundingClientRect();
+            const timelineChartWidthInPx =
+              chartBodyRect.width - explorerSize - 5;
+            this._viewStateService.setPixelPerTime(
+              timelineChartWidthInPx / (range.duration + 2 * timeMargin),
+            );
+          }
+        }
+      });
   }
 
   _onScrollTimeline(e: WheelEvent) {
@@ -531,20 +537,26 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   _moveTimeOffset(delta: number) {
     const MINIMUM_PIXELS_IN_AREA = 300;
-    const range = this.timeRange.value;
-    const minimalPixelsInAreaInTime =
-      MINIMUM_PIXELS_IN_AREA / this._viewStateService.getPixelPerTime();
-    const current = this._viewStateService.getTimeOffset();
-    const nextUnlimitedTimeOffset =
-      current + delta / this._viewStateService.getPixelPerTime();
-    const maximumAllowedOffset = range.begin - minimalPixelsInAreaInTime;
-    const minimumAllowedOffset = range.end - minimalPixelsInAreaInTime;
-    let nextTimeOffset = Math.min(
-      nextUnlimitedTimeOffset,
-      minimumAllowedOffset,
-    );
-    nextTimeOffset = Math.max(nextTimeOffset, maximumAllowedOffset);
-    this._viewStateService.setTimeOffset(nextTimeOffset);
+    this._inspectionDataStore.inspectionData
+      .pipe(take(1))
+      .subscribe((inspectionData) => {
+        if (!!inspectionData) {
+          const range = inspectionData.range;
+          const minimalPixelsInAreaInTime =
+            MINIMUM_PIXELS_IN_AREA / this._viewStateService.getPixelPerTime();
+          const current = this._viewStateService.getTimeOffset();
+          const nextUnlimitedTimeOffset =
+            current + delta / this._viewStateService.getPixelPerTime();
+          const maximumAllowedOffset = range.begin - minimalPixelsInAreaInTime;
+          const minimumAllowedOffset = range.end - minimalPixelsInAreaInTime;
+          let nextTimeOffset = Math.min(
+            nextUnlimitedTimeOffset,
+            minimumAllowedOffset,
+          );
+          nextTimeOffset = Math.max(nextTimeOffset, maximumAllowedOffset);
+          this._viewStateService.setTimeOffset(nextTimeOffset);
+        }
+      });
   }
 
   _moveScale(delta: number, scaleCenter: number) {
@@ -553,30 +565,36 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
     // https://developer.mozilla.org/en-US/docs/Web/API/Element/mousewheel_event#chrome
     const MAX_TIME_RANGE_WIDTH = 300;
     const SCALING_SPEED = 0.2;
-    const range = this.timeRange.value;
-    const deltaSign = Math.sign(delta);
-    const currentScale = this._viewStateService.getPixelPerTime();
-    const nextScale = Math.min(
-      1,
-      Math.max(
-        Number.MIN_VALUE,
-        currentScale * (1 + deltaSign * SCALING_SPEED),
-      ),
-    );
-    const minimalPixelPerTime = MAX_TIME_RANGE_WIDTH / range.duration;
-    const cursorTime = scaleCenter / currentScale;
-    const nextTime = scaleCenter / nextScale;
-    const currentOffset = this._viewStateService.getTimeOffset();
-    const isScalingUp = nextScale > currentScale;
-    // Ignore scaling down when it reaches the minimum scale. This check is ignored on scaling up because it could be temporary smaller than the limit because of the parent window resizes.
-    if (isScalingUp || nextScale > minimalPixelPerTime) {
-      this._viewStateService.setPixelPerTime(
-        Math.max(nextScale, minimalPixelPerTime),
-      );
-      this._viewStateService.setTimeOffset(
-        cursorTime - nextTime + currentOffset,
-      );
-    }
+    this._inspectionDataStore.inspectionData
+      .pipe(take(1))
+      .subscribe((inspectionData) => {
+        if (!!inspectionData) {
+          const range = inspectionData.range;
+          const deltaSign = Math.sign(delta);
+          const currentScale = this._viewStateService.getPixelPerTime();
+          const nextScale = Math.min(
+            1,
+            Math.max(
+              Number.MIN_VALUE,
+              currentScale * (1 + deltaSign * SCALING_SPEED),
+            ),
+          );
+          const minimalPixelPerTime = MAX_TIME_RANGE_WIDTH / range.duration;
+          const cursorTime = scaleCenter / currentScale;
+          const nextTime = scaleCenter / nextScale;
+          const currentOffset = this._viewStateService.getTimeOffset();
+          const isScalingUp = nextScale > currentScale;
+          // Ignore scaling down when it reaches the minimum scale. This check is ignored on scaling up because it could be temporary smaller than the limit because of the parent window resizes.
+          if (isScalingUp || nextScale > minimalPixelPerTime) {
+            this._viewStateService.setPixelPerTime(
+              Math.max(nextScale, minimalPixelPerTime),
+            );
+            this._viewStateService.setTimeOffset(
+              cursorTime - nextTime + currentOffset,
+            );
+          }
+        }
+      });
   }
 
   onTimelineHeaderClick(timeline: TimelineEntry) {

@@ -51,9 +51,9 @@ func NewTaskManager() *RecorderTaskManager {
 
 func (r *RecorderTaskManager) AddRecorder(name string, dependencies []string, recorder RecorderFunc, logGroupFilter LogGroupFilterFunc, logFilter LogFilterFunc) {
 	dependenciesBase := []string{
-		inspection_task.BuilderGeneratorTaskId,
-		k8saudittask.LogConvertTaskId,
-		k8saudittask.ManifestGenerateTaskId,
+		inspection_task.BuilderGeneratorTaskID,
+		k8saudittask.LogConvertTaskID,
+		k8saudittask.ManifestGenerateTaskID,
 	}
 	newTask := inspection_task.NewInspectionProcessor(r.GetRecorderTaskName(name), append(dependenciesBase, dependencies...), func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
 		if taskMode == inspection_task.TaskModeDryRun {
@@ -63,7 +63,7 @@ func (r *RecorderTaskManager) AddRecorder(name string, dependencies []string, re
 		if err != nil {
 			return nil, err
 		}
-		groupedLogs, err := task.GetTypedVariableFromTaskVariable[[]*types.TimelineGrouperResult](v, k8saudittask.ManifestGenerateTaskId, nil)
+		groupedLogs, err := task.GetTypedVariableFromTaskVariable[[]*types.TimelineGrouperResult](v, k8saudittask.ManifestGenerateTaskID, nil)
 		if err != nil {
 			return nil, err
 		}

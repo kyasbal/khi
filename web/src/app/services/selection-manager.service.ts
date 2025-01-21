@@ -45,7 +45,7 @@ export class SelectionManagerService {
   /**
    * Return a selected LogEntity.
    */
-  public selectedLog = this._inspectionData.allLogs.pipe(
+  public selectedLog = this.inspectionDataStore.allLogs.pipe(
     combineLatestWith(this.logSelectionQuery),
     map(([logs, query]) => this._filterSelectedLog(logs, query)),
     startWith(null),
@@ -59,7 +59,7 @@ export class SelectionManagerService {
   /**
    * The list of logs highlighted.
    */
-  public highlightedLogs = this._inspectionData.allLogs.pipe(
+  public highlightedLogs = this.inspectionDataStore.allLogs.pipe(
     combineLatestWith(this.logHighlightQuery),
     map(([logs, query]) => this._filterHighlightedLogs(logs, query)),
     startWith([]),
@@ -175,7 +175,7 @@ export class SelectionManagerService {
   public highlightedChildrenOfSelectedTimeline = this.selectedTimeline.pipe(
     combineLatestWith(
       this.timelineSelectionShouldIncludeChildren,
-      this._inspectionData.allTimelines,
+      this.inspectionDataStore.allTimelines,
     ),
     map(([selectedTimeline, includeChildren, allTimelines]) => {
       if (!includeChildren) return [];
@@ -193,7 +193,7 @@ export class SelectionManagerService {
       refCount: true,
     }),
   );
-  constructor(private _inspectionData: InspectionDataStoreService) {
+  constructor(private inspectionDataStore: InspectionDataStoreService) {
     // Change selection status when current timeline selection was changed.
     this.selectedTimeline
       .pipe(
@@ -236,14 +236,20 @@ export class SelectionManagerService {
 
   public onSelectTimeline(timeline: TimelineEntry | string | null) {
     if (typeof timeline === 'string') {
-      const resolvedTimeline = this._inspectionData.allTimelines.value.filter(
-        (t) => t.resourcePath === timeline,
-      );
-      if (resolvedTimeline.length === 1) {
-        this.selectedTimelineSubject.next(resolvedTimeline[0]);
-      } else {
-        console.warn(resolvedTimeline);
-      }
+      this.inspectionDataStore.inspectionData
+        .pipe(
+          take(1),
+          filter((inspectionData) => !!inspectionData),
+        )
+        .subscribe((inspectionData) => {
+          const timelineEntry =
+            inspectionData!.getTimelineByResourcePath(timeline);
+          if (timelineEntry) {
+            this.selectedTimelineSubject.next(timelineEntry);
+          } else {
+            console.warn(timeline);
+          }
+        });
       return;
     }
     this.selectedTimelineSubject.next(timeline);
@@ -251,14 +257,20 @@ export class SelectionManagerService {
 
   public onHighlightTimeline(timeline: TimelineEntry | string | null) {
     if (typeof timeline === 'string') {
-      const resolvedTimeline = this._inspectionData.allTimelines.value.filter(
-        (t) => t.resourcePath === timeline,
-      );
-      if (resolvedTimeline.length === 1) {
-        this.highlightedTimelineSubject.next(resolvedTimeline[0]);
-      } else {
-        console.warn(resolvedTimeline);
-      }
+      this.inspectionDataStore.inspectionData
+        .pipe(
+          take(1),
+          filter((inspectionData) => !!inspectionData),
+        )
+        .subscribe((inspectionData) => {
+          const timelineEntry =
+            inspectionData!.getTimelineByResourcePath(timeline);
+          if (timelineEntry) {
+            this.highlightedTimelineSubject.next(timelineEntry);
+          } else {
+            console.warn(timeline);
+          }
+        });
       return;
     }
     this.highlightedTimelineSubject.next(timeline);

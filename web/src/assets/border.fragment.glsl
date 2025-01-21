@@ -23,12 +23,13 @@ in vec2 originalPosition;
 out vec4 outColor;
 
 // thickness for border in order of top,right,bottom,left.
-const vec4 thickness = vec4(0.f, 0.f, 0.03f, 0.f);
+const vec4 thickness = vec4(0.f, 0.f, 1.0f, 0.f);
 const vec4 color = vec4(0, 0, 0, 0.4f);
 
 void main() {
     vec2 viewportResolution = vec2(vs.resolution.x, timelineHeight);
-    vec4 edgeSize = 2.f / viewportResolution.yxyx * pow(thickness * timelineHeight, vec4(2.0f));
+    // convert edge size scale from screen space to viewport space.
+    vec4 edgeSize = 2.f / viewportResolution.yxyx * thickness;
 
     float border = max(max(step(originalPosition.x, -1.0f + edgeSize.w), step(1.f - edgeSize.y, originalPosition.x)), // horizontal edge
     max(step(originalPosition.y, -1.0f + edgeSize.x), step(1.f - edgeSize.z, originalPosition.y)));

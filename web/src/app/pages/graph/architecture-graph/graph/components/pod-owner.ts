@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { K8sCondition } from 'src/app/models/k8s/k8s-types';
+import { K8sCondition } from 'src/app/store/k8s-types';
 import {
   GraphData,
   GraphPodOwnerBase,

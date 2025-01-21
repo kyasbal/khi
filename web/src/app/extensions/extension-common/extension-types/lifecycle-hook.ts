@@ -15,7 +15,7 @@
  */
 
 import { ReferenceResolverStore } from 'src/app/common/loader/reference-resolver';
-import { InspectionData } from 'src/app/models/inspection-data';
+import { InspectionData } from 'src/app/store/inspection-data';
 
 /**
  * LifecycleExtension is an interface with set of event handlers.

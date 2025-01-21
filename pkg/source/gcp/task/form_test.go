@@ -33,7 +33,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/testutil/testtask"
 )
 
-var testClusterNamePrefix = task_test.MockProcessorTaskFromTaskId(ClusterNamePrefixTaskId, "")
+var testClusterNamePrefix = task_test.MockProcessorTaskFromTaskID(ClusterNamePrefixTaskID, "")
 
 func TestProjectIdInput(t *testing.T) {
 	form_test.TestTextForms(t, "gcp-project-id", InputProjectIdTask, []*form_test.FormTestCase{
@@ -135,7 +135,7 @@ func TestProjectIdInput(t *testing.T) {
 }
 
 func TestClusterNameInput(t *testing.T) {
-	mockClusterNamesTask1 := task_test.MockProcessorTaskFromTaskId(AutocompleteClusterNamesTaskId, &AutocompleteClusterNameList{
+	mockClusterNamesTask1 := task_test.MockProcessorTaskFromTaskID(AutocompleteClusterNamesTaskID, &AutocompleteClusterNameList{
 		ClusterNames: []string{"foo-cluster", "bar-cluster"},
 		Error:        "",
 	})
@@ -214,10 +214,10 @@ func TestDurationInput(t *testing.T) {
 	expectedDescription := ""
 	expectedLabel := "Duration"
 	expectedSuggestions := []string{"1m", "10m", "1h", "3h", "12h", "24h"}
-	timezoneTaskUTC := task_test.MockProcessorTaskFromTaskId(TimeZoneShiftInputTaskId, time.UTC)
-	timezoneTaskJST := task_test.MockProcessorTaskFromTaskId(TimeZoneShiftInputTaskId, time.FixedZone("", 9*3600))
-	currentTimeTask1 := task_test.MockProcessorTaskFromTaskId(inspection_task.InspectionTimeProducer.ID().String(), time.Date(2023, time.April, 5, 12, 0, 0, 0, time.UTC))
-	endTimeTask := task_test.MockProcessorTaskFromTaskId(InputEndTimeTask.ID().String(), time.Date(2023, time.April, 1, 12, 0, 0, 0, time.UTC))
+	timezoneTaskUTC := task_test.MockProcessorTaskFromTaskID(TimeZoneShiftInputTaskID, time.UTC)
+	timezoneTaskJST := task_test.MockProcessorTaskFromTaskID(TimeZoneShiftInputTaskID, time.FixedZone("", 9*3600))
+	currentTimeTask1 := task_test.MockProcessorTaskFromTaskID(inspection_task.InspectionTimeProducer.ID().String(), time.Date(2023, time.April, 5, 12, 0, 0, 0, time.UTC))
+	endTimeTask := task_test.MockProcessorTaskFromTaskID(InputEndTimeTask.ID().String(), time.Date(2023, time.April, 1, 12, 0, 0, 0, time.UTC))
 
 	form_test.TestTextForms(t, "duration", InputDurationTask, []*form_test.FormTestCase{
 		{
@@ -319,8 +319,8 @@ func TestInputEndtime(t *testing.T) {
 		t.Errorf("unexpected error\n%s", err)
 	}
 	expectedValue2, err := time.Parse(time.RFC3339, "2020-01-02T00:00:00Z")
-	timezoneTaskUTC := task_test.MockProcessorTaskFromTaskId(TimeZoneShiftInputTaskId, time.UTC)
-	timezoneTaskJST := task_test.MockProcessorTaskFromTaskId(TimeZoneShiftInputTaskId, time.FixedZone("", 9*3600))
+	timezoneTaskUTC := task_test.MockProcessorTaskFromTaskID(TimeZoneShiftInputTaskID, time.UTC)
+	timezoneTaskJST := task_test.MockProcessorTaskFromTaskID(TimeZoneShiftInputTaskID, time.FixedZone("", 9*3600))
 
 	if err != nil {
 		t.Errorf("unexpected error\n%s", err)
@@ -385,9 +385,9 @@ func TestInputStartTime(t *testing.T) {
 	}
 	startTime, err := testtask.RunSingleTask[time.Time](InputStartTimeTask, inspection_task.TaskModeDryRun,
 		testtask.PriorTaskResultFromID(inspection_task.MetadataVariableName, metadata.NewSet()),
-		testtask.PriorTaskResultFromID(InputDurationVariableName, duration),
-		testtask.PriorTaskResultFromID(InputEndTimeVariableName, endTime),
-		testtask.PriorTaskResultFromID(TimeZoneShiftInputTaskId, time.UTC),
+		testtask.PriorTaskResultFromID(InputDurationTaskID, duration),
+		testtask.PriorTaskResultFromID(InputEndTimeTaskID, endTime),
+		testtask.PriorTaskResultFromID(TimeZoneShiftInputTaskID, time.UTC),
 	)
 	if err != nil {
 		t.Errorf("unexpected error\n%v", err)
@@ -519,6 +519,79 @@ func TestInputNamespaces(t *testing.T) {
 	}, cmpopts.SortSlices(func(a string, b string) bool {
 		return strings.Compare(a, b) > 0
 	}))
+}
+
+func TestNodeNameFiltertask(t *testing.T) {
+	wantLabelName := "Node names"
+	wantDescription := "A space-separated list of node name substrings used to collect node-related logs. If left blank, KHI gathers logs from all nodes in the cluster."
+	form_test.TestTextForms(t, "node-name", InputNodeNameFilterTask, []*form_test.FormTestCase{
+		{
+			Name:          "With an empty input",
+			Input:         "",
+			ExpectedValue: []string{},
+			Dependencies:  []task.Definition{},
+			ExpectedFormField: &form.FormField{
+				Label:       wantLabelName,
+				Description: wantDescription,
+				AllowEdit:   true,
+				HintType:    form.HintTypeInfo,
+				Default:     "",
+			},
+		},
+		{
+			Name:          "With a single node name substring",
+			Input:         "node-name-1",
+			ExpectedValue: []string{"node-name-1"},
+			Dependencies:  []task.Definition{},
+			ExpectedFormField: &form.FormField{
+				Label:       wantLabelName,
+				Description: wantDescription,
+				AllowEdit:   true,
+				HintType:    form.HintTypeInfo,
+				Default:     "",
+			},
+		},
+		{
+			Name:          "With multiple node name substrings",
+			Input:         "node-name-1 node-name-2 node-name-3",
+			ExpectedValue: []string{"node-name-1", "node-name-2", "node-name-3"},
+			Dependencies:  []task.Definition{},
+			ExpectedFormField: &form.FormField{
+				Label:       wantLabelName,
+				Description: wantDescription,
+				AllowEdit:   true,
+				HintType:    form.HintTypeInfo,
+				Default:     "",
+			},
+		},
+		{
+			Name:          "With invalid node name substring",
+			Input:         "node-name-1 invalid=node=name node-name-3",
+			ExpectedValue: []string{},
+			Dependencies:  []task.Definition{},
+			ExpectedFormField: &form.FormField{
+				Label:           wantLabelName,
+				Description:     wantDescription,
+				AllowEdit:       true,
+				HintType:        form.HintTypeInfo,
+				ValidationError: "substring `invalid=node=name` is not valid as a substring of node name",
+				Default:         "",
+			},
+		},
+		{
+			Name:          "With spaces around node name substring",
+			Input:         "  node-name-1  node-name-2  ",
+			ExpectedValue: []string{"node-name-1", "node-name-2"},
+			Dependencies:  []task.Definition{},
+			ExpectedFormField: &form.FormField{
+				Label:       wantLabelName,
+				Description: wantDescription,
+				AllowEdit:   true,
+				HintType:    form.HintTypeInfo,
+				Default:     "",
+			},
+		},
+	})
 }
 
 func TestLocationInput(t *testing.T) {

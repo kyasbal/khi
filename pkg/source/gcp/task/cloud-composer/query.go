@@ -36,8 +36,8 @@ var ComposerSchedulerLogQueryTask = query.NewQueryGeneratorTask(
 	"Composer Environment/Airflow Scheduler",
 	enum.LogTypeComposerEnvironment,
 	[]string{
-		gcp_task.InputProjectIdVariableName,
-		InputComposerEnvironmentVariableName,
+		gcp_task.InputProjectIdTaskID,
+		InputComposerEnvironmentTaskID,
 	},
 	createGenerator("airflow-scheduler"),
 )
@@ -47,8 +47,8 @@ var ComposerDagProcessorManagerLogQueryTask = query.NewQueryGeneratorTask(
 	"Composer Environment/DAG Processor Manager",
 	enum.LogTypeComposerEnvironment,
 	[]string{
-		gcp_task.InputProjectIdVariableName,
-		InputComposerEnvironmentVariableName,
+		gcp_task.InputProjectIdTaskID,
+		InputComposerEnvironmentTaskID,
 	},
 	createGenerator("dag-processor-manager"),
 )
@@ -58,8 +58,8 @@ var ComposerMonitoringLogQueryTask = query.NewQueryGeneratorTask(
 	"Composer Environment/Airflow Monitoring",
 	enum.LogTypeComposerEnvironment,
 	[]string{
-		gcp_task.InputProjectIdVariableName,
-		InputComposerEnvironmentVariableName,
+		gcp_task.InputProjectIdTaskID,
+		InputComposerEnvironmentTaskID,
 	},
 	createGenerator("airflow-monitoring"),
 )
@@ -69,8 +69,8 @@ var ComposerWorkerLogQueryTask = query.NewQueryGeneratorTask(
 	"Composer Environment/Airflow Worker",
 	enum.LogTypeComposerEnvironment,
 	[]string{
-		gcp_task.InputProjectIdVariableName,
-		InputComposerEnvironmentVariableName,
+		gcp_task.InputProjectIdTaskID,
+		InputComposerEnvironmentTaskID,
 	},
 	createGenerator("airflow-worker"),
 )

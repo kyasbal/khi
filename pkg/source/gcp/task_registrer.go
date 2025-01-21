@@ -106,6 +106,10 @@ func commonPreparation(inspectionServer *inspection.InspectionTaskServer) error 
 	if err != nil {
 		return err
 	}
+	err = inspectionServer.AddTaskDefinition(task.InputNodeNameFilterTask)
+	if err != nil {
+		return err
+	}
 
 	err = inspectionServer.AddTaskDefinition(k8s_container.InputContainerQueryNamespaceFilterTask)
 	if err != nil {

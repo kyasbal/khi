@@ -27,7 +27,7 @@ const (
 )
 
 func GetHistoryBuilderFromTaskVariable(v *task.VariableSet) (*history.Builder, error) {
-	return task.GetTypedVariableFromTaskVariable[*history.Builder](v, BuilderGeneratorTaskId, nil)
+	return task.GetTypedVariableFromTaskVariable[*history.Builder](v, BuilderGeneratorTaskID, nil)
 }
 
 func GetInspectionIdFromTaskVariable(v *task.VariableSet) (string, error) {

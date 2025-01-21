@@ -26,17 +26,17 @@ type InspectionRequest struct {
 	Values map[string]any
 }
 
-var InspectionTimeTaskId = InspectionTaskPrefix + "task/time"
+var InspectionTimeTaskID = InspectionTaskPrefix + "task/time"
 
 // InspectionTimeProducer is a provider of inspection time.
 // Tasks shouldn't use time.Now() directly to make test easier.
-var InspectionTimeProducer common_task.Definition = common_task.NewProcessorTask(InspectionTimeTaskId, []string{}, func(ctx context.Context, taskMode int, v *common_task.VariableSet) (any, error) {
+var InspectionTimeProducer common_task.Definition = common_task.NewProcessorTask(InspectionTimeTaskID, []string{}, func(ctx context.Context, taskMode int, v *common_task.VariableSet) (any, error) {
 	return time.Now(), nil
 })
 
 // TestInspectionTimeTaskProducer is a function to generate a fake InspectionTimeProducer task with the given time string.
 var TestInspectionTimeTaskProducer func(timeStr string) common_task.Definition = func(timeStr string) common_task.Definition {
-	return common_task.NewProcessorTask(InspectionTimeTaskId, []string{}, func(ctx context.Context, taskMode int, v *common_task.VariableSet) (any, error) {
+	return common_task.NewProcessorTask(InspectionTimeTaskID, []string{}, func(ctx context.Context, taskMode int, v *common_task.VariableSet) (any, error) {
 		time, err := time.Parse(time.RFC3339, timeStr)
 		if err != nil {
 			return nil, err
@@ -54,5 +54,5 @@ func GetInspectionRequestFromVariable(v *common_task.VariableSet) (*InspectionRe
 }
 
 func GetInspectionTimeFromTaskVariable(v *common_task.VariableSet) (time.Time, error) {
-	return common_task.GetTypedVariableFromTaskVariable[time.Time](v, InspectionTimeTaskId, time.Time{})
+	return common_task.GetTypedVariableFromTaskVariable[time.Time](v, InspectionTimeTaskID, time.Time{})
 }

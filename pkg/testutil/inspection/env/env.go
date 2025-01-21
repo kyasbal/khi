@@ -31,12 +31,12 @@ func MockedEnvironmentVariableProducer(parentVariableDefinition task.Definition,
 		panic(fmt.Errorf("the given parent variable definition is not declared with EnvironmentVariableProducer"))
 	}
 	if value == "" {
-		return task_test.MockProcessorTaskFromTaskId(parentVariableDefinition.ID().String(), &env.EnvironmentVariable{
+		return task_test.MockProcessorTaskFromTaskID(parentVariableDefinition.ID().String(), &env.EnvironmentVariable{
 			Value:  dv.(string),
 			Exists: false,
 		})
 	} else {
-		return task_test.MockProcessorTaskFromTaskId(parentVariableDefinition.ID().String(), &env.EnvironmentVariable{
+		return task_test.MockProcessorTaskFromTaskID(parentVariableDefinition.ID().String(), &env.EnvironmentVariable{
 			Value:  value,
 			Exists: true,
 		})

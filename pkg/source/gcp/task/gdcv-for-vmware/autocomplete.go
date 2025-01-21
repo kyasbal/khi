@@ -25,8 +25,8 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
-var AutocompleteClusterNames = task.NewCachedProcessor(gcp_task.AutocompleteClusterNamesTaskId+"#anthos-on-vmware", []string{
-	gcp_task.InputProjectIdVariableName,
+var AutocompleteClusterNames = task.NewCachedProcessor(gcp_task.AutocompleteClusterNamesTaskID+"#anthos-on-vmware", []string{
+	gcp_task.InputProjectIdTaskID,
 }, func(ctx context.Context, taskMode int, v *task.VariableSet) (any, error) {
 	client, err := api.DefaultGCPClientFactory.NewClient()
 	if err != nil {
@@ -54,4 +54,4 @@ var AutocompleteClusterNames = task.NewCachedProcessor(gcp_task.AutocompleteClus
 		ClusterNames: []string{},
 		Error:        "Project ID is empty",
 	}, nil
-}, inspection_task.InspectionTaskLabel(InspectionTypeId))
+}, inspection_task.InspectionTypeLabel(InspectionTypeId))

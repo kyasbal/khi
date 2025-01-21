@@ -36,6 +36,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MainMenuComponent } from './main-menu.component';
 import { GraphMenuComponent } from './graph-menu.component';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 @NgModule({
   declarations: [
@@ -63,6 +64,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     OverlayModule,
     NgxEnvModule,
     MatTooltipModule,
+    MatButtonToggleModule,
   ],
   exports: [HeaderComponent, TitleBarComponent, GraphMenuComponent],
 })

@@ -24,7 +24,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/task"
 )
 
-var AutoscalerQueryTaskId = query.GKEQueryPrefix + "autoscaler"
+var AutoscalerQueryTaskID = query.GKEQueryPrefix + "autoscaler"
 
 func GenerateAutoscalerQuery(projectId string, clusterName string, excludeStatus bool) string {
 	excludeStatusQueryFragment := "-- include query for status log"
@@ -38,9 +38,9 @@ resource.labels.cluster_name="%s"
 logName="projects/%s/logs/container.googleapis.com%%2Fcluster-autoscaler-visibility"`, projectId, clusterName, excludeStatusQueryFragment, projectId)
 }
 
-var AutoscalerQueryTask = query.NewQueryGeneratorTask(AutoscalerQueryTaskId, "Autoscaler logs", enum.LogTypeAutoscaler, []string{
-	gcp_task.InputProjectIdVariableName,
-	gcp_task.InputClusterName,
+var AutoscalerQueryTask = query.NewQueryGeneratorTask(AutoscalerQueryTaskID, "Autoscaler logs", enum.LogTypeAutoscaler, []string{
+	gcp_task.InputProjectIdTaskID,
+	gcp_task.InputClusterNameTaskID,
 }, func(ctx context.Context, i int, vs *task.VariableSet) ([]string, error) {
 	projectId, err := gcp_task.GetInputProjectIdFromTaskVariable(vs)
 	if err != nil {

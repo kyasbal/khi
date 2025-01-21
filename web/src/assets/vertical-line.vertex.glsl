@@ -28,11 +28,14 @@ layout(std140) uniform LineState {
     vec4 lineColor;
 } ls;
 
+out vec2 originalPosition;
+
 void main() {
     float centerOfLineTimeOffset = ls.lineOffsetFromLeft - vs.offsetToLeft;
     float centerOfLinePixelOffset = centerOfLineTimeOffset * vs.pixelPerTime;
     float clipSpaceX = centerOfLinePixelOffset / vs.resolution.x * 2.f - 1.f;
     float lineHalfWidth = ls.lineThickness / vs.resolution.x / 2.f;
 
+    originalPosition = position.xy;
     gl_Position = vec4(clipSpaceX + lineHalfWidth * position.x, position.y, 0, 1);
 }
