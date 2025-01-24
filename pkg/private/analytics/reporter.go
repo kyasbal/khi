@@ -21,9 +21,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/analytics/types"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/parameters"
+	"github.com/GoogleCloudPlatform/khi/pkg/common"
+	"github.com/GoogleCloudPlatform/khi/pkg/private/analytics/types"
+	"github.com/GoogleCloudPlatform/khi/pkg/private/parameters"
 )
 
 var analyticsEndpoint = "https://khi-analytics-5dxktvcd7q-uc.a.run.app"

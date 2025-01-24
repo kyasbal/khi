@@ -15,8 +15,8 @@
 package iamtoken
 
 import (
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/token"
-	privateParameters "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/parameters"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/token"
+	privateParameters "github.com/GoogleCloudPlatform/khi/pkg/private/parameters"
 )
 
 var DefaultIAMTokenStore = token.NewBasicTokenStore("iamtoken", token.NewMultiTokenResolver(

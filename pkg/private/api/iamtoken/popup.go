@@ -20,9 +20,9 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/token"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/popup"
-	privateParameters "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/parameters"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/token"
+	"github.com/GoogleCloudPlatform/khi/pkg/popup"
+	privateParameters "github.com/GoogleCloudPlatform/khi/pkg/private/parameters"
 )
 
 type IAMTokenResolverPopupForm struct {

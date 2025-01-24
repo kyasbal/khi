@@ -21,13 +21,13 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/errorreport"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/lifecycle"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
-	privateLifecycle "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/lifecycle"
-	privateParameters "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/parameters"
-	privateIndex "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/server/index"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/errorreport"
+	"github.com/GoogleCloudPlatform/khi/pkg/lifecycle"
+	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
+	privateLifecycle "github.com/GoogleCloudPlatform/khi/pkg/private/lifecycle"
+	privateParameters "github.com/GoogleCloudPlatform/khi/pkg/private/parameters"
+	privateIndex "github.com/GoogleCloudPlatform/khi/pkg/private/server/index"
+	"github.com/GoogleCloudPlatform/khi/pkg/private/task"
 )
 
 func init() {

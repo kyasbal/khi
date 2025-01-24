@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/analytics/types"
+	"github.com/GoogleCloudPlatform/khi/pkg/private/analytics/types"
 	"github.com/gin-gonic/gin"
 )
 

@@ -14,7 +14,7 @@
 
 package index
 
-import "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/server/index"
+import "github.com/GoogleCloudPlatform/khi/pkg/server/index"
 
 // RegisterAll register all private tag generators.
 func RegisterAll() {

@@ -15,7 +15,7 @@
 package index
 
 import (
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/server/index"
+	"github.com/GoogleCloudPlatform/khi/pkg/server/index"
 )
 
 // GoogleAnalyticsTagGenerator returns the tag needed in index.html to track with Google Analytics.

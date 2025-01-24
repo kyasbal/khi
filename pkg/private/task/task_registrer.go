@@ -14,7 +14,7 @@
 
 package task
 
-import "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/inspection"
+import "github.com/GoogleCloudPlatform/khi/pkg/inspection"
 
 func PrepareInspectionServer(inspectionServer *inspection.InspectionTaskServer) error {
 	err := inspectionServer.AddTaskDefinition(FilenameHeaderMetadataGeneratorTask)

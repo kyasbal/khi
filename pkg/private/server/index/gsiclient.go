@@ -14,7 +14,7 @@
 
 package index
 
-import "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/server/index"
+import "github.com/GoogleCloudPlatform/khi/pkg/server/index"
 
 // GoogleIdentityServiceTagGenerator returns its client tag. This is needed for Google Drive integration only for internal.
 type GoogleIdentityServiceTagGenerator struct {

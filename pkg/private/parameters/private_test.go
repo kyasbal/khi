@@ -19,9 +19,9 @@ import (
 	"os"
 	"testing"
 
-	khiflag "github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/flag"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/parameters"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/testutil"
+	khiflag "github.com/GoogleCloudPlatform/khi/pkg/common/flag"
+	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
+	"github.com/GoogleCloudPlatform/khi/pkg/testutil"
 	"github.com/google/go-cmp/cmp"
 )
 

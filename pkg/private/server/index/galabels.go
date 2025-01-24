@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/private/parameters"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/server/index"
+	"github.com/GoogleCloudPlatform/khi/pkg/private/parameters"
+	"github.com/GoogleCloudPlatform/khi/pkg/server/index"
 )
 
 type GALabelTagGenerator struct {

@@ -18,8 +18,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/httpclient"
-	"github.com/GoogleCloudPlatform/kubernetes-history-inspector/pkg/common/token"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/httpclient"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/token"
 )
 
 // GCPIAMTokenProvider is an implementation of HTTPHeaderProvider for IAM token.
