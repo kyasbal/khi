@@ -2,9 +2,18 @@
 
 ## Run your first build
 
-Follow [the "Run from source code" section](../../README.md) on README.
+Follow [the "Run from source code" section](../../README.md#run-from-source-code) on README.
 
 ## Setup environment for development
+
+### Fork KHI repository
+
+You can't create a new branch our repository directly. Please fork our repository on your account to modify.
+
+### Setup commit signature verification
+
+Please check [this document](https://docs.github.com/en/authentication/managing-commit-signature-verification) to make sure your commits are signed.
+Our repository can't accept unsigned commits.
 
 ### Setup Git hook
 
@@ -49,7 +58,7 @@ Save the following code as `.vscode/launch.json`.
 }
 ```
 
-You can run KHI with VSCode and features like break points are available with it.
+You can run the server with VSCode. You can refer [this document](https://code.visualstudio.com/docs/languages/go) for more details.
 
 ### Run frontend server for development
 
