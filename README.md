@@ -128,6 +128,22 @@ It works without the permission, but the suggestive autocomplete won't appear.
 
 * Cluster list permission for the cluster type (e.g `container.clusters.list` for GKE)
 
+### Environment specific settings
+
+#### Google Cloud
+
+KHI shows very informative result without any additional configurations, and it can show detailer result with enabling `DATA_WRITE` audit log on Kubernetes Engine API.
+
+1. `IAM & Admin` => `Audit logs`
+2. Check the checkbox at the left side of `Kubernetes Engine API` row
+3. Check the checkbox `Data write` in the right pane and press save.
+
+This enables Kubernetes Engine to ingest several audit logs additionally. 
+
+> [!TIP]
+> It shows every patch requests on Pod or Node `.status` field additionally for instance.
+> We can see the latest container status from the audit log on removing the Pod even without this setting but GKE won't record the all container status changes without the option. 
+> If you want to troubleshoot incidents with detailed container statuses, it's recommended to enable the audit log.
 
 ## User Guide
 
