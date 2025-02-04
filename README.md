@@ -112,25 +112,39 @@ For more details, please try [Getting started](./docs/en/getting-started.md).
 > KHI itself is not providing any authentication or authorization features and KHI is intended to be accessed from its local user.
 
 ### Authentication settings
+## Settings for managed environments
 
-#### Google Cloud
+### Google Cloud
 
-Your account must have the following permissions granted:
+#### Permissions
+
+The following permissions are required or recommended to have.
 
 **Required**
 
 * `logging.logEntries.list`
 
-**Optional**
+**Recommended**
 
 This permission is used to show a suggestion popup to fill the forms of log filter.
 It works without the permission, but the suggestive autocomplete won't appear. 
 
 * Cluster list permission for the cluster type (e.g `container.clusters.list` for GKE)
 
-### Environment specific settings
+##### Steps to configure
 
-#### Google Cloud
+* When you run KHI with Cloud Shell: Apply the permissions above to your user account from `IAM & Admin` => `IAM`. Cloud Shell uses permissions of user account.
+* When you run KHI with any environments with Metadata Server: Apply the permissions above to the service account used by the metadata server from `IAM & Admin` => `IAM`.
+
+#### Log related configurations
+
+**Required**
+
+**There is no any required settings. KHI works fine with the defaut configuration.**
+
+**Recommended**
+
+##### Configure `DATA_WRITE` audit log
 
 KHI shows very informative result without any additional configurations, and it can show detailer result with enabling `DATA_WRITE` audit log on Kubernetes Engine API.
 
