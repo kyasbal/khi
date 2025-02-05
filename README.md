@@ -118,7 +118,7 @@ For more details, please try [Getting started](./docs/en/getting-started.md).
 
 #### Permissions
 
-The following permissions are required or recommended to have.
+The following permissions are required or recommended.
 
 **Required**
 
@@ -126,38 +126,36 @@ The following permissions are required or recommended to have.
 
 **Recommended**
 
-This permission is used to show a suggestion popup to fill the forms of log filter.
-It works without the permission, but the suggestive autocomplete won't appear. 
+* Permissions to list clusters for cluster type (eg. `container.clusters.list` for GKE)
 
-* Cluster list permission for the cluster type (e.g `container.clusters.list` for GKE)
+   This permission is used to show autofill candidates for the log filter. KHI's main functionality is not affected without this permission. 
+
 
 ##### Steps to configure
 
 * When you run KHI with Cloud Shell: Apply the permissions above to your user account from `IAM & Admin` => `IAM`. Cloud Shell uses permissions of user account.
 * When you run KHI with any environments with Metadata Server: Apply the permissions above to the service account used by the metadata server from `IAM & Admin` => `IAM`.
 
-#### Log related configurations
+#### Audit Logging
 
 **Required**
 
-**There is no any required settings. KHI works fine with the defaut configuration.**
+* **Nothing required**. KHI fully works with the default audit logging configuration.
 
 **Recommended**
 
-##### Configure `DATA_WRITE` audit log
+* Kubernetes Engine API Data access audit logs for `DATA_WRITE`
 
-KHI shows very informative result without any additional configurations, and it can show detailer result with enabling `DATA_WRITE` audit log on Kubernetes Engine API.
+  > [!TIP]
+  > Enabling these will log every patch requests on Pod or Node `.status` field.
+  > KHI will use this to display detailed container status.
+  > KHI will still guess the last container status from the audited Pod deletion log even without these logs, however it requires the Pod to be deleted within the queried timeframe.
 
-1. `IAM & Admin` => `Audit logs`
-2. Check the checkbox at the left side of `Kubernetes Engine API` row
-3. Check the checkbox `Data write` in the right pane and press save.
-
-This enables Kubernetes Engine to ingest several audit logs additionally. 
-
-> [!TIP]
-> It shows every patch requests on Pod or Node `.status` field additionally for instance.
-> We can see the latest container status from the audit log on removing the Pod even without this setting but GKE won't record the all container status changes without the option. 
-> If you want to troubleshoot incidents with detailed container statuses, it's recommended to enable the audit log.
+##### Setup
+1. In the Google Cloud Console, [go to the Audit Logs](https://console.cloud.google.com/iam-admin/audit) page.
+1. In the Data Access audit logs configuration table, select  `Kubernetes Engine API` from the Service column.
+1. In the Log Types tab, select the `Data write` Data Access audit log type
+1. Click "SAVE".
 
 ## User Guide
 
