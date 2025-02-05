@@ -131,10 +131,14 @@ The following permissions are required or recommended.
    This permission is used to show autofill candidates for the log filter. KHI's main functionality is not affected without this permission. 
 
 
-##### Steps to configure
+##### Setup 
 
-* When you run KHI with Cloud Shell: Apply the permissions above to your user account from `IAM & Admin` => `IAM`. Cloud Shell uses permissions of user account.
-* When you run KHI with any environments with Metadata Server: Apply the permissions above to the service account used by the metadata server from `IAM & Admin` => `IAM`.
+* Running KHI on environments with a service account attached, such as Google Cloud Compute Engine Instance: Apply the permissions above to the attached service account.
+* Running KHI locally or on Cloud Shell with a user account: Apply the permissions above to your user account. 
+> [!WARNING]
+> KHI does not respect [ADC](https://cloud.google.com/docs/authentication/provide-credentials-adc) – runnig KHI on a Compute Engine Instances will always use the attached service account regardless of ADC.
+> This specification is subject to change in the future. 
+
 
 #### Audit Logging
 
@@ -146,10 +150,10 @@ The following permissions are required or recommended.
 
 * Kubernetes Engine API Data access audit logs for `DATA_WRITE`
 
-  > [!TIP]
-  > Enabling these will log every patch requests on Pod or Node `.status` field.
-  > KHI will use this to display detailed container status.
-  > KHI will still guess the last container status from the audited Pod deletion log even without these logs, however it requires the Pod to be deleted within the queried timeframe.
+> [!TIP]
+> Enabling these will log every patch requests on Pod or Node `.status` field.
+> KHI will use this to display detailed container status.
+> KHI will still guess the last container status from the audited Pod deletion log even without these logs, however it requires the Pod to be deleted within the queried timeframe.
 
 ##### Setup
 1. In the Google Cloud Console, [go to the Audit Logs](https://console.cloud.google.com/iam-admin/audit) page.
