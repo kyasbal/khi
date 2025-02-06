@@ -121,7 +121,7 @@ Kubernetes History Inspector (KHI) は、Kubernetesクラスタのログ可視�
 
 **推奨権限**
 
-* 対象のクラスタのタイプに対するリスト権限 (e.g 例えばGKEの場合 `container.clusters.list`)
+* 対象のクラスタのタイプに対するリスト権限（例：GKEの場合 `container.clusters.list`）
 
    ログフィルタ生成ダイアログの候補の出力に使用します。KHIの主機能の利用に影響はありません。
 

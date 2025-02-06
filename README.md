@@ -136,7 +136,7 @@ The following permissions are required or recommended.
 * Running KHI on environments with a service account attached, such as Google Cloud Compute Engine Instance: Apply the permissions above to the attached service account.
 * Running KHI locally or on Cloud Shell with a user account: Apply the permissions above to your user account. 
 > [!WARNING]
-> KHI does not respect [ADC](https://cloud.google.com/docs/authentication/provide-credentials-adc) – runnig KHI on a Compute Engine Instances will always use the attached service account regardless of ADC.
+> KHI does not respect [ADC](https://cloud.google.com/docs/authentication/provide-credentials-adc) – running KHI on a Compute Engine Instances will always use the attached service account regardless of ADC.
 > This specification is subject to change in the future. 
 
 
