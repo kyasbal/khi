@@ -145,7 +145,7 @@ func main() {
 
 		uploadFileStoreFolder := "/tmp"
 
-		if *parameters.Common.UploadFileStoreFolder != "" {
+		if parameters.Common.UploadFileStoreFolder != nil {
 			uploadFileStoreFolder = *parameters.Common.UploadFileStoreFolder
 		}
 
