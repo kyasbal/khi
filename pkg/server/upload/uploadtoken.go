@@ -22,12 +22,20 @@ type UploadToken interface {
 	GetType() string
 	// GetID returns the unique identifier of upload files.
 	GetID() string
+	// GetHash returns a unique string calculated from all the field of the implementation.
+	// This must be calculated from ALL the field because this is for checking if 2 instances are identical.
+	GetHash() string
 }
 
 // DirectUploadToken is a UploadToken for uploading the target file to API directly.
 type DirectUploadToken struct {
 	// ID identiies the file location uploade to this server directly.
 	ID string `json:"id"`
+}
+
+// GetHash implements UploadToken.
+func (d *DirectUploadToken) GetHash() string {
+	return d.ID
 }
 
 // GetID implements UploadToken.

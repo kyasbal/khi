@@ -60,9 +60,15 @@ func (j *JSONLineUploadFileVerifier) Verify(storeProvider UploadFileStoreProvide
 			continue
 		}
 
-		var data interface{}
-		if err := json.Unmarshal(line, &data); err != nil {
-			return fmt.Errorf("invalid JSON on line %d: %w", lineNumber, err)
+		if !json.Valid(line) {
+			// json.Valid only returns valid or not, gets the error message with deserializing it.
+			var data interface{}
+			if err := json.Unmarshal(line, &data); err != nil {
+				return fmt.Errorf("invalid JSON on line %d: %w", lineNumber, err)
+			} else {
+				// The JSON is not valid but deserialized.
+				return fmt.Errorf("unreachable")
+			}
 		}
 	}
 

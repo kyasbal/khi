@@ -57,15 +57,21 @@ type UploadFileStore struct {
 	results       map[string]UploadResult
 	verifierLock  sync.RWMutex
 	verifiers     map[string]UploadFileVerifier
+	tokenHashes   map[string]interface{}
+	tokenHashLock sync.RWMutex
 }
 
 // GetUploadToken returns the token to upload it from frontend.
+// The ID must be combination of a known string and random string to make it harder to guess it from outside.
 func (s *UploadFileStore) GetUploadToken(id string, verifier UploadFileVerifier) UploadToken {
 	s.resultLock.Lock()
 	s.verifierLock.Lock()
+	s.tokenHashLock.Lock()
 	defer s.resultLock.Unlock()
 	defer s.verifierLock.Unlock()
+	defer s.tokenHashLock.Unlock()
 	token := s.StoreProvider.GetUploadToken(id)
+	s.tokenHashes[token.GetHash()] = struct{}{}
 	_, ok := s.results[token.GetID()]
 	if !ok {
 		s.results[token.GetID()] = UploadResult{
@@ -78,9 +84,13 @@ func (s *UploadFileStore) GetUploadToken(id string, verifier UploadFileVerifier)
 
 // GetResult returns the result of the upload with given token.
 func (s *UploadFileStore) GetResult(token UploadToken) (UploadResult, error) {
+	err := s.ensureIssuedToken(token)
+	if err != nil {
+		return UploadResult{}, err
+	}
 	s.resultLock.RLock()
+	defer s.resultLock.RUnlock()
 	result, ok := s.results[token.GetID()]
-	s.resultLock.RUnlock()
 	if ok {
 		return result, nil
 	}
@@ -89,6 +99,10 @@ func (s *UploadFileStore) GetResult(token UploadToken) (UploadResult, error) {
 
 // SetResultOnStartingUpload sets the upload status to Uploading.  It returns an error if the token is not found.
 func (s *UploadFileStore) SetResultOnStartingUpload(token UploadToken) error {
+	err := s.ensureIssuedToken(token)
+	if err != nil {
+		return err
+	}
 	s.resultLock.Lock()
 	defer s.resultLock.Unlock()
 	_, ok := s.results[token.GetID()]
@@ -104,6 +118,10 @@ func (s *UploadFileStore) SetResultOnStartingUpload(token UploadToken) error {
 
 // SetResultOnCompletedUpload notify the file upload is completed and start verifier.
 func (s *UploadFileStore) SetResultOnCompletedUpload(token UploadToken, uploadError error) error {
+	err := s.ensureIssuedToken(token)
+	if err != nil {
+		return err
+	}
 	s.resultLock.Lock()
 	defer s.resultLock.Unlock()
 	prev, ok := s.results[token.GetID()]
@@ -152,11 +170,23 @@ func (s *UploadFileStore) SetResultOnCompletedUpload(token UploadToken, uploadEr
 	return nil
 }
 
+// ensureIssuedToken verify given UploadToken is issued from GetUploadToken and
+func (s *UploadFileStore) ensureIssuedToken(token UploadToken) error {
+	s.tokenHashLock.RLock()
+	defer s.tokenHashLock.RUnlock()
+	_, found := s.tokenHashes[token.GetHash()]
+	if found {
+		return nil
+	}
+	return fmt.Errorf("unknown upload token specifed")
+}
+
 // NewUploadFileStore creates a new UploadFileStore.
 func NewUploadFileStore(storeProvider UploadFileStoreProvider) *UploadFileStore {
 	return &UploadFileStore{
 		StoreProvider: storeProvider,
 		results:       make(map[string]UploadResult),
 		verifiers:     make(map[string]UploadFileVerifier),
+		tokenHashes:   make(map[string]interface{}),
 	}
 }

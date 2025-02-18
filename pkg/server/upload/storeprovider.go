@@ -41,16 +41,7 @@ type LocalUploadFileStoreProvider struct {
 }
 
 // NewLocalUploadFileStoreProvider creates a new LocalUploadFileStore.
-// It takes the directory path as an argument and creates the directory
-// if it does not exist.  It returns an error if the directory
-// cannot be created (and does not already exist).
 func NewLocalUploadFileStoreProvider(directoryPath string) (*LocalUploadFileStoreProvider, error) {
-	// Create the directory (and any parent directories) if it doesn't exist.
-	// os.MkdirAll will not return an error if the directory already exists.
-	err := os.MkdirAll(directoryPath, 0755)
-	if err != nil {
-		return nil, err // Return the error if directory creation fails.
-	}
 	return &LocalUploadFileStoreProvider{directoryPath: directoryPath}, nil
 }
 
@@ -72,8 +63,11 @@ func (l *LocalUploadFileStoreProvider) Read(token UploadToken) (io.ReadCloser, e
 }
 
 func (l *LocalUploadFileStoreProvider) Write(token UploadToken, reader io.Reader) error {
+	err := l.ensureFolderExists()
+	if err != nil {
+		return err
+	}
 	filePath := filepath.Join(l.directoryPath, token.GetID())
-
 	file, err := os.Create(filePath)
 	if err != nil {
 		return err
@@ -87,6 +81,12 @@ func (l *LocalUploadFileStoreProvider) Write(token UploadToken, reader io.Reader
 	}
 
 	return nil
+}
+
+func (l *LocalUploadFileStoreProvider) ensureFolderExists() error {
+	// Create the directory (and any parent directories) if it doesn't exist.
+	// os.MkdirAll will not return an error if the directory already exists.
+	return os.MkdirAll(l.directoryPath, 0700)
 }
 
 var _ UploadFileStoreProvider = &LocalUploadFileStoreProvider{}
