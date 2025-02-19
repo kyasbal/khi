@@ -71,6 +71,6 @@ function generateWrapper(title: string, size = 300): HTMLDivElement {
   svgWrap.style.height = `${size}px`;
   svgWrap.style.backgroundColor = 'white';
   wrapperDiv.appendChild(svgWrap);
-  document.body.appendChild(wrapperDiv);
+  // document.body.appendChild(wrapperDiv);
   return svgWrap;
 }
