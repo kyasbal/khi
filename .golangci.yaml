@@ -1,0 +1,31 @@
+run:
+  timeout: "30m"
+  allow-parallel-runners: true
+  go: "1.23"
+
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    # - errcheck
+    - gocritic
+    - goimports
+    - gosimple
+    - govet
+    - ineffassign
+    - noctx
+    - staticcheck
+    - unused
+
+linters-settings:
+  govet:
+    enable-all: true
+  staticcheck:
+    # SA1006 is disabled
+    # See https://staticcheck.dev/docs/checks#SA1006 for more information
+    checks: ["-SA1006"]
+issues:
+  exclude-use-default: true
+
+output:
+  print-linter-name: true
