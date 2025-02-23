@@ -30,7 +30,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import {
   FILE_UPLOADER,
-  UplaodToken,
+  UploadToken,
   UploadStatus,
 } from './service/file-uploader';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -58,7 +58,7 @@ export class FileUploadComponent {
   /**
    * The token provided from backend to request file.
    */
-  uploadToken = input.required<UplaodToken>();
+  uploadToken = input.required<UploadToken>();
 
   /**
    * The description of this upload form field.
@@ -77,9 +77,14 @@ export class FileUploadComponent {
 
   /**
    * The state if currently selected file is uploaded or not.
+   * This parameter is a status only for the currently selected file, `uploadStatus` is a status for this field.
+   * This parameter will be false even if `uploadStatus` is completed when user successfully uploaded their file on the server but opened a new file on the form.
    */
-  uploaded = signal(true);
+  isSelectedFileUploaded = signal(true);
 
+  /**
+   * The status if a file is dragged over the file dropping area.
+   */
   fileDraggingOverArea = signal(false);
 
   /**
@@ -114,7 +119,7 @@ export class FileUploadComponent {
    */
   onSelectedFileChangedFromDialog() {
     this.processReceivedFileInfo(
-      this.fileListToArray(this.fileInput.nativeElement.files),
+      Array.from(this.fileInput.nativeElement.files ?? []),
     );
   }
 
@@ -147,7 +152,7 @@ export class FileUploadComponent {
     e.preventDefault();
     e.stopImmediatePropagation();
     this.fileDraggingOverArea.set(false);
-    this.processReceivedFileInfo(this.fileListToArray(e.dataTransfer?.files));
+    this.processReceivedFileInfo(Array.from(e.dataTransfer?.files ?? []));
   }
 
   /**
@@ -162,7 +167,7 @@ export class FileUploadComponent {
       .subscribe((status) => {
         this.uploadRatio.set(status.completeRatio);
         if (status.done) {
-          this.uploaded.set(true);
+          this.isSelectedFileUploaded.set(true);
         }
       });
   }
@@ -173,22 +178,7 @@ export class FileUploadComponent {
     }
     const file = files[0];
     this.filename.set(file.name);
-    this.uploaded.set(false);
+    this.isSelectedFileUploaded.set(false);
     this.selectedFile = file;
-  }
-
-  /**
-   * Convert FileList types to the list of File.
-   * Returns an empty array when the input is null or undefined.
-   */
-  private fileListToArray(files?: FileList | null): File[] {
-    if (files === undefined || files === null) {
-      return [];
-    }
-    const arrayOfFiles: File[] = [];
-    for (let i = 0; i < files.length; i++) {
-      arrayOfFiles.push(files[i]);
-    }
-    return arrayOfFiles;
   }
 }

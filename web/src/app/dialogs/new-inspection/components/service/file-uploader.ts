@@ -20,7 +20,7 @@ import { Observable, of } from 'rxjs';
 /**
  * The ID of token given from the backend to identify uploaded files.
  */
-export interface UplaodToken {
+export interface UploadToken {
   id: string;
 }
 
@@ -54,7 +54,7 @@ export interface FileUploader {
   /**
    * Upload a file tied with the UploadToken.
    */
-  upload(token: UplaodToken, file: File): Observable<FileUploaderStatus>;
+  upload(token: UploadToken, file: File): Observable<FileUploaderStatus>;
 }
 
 /**

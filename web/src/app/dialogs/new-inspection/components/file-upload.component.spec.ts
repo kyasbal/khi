@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FileUploadComponent } from './file-upload.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {
@@ -25,7 +25,7 @@ import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 import {
   FILE_UPLOADER,
   MockFileUploader,
-  UplaodToken,
+  UploadToken,
   UploadStatus,
 } from './service/file-uploader';
 import { By } from '@angular/platform-browser';
@@ -35,7 +35,8 @@ import { MatProgressSpinnerHarness } from '@angular/material/progress-spinner/te
 
 describe('FileUploadComponent', () => {
   const mockFileUploader = new MockFileUploader();
-  const fakeUploadToken: UplaodToken = { id: 'foo' };
+  const fakeUploadToken: UploadToken = { id: 'foo' };
+  let fixture: ComponentFixture<FileUploadComponent>;
   beforeAll(() => {
     TestBed.resetTestEnvironment();
     TestBed.initTestEnvironment(
@@ -59,6 +60,10 @@ describe('FileUploadComponent', () => {
     }).compileComponents();
     const matIconRegistry = TestBed.inject(MatIconRegistry);
     matIconRegistry.setDefaultFontSetClass('material-symbols-outlined');
+    fixture = TestBed.createComponent(FileUploadComponent);
+    fixture.componentRef.setInput('uploadToken', fakeUploadToken);
+    fixture.componentRef.setInput('label', 'test-field-label');
+    fixture.componentRef.setInput('description', 'test-description');
   });
 
   afterAll(() => {
@@ -71,10 +76,6 @@ describe('FileUploadComponent', () => {
   });
 
   it('should pass input values', () => {
-    const fixture = TestBed.createComponent(FileUploadComponent);
-    fixture.componentRef.setInput('uploadToken', fakeUploadToken);
-    fixture.componentRef.setInput('label', 'test-field-label');
-    fixture.componentRef.setInput('description', 'test-description');
     fixture.componentRef.setInput('errorMessage', 'test error message');
     fixture.detectChanges();
 
@@ -90,10 +91,6 @@ describe('FileUploadComponent', () => {
   });
 
   it('shows filename if the name is assigned', () => {
-    const fixture = TestBed.createComponent(FileUploadComponent);
-    fixture.componentRef.setInput('uploadToken', fakeUploadToken);
-    fixture.componentRef.setInput('label', 'test-field-label');
-    fixture.componentRef.setInput('description', 'test-description');
     fixture.componentInstance.processReceivedFileInfo([
       new File([], 'test-filename.txt'),
     ]);
@@ -109,12 +106,7 @@ describe('FileUploadComponent', () => {
     expect(uploadButton.attributes['disabled']).toBeFalsy();
   });
 
-  it('dont show error message when it was empty string', () => {
-    const fixture = TestBed.createComponent(FileUploadComponent);
-    fixture.componentRef.setInput('uploadToken', fakeUploadToken);
-    fixture.componentRef.setInput('label', 'test-field-label');
-    fixture.componentRef.setInput('description', 'test-description');
-    fixture.componentRef.setInput('errorMessage', '');
+  it('should not show error message when it was empty string', () => {
     fixture.detectChanges();
 
     const errorMessage = fixture.debugElement.query(
@@ -124,16 +116,12 @@ describe('FileUploadComponent', () => {
   });
 
   it('shows progress bar with upload status', async () => {
-    const fixture = TestBed.createComponent(FileUploadComponent);
     mockFileUploader.statusProvider = () =>
       of({
         done: false,
         completeRatio: 0.5,
       });
 
-    fixture.componentRef.setInput('uploadToken', fakeUploadToken);
-    fixture.componentRef.setInput('label', 'test-field-label');
-    fixture.componentRef.setInput('description', 'test-description');
     fixture.componentRef.setInput(
       'errorMessage',
       'This file is not in the format of JSON line.',
@@ -151,15 +139,11 @@ describe('FileUploadComponent', () => {
   });
 
   it('shows progress bar with veryfying status', async () => {
-    const fixture = TestBed.createComponent(FileUploadComponent);
     mockFileUploader.statusProvider = () =>
       of({
         done: false,
         completeRatio: 0.5,
       });
-    fixture.componentRef.setInput('uploadToken', fakeUploadToken);
-    fixture.componentRef.setInput('label', 'test-field-label');
-    fixture.componentRef.setInput('description', 'test-description');
     fixture.componentRef.setInput(
       'errorMessage',
       'This file is not in the format of JSON line.',
@@ -176,15 +160,11 @@ describe('FileUploadComponent', () => {
   });
 
   it('shows done message with done status', async () => {
-    const fixture = TestBed.createComponent(FileUploadComponent);
     mockFileUploader.statusProvider = () =>
       of({
         done: false,
         completeRatio: 0.5,
       });
-    fixture.componentRef.setInput('uploadToken', fakeUploadToken);
-    fixture.componentRef.setInput('label', 'test-field-label');
-    fixture.componentRef.setInput('description', 'test-description');
     fixture.componentRef.setInput('uploadStatus', UploadStatus.Done);
     fixture.componentInstance.onClickUploadButton();
     fixture.detectChanges();
@@ -196,17 +176,13 @@ describe('FileUploadComponent', () => {
   });
 
   it('must disable upload button after upload', () => {
-    const fixture = TestBed.createComponent(FileUploadComponent);
-    fixture.componentRef.setInput('uploadToken', fakeUploadToken);
-    fixture.componentRef.setInput('label', 'test-field-label');
-    fixture.componentRef.setInput('description', 'test-description');
     fixture.componentRef.setInput(
       'errorMessage',
       'This file is not in the format of JSON line.',
     );
     fixture.componentRef.setInput('uploadStatus', UploadStatus.Verifying);
     fixture.componentInstance.selectedFile = new File([], 'a mock file');
-    fixture.componentInstance.uploaded.set(false);
+    fixture.componentInstance.isSelectedFileUploaded.set(false);
     fixture.detectChanges();
     const uploadButton = fixture.debugElement.query(By.css('.upload-button'));
     expect(uploadButton.attributes['disabled']).toBeFalsy();

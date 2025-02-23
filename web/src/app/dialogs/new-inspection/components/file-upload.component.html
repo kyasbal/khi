@@ -32,7 +32,7 @@
         <input #fileInput type="file" hidden />
         <p class="drop-area-hint">Drop file here</p>
         <p class="drop-area-hint-file-dialog">
-          (Or click here to the file dialog)
+          (Or click here to open the file dialog)
         </p>
         @if (filename() !== "") {
           <p class="drop-area-hint-file-name">
@@ -81,7 +81,7 @@
       mat-raised-button
       color="primary"
       (click)="onClickUploadButton()"
-      [disabled]="uploaded()"
+      [disabled]="isSelectedFileUploaded()"
     >
       <mat-icon>upload_file</mat-icon>Upload
     </button>
