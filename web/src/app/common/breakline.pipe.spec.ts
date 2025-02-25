@@ -29,4 +29,12 @@ describe('BreaklinePipe', () => {
     const pipe = new BreaklinePipe();
     expect(pipe.transform('a\nb\nc')).toBe('a<br/>b<br/>c');
   });
+  it('return an empty string for undefined', () => {
+    const pipe = new BreaklinePipe();
+    expect(pipe.transform(undefined)).toBe('');
+  });
+  it('return an empty string for null', () => {
+    const pipe = new BreaklinePipe();
+    expect(pipe.transform(null)).toBe('');
+  });
 });
