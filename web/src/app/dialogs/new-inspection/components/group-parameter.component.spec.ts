@@ -29,9 +29,14 @@ import {
   ParameterInputType,
 } from 'src/app/common/schema/form-types';
 import { FILE_UPLOADER, MockFileUploader } from './service/file-uploader';
+import {
+  DefaultParameterStore,
+  PARAMETER_STORE,
+} from './service/parameter-store';
 
 describe('GroupParameterComponent', () => {
   let fixture: ComponentFixture<GroupParameterComponent>;
+  let parameterStore: DefaultParameterStore;
 
   beforeAll(() => {
     TestBed.resetTestEnvironment();
@@ -43,6 +48,7 @@ describe('GroupParameterComponent', () => {
   });
 
   beforeEach(async () => {
+    parameterStore = new DefaultParameterStore();
     await TestBed.configureTestingModule({
       imports: [BrowserAnimationsModule],
       providers: [
@@ -50,11 +56,19 @@ describe('GroupParameterComponent', () => {
           provide: FILE_UPLOADER,
           useValue: new MockFileUploader(),
         },
+        {
+          provide: PARAMETER_STORE,
+          useValue: parameterStore,
+        },
       ],
     }).compileComponents();
     const matIconRegistry = TestBed.inject(MatIconRegistry);
     matIconRegistry.setDefaultFontSetClass('material-symbols-outlined');
     fixture = TestBed.createComponent(GroupParameterComponent);
+  });
+
+  afterEach(() => {
+    parameterStore.destroy();
   });
 
   it('should pass input values', () => {
