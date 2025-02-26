@@ -17,6 +17,7 @@ package generator
 import (
 	"testing"
 
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 	"github.com/google/go-cmp/cmp"
 )
 

@@ -17,6 +17,7 @@ package label
 import (
 	"testing"
 
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/khi/pkg/task"
 )
