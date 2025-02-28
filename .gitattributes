@@ -1,0 +1,14 @@
+.gitattributes merge=ours
+app.yaml merge=ours
+.gcloudignore merge=ours
+.cloudbuild merge=ours
+.ossignore merge=ours
+Dockerfile-analytics merge=ours
+cmd/analytics merge=ours
+cmd/kubernetes-history-inspector/private.go merge=ours
+pkg/private merge=ours
+scripts/private merge=ours
+scripts/make/private.mk merge=ours
+web/src/environments/environment.*-internal*.ts merge=ours
+web/src/app/extensions/google-drive merge=ours
+web/src/app/extensions/private merge=ours
