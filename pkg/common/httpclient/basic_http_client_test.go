@@ -104,10 +104,13 @@ func TestBasicHttpClient_DoWithContext(t *testing.T) {
 		client := NewBasicHttpClient()
 		req, _ := http.NewRequest("GET", "http://localhost:12345", nil)
 
-		_, err := client.DoWithContext(context.Background(), req)
+		resp, err := client.DoWithContext(context.Background(), req)
 
 		if err == nil {
 			t.Error("got nil, want error")
+		}
+		if resp != nil {
+			defer resp.Body.Close()
 		}
 	})
 
@@ -123,10 +126,13 @@ func TestBasicHttpClient_DoWithContext(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		_, err := client.DoWithContext(ctx, req)
+		resp, err := client.DoWithContext(ctx, req)
 
 		if err == nil {
 			t.Error("got nil, want error")
+		}
+		if resp != nil {
+			defer resp.Body.Close()
 		}
 		if !errors.Is(err, context.Canceled) {
 			t.Errorf("got %v, want context.Canceled", err)
