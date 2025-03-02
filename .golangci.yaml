@@ -39,6 +39,12 @@ linters-settings:
     checks: ["-SA1006"]
 issues:
   exclude-use-default: true
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - noctx
+        - govet
 
 output:
   print-linter-name: true
