@@ -97,10 +97,8 @@ func (s *DefinitionSet) FilteredSubset(key string, predicate LabelPredicate, inc
 			if predicate(labelValue) {
 				filteredTasks = append(filteredTasks, task)
 			}
-		} else {
-			if includeUndefined {
-				filteredTasks = append(filteredTasks, task)
-			}
+		} else if includeUndefined {
+			filteredTasks = append(filteredTasks, task)
 		}
 	}
 	return &DefinitionSet{
