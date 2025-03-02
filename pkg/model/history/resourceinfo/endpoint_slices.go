@@ -101,7 +101,7 @@ func (e *EndpointSliceInfo) GetLastDiffs(uid string) ([]*EndpointSliceEndpointDi
 	}
 	result := []*EndpointSliceEndpointDiff{}
 	if previous == nil {
-		if current.Endpoints == nil || len(current.Endpoints) == 0 {
+		if len(current.Endpoints) == 0 {
 			return []*EndpointSliceEndpointDiff{}, nil
 		}
 		for _, endpoint := range current.Endpoints {

@@ -55,6 +55,7 @@ func TestBasicHttpClient_DoWithContext(t *testing.T) {
 		if err != nil {
 			t.Errorf("Expected no error, but got %v", err)
 		}
+		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
 			t.Errorf("got status code %d, want %d", http.StatusOK, resp.StatusCode)
 		}
@@ -93,6 +94,7 @@ func TestBasicHttpClient_DoWithContext(t *testing.T) {
 		if err != nil {
 			t.Errorf("Expected no error, but got %v", err)
 		}
+		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
 			t.Errorf("got status code %d, want %d", http.StatusOK, resp.StatusCode)
 		}
