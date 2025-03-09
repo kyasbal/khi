@@ -649,7 +649,7 @@ func reorderArrayKeysForMerge(prev []string, patch []string, setElementOrderDire
 		if _, found := patchMap[directiveElem]; !found {
 			if _, found := prevMap[directiveElem]; !found {
 				// Assume the item was existing from the past
-				liveOnlyList = append(liveOnlyList, directiveElem)
+				liveList = append(liveOnlyList, directiveElem)
 			}
 		}
 	}
