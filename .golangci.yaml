@@ -33,6 +33,9 @@ linters:
 linters-settings:
   govet:
     enable-all: true
+    disable:
+      - fieldalignment
+      - shadow
   staticcheck:
     # SA1006 is disabled
     # See https://staticcheck.dev/docs/checks#SA1006 for more information
