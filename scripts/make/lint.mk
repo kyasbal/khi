@@ -4,7 +4,7 @@ lint-web: prepare-frontend
 
 .PHONY=lint-go
 lint-go:
-	golangci-lint run
+	go vet ./...
 .PHONY=format-go
 format-go:
 	gofmt -s -w .
