@@ -47,10 +47,13 @@ func (m *MDSTokenResolver) Resolve(ctx context.Context) (*token.Token, error) {
 		return nil, err
 	}
 	req.Header.Add("Metadata-Flavor", "Google")
-	response, _, err := m.client.DoWithContext(ctx, req)
+	response, httpResp, err := m.client.DoWithContext(ctx, req)
 	if err != nil {
 		slog.InfoContext(ctx, fmt.Sprintf("failed to get access token from metadata server\n%s", err.Error()))
 		return nil, err
+	}
+	if httpResp != nil && httpResp.Body != nil {
+		defer httpResp.Body.Close()
 	}
 	if response.AccessToken != "" {
 		return token.NewWithExpiry(response.AccessToken, time.Now().Add(time.Duration(response.ExpiresIn-1)*time.Second)), nil
