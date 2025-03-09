@@ -92,7 +92,8 @@ func (d *StrategicMergedStructureData) Keys() ([]string, error) {
 		return []string{""}, nil
 	}
 
-	if ty == structuredata.StructuredTypeMap {
+	switch ty {
+	case structuredata.StructuredTypeMap:
 		keydiff := NewKeyDiff(prevKeys, patchKeys)
 		strategicPatchKeys := splitPatchKeysByFieldsOrMergeAttributes(keydiff.OnlyInPatch)
 		if err == nil {
@@ -118,7 +119,7 @@ func (d *StrategicMergedStructureData) Keys() ([]string, error) {
 			return retainResult, nil
 		}
 		return result, nil
-	} else if ty == structuredata.StructuredTypeArray {
+	case structuredata.StructuredTypeArray:
 		if d.arrayMergeResultSourceCache == nil {
 			err := d.buildArrayMergeResultSourceCache()
 			if err != nil {
@@ -126,8 +127,7 @@ func (d *StrategicMergedStructureData) Keys() ([]string, error) {
 			}
 		}
 		return stringSequence(len(d.arrayMergeResultSourceCache.References)), nil
-
-	} else {
+	default:
 		return []string{""}, nil
 	}
 }
