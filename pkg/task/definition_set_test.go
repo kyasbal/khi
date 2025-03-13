@@ -59,11 +59,6 @@ func (d *testTaskDefinition) WithTestLabel(labels ...string) *testTaskDefinition
 	return d
 }
 
-func (d *testTaskDefinition) WithThreadUnsafeLabel() *testTaskDefinition {
-	d.labels.Set(LabelKeyThreadUnsafe, true)
-	return d
-}
-
 func (d *testTaskDefinition) WithRunnable(runnable Runnable) *testTaskDefinition {
 	d.runnable = runnable
 	return d

@@ -21,8 +21,7 @@ import (
 )
 
 const (
-	KHISystemPrefix      = "khi.google.com/"
-	LabelKeyThreadUnsafe = KHISystemPrefix + "thread-unsafe"
+	KHISystemPrefix = "khi.google.com/"
 	// KHI allows tasks with different ID suffixes to be specified as dependencies
 	// using only the ID without the suffix. For example, both `a.b.c/qux#foo` and `a.b.c/qux#bar`
 	// can be specified as a dependency using `a.b.c/qux`.

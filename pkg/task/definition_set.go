@@ -186,14 +186,8 @@ func (s *DefinitionSet) sortTaskGraph() *SortTaskGraphResult {
 		var nextResolveTaskId string = "N/A"
 		nextResolvedTaskIdThreadUnsafeCandidate := "N/A"
 		for _, taskId := range sortedMapKeys(nonResolvedTasksMap) { // Needs task sorting to get the same result every time.
-			task := nonResolvedTasksMap[taskId]
-			// non thread safe tasks are low prioritized
-			isThreadUnsafe := task.Labels().GetOrDefault(LabelKeyThreadUnsafe, false).(bool)
 			if currentMissingTaskSourceCount[taskId] == 0 {
-				if !isThreadUnsafe {
-					nextResolveTaskId = taskId
-					break
-				} else if nextResolvedTaskIdThreadUnsafeCandidate == "N/A" {
+				if nextResolvedTaskIdThreadUnsafeCandidate == "N/A" {
 					nextResolvedTaskIdThreadUnsafeCandidate = taskId
 				}
 			}
