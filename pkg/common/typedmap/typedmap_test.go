@@ -17,6 +17,7 @@ package typedmap
 import (
 	"testing"
 
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -308,6 +309,89 @@ func TestReadonlyTypedMapClone(t *testing.T) {
 		clonedValue, _ := Get(roClone, StringKey)
 		if clonedValue != "ReadOnly" {
 			t.Errorf("cloned readonly value is %v, want %v", clonedValue, "ReadOnly")
+		}
+	})
+}
+
+func TestTypedMapKeys(t *testing.T) {
+	t.Run("empty map", func(t *testing.T) {
+		tm := NewTypedMap()
+		keys := tm.Keys()
+		if len(keys) != 0 {
+			t.Errorf("Keys() on empty map = %v, want empty slice", keys)
+		}
+	})
+
+	t.Run("map with multiple keys", func(t *testing.T) {
+		tm := NewTypedMap()
+		// Add several keys of different types
+		Set(tm, StringKey, "string value")
+		Set(tm, StructKey, Person{Name: "Alice", Age: 30})
+		Set(tm, StructPtrKey, &Person{Name: "Bob", Age: 25})
+		Set(tm, NewTypedKey[int]("int-key"), 42)
+
+		// Get all keys
+		keys := tm.Keys()
+
+		// Check that we have the expected number of keys
+		if len(keys) != 4 {
+			t.Errorf("Keys() returned %d keys, want 4", len(keys))
+		}
+
+		// Check that all expected keys are present
+		// Note: The order of keys is not guaranteed, so we need to check for presence
+		expectedKeys := map[string]bool{
+			"string-key":     false,
+			"struct-key":     false,
+			"struct-ptr-key": false,
+			"int-key":        false,
+		}
+
+		for _, key := range keys {
+			if _, exists := expectedKeys[key]; !exists {
+				t.Errorf("Unexpected key found: %s", key)
+			} else {
+				expectedKeys[key] = true
+			}
+		}
+
+		// Ensure all expected keys were found
+		for key, found := range expectedKeys {
+			if !found {
+				t.Errorf("Expected key not found: %s", key)
+			}
+		}
+	})
+}
+
+func TestReadonlyTypedMapKeys(t *testing.T) {
+	tm := NewTypedMap()
+	Set(tm, StringKey, "value1")
+	Set(tm, NewTypedKey[int]("key2"), 42)
+
+	ro := tm.AsReadonly()
+
+	t.Run("readonly map has same keys as source", func(t *testing.T) {
+		sourceKeys := tm.Keys()
+		readonlyKeys := ro.Keys()
+
+		// Check that both have the same number of keys
+		if len(sourceKeys) != len(readonlyKeys) {
+			t.Errorf("ReadonlyTypedMap.Keys() returned %d keys, want %d (same as source)",
+				len(readonlyKeys), len(sourceKeys))
+		}
+
+		// Create maps for easy lookup
+		sourceKeyMap := make(map[string]bool)
+		for _, key := range sourceKeys {
+			sourceKeyMap[key] = true
+		}
+
+		// Check that all readonly keys exist in source
+		for _, key := range readonlyKeys {
+			if !sourceKeyMap[key] {
+				t.Errorf("Key %s found in readonly map but not in source map", key)
+			}
 		}
 	})
 }

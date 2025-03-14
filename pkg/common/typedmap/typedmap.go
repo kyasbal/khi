@@ -22,6 +22,11 @@ type TypedKey[T any] struct {
 	key string
 }
 
+// Key returns the string identifier of this key.
+func (k TypedKey[T]) Key() string {
+	return k.key
+}
+
 // NewTypedKey creates a new typed key with the given string identifier.
 func NewTypedKey[T any](key string) TypedKey[T] {
 	return TypedKey[T]{key: key}
@@ -88,6 +93,23 @@ func (m *TypedMap) Clone() *TypedMap {
 func (m *ReadonlyTypedMap) Clone() *ReadonlyTypedMap {
 	cloned := m.source.Clone()
 	return cloned.AsReadonly()
+}
+
+// Keys returns all keys in the map as a slice of strings
+func (m *TypedMap) Keys() []string {
+	var keys []string
+	m.container.Range(func(key, value interface{}) bool {
+		if strKey, ok := key.(string); ok {
+			keys = append(keys, strKey)
+		}
+		return true
+	})
+	return keys
+}
+
+// Keys returns all keys in the map as a slice of strings
+func (m *ReadonlyTypedMap) Keys() []string {
+	return m.source.Keys()
 }
 
 // Get retrieves a value in a type-safe way.

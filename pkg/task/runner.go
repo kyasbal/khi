@@ -210,5 +210,5 @@ func (r *LocalRunner) waitDependencies(ctx context.Context, sources []taskid.Tas
 
 func (r *LocalRunner) wrapWithTaskError(err error, definition Definition) error {
 	errMsg := fmt.Sprintf("failed to run a task graph.\n definition ID=%s got an error. \n ERROR:\n%v", definition.ID(), err)
-	return fmt.Errorf(errMsg)
+	return fmt.Errorf("%s", errMsg)
 }
