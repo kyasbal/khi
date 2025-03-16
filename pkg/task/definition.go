@@ -50,37 +50,20 @@ type Definition interface {
 
 	// Dependencies returns the set of Definition ids without the suffix beginning with #. Task runner will wait these dependent tasks to be done before running this task.
 	Dependencies() []taskid.TaskReferenceId
-	// Runnable returns the new KHITaskRunner instance.
-	// The implementation of this function must create a new instance for each calls.
-	Runnable(taskMode int) Runnable
-}
 
-// Runnable is an interface of the actual task implementation.
-type Runnable interface {
-	Run(ctx context.Context, v *VariableSet) error
-}
-
-type funcRunnableImpl struct {
-	f func(ctx context.Context, v *VariableSet) error
-}
-
-// Run implements Runnable.
-func (f *funcRunnableImpl) Run(ctx context.Context, v *VariableSet) error {
-	return f.f(ctx, v)
-}
-
-var _ Runnable = (*funcRunnableImpl)(nil)
-
-// NewRunnableFunc is an utility function to generate a new instance implements Runnable from a function.
-func NewRunnableFunc(f func(ctx context.Context, v *VariableSet) error) Runnable {
-	return &funcRunnableImpl{f: f}
+	Run(ctx context.Context, taskMode int, v *VariableSet) (any, error)
 }
 
 type ConstantDefinitionImpl struct {
-	id                taskid.TaskImplementationId
-	labels            *typedmap.ReadonlyTypedMap
-	dependencies      []taskid.TaskReferenceId
-	runnableGenerator func(taskMode int) Runnable
+	id           taskid.TaskImplementationId
+	labels       *typedmap.ReadonlyTypedMap
+	dependencies []taskid.TaskReferenceId
+	runFunc      func(ctx context.Context, taskMode int, v *VariableSet) (any, error)
+}
+
+// Run implements Definition.
+func (c *ConstantDefinitionImpl) Run(ctx context.Context, taskMode int, v *VariableSet) (any, error) {
+	return c.runFunc(ctx, taskMode, v)
 }
 
 // Dependencies implements Definition.
@@ -98,19 +81,14 @@ func (c *ConstantDefinitionImpl) Labels() *typedmap.ReadonlyTypedMap {
 	return c.labels
 }
 
-// Runnable implements Definition.
-func (c *ConstantDefinitionImpl) Runnable(taskMode int) Runnable {
-	return c.runnableGenerator(taskMode)
-}
-
 var _ Definition = (*ConstantDefinitionImpl)(nil)
 
-func NewDefinitionFromFunc(taskId taskid.TaskImplementationId, dependencies []taskid.TaskReferenceId, runnableGenerator func(taskMode int) Runnable, labelOpts ...LabelOpt) *ConstantDefinitionImpl {
+func NewDefinitionFromFunc(taskId taskid.TaskImplementationId, dependencies []taskid.TaskReferenceId, runFunc func(ctx context.Context, taskMode int, v *VariableSet) (any, error), labelOpts ...LabelOpt) *ConstantDefinitionImpl {
 	labels := NewLabelSet(labelOpts...)
 	return &ConstantDefinitionImpl{
-		id:                taskId,
-		labels:            labels,
-		dependencies:      taskid.DedupeReferenceIds(dependencies),
-		runnableGenerator: runnableGenerator,
+		id:           taskId,
+		labels:       labels,
+		dependencies: taskid.DedupeReferenceIds(dependencies),
+		runFunc:      runFunc,
 	}
 }

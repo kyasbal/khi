@@ -107,7 +107,6 @@ func (r *LocalRunner) Run(ctx context.Context, taskMode int, initialVariables ma
 func (r *LocalRunner) runTask(ctx context.Context, taskDefIndex int, taskMode int) error {
 	definition := r.resolvedDefinitionSet.GetAll()[taskDefIndex]
 	sources := definition.Dependencies()
-	runnable := definition.Runnable(taskMode)
 	taskStatus := r.taskStatuses[taskDefIndex]
 	ctx = context.WithValue(ctx, "tid", definition.ID())
 	slog.DebugContext(ctx, fmt.Sprintf("task %s started", definition.ID().String()))
@@ -120,7 +119,7 @@ func (r *LocalRunner) runTask(ctx context.Context, taskDefIndex int, taskMode in
 	taskStatus.Phase = LocalRunnerTaskStatPhaseRunning
 	slog.DebugContext(ctx, fmt.Sprintf("task %s started", definition.ID()))
 
-	err := runnable.Run(ctx, r.resultVariable)
+	result, err := definition.Run(ctx, taskMode, r.resultVariable)
 
 	taskStatus.Phase = LocalRunnerTaskStatPhaseStopped
 	taskStatus.EndTime = time.Now()
@@ -135,6 +134,7 @@ func (r *LocalRunner) runTask(ctx context.Context, taskDefIndex int, taskMode in
 		slog.ErrorContext(ctx, err.Error())
 		return detailedErr
 	}
+	r.resultVariable.Set(definition.ID().ReferenceId().String(), result)
 	err = r.resolveTask(ctx, definition.ID())
 	if err != nil {
 		detailedErr := r.wrapWithTaskError(err, definition)

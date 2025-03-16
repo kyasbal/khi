@@ -194,7 +194,7 @@ func TestTextFormDefinitionBuilder(t *testing.T) {
 
 			// Execute task as DryRun mode
 			vs := generateFakeVariableSet("foo", testCase.RequestValue)
-			err := taskDef.Runnable(task.TaskModeDryRun).Run(context.Background(), vs)
+			_, err := taskDef.Run(context.Background(), task.TaskModeDryRun, vs)
 			if testCase.ExpectedError != "" {
 				if err == nil {
 					t.Errorf("task was expected to be end with an error. But the task finished without an error")
@@ -221,7 +221,7 @@ func TestTextFormDefinitionBuilder(t *testing.T) {
 			// Execute task as Run mode
 			if testCase.ExpectedError != "" {
 				vs = generateFakeVariableSet("foo", testCase.RequestValue)
-				err = taskDef.Runnable(task.TaskModeRun).Run(context.Background(), vs)
+				_, err = taskDef.Run(context.Background(), task.TaskModeRun, vs)
 				if testCase.ExpectedError != "" {
 					if err == nil {
 						t.Errorf("task was expected to be end with an error. But the task finished without an error")

@@ -101,10 +101,10 @@ func (s *DefinitionSet) WrapGraph(subgraphId taskid.TaskImplementationId, subgra
 	for _, t := range s.definitions {
 		if len(t.Dependencies()) == 0 {
 			capturedTask := t
-			rewiredTask := NewDefinitionFromFunc(t.ID(), []taskid.TaskReferenceId{taskid.NewTaskReference(initTaskId)}, func(taskMode int) Runnable {
-				return capturedTask.Runnable(taskMode)
-			})
-			rewiredTask.labels = t.Labels().Clone()
+			rewiredTask := &wrapGraphFirstTask{
+				task:         capturedTask,
+				dependencies: []taskid.TaskReferenceId{taskid.NewTaskReference(initTaskId)},
+			}
 			rewiredTasks = append(rewiredTasks, rewiredTask)
 		} else {
 			rewiredTasks = append(rewiredTasks, t)
@@ -125,16 +125,8 @@ func (s *DefinitionSet) WrapGraph(subgraphId taskid.TaskImplementationId, subgra
 	}
 	// Sort to make result stable
 	slices.SortFunc(doneTaskDependencies, func(a, b taskid.TaskReferenceId) int { return strings.Compare(a.String(), b.String()) })
-	initTask := NewDefinitionFromFunc(taskid.NewTaskImplementationId(initTaskId), subgraphDependency, func(taskMode int) Runnable {
-		return NewRunnableFunc(func(ctx context.Context, v *VariableSet) error {
-			return nil
-		})
-	})
-	doneTask := NewDefinitionFromFunc(taskid.NewTaskImplementationId(doneTaskId), doneTaskDependencies, func(taskMode int) Runnable {
-		return NewRunnableFunc(func(ctx context.Context, v *VariableSet) error {
-			return nil
-		})
-	})
+	initTask := NewDefinitionFromFunc(taskid.NewTaskImplementationId(initTaskId), subgraphDependency, func(ctx context.Context, taskMode int, v *VariableSet) (any, error) { return nil, nil })
+	doneTask := NewDefinitionFromFunc(taskid.NewTaskImplementationId(doneTaskId), doneTaskDependencies, func(ctx context.Context, taskMode int, v *VariableSet) (any, error) { return nil, nil })
 	rewiredTasks = append(rewiredTasks, initTask, doneTask)
 	return NewSet(rewiredTasks)
 }
@@ -340,3 +332,32 @@ func sortedMapKeys[T any](inputMap map[string]T) []string {
 func graphVizValidId(id string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(id, "-", "_"), "/", "_"), ".", "_"), "#", "_")
 }
+
+// wrapGraphFirstTask is an implementation of Task to rewrite its dependency for wrapping graphs as a sub graph.
+// This is only used in the WrapGraph method.
+type wrapGraphFirstTask struct {
+	task         Definition
+	dependencies []taskid.TaskReferenceId
+}
+
+// Dependencies implements Definition.
+func (w *wrapGraphFirstTask) Dependencies() []taskid.TaskReferenceId {
+	return w.dependencies
+}
+
+// ID implements Definition.
+func (w *wrapGraphFirstTask) ID() taskid.TaskImplementationId {
+	return w.task.ID()
+}
+
+// Labels implements Definition.
+func (w *wrapGraphFirstTask) Labels() *typedmap.ReadonlyTypedMap {
+	return w.task.Labels()
+}
+
+// Run implements Definition.
+func (w *wrapGraphFirstTask) Run(ctx context.Context, taskMode int, v *VariableSet) (any, error) {
+	return w.task.Run(ctx, taskMode, v)
+}
+
+var _ Definition = (*wrapGraphFirstTask)(nil)

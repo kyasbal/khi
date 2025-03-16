@@ -15,6 +15,7 @@
 package task
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -31,7 +32,11 @@ type testTaskDefinition struct {
 	id           taskid.TaskImplementationId
 	dependencies []taskid.TaskReferenceId
 	labels       *typedmap.ReadonlyTypedMap
-	runnable     Runnable
+}
+
+// Run implements Definition.
+func (d *testTaskDefinition) Run(ctx context.Context, taskMode int, v *VariableSet) (any, error) {
+	return nil, nil
 }
 
 var _ Definition = (*testTaskDefinition)(nil)
@@ -44,19 +49,9 @@ func (d *testTaskDefinition) Labels() *typedmap.ReadonlyTypedMap {
 	return d.labels
 }
 
-// Runnable implements KHITaskUnit.
-func (d *testTaskDefinition) Runnable(taskMode int) Runnable {
-	return d.runnable
-}
-
 // Dependencies implements KHITaskUnit.
 func (d *testTaskDefinition) Dependencies() []taskid.TaskReferenceId {
 	return d.dependencies
-}
-
-func (d *testTaskDefinition) WithRunnable(runnable Runnable) *testTaskDefinition {
-	d.runnable = runnable
-	return d
 }
 
 func newDebugDefinition(id string, dependencies []string, labelOpt ...LabelOpt) *testTaskDefinition {
