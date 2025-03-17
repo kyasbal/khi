@@ -33,7 +33,7 @@ func TestConformance(t *testing.T) {
 }
 
 func loggerCtx(ctx context.Context, iid string, tid string, rid string) context.Context {
-	return context.WithValue(context.WithValue(context.WithValue(ctx, "iid", iid), "tid", taskid.NewTaskImplementationId(tid)), "rid", rid)
+	return context.WithValue(context.WithValue(context.WithValue(ctx, "iid", iid), "tid", taskid.NewDefaultImplementationID[any](tid)), "rid", rid)
 }
 
 func testRecord(attrs ...slog.Attr) slog.Record {

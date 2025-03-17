@@ -18,24 +18,26 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/log"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/query"
 	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
 const ComposerQueryPrefix = gcp_task.GCPPrefix + "query/composer/"
 
-const ComposerSchedulerLogQueryTaskName = ComposerQueryPrefix + "scheduler"
-const ComposerDagProcessorManagerLogQueryTaskName = ComposerQueryPrefix + "dag-processor-manager"
-const ComposerMonitoringLogQueryTaskName = ComposerQueryPrefix + "monitoring"
-const ComposerWorkerLogQueryTaskName = ComposerQueryPrefix + "worker"
+var ComposerSchedulerLogQueryTaskName = taskid.NewDefaultImplementationID[[]*log.LogEntity](ComposerQueryPrefix + "scheduler")
+var ComposerDagProcessorManagerLogQueryTaskName = taskid.NewDefaultImplementationID[[]*log.LogEntity](ComposerQueryPrefix + "dag-processor-manager")
+var ComposerMonitoringLogQueryTaskName = taskid.NewDefaultImplementationID[[]*log.LogEntity](ComposerQueryPrefix + "monitoring")
+var ComposerWorkerLogQueryTaskName = taskid.NewDefaultImplementationID[[]*log.LogEntity](ComposerQueryPrefix + "worker")
 
 var ComposerSchedulerLogQueryTask = query.NewQueryGeneratorTask(
 	ComposerSchedulerLogQueryTaskName,
 	"Composer Environment/Airflow Scheduler",
 	enum.LogTypeComposerEnvironment,
-	[]string{
+	[]taskid.UntypedTaskReference{
 		gcp_task.InputProjectIdTaskID,
 		InputComposerEnvironmentTaskID,
 	},
@@ -47,7 +49,7 @@ var ComposerDagProcessorManagerLogQueryTask = query.NewQueryGeneratorTask(
 	ComposerDagProcessorManagerLogQueryTaskName,
 	"Composer Environment/DAG Processor Manager",
 	enum.LogTypeComposerEnvironment,
-	[]string{
+	[]taskid.UntypedTaskReference{
 		gcp_task.InputProjectIdTaskID,
 		InputComposerEnvironmentTaskID,
 	},
@@ -59,7 +61,7 @@ var ComposerMonitoringLogQueryTask = query.NewQueryGeneratorTask(
 	ComposerMonitoringLogQueryTaskName,
 	"Composer Environment/Airflow Monitoring",
 	enum.LogTypeComposerEnvironment,
-	[]string{
+	[]taskid.UntypedTaskReference{
 		gcp_task.InputProjectIdTaskID,
 		InputComposerEnvironmentTaskID,
 	},
@@ -71,7 +73,7 @@ var ComposerWorkerLogQueryTask = query.NewQueryGeneratorTask(
 	ComposerWorkerLogQueryTaskName,
 	"Composer Environment/Airflow Worker",
 	enum.LogTypeComposerEnvironment,
-	[]string{
+	[]taskid.UntypedTaskReference{
 		gcp_task.InputProjectIdTaskID,
 		InputComposerEnvironmentTaskID,
 	},

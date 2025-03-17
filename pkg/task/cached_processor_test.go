@@ -22,6 +22,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
 type cachableData struct{}
@@ -43,23 +44,23 @@ func TestCachedProcessorStoreValue(t *testing.T) {
 	// First task is the cachable task.
 	taskSeries := []struct {
 		ShouldUseCache bool
-		Tasks          []Definition
+		Tasks          []UntypedDefinition
 	}{
 		{
 			ShouldUseCache: false,
-			Tasks: []Definition{
+			Tasks: []UntypedDefinition{
 				NewCachedProcessor("foo", []string{}, cachableTaskFunc),
 			},
 		},
 		{
 			ShouldUseCache: true,
-			Tasks: []Definition{
+			Tasks: []UntypedDefinition{
 				NewCachedProcessor("foo", []string{}, cachableTaskFunc),
 			},
 		},
 		{
 			ShouldUseCache: false,
-			Tasks: []Definition{
+			Tasks: []UntypedDefinition{
 				NewCachedProcessor("bar", []string{"qux", "quux"}, cachableTaskFunc),
 				NewProcessorTask("qux", []string{}, func(ctx context.Context, taskMode int, v *VariableSet) (any, error) {
 					return "qux-value", nil
@@ -71,7 +72,7 @@ func TestCachedProcessorStoreValue(t *testing.T) {
 		},
 		{
 			ShouldUseCache: false,
-			Tasks: []Definition{
+			Tasks: []UntypedDefinition{
 				NewCachedProcessor("bar", []string{"qux", "quux"}, cachableTaskFunc),
 				NewProcessorTask("qux", []string{}, func(ctx context.Context, taskMode int, v *VariableSet) (any, error) {
 					return "qux-value2", nil
@@ -83,7 +84,7 @@ func TestCachedProcessorStoreValue(t *testing.T) {
 		},
 		{
 			ShouldUseCache: true,
-			Tasks: []Definition{
+			Tasks: []UntypedDefinition{
 				NewCachedProcessor("bar", []string{"qux", "quux"}, cachableTaskFunc),
 				NewProcessorTask("qux", []string{}, func(ctx context.Context, taskMode int, v *VariableSet) (any, error) {
 					return "qux-value2", nil
@@ -95,7 +96,7 @@ func TestCachedProcessorStoreValue(t *testing.T) {
 		},
 		{
 			ShouldUseCache: true,
-			Tasks: []Definition{
+			Tasks: []UntypedDefinition{
 				NewCachedProcessor("bar", []string{"qux", "quux"}, cachableTaskFunc),
 				NewProcessorTask("qux", []string{}, func(ctx context.Context, taskMode int, v *VariableSet) (any, error) {
 					return "qux-value", nil
@@ -107,7 +108,7 @@ func TestCachedProcessorStoreValue(t *testing.T) {
 		},
 		{
 			ShouldUseCache: false,
-			Tasks: []Definition{
+			Tasks: []UntypedDefinition{
 				NewCachedProcessor("hoge", []string{"fuga"}, cachableTaskFunc),
 				NewProcessorTask("fuga", []string{}, func(ctx context.Context, taskMode int, v *VariableSet) (any, error) {
 					return &cachableData{}, nil
@@ -116,7 +117,7 @@ func TestCachedProcessorStoreValue(t *testing.T) {
 		},
 		{
 			ShouldUseCache: true,
-			Tasks: []Definition{
+			Tasks: []UntypedDefinition{
 				NewCachedProcessor("hoge", []string{"fuga"}, cachableTaskFunc),
 				NewProcessorTask("fuga", []string{}, func(ctx context.Context, taskMode int, v *VariableSet) (any, error) {
 					return &cachableData{}, nil
@@ -169,7 +170,7 @@ func TestCacheProcessorWithMultiThreadNotToCallRunnableMultipleTime(t *testing.T
 	runners := []*LocalRunner{}
 	results := make([]string, RUNNER_COUNT)
 	callCount := 0
-	task := NewCachedProcessor("foo", []string{}, func(ctx context.Context, taskMode int, v *VariableSet) (any, error) {
+	task := NewCachedProcessor("foo", []taskid.UntypedTaskReference{}, func(ctx context.Context, taskMode int, v *VariableSet) (any, error) {
 		<-time.After(time.Second)
 		callCount += 1
 		return "foo-value", nil

@@ -25,8 +25,8 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
-func createMockTask(id string, dependencies []string, runFunc func(ctx context.Context, taskMode int, v *VariableSet) (any, error)) Definition {
-	deps := make([]taskid.TaskReferenceId, len(dependencies))
+func createMockTask(id string, dependencies []string, runFunc func(ctx context.Context, taskMode int, v *VariableSet) (any, error)) UntypedDefinition {
+	deps := make([]taskid.UntypedTaskReference, len(dependencies))
 	for i, dep := range dependencies {
 		deps[i] = taskid.NewTaskReference(dep)
 	}
@@ -44,7 +44,7 @@ func TestLocalRunner_SingleTask(t *testing.T) {
 		return taskResult, nil
 	})
 
-	definitionSet, err := NewSet([]Definition{task})
+	definitionSet, err := NewSet([]UntypedDefinition{task})
 	if err != nil {
 		t.Fatalf("Failed to create definition set: %v", err)
 	}
@@ -101,7 +101,7 @@ func TestLocalRunner_TasksWithDependencies(t *testing.T) {
 		return "result2", nil
 	})
 
-	definitionSet, err := NewSet([]Definition{task1, task2})
+	definitionSet, err := NewSet([]UntypedDefinition{task1, task2})
 	if err != nil {
 		t.Fatalf("Failed to create definition set: %v", err)
 	}
@@ -166,7 +166,7 @@ func TestLocalRunner_TaskError(t *testing.T) {
 		return "result2", nil
 	})
 
-	definitionSet, err := NewSet([]Definition{task1, task2})
+	definitionSet, err := NewSet([]UntypedDefinition{task1, task2})
 	if err != nil {
 		t.Fatalf("Failed to create definition set: %v", err)
 	}
@@ -213,7 +213,7 @@ func TestLocalRunner_ContextCancellation(t *testing.T) {
 		}
 	})
 
-	definitionSet, err := NewSet([]Definition{task})
+	definitionSet, err := NewSet([]UntypedDefinition{task})
 	if err != nil {
 		t.Fatalf("Failed to create definition set: %v", err)
 	}

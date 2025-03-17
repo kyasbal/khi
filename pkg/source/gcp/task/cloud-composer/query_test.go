@@ -28,8 +28,8 @@ func TestCreateGeneratorCreatesComposerQuery(t *testing.T) {
 	projectId := "test-project"
 	environmentName := "test-environment"
 	vs := task.NewVariableSet(map[string]any{})
-	vs.Set(gcp_task.InputProjectIdTaskID, projectId)
-	vs.Set(InputComposerEnvironmentTaskID, environmentName)
+	vs.Set(gcp_task.InputProjectIdTaskID.String(), projectId)
+	vs.Set(InputComposerEnvironmentTaskID.String(), environmentName)
 
 	// resource.type="cloud_composer_environment"
 	// resource.labels.environment_name="test-environment"

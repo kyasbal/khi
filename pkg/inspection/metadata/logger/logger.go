@@ -164,7 +164,7 @@ func (l *Logger) MakeTaskLogger(ctx context.Context, minLevel slog.Level) *TaskL
 	iidAny := ctx.Value("iid")
 	if iid, convertible := iidAny.(string); convertible {
 		tidAny := ctx.Value("tid")
-		if tid, convertible := tidAny.(taskid.TaskImplementationId); convertible {
+		if tid, convertible := tidAny.(taskid.UntypedTaskImplementationID); convertible {
 			ridAny := ctx.Value("rid")
 			if rid, convertible := ridAny.(string); convertible {
 				lb := new(bytes.Buffer)

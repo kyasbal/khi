@@ -31,6 +31,7 @@ import (
 	composer_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke"
 	"github.com/GoogleCloudPlatform/khi/pkg/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
 type autoscalerLogParser struct {
@@ -42,8 +43,8 @@ func (p *autoscalerLogParser) TargetLogType() enum.LogType {
 }
 
 // Dependencies implements parser.Parser.
-func (*autoscalerLogParser) Dependencies() []string {
-	return []string{
+func (*autoscalerLogParser) Dependencies() []taskid.UntypedTaskReference {
+	return []taskid.UntypedTaskReference{
 		gcp_task.InputClusterNameTaskID,
 	}
 }
@@ -59,8 +60,8 @@ func (*autoscalerLogParser) GetParserName() string {
 }
 
 // LogTask implements parser.Parser.
-func (*autoscalerLogParser) LogTask() string {
-	return AutoscalerQueryTaskID
+func (*autoscalerLogParser) LogTask() taskid.TaskReference[[]*log.LogEntity] {
+	return AutoscalerQueryTaskID.GetTaskReference()
 }
 
 func (*autoscalerLogParser) Grouper() grouper.LogGrouper {
@@ -227,4 +228,4 @@ func parseResultInfo(ctx context.Context, clusterName string, l *log.LogEntity, 
 
 var _ parser.Parser = (*autoscalerLogParser)(nil)
 
-var AutoscalerParserTask = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/autoscaler-parser", &autoscalerLogParser{}, true, inspection_task.InspectionTypeLabel(gke.InspectionTypeId, composer_task.InspectionTypeId))
+var AutoscalerParserTask = parser.NewParserTaskFromParser(taskid.NewDefaultImplementationID[any](gcp_task.GCPPrefix+"feature/autoscaler-parser"), &autoscalerLogParser{}, true, inspection_task.InspectionTypeLabel(gke.InspectionTypeId, composer_task.InspectionTypeId))

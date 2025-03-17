@@ -87,7 +87,7 @@ func (g *globalLoggerHandler) routeHandler(ctx context.Context) slog.Handler {
 	tidAny := ctx.Value("tid") // task id
 	ridAny := ctx.Value("rid")
 	if iid, converted := iidAny.(string); converted {
-		if tid, converted := tidAny.(taskid.TaskImplementationId); converted {
+		if tid, converted := tidAny.(taskid.UntypedTaskImplementationID); converted {
 			if rid, converted := ridAny.(string); converted {
 				g.handlersLock.Lock()
 				defer g.handlersLock.Unlock()

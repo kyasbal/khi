@@ -34,8 +34,8 @@ func TestGlobalLoggerHandlerWithChildLogger(t *testing.T) {
 	buf2Handler := slog.NewTextHandler(buf2, nil)
 	lh := localInitInspectionLogger(slog.NewTextHandler(bufDefault, nil))
 	ctx := context.Background()
-	t1Ctx := context.WithValue(context.WithValue(context.WithValue(ctx, "tid", taskid.NewTaskImplementationId("task1")), "iid", "inspection1"), "rid", "r1")
-	t2Ctx := context.WithValue(context.WithValue(context.WithValue(ctx, "tid", taskid.NewTaskImplementationId("task2")), "iid", "inspection2"), "rid", "r2")
+	t1Ctx := context.WithValue(context.WithValue(context.WithValue(ctx, "tid", taskid.NewDefaultImplementationID[any]("task1")), "iid", "inspection1"), "rid", "r1")
+	t2Ctx := context.WithValue(context.WithValue(context.WithValue(ctx, "tid", taskid.NewDefaultImplementationID[any]("task2")), "iid", "inspection2"), "rid", "r2")
 	logger := slog.New(lh)
 
 	logger.Info("default info")
