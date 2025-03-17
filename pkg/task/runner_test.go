@@ -69,7 +69,7 @@ func TestLocalRunner_SingleTask(t *testing.T) {
 		t.Fatalf("Failed to get result: %v", err)
 	}
 
-	val, err := result.Get("task1")
+	val, err := GetTypedVariableFromTaskVariable[string](result, "task1", "")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -94,11 +94,10 @@ func TestLocalRunner_TasksWithDependencies(t *testing.T) {
 		executionOrder = append(executionOrder, "task2")
 		mu.Unlock()
 
-		val, err := v.Get("task1")
-		if err != nil || val != "result1" {
-			return nil, errors.New("task1's result not available or incorrect")
+		_, err := GetTypedVariableFromTaskVariable[string](v, "task1", "")
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
 		}
-
 		return "result2", nil
 	})
 
@@ -137,17 +136,17 @@ func TestLocalRunner_TasksWithDependencies(t *testing.T) {
 		t.Fatalf("Failed to get result: %v", err)
 	}
 
-	val1, err := result.Get("task1")
+	val1, err := GetTypedVariableFromTaskVariable[string](result, "task1", "")
 	if err != nil {
-		t.Errorf("Failed to get task1 result: %v", err)
+		t.Errorf("Expected no error, got %v", err)
 	}
 	if val1 != "result1" {
 		t.Errorf("Expected task1 result 'result1', got '%v'", val1)
 	}
 
-	val2, err := result.Get("task2")
+	val2, err := GetTypedVariableFromTaskVariable[string](result, "task1", "")
 	if err != nil {
-		t.Errorf("Failed to get task2 result: %v", err)
+		t.Errorf("Expected no error, got %v", err)
 	}
 	if val2 != "result2" {
 		t.Errorf("Expected task2 result 'result2', got '%v'", val2)

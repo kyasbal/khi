@@ -81,7 +81,7 @@ func TestTextForms(t *testing.T, label string, formVariable task.Definition, tes
 			if err != nil {
 				t.Errorf("task graph was ended with a failure result.\n%v", err)
 			}
-			result, err := vs.Get(formVariable.ID().ReferenceId().String())
+			result, err := task.GetTypedVariableFromTaskVariable[any](vs, formVariable.ID().ReferenceId().String(), nil)
 			if err != nil {
 				t.Errorf("failed to get the form variable\n%v", err)
 			}

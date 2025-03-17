@@ -233,7 +233,7 @@ func (i *InspectionRunner) Result() (*InspectionRunResult, error) {
 		return nil, err
 	}
 
-	inspectionResultAny, err := v.Get(serializer.SerializerTaskID)
+	inspectionResult, err := task.GetTypedVariableFromTaskVariable[inspectiondata.Store](v, serializer.SerializerTaskID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +244,7 @@ func (i *InspectionRunner) Result() (*InspectionRunResult, error) {
 	}
 	return &InspectionRunResult{
 		Metadata:    md,
-		ResultStore: inspectionResultAny.(inspectiondata.Store),
+		ResultStore: inspectionResult,
 	}, nil
 }
 

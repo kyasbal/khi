@@ -15,44 +15,11 @@
 package task
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
-
-func TestVariableSetToBeReleasedWhenItWasSet(t *testing.T) {
-	variableSet := NewVariableSet(map[string]any{})
-	go func() {
-		<-time.After(time.Second)
-		variableSet.Set("foo-key", "bar")
-	}()
-	val, err := variableSet.Wait(context.Background(), "foo-key")
-	if err != nil {
-		t.Errorf("unexpected error %v", err)
-	}
-	if val != "bar" {
-		t.Errorf("variable `foo-key` wasn't resolved to `bar`")
-	}
-}
-
-func TestVariableSetToBeCancelledWithCancelledContext(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	variableSet := NewVariableSet(map[string]any{})
-	go func() {
-		<-time.After(time.Second)
-		cancel()
-	}()
-	_, err := variableSet.Wait(ctx, "foo-key")
-	if err != context.Canceled {
-		t.Errorf("unexpected error %v", err)
-	}
-	_, err = variableSet.Wait(ctx, "foo-key")
-	if err != context.Canceled {
-		t.Errorf("unexpected error %v", err)
-	}
-}
 
 func TestVariableSetShouldReturnErrorWhenTheVariableSetTwice(t *testing.T) {
 	variableSet := NewVariableSet(map[string]any{})

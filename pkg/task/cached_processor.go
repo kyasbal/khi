@@ -35,7 +35,7 @@ func NewCachedProcessor(taskId string, dependencies []string, processorFunc Proc
 	return NewProcessorTask(taskId, dependencies, func(ctx context.Context, taskMode int, v *VariableSet) (any, error) {
 		cacheKey := fmt.Sprintf("%s-%d-", taskId, taskMode)
 		for _, source := range dependencies {
-			rawValue, err := v.Get(source)
+			rawValue, err := GetTypedVariableFromTaskVariable[any](v, source, "")
 			if err != nil {
 				return nil, err
 			}
