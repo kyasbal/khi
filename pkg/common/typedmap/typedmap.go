@@ -14,7 +14,10 @@
 
 package typedmap
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 // TypedKey represents a key with associated type information.
 // The type parameter T indicates what type this key will retrieve.
@@ -118,7 +121,7 @@ func Get[T any](m ReadableTypedMap, key TypedKey[T]) (T, bool) {
 	// Type assertion
 	typed, ok := v.(T)
 	if !ok {
-		return zero, false
+		panic(fmt.Sprintf("expected map value at %s is convertible to %T, but got %T", key.key, *new(T), v))
 	}
 
 	return typed, true

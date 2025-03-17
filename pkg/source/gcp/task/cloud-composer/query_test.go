@@ -27,7 +27,7 @@ func TestCreateGeneratorCreatesComposerQuery(t *testing.T) {
 	ctx := context.Background()
 	projectId := "test-project"
 	environmentName := "test-environment"
-	vs := &task.VariableSet{}
+	vs := task.NewVariableSet(map[string]any{})
 	vs.Set(gcp_task.InputProjectIdTaskID, projectId)
 	vs.Set(InputComposerEnvironmentTaskID, environmentName)
 

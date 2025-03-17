@@ -187,13 +187,32 @@ func (r *LocalRunner) WithCacheProvider(cache TaskVariableCache) *LocalRunner {
 func (r *LocalRunner) markDone() {
 	r.stopped = true
 	close(r.waiter)
+	r.taskWaiters.Range(func(key, value any) bool {
+		mutex, _ := value.(*sync.RWMutex)
+		if !mutex.TryRLock() {
+			mutex.Unlock()
+		}
+		return true
+	})
 }
 
 func (r *LocalRunner) waitDependencies(ctx context.Context, dependencies []taskid.TaskReferenceId) error {
 	for _, dependency := range dependencies {
-		waiter, _ := r.taskWaiters.Load(dependency.String())
-		taskWaiter := waiter.(*sync.RWMutex)
-		taskWaiter.RLock()
+		select { // wait for getting the RLock for the task result, or context cancel
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-func() chan struct{} {
+			ch := make(chan struct{})
+			go func() {
+				waiter, _ := r.taskWaiters.Load(dependency.String())
+				taskWaiter := waiter.(*sync.RWMutex)
+				taskWaiter.RLock()
+				close(ch)
+			}()
+			return ch
+		}():
+			continue
+		}
 	}
 	return nil
 }
