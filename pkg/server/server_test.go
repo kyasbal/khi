@@ -96,7 +96,7 @@ func createTestInspectionServer() (*inspection.InspectionTaskServer, error) {
 		return nil, err
 	}
 	taskDefinitions := []task.UntypedDefinition{
-		task_test.MockProcessorTaskFromTaskID(inspection_task.BuilderGeneratorTask.ID().String(), history.NewBuilder(&ioconfig.IOConfig{
+		task_test.MockProcessorTaskFromTaskID(inspection_task.BuilderGeneratorTask.ID(), history.NewBuilder(&ioconfig.IOConfig{
 			ApplicationRoot: "/",
 			DataDestination: "/tmp/",
 			TemporaryFolder: "/tmp/",
@@ -294,7 +294,7 @@ func TestApiResponses(t *testing.T) {
 			ExpectedCode:  200,
 			RequestMethod: "GET",
 			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/features",
-			BodyValidator: bodyCompareWithStringExpectedValue(`{"features":[{"id":"feature-foo1","label":"foo feature1","description":"test-feature","enabled":false},{"id":"feature-foo2","label":"foo feature2","description":"test-feature","enabled":false}]}`),
+			BodyValidator: bodyCompareWithStringExpectedValue(`{"features":[{"id":"feature-foo1#default","label":"foo feature1","description":"test-feature","enabled":false},{"id":"feature-foo2#default","label":"foo feature2","description":"test-feature","enabled":false}]}`),
 		},
 		{
 			// 005
@@ -304,7 +304,7 @@ func TestApiResponses(t *testing.T) {
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
 				return PutInspectionTaskFeatureRequest{
 					Features: []string{
-						"feature-foo2",
+						"feature-foo2#default",
 					},
 				}
 			},
@@ -315,7 +315,7 @@ func TestApiResponses(t *testing.T) {
 			ExpectedCode:  200,
 			RequestMethod: "GET",
 			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/features",
-			BodyValidator: bodyCompareWithStringExpectedValue(`{"features":[{"id":"feature-foo1","label":"foo feature1","description":"test-feature","enabled":false},{"id":"feature-foo2","label":"foo feature2","description":"test-feature","enabled":true}]}`),
+			BodyValidator: bodyCompareWithStringExpectedValue(`{"features":[{"id":"feature-foo1#default","label":"foo feature1","description":"test-feature","enabled":false},{"id":"feature-foo2#default","label":"foo feature2","description":"test-feature","enabled":true}]}`),
 		},
 		{
 			// 007
@@ -464,7 +464,7 @@ func TestApiResponses(t *testing.T) {
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
 				return PutInspectionTaskFeatureRequest{
 					Features: []string{
-						"feature-bar",
+						"feature-bar#default",
 					},
 				}
 			},
@@ -486,7 +486,7 @@ func TestApiResponses(t *testing.T) {
 			ExpectedCode:  200,
 			RequestMethod: "GET",
 			RequestPath:   "/foo/api/v2/inspection/tasks",
-			BodyValidator: taskCompare("task-2", `{"error":{"errorMessages":[]},"progress":{"phase":"RUNNING","progresses":[{"id":"neverend","indeterminate":false,"label":"neverend","message":"test","percentage":0.5}],"totalProgress":{"id":"Total","indeterminate":false,"label":"Total","message":"0 of 3 tasks complete","percentage":0}}}`, "header"),
+			BodyValidator: taskCompare("task-2", `{"error":{"errorMessages":[]},"progress":{"phase":"RUNNING","progresses":[{"id":"neverend#default","indeterminate":false,"label":"neverend#default","message":"test","percentage":0.5}],"totalProgress":{"id":"Total","indeterminate":false,"label":"Total","message":"0 of 3 tasks complete","percentage":0}}}`, "header"),
 		},
 		{
 			// 024
@@ -536,7 +536,7 @@ func TestApiResponses(t *testing.T) {
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
 				return PutInspectionTaskFeatureRequest{
 					Features: []string{
-						"feature-qux",
+						"feature-qux#default",
 					},
 				}
 			},

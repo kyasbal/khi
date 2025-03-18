@@ -26,11 +26,11 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
-func RunSingleTask[T any](target task.UntypedDefinition, mode int, opts ...TestRunTaskParameterOpt) (T, error) {
+func RunSingleTask[T any](target task.Definition[T], mode int, opts ...TestRunTaskParameterOpt) (T, error) {
 	return RunMultipleTask[T](target, []task.UntypedDefinition{}, mode, opts...)
 }
 
-func RunMultipleTask[T any](target task.UntypedDefinition, availableTasks []task.UntypedDefinition, mode int, opts ...TestRunTaskParameterOpt) (T, error) {
+func RunMultipleTask[T any](target task.Definition[T], availableTasks []task.UntypedDefinition, mode int, opts ...TestRunTaskParameterOpt) (T, error) {
 	params := generateVariableSetFromOpts(opts...)
 	sourceTaskSet, err := task.NewSet([]task.UntypedDefinition{target})
 	if err != nil {

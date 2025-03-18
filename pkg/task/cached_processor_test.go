@@ -156,7 +156,7 @@ func TestCachedProcessorStoreValue(t *testing.T) {
 			t.Errorf("unexpected error\n%v", err)
 		}
 
-		storedValue, err := GetTypedVariableFromTaskVariable[string](v, series.Tasks[0].UntypedID().ReferenceIDString(), "")
+		storedValue, err := GetTypedVariableFromTaskVariable(v, series.Tasks[0].UntypedID().ReferenceIDString(), "")
 		if err != nil {
 			t.Errorf("unexpected error\n%v", err)
 		}
@@ -210,7 +210,7 @@ func TestCacheProcessorWithMultiThreadNotToCallRunnableMultipleTime(t *testing.T
 			if err != nil {
 				return err
 			}
-			resultAny, err := GetTypedVariableFromTaskVariable[string](vs, "foo", "")
+			resultAny, err := GetTypedVariableFromTaskVariable(vs, "foo", "")
 			if err != nil {
 				return err
 			}

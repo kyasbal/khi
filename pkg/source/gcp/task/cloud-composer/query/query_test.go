@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
+	composer_taskid "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/task"
 )
 
@@ -28,8 +29,8 @@ func TestCreateGeneratorCreatesComposerQuery(t *testing.T) {
 	projectId := "test-project"
 	environmentName := "test-environment"
 	vs := task.NewVariableSet(map[string]any{})
-	vs.Set(gcp_task.InputProjectIdTaskID.String(), projectId)
-	vs.Set(InputComposerEnvironmentTaskID.String(), environmentName)
+	vs.Set(gcp_task.InputProjectIdTaskID.ReferenceIDString(), projectId)
+	vs.Set(composer_taskid.InputComposerEnvironmentTaskID.ReferenceIDString(), environmentName)
 
 	// resource.type="cloud_composer_environment"
 	// resource.labels.environment_name="test-environment"

@@ -63,9 +63,9 @@ func TestChildLoggers(t *testing.T) {
 
 	actual1 := log1.Read()
 	actual2 := log2.Read()
-	expect1 := `task1 > INFO task1 message
+	expect1 := `task1#default > INFO task1 message
 `
-	expect2 := `task2 > INFO task2 message
+	expect2 := `task2#default > INFO task2 message
 `
 
 	if expect1 != actual1 {

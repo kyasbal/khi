@@ -25,29 +25,29 @@ type TestRunTaskParameterOpt interface {
 }
 
 type priorTaskResultOpt struct {
-	taskId    string
+	refID     string
 	parameter any
 }
 
 // AddParam implements RunSingleTaskParameterOpt.
 func (p *priorTaskResultOpt) AddParam(params map[string]any) {
-	params[p.taskId] = p.parameter
+	params[p.refID] = p.parameter
 }
 
 var _ TestRunTaskParameterOpt = (*priorTaskResultOpt)(nil)
 
 // PriorTaskResult returns RunSingleTaskParameterOpt to fill a parameter of a task result with given value.
-func PriorTaskResult(task task.UntypedDefinition, parameter any) TestRunTaskParameterOpt {
+func PriorTaskResult[T any](task task.Definition[T], parameter T) TestRunTaskParameterOpt {
 	return &priorTaskResultOpt{
-		taskId:    task.UntypedID().String(),
+		refID:     task.UntypedID().String(),
 		parameter: parameter,
 	}
 }
 
 // PriorTaskResultFromID returns RunSingleTaskParameterOpt to fill a parameter of a task result with given value.
-func PriorTaskResultFromID(id taskid.UntypedTaskReference, parameter any) TestRunTaskParameterOpt {
+func PriorTaskResultFromID[T any](id taskid.TaskImplementationID[T], parameter T) TestRunTaskParameterOpt {
 	return &priorTaskResultOpt{
-		taskId:    id.String(),
+		refID:     id.ReferenceIDString(),
 		parameter: parameter,
 	}
 }

@@ -130,7 +130,7 @@ func Get[T any](m ReadableTypedMap, key TypedKey[T]) (T, bool) {
 // GetOrDefault retrieves a value or returns the default if not found.
 // Works with both TypedMap and ReadonlyTypedMap.
 func GetOrDefault[T any](m ReadableTypedMap, key TypedKey[T], defaultValue T) T {
-	v, ok := Get[T](m, key)
+	v, ok := Get(m, key)
 	if !ok {
 		return defaultValue
 	}

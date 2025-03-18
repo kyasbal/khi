@@ -17,7 +17,6 @@ package task
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
@@ -250,13 +249,9 @@ func (s *DefinitionSet) ResolveTask(availableDefinitionSet *DefinitionSet) (*Def
 		for _, missingSource := range sortResult.MissingDependencies {
 			matched := []UntypedDefinition{}
 			for _, task := range availableDefinitionSet.definitions {
-				taskID := task.UntypedID()
 				missingSourceReference := missingSource.ReferenceIDString()
 				if task.UntypedID().ReferenceIDString() == missingSourceReference {
-					slog.Info(fmt.Sprintf("⭕️ %s == %s", taskID.ReferenceIDString(), missingSourceReference))
 					matched = append(matched, task)
-				} else {
-					slog.Info(fmt.Sprintf("❌ %s != %s", taskID.ReferenceIDString(), missingSourceReference))
 				}
 			}
 			// sort matched tasks with selection priority for in case when there are 2 or more tasks can be usable for resolving required dependency

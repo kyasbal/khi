@@ -25,7 +25,7 @@ type ProcessorFunc[T any] = func(ctx context.Context, taskMode int, v *VariableS
 // NewProcessor returns a task definition generates a variable named the task Id from one or more variables generated from the dependency.
 // A processor task set the variable that has the same name of the task Id at the end.
 func NewProcessorTask[T any](taskImplementationID taskid.TaskImplementationID[T], dependencies []taskid.UntypedTaskReference, processor ProcessorFunc[T], labelOpts ...LabelOpt) Definition[T] {
-	return NewDefinitionFromFunc[T](taskImplementationID, dependencies, func(ctx context.Context, taskMode int, v *VariableSet) (T, error) {
+	return NewDefinitionFromFunc(taskImplementationID, dependencies, func(ctx context.Context, taskMode int, v *VariableSet) (T, error) {
 		return processor(ctx, taskMode, v)
 	}, labelOpts...)
 }

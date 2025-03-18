@@ -25,6 +25,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/query/queryutil"
 	"github.com/GoogleCloudPlatform/khi/pkg/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	form_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/form"
@@ -34,7 +35,7 @@ import (
 	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
-var testClusterNamePrefix = task_test.MockProcessorTaskFromTaskID(ClusterNamePrefixTaskID, "")
+var testClusterNamePrefix = task_test.MockProcessorTaskFromTaskID(taskid.NewImplementationID(ClusterNamePrefixTaskID, "test"), "")
 
 func TestProjectIdInput(t *testing.T) {
 	form_test.TestTextForms(t, "gcp-project-id", InputProjectIdTask, []*form_test.FormTestCase{
@@ -136,7 +137,7 @@ func TestProjectIdInput(t *testing.T) {
 }
 
 func TestClusterNameInput(t *testing.T) {
-	mockClusterNamesTask1 := task_test.MockProcessorTaskFromTaskID(AutocompleteClusterNamesTaskID, &AutocompleteClusterNameList{
+	mockClusterNamesTask1 := task_test.MockProcessorTaskFromTaskID(taskid.NewImplementationID(AutocompleteClusterNamesTaskID, "test"), &AutocompleteClusterNameList{
 		ClusterNames: []string{"foo-cluster", "bar-cluster"},
 		Error:        "",
 	})
@@ -217,8 +218,8 @@ func TestDurationInput(t *testing.T) {
 	expectedSuggestions := []string{"1m", "10m", "1h", "3h", "12h", "24h"}
 	timezoneTaskUTC := task_test.MockProcessorTaskFromTaskID(TimeZoneShiftInputTaskID, time.UTC)
 	timezoneTaskJST := task_test.MockProcessorTaskFromTaskID(TimeZoneShiftInputTaskID, time.FixedZone("", 9*3600))
-	currentTimeTask1 := task_test.MockProcessorTaskFromTaskID(inspection_task.InspectionTimeProducer.ID().String(), time.Date(2023, time.April, 5, 12, 0, 0, 0, time.UTC))
-	endTimeTask := task_test.MockProcessorTaskFromTaskID(InputEndTimeTask.ID().String(), time.Date(2023, time.April, 1, 12, 0, 0, 0, time.UTC))
+	currentTimeTask1 := task_test.MockProcessorTaskFromTaskID(inspection_task.InspectionTimeProducer.ID(), time.Date(2023, time.April, 5, 12, 0, 0, 0, time.UTC))
+	endTimeTask := task_test.MockProcessorTaskFromTaskID(InputEndTimeTask.ID(), time.Date(2023, time.April, 1, 12, 0, 0, 0, time.UTC))
 
 	form_test.TestTextForms(t, "duration", InputDurationTask, []*form_test.FormTestCase{
 		{

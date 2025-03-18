@@ -31,5 +31,5 @@ func GetHistoryBuilderFromTaskVariable(v *task.VariableSet) (*history.Builder, e
 }
 
 func GetInspectionIdFromTaskVariable(v *task.VariableSet) (string, error) {
-	return task.GetTypedVariableFromTaskVariable[string](v, InspectionIdVariableName, "<INVALID>")
+	return task.GetTypedVariableFromTaskVariable(v, InspectionIdVariableName, "<INVALID>")
 }

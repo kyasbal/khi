@@ -136,7 +136,7 @@ func TestLocalRunner_TasksWithDependencies(t *testing.T) {
 		t.Fatalf("Failed to get result: %v", err)
 	}
 
-	val1, err := GetTypedVariableFromTaskVariable[string](result, "task1", "")
+	val1, err := GetTypedVariableFromTaskVariable(result, "task1", "")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -144,7 +144,7 @@ func TestLocalRunner_TasksWithDependencies(t *testing.T) {
 		t.Errorf("Expected task1 result 'result1', got '%v'", val1)
 	}
 
-	val2, err := GetTypedVariableFromTaskVariable[string](result, "task1", "")
+	val2, err := GetTypedVariableFromTaskVariable(result, "task1", "")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}

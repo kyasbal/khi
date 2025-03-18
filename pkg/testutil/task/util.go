@@ -18,11 +18,12 @@ import (
 	"context"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
 // Deprecated: Use testtask package instead.
-func MockProcessorTaskFromTaskID(taskId string, value any) task.UntypedDefinition {
-	return task.NewProcessorTask(taskId, []string{}, func(ctx context.Context, taskMode int, v *task.VariableSet) (any, error) {
+func MockProcessorTaskFromTaskID[T any](taskId taskid.TaskImplementationID[T], value T) task.Definition[T] {
+	return task.NewProcessorTask(taskId, []taskid.UntypedTaskReference{}, func(ctx context.Context, taskMode int, v *task.VariableSet) (T, error) {
 		return value, nil
 	})
 }

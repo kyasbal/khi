@@ -26,6 +26,10 @@ import (
 	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
+func debugTaskID(id string) taskid.TaskImplementationID[any] {
+	return taskid.NewDefaultImplementationID[any](id)
+}
+
 func TestGlobalLoggerHandlerWithChildLogger(t *testing.T) {
 	bufDefault := new(bytes.Buffer)
 	buf1 := new(bytes.Buffer)
@@ -41,8 +45,8 @@ func TestGlobalLoggerHandlerWithChildLogger(t *testing.T) {
 	logger.Info("default info")
 	logger.InfoContext(ctx, "default info")
 	logger.InfoContext(t1Ctx, "unknown task")
-	lh.RegisterTaskLogger("inspection1", "task1", "r1", buf1Handler)
-	lh.RegisterTaskLogger("inspection2", "task2", "r2", buf2Handler)
+	lh.RegisterTaskLogger("inspection2", debugTaskID("task2"), "r2", buf2Handler)
+	lh.RegisterTaskLogger("inspection1", debugTaskID("task1"), "r1", buf1Handler)
 	logger.InfoContext(t1Ctx, "inspection1 task1 info")
 	logger.InfoContext(t2Ctx, "inspection2 task2 info")
 

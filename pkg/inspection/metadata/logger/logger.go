@@ -181,7 +181,7 @@ func (l *Logger) MakeTaskLogger(ctx context.Context, minLevel slog.Level) *TaskL
 					logHandler: th,
 					logBuffer:  lb,
 				}
-				logger.RegisterTaskLogger(iid, tid.String(), rid, th)
+				logger.RegisterTaskLogger(iid, tid, rid, th)
 				l.loggers = append(l.loggers, tl)
 				return tl
 			} else {
