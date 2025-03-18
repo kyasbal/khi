@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"testing"
 
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
 	composer_taskid "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/task"
