@@ -15,8 +15,6 @@
 package task
 
 import (
-	"log/slog"
-
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 )
 
@@ -34,8 +32,8 @@ func NewVariableSet(initialVariables map[string]any) *VariableSet {
 	return vs
 }
 
+// TODO: define a new type safe function
 func (s *VariableSet) Set(key string, value any) error {
-	slog.Warn("VariableSet.Set is deprecated.")
 	typedmap.Set(s.variables, typedmap.NewTypedKey[any](key), value)
 	return nil
 }
@@ -52,9 +50,9 @@ func (s *VariableSet) DeleteItems(selector func(key string) bool) {
 	}
 }
 
+// TODO: define a new type safe function
 // GetTypedVariableFromTaskVariable returns the specified variable from given variable set with type cast.
 func GetTypedVariableFromTaskVariable[T any](tv *VariableSet, variableId string, defaultValue T) (T, error) {
-	slog.Warn("GetTypedVariableFromTaskVariable is deprecated.")
 	value, found := typedmap.Get(tv.variables, typedmap.NewTypedKey[T](variableId))
 	if !found {
 		return value, nil

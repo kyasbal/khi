@@ -173,7 +173,7 @@ func (s *DefinitionSet) sortTaskGraph() *SortTaskGraphResult {
 		if nextResolveTaskId != "N/A" {
 			nextTask := nonResolvedTasksMap[nextResolveTaskId]
 			delete(nonResolvedTasksMap, nextResolveTaskId)
-			removingDependencyId := nextTask.UntypedID().GetUntypedReference().String()
+			removingDependencyId := nextTask.UntypedID().ReferenceIDString()
 			for taskId := range nonResolvedTasksMap {
 				if _, exist := currentMissingTaskDependencies[taskId][removingDependencyId]; exist {
 					delete(currentMissingTaskDependencies[taskId], removingDependencyId)
@@ -191,7 +191,7 @@ func (s *DefinitionSet) sortTaskGraph() *SortTaskGraphResult {
 				}
 			}
 			for _, task := range nonResolvedTasksMap {
-				delete(missingTaskIdsInMap, task.UntypedID().String())
+				delete(missingTaskIdsInMap, task.UntypedID().ReferenceIDString())
 			}
 
 			// When there were no task runnable only with the missing sources,
@@ -208,6 +208,12 @@ func (s *DefinitionSet) sortTaskGraph() *SortTaskGraphResult {
 				if canBeNextStartingPoint {
 					hasCyclicDependencies = false
 					break
+				}
+			}
+
+			if !hasCyclicDependencies {
+				for _, task := range nonResolvedTasksMap {
+					delete(missingTaskIdsInMap, task.UntypedID().ReferenceIDString())
 				}
 			}
 
