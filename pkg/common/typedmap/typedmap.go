@@ -130,14 +130,14 @@ func Get[T any](m ReadableTypedMap, key TypedKey[T]) (T, bool) {
 // GetOrDefault retrieves a value or returns the default if not found.
 // Works with both TypedMap and ReadonlyTypedMap.
 func GetOrDefault[T any](m ReadableTypedMap, key TypedKey[T], defaultValue T) T {
-	v, ok := Get(m, key)
+	v, ok := Get[T](m, key)
 	if !ok {
 		return defaultValue
 	}
 	return v
 }
 
-// Set stores a value with type safety.
+// Set stores a value.
 // The key's type parameter must match the value's type.
 func Set[T any](m *TypedMap, key TypedKey[T], value T) {
 	m.container.Store(key.key, value)
