@@ -32,5 +32,5 @@ var ReaderFactoryGeneratorTask = task.NewProcessorTask(ReaderFactoryGeneratorTas
 })
 
 func GetReaderFactoryFromTaskVariable(v *task.VariableSet) (*structure.ReaderFactory, error) {
-	return common_task.GetTypedVariableFromTaskVariable[*structure.ReaderFactory](v, ReaderFactoryGeneratorTaskID.String(), nil)
+	return common_task.GetTypedVariableFromTaskVariable[*structure.ReaderFactory](v, ReaderFactoryGeneratorTaskID.ReferenceIDString(), nil)
 }

@@ -29,8 +29,8 @@ import (
 )
 
 type testTaskDefinition struct {
-	id           taskid.TaskImplementationID
-	dependencies []taskid.TaskReference
+	id           taskid.TaskImplementationID[any]
+	dependencies []taskid.UntypedTaskReference
 	labels       *typedmap.ReadonlyTypedMap
 }
 
@@ -39,9 +39,17 @@ func (d *testTaskDefinition) Run(ctx context.Context, taskMode int, v *VariableS
 	return nil, nil
 }
 
-var _ Definition = (*testTaskDefinition)(nil)
+func (d *testTaskDefinition) UntypedRun(ctx context.Context, taskMode int, v *VariableSet) (any, error) {
+	return nil, nil
+}
 
-func (d *testTaskDefinition) ID() taskid.TaskImplementationID {
+var _ Definition[any] = (*testTaskDefinition)(nil)
+
+func (d *testTaskDefinition) ID() taskid.TaskImplementationID[any] {
+	return d.id
+}
+
+func (d *testTaskDefinition) UntypedID() taskid.UntypedTaskImplementationID {
 	return d.id
 }
 
@@ -50,25 +58,25 @@ func (d *testTaskDefinition) Labels() *typedmap.ReadonlyTypedMap {
 }
 
 // Dependencies implements KHITaskUnit.
-func (d *testTaskDefinition) Dependencies() []taskid.TaskReference {
+func (d *testTaskDefinition) Dependencies() []taskid.UntypedTaskReference {
 	return d.dependencies
 }
 
 func newDebugDefinition(id string, dependencies []string, labelOpt ...LabelOpt) *testTaskDefinition {
 	labels := NewLabelSet(labelOpt...)
-	dependencyReferenceIds := []taskid.TaskReference{}
+	dependencyReferenceIds := []taskid.UntypedTaskReference{}
 	for _, id := range dependencies {
-		dependencyReferenceIds = append(dependencyReferenceIds, taskid.NewTaskReference(id))
+		dependencyReferenceIds = append(dependencyReferenceIds, taskid.NewTaskReference[any](id))
 	}
 
 	return &testTaskDefinition{
-		id:           taskid.NewTaskImplementationId(id),
+		id:           taskid.NewDefaultImplementationID[any](id),
 		dependencies: dependencyReferenceIds,
 		labels:       labels,
 	}
 }
 func TestSortTaskGraphWithValidGraph(t *testing.T) {
-	tasks := []Definition{
+	tasks := []UntypedDefinition{
 		newDebugDefinition("foo", []string{"bar"}),
 		newDebugDefinition("bar", []string{}),
 		newDebugDefinition("qux", []string{"quux"}),
@@ -79,16 +87,16 @@ func TestSortTaskGraphWithValidGraph(t *testing.T) {
 	resolveResult := taskSet.sortTaskGraph()
 
 	if diff := cmp.Diff(resolveResult, &SortTaskGraphResult{
-		TopologicalSortedTasks: []Definition{
+		TopologicalSortedTasks: []UntypedDefinition{
 			newDebugDefinition("bar", []string{}),
 			newDebugDefinition("foo", []string{"bar"}),
 			newDebugDefinition("quux", []string{"foo", "bar"}),
 			newDebugDefinition("qux", []string{"quux"}),
 		},
-		MissingDependencies: []taskid.TaskReference{},
+		MissingDependencies: []taskid.UntypedTaskReference{},
 		Runnable:            true,
 		HasCyclicDependency: false,
-	}, cmp.AllowUnexported(testTaskDefinition{}, taskid.TaskImplementationID{}, taskid.TaskReference{}), cmpopts.IgnoreUnexported(typedmap.ReadonlyTypedMap{})); diff != "" {
+	}, cmp.AllowUnexported(testTaskDefinition{}), cmpopts.IgnoreUnexported(typedmap.ReadonlyTypedMap{})); diff != "" {
 		t.Errorf("Generated SortTaskGraphResult is mismatched, (-actual,+expected);\n%s", diff)
 	}
 }
@@ -96,7 +104,7 @@ func TestSortTaskGraphWithValidGraph(t *testing.T) {
 func TestSortTaskGraphReturnsTheStableResult(t *testing.T) {
 	COUNT := 100
 	for i := 0; i < COUNT; i++ {
-		tasks := []Definition{
+		tasks := []UntypedDefinition{
 			newDebugDefinition("foo", []string{}),
 			newDebugDefinition("bar", []string{"foo"}),
 			newDebugDefinition("qux", []string{"foo"}),
@@ -107,16 +115,16 @@ func TestSortTaskGraphReturnsTheStableResult(t *testing.T) {
 		resolveResult := taskSet.sortTaskGraph()
 
 		if diff := cmp.Diff(resolveResult, &SortTaskGraphResult{
-			TopologicalSortedTasks: []Definition{
+			TopologicalSortedTasks: []UntypedDefinition{
 				newDebugDefinition("foo", []string{}),
 				newDebugDefinition("bar", []string{"foo"}),
 				newDebugDefinition("quux", []string{"foo"}),
 				newDebugDefinition("qux", []string{"foo"}),
 			},
-			MissingDependencies: []taskid.TaskReference{},
+			MissingDependencies: []taskid.UntypedTaskReference{},
 			Runnable:            true,
 			HasCyclicDependency: false,
-		}, cmp.AllowUnexported(testTaskDefinition{}, taskid.TaskImplementationID{}, taskid.TaskReference{}), cmpopts.IgnoreUnexported(typedmap.ReadonlyTypedMap{})); diff != "" {
+		}, cmp.AllowUnexported(testTaskDefinition{}), cmpopts.IgnoreUnexported(typedmap.ReadonlyTypedMap{})); diff != "" {
 			t.Errorf("Generated SortTaskGraphResult is mismatched, (-actual,+expected);\n%s", diff)
 			break
 		}
@@ -124,7 +132,7 @@ func TestSortTaskGraphReturnsTheStableResult(t *testing.T) {
 }
 
 func TestSortTaskGraphWithMissingDependency(t *testing.T) {
-	tasks := []Definition{
+	tasks := []UntypedDefinition{
 		newDebugDefinition("foo", []string{"bar", "missing-input2"}),
 		newDebugDefinition("bar", []string{}),
 		newDebugDefinition("qux", []string{"quux", "missing-input1"}),
@@ -136,10 +144,10 @@ func TestSortTaskGraphWithMissingDependency(t *testing.T) {
 
 	if diff := cmp.Diff(resolveResult, &SortTaskGraphResult{
 		TopologicalSortedTasks: nil,
-		MissingDependencies:    []taskid.TaskReference{taskid.NewTaskReference("missing-input1"), taskid.NewTaskReference("missing-input2")},
+		MissingDependencies:    []taskid.UntypedTaskReference{taskid.NewTaskReference[any]("missing-input1"), taskid.NewTaskReference[any]("missing-input2")},
 		Runnable:               false,
 		HasCyclicDependency:    false,
-	}, cmp.AllowUnexported(testTaskDefinition{}, taskid.TaskReference{}), cmpopts.SortSlices(func(a, b taskid.TaskReference) bool {
+	}, cmp.AllowUnexported(testTaskDefinition{}), cmpopts.SortSlices(func(a, b taskid.UntypedTaskReference) bool {
 		return strings.Compare(a.String(), b.String()) > 0
 	}), cmpopts.IgnoreUnexported(typedmap.ReadonlyTypedMap{})); diff != "" {
 		t.Errorf("Generated SortTaskGraphResult is mismatched, (-actual,+expected);\n%s", diff)
@@ -147,7 +155,7 @@ func TestSortTaskGraphWithMissingDependency(t *testing.T) {
 }
 
 func TestResolveGraphShouldIgnoreAfterSharp(t *testing.T) {
-	tasks := []Definition{
+	tasks := []UntypedDefinition{
 		newDebugDefinition("foo#suffix", []string{"bar"}),
 		newDebugDefinition("bar", []string{}),
 		newDebugDefinition("qux", []string{"quux"}),
@@ -158,22 +166,22 @@ func TestResolveGraphShouldIgnoreAfterSharp(t *testing.T) {
 	resolveResult := taskSet.sortTaskGraph()
 
 	if diff := cmp.Diff(resolveResult, &SortTaskGraphResult{
-		TopologicalSortedTasks: []Definition{
+		TopologicalSortedTasks: []UntypedDefinition{
 			newDebugDefinition("bar", []string{}),
 			newDebugDefinition("foo#suffix", []string{"bar"}),
 			newDebugDefinition("quux", []string{"foo", "bar"}),
 			newDebugDefinition("qux", []string{"quux"}),
 		},
-		MissingDependencies: []taskid.TaskReference{},
+		MissingDependencies: []taskid.UntypedTaskReference{},
 		Runnable:            true,
 		HasCyclicDependency: false,
-	}, cmp.AllowUnexported(testTaskDefinition{}, taskid.TaskImplementationID{}, taskid.TaskReference{}), cmpopts.IgnoreUnexported(typedmap.ReadonlyTypedMap{})); diff != "" {
+	}, cmp.AllowUnexported(testTaskDefinition{}), cmpopts.IgnoreUnexported(typedmap.ReadonlyTypedMap{})); diff != "" {
 		t.Errorf("Generated SortTaskGraphResult is mismatched, (-actual,+expected);\n%s", diff)
 	}
 }
 
 func TestResolveGraphWithCircularDependency(t *testing.T) {
-	tasks := []Definition{
+	tasks := []UntypedDefinition{
 		newDebugDefinition("foo", []string{"bar", "qux"}),
 		newDebugDefinition("bar", []string{}),
 		newDebugDefinition("qux", []string{"quux"}),
@@ -185,10 +193,10 @@ func TestResolveGraphWithCircularDependency(t *testing.T) {
 
 	if diff := cmp.Diff(resolveResult, &SortTaskGraphResult{
 		TopologicalSortedTasks: nil,
-		MissingDependencies:    []taskid.TaskReference{},
+		MissingDependencies:    []taskid.UntypedTaskReference{},
 		Runnable:               false,
 		HasCyclicDependency:    true,
-	}, cmp.AllowUnexported(testTaskDefinition{}, taskid.TaskReference{}), cmpopts.SortSlices(func(a string, b string) bool {
+	}, cmp.AllowUnexported(testTaskDefinition{}), cmpopts.SortSlices(func(a string, b string) bool {
 		return strings.Compare(a, b) > 0
 	}), cmpopts.IgnoreUnexported(typedmap.ReadonlyTypedMap{})); diff != "" {
 		t.Errorf("Generated SortTaskGraphResult is mismatched, (-actual,+expected);\n%s", diff)
@@ -196,12 +204,12 @@ func TestResolveGraphWithCircularDependency(t *testing.T) {
 }
 
 func TestResolveTaskWithSelectionPriority(t *testing.T) {
-	tasks := []Definition{
+	tasks := []UntypedDefinition{
 		newDebugDefinition("foo", []string{"bar"}),
 	}
 	taskSet := &DefinitionSet{definitions: tasks}
 
-	availableSet, err := NewSet([]Definition{
+	availableSet, err := NewSet([]UntypedDefinition{
 		newDebugDefinition("bar#a", []string{}, WithSelectionPriority(10)),
 		newDebugDefinition("bar#b", []string{}, WithSelectionPriority(20)),
 		newDebugDefinition("bar#c", []string{}),
@@ -214,7 +222,7 @@ func TestResolveTaskWithSelectionPriority(t *testing.T) {
 		t.Errorf("unexpected error\n%v", err)
 	}
 
-	expectedSet, err := NewSet([]Definition{
+	expectedSet, err := NewSet([]UntypedDefinition{
 		newDebugDefinition("bar#b", []string{}, WithSelectionPriority(20)),
 		newDebugDefinition("foo", []string{"bar"}),
 	})
@@ -223,7 +231,7 @@ func TestResolveTaskWithSelectionPriority(t *testing.T) {
 		t.Errorf("unexpected error\n%v", err)
 	}
 
-	if diff := cmp.Diff(resolveResult, expectedSet, cmp.AllowUnexported(testTaskDefinition{}, taskid.TaskReference{}, taskid.TaskImplementationID{}, DefinitionSet{}), cmpopts.SortSlices(func(a string, b string) bool {
+	if diff := cmp.Diff(resolveResult, expectedSet, cmp.AllowUnexported(testTaskDefinition{}, DefinitionSet{}), cmpopts.SortSlices(func(a string, b string) bool {
 		return strings.Compare(a, b) > 0
 	}), cmpopts.IgnoreUnexported(typedmap.ReadonlyTypedMap{})); diff != "" {
 		t.Errorf("Generated DefinitionSet is mismatched, (-actual,+expected);\n%s", diff)
@@ -233,7 +241,7 @@ func TestResolveTaskWithSelectionPriority(t *testing.T) {
 func TestWrapGraph(t *testing.T) {
 	testCases := []struct {
 		ResolvedShape string
-		Definitions   []Definition
+		Definitions   []UntypedDefinition
 	}{
 		{
 			//https://dreampuf.github.io/GraphvizOnline/#digraph%20G%20%7B%0Astart%20%5Bshape%3D%22diamond%22%2Cfillcolor%3Dgray%2Cstyle%3Dfilled%5D%0Atest_init%20%5Bshape%3D%22circle%22%2Clabel%3D%22test-init%22%5D%0Atest_done%20%5Bshape%3D%22circle%22%2Clabel%3D%22test-done%22%5D%0Astart%20-%3E%20test_init%0Atest_init%20-%3E%20test_done%0A%7D
@@ -244,7 +252,7 @@ test_done [shape="circle",label="test-done"]
 start -> test_init
 test_init -> test_done
 }`,
-			Definitions: []Definition{},
+			Definitions: []UntypedDefinition{},
 		},
 		{
 			//https://dreampuf.github.io/GraphvizOnline/#digraph%20G%20%7B%0Astart%20%5Bshape%3D%22diamond%22%2Cfillcolor%3Dgray%2Cstyle%3Dfilled%5D%0Atest_init%20%5Bshape%3D%22circle%22%2Clabel%3D%22test-init%22%5D%0Abar%20%5Bshape%3D%22circle%22%2Clabel%3D%22bar%22%5D%0Afoo%20%5Bshape%3D%22circle%22%2Clabel%3D%22foo%22%5D%0Aquux%20%5Bshape%3D%22circle%22%2Clabel%3D%22quux%22%5D%0Aquz%20%5Bshape%3D%22circle%22%2Clabel%3D%22quz%22%5D%0Atest_done%20%5Bshape%3D%22circle%22%2Clabel%3D%22test-done%22%5D%0Astart%20-%3E%20test_init%0Atest_init%20-%3E%20bar%0Atest_init%20-%3E%20foo%0Atest_init%20-%3E%20quux%0Atest_init%20-%3E%20quz%0Atest_init%20-%3E%20test_done%0Afoo%20-%3E%20test_done%0Abar%20-%3E%20test_done%0Aquz%20-%3E%20test_done%0Aquux%20-%3E%20test_done%0A%7D
@@ -267,7 +275,7 @@ quux -> test_done
 quz -> test_done
 test_init -> test_done
 }`,
-			Definitions: []Definition{
+			Definitions: []UntypedDefinition{
 				newDebugDefinition("foo", []string{}),
 				newDebugDefinition("bar", []string{}),
 				newDebugDefinition("quz", []string{}),
@@ -294,7 +302,7 @@ bar -> test_done
 quux -> test_done
 test_init -> test_done
 }`,
-			Definitions: []Definition{
+			Definitions: []UntypedDefinition{
 				newDebugDefinition("foo", []string{}),
 				newDebugDefinition("bar", []string{"foo", "quz"}),
 				newDebugDefinition("quz", []string{}),
@@ -309,7 +317,7 @@ test_init -> test_done
 			if err != nil {
 				t.Errorf("unexpected error %v", err)
 			}
-			wrapped, err := originalSet.WrapGraph(taskid.NewTaskImplementationId("test"), []taskid.TaskReference{})
+			wrapped, err := originalSet.WrapGraph(taskid.NewDefaultImplementationID[any]("test"), []taskid.UntypedTaskReference{})
 			if err != nil {
 				t.Errorf("unexpected error %v", err)
 			}
@@ -336,7 +344,7 @@ test_init -> test_done
 				if err != nil {
 					t.Errorf("unexpected error %v", err)
 				}
-				wrapped, err := originalSet.WrapGraph(taskid.NewTaskImplementationId("test"), []taskid.TaskReference{})
+				wrapped, err := originalSet.WrapGraph(taskid.NewDefaultImplementationID[any]("test"), []taskid.UntypedTaskReference{})
 				if err != nil {
 					t.Errorf("unexpected error %v", err)
 				}
@@ -357,12 +365,12 @@ test_init -> test_done
 }
 
 func TestResolveTaskWithValidTaskSet(t *testing.T) {
-	featureTasks := []Definition{
+	featureTasks := []UntypedDefinition{
 		newDebugDefinition("foo", []string{"bar"}),
 		newDebugDefinition("bar", []string{"qux"}),
 	}
 	featureTaskSet := DefinitionSet{definitions: featureTasks, runnable: false}
-	availableTasks := []Definition{
+	availableTasks := []UntypedDefinition{
 		newDebugDefinition("qux", []string{"quux"}),
 		newDebugDefinition("quux", []string{}),
 		newDebugDefinition("hoge", []string{"fuga"}),
@@ -376,24 +384,24 @@ func TestResolveTaskWithValidTaskSet(t *testing.T) {
 	}
 	if diff := cmp.Diff(resolvedTaskSet, &DefinitionSet{
 		runnable: true,
-		definitions: []Definition{
+		definitions: []UntypedDefinition{
 			newDebugDefinition("quux", []string{}),
 			newDebugDefinition("qux", []string{"quux"}),
 			newDebugDefinition("bar", []string{"qux"}),
 			newDebugDefinition("foo", []string{"bar"}),
 		},
-	}, cmp.AllowUnexported(testTaskDefinition{}, DefinitionSet{}, taskid.TaskImplementationID{}, taskid.TaskReference{}), cmpopts.IgnoreUnexported(typedmap.ReadonlyTypedMap{})); diff != "" {
+	}, cmp.AllowUnexported(testTaskDefinition{}, DefinitionSet{}), cmpopts.IgnoreUnexported(typedmap.ReadonlyTypedMap{})); diff != "" {
 		t.Errorf("The result of ResolveTask is mismatched, (-actual,+expected);\n%s", diff)
 	}
 }
 
 func TestDumpGraphviz(t *testing.T) {
-	featureTasks := []Definition{
+	featureTasks := []UntypedDefinition{
 		newDebugDefinition("foo", []string{"bar"}),
 		newDebugDefinition("bar", []string{"qux", "quux"}),
 	}
 	featureTaskSet := DefinitionSet{definitions: featureTasks, runnable: false}
-	availableTasks := []Definition{
+	availableTasks := []UntypedDefinition{
 		newDebugDefinition("qux", []string{}),
 		newDebugDefinition("quux", []string{}),
 		newDebugDefinition("hoge", []string{"fuga"}),
@@ -429,11 +437,11 @@ bar -> foo
 func TestDumpGraphvizReturnsStableResult(t *testing.T) {
 	COUNT := 100
 	for i := 0; i < COUNT; i++ {
-		featureTasks := []Definition{
+		featureTasks := []UntypedDefinition{
 			newDebugDefinition("foo", []string{"qux", "quux", "hoge"}),
 		}
 		featureTaskSet := DefinitionSet{definitions: featureTasks, runnable: false}
-		availableTasks := []Definition{
+		availableTasks := []UntypedDefinition{
 			newDebugDefinition("qux", []string{}),
 			newDebugDefinition("quux", []string{}),
 			newDebugDefinition("hoge", []string{"fuga"}),
@@ -475,7 +483,7 @@ hoge -> foo
 }
 
 func TestAddDefinitionToSet(t *testing.T) {
-	ds, err := NewSet([]Definition{})
+	ds, err := NewSet([]UntypedDefinition{})
 	if err != nil {
 		t.Errorf("unexpected err:%s", err)
 	}
@@ -493,7 +501,7 @@ func TestAddDefinitionToSet(t *testing.T) {
 }
 
 func TestNewSetWithDuplicatedID(t *testing.T) {
-	_, err := NewSet([]Definition{
+	_, err := NewSet([]UntypedDefinition{
 		newDebugDefinition("bar", []string{"qux", "quux"}),
 		newDebugDefinition("bar", []string{"qux", "quux"}),
 	})

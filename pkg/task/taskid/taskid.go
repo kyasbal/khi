@@ -14,6 +14,11 @@
 
 package taskid
 
+import (
+	"fmt"
+	"strings"
+)
+
 // TaskImplementationId is a unique value associated with each task implementation.
 // TaskReferenceId is an ID that can be used to refer tasks in the dependencies and does not
 // have a task suffix.
@@ -26,6 +31,7 @@ package taskid
 
 type UntypedTaskReference interface {
 	String() string
+	ReferenceIDString() string
 }
 
 type TaskReference[TaskResult any] interface {
@@ -36,6 +42,7 @@ type TaskReference[TaskResult any] interface {
 
 type UntypedTaskImplementationID interface {
 	String() string
+	ReferenceIDString() string
 	GetTaskImplementationHash() string
 	GetUntypedReference() UntypedTaskReference
 }
@@ -70,6 +77,14 @@ func (t taskImplementationIDImpl[TaskResult]) GetTaskReference() TaskReference[T
 	return taskReferenceImpl[TaskResult]{id: t.referenceId}
 }
 
+func (t taskReferenceImpl[TaskResult]) ReferenceIDString() string {
+	return t.String()
+}
+
+func (t taskImplementationIDImpl[TaskResult]) ReferenceIDString() string {
+	return t.referenceId
+}
+
 func (t taskImplementationIDImpl[TaskResult]) GetTaskImplementationHash() string {
 	return t.implementationHash
 }
@@ -79,10 +94,16 @@ func (t taskImplementationIDImpl[TaskResult]) GetUntypedReference() UntypedTaskR
 }
 
 func NewTaskReference[TaskResult any](id string) TaskReference[TaskResult] {
+	if strings.Contains(id, "#") {
+		panic(fmt.Sprintf("reference id %s is invalid. It cannot contain '#' in reference ID", id))
+	}
 	return taskReferenceImpl[TaskResult]{id: id}
 }
 
 func NewDefaultImplementationID[TaskResult any](id string) TaskImplementationID[TaskResult] {
+	if strings.Contains(id, "#") {
+		panic(fmt.Sprintf("task id %s is invalid. It cannot contain '#' on NewDefaultImplementationID. Use NewImplementationID instead to use a custom implementation hash.", id))
+	}
 	return taskImplementationIDImpl[TaskResult]{referenceId: id, implementationHash: "default"}
 }
 

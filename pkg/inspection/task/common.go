@@ -55,5 +55,5 @@ func GetInspectionRequestFromVariable(v *common_task.VariableSet) (*InspectionRe
 }
 
 func GetInspectionTimeFromTaskVariable(v *common_task.VariableSet) (time.Time, error) {
-	return common_task.GetTypedVariableFromTaskVariable[time.Time](v, InspectionTimeTaskID.String(), time.Time{})
+	return common_task.GetTypedVariableFromTaskVariable[time.Time](v, InspectionTimeTaskID.ReferenceIDString(), time.Time{})
 }

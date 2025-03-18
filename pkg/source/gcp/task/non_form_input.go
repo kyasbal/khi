@@ -43,5 +43,5 @@ var TimeZoneShiftInputTask = inspection_task.NewInspectionProcessor(TimeZoneShif
 })
 
 func GetTimezoneShiftInput(tv *task.VariableSet) (*time.Location, error) {
-	return task.GetTypedVariableFromTaskVariable[*time.Location](tv, TimeZoneShiftInputTaskID.String(), time.UTC)
+	return task.GetTypedVariableFromTaskVariable[*time.Location](tv, TimeZoneShiftInputTaskID.ReferenceIDString(), time.UTC)
 }

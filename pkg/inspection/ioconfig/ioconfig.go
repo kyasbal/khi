@@ -79,5 +79,5 @@ var TestIOConfig = task.NewCachedProcessor(IOConfigTaskID, []taskid.UntypedTaskR
 })
 
 func GetIOConfigFromTaskVariable(v *task.VariableSet) (*IOConfig, error) {
-	return task.GetTypedVariableFromTaskVariable[*IOConfig](v, IOConfigTaskID.String(), nil)
+	return task.GetTypedVariableFromTaskVariable[*IOConfig](v, IOConfigTaskID.ReferenceIDString(), nil)
 }

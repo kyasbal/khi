@@ -27,5 +27,5 @@ type AutocompleteClusterNameList struct {
 }
 
 func GetAutocompleteClusterNamesFromTaskVariable(v *task.VariableSet) (*AutocompleteClusterNameList, error) {
-	return task.GetTypedVariableFromTaskVariable[*AutocompleteClusterNameList](v, AutocompleteClusterNamesTaskID.String(), nil)
+	return task.GetTypedVariableFromTaskVariable[*AutocompleteClusterNameList](v, AutocompleteClusterNamesTaskID.ReferenceIDString(), nil)
 }

@@ -33,13 +33,13 @@ const GCPPrefix = "cloud.google.com/"
 var ClusterNamePrefixTaskID = taskid.NewTaskReference[string](GCPPrefix + "cluster-name-prefix")
 
 func GetClusterNamePrefixFromTaskVariable(v *task.VariableSet) (string, error) {
-	return task.GetTypedVariableFromTaskVariable[string](v, ClusterNamePrefixTaskID.String(), "")
+	return task.GetTypedVariableFromTaskVariable[string](v, ClusterNamePrefixTaskID.ReferenceIDString(), "")
 }
 
 var K8sResourceMergeConfigTaskID = taskid.NewDefaultImplementationID[*k8s.MergeConfigRegistry](GCPPrefix + "merge-config")
 
 func GetK8sResourceMergeConfigFromTaskVariable(v *task.VariableSet) (*k8s.MergeConfigRegistry, error) {
-	return task.GetTypedVariableFromTaskVariable[*k8s.MergeConfigRegistry](v, K8sResourceMergeConfigTaskID.String(), nil)
+	return task.GetTypedVariableFromTaskVariable[*k8s.MergeConfigRegistry](v, K8sResourceMergeConfigTaskID.ReferenceIDString(), nil)
 }
 
 var GCPDefaultK8sResourceMergeConfigTask = inspection_task.NewInspectionProducer(K8sResourceMergeConfigTaskID, func(ctx context.Context, taskMode int, progress *progress.TaskProgress) (*k8s.MergeConfigRegistry, error) {

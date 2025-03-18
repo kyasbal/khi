@@ -74,7 +74,7 @@ var InputProjectIdTask = form.NewInputFormDefinitionBuilder(InputProjectIdTaskID
 	Build()
 
 func GetInputProjectIdFromTaskVariable(tv *task.VariableSet) (string, error) {
-	return task.GetTypedVariableFromTaskVariable[string](tv, InputProjectIdTaskID.String(), "<INVALID>")
+	return task.GetTypedVariableFromTaskVariable[string](tv, InputProjectIdTaskID.ReferenceIDString(), "<INVALID>")
 }
 
 var InputClusterNameTaskID = taskid.NewDefaultImplementationID[string](GCPPrefix + "input/cluster-name")
@@ -143,7 +143,7 @@ var InputClusterNameTask = form.NewInputFormDefinitionBuilder(InputClusterNameTa
 	Build()
 
 func GetInputClusterNameFromTaskVariable(tv *task.VariableSet) (string, error) {
-	return task.GetTypedVariableFromTaskVariable[string](tv, InputClusterNameTaskID.String(), "<INVALID>")
+	return task.GetTypedVariableFromTaskVariable[string](tv, InputClusterNameTaskID.ReferenceIDString(), "<INVALID>")
 }
 
 var InputDurationTaskID = taskid.NewDefaultImplementationID[time.Duration](GCPPrefix + "input/duration")
@@ -211,7 +211,7 @@ var InputDurationTask = form.NewInputFormDefinitionBuilder(InputDurationTaskID, 
 	Build()
 
 func GetInputDurationFromTaskVariable(tv *task.VariableSet) (time.Duration, error) {
-	return task.GetTypedVariableFromTaskVariable[time.Duration](tv, InputDurationTaskID.String(), 0)
+	return task.GetTypedVariableFromTaskVariable[time.Duration](tv, InputDurationTaskID.ReferenceIDString(), 0)
 }
 
 var InputEndTimeTaskID = taskid.NewDefaultImplementationID[time.Time](GCPPrefix + "input/end-time")
@@ -265,7 +265,7 @@ var InputEndTimeTask = form.NewInputFormDefinitionBuilder(InputEndTimeTaskID, Pr
 	Build()
 
 func GetInputEndTimeFromTaskVariable(tv *task.VariableSet) (time.Time, error) {
-	return task.GetTypedVariableFromTaskVariable[time.Time](tv, InputEndTimeTaskID.String(), time.Time{})
+	return task.GetTypedVariableFromTaskVariable[time.Time](tv, InputEndTimeTaskID.ReferenceIDString(), time.Time{})
 }
 
 var InputStartTimeTaskID = taskid.NewDefaultImplementationID[time.Time](GCPPrefix + "input/start-time")
@@ -300,7 +300,7 @@ var InputStartTimeTask = common_task.NewInspectionProcessor(InputStartTimeTaskID
 })
 
 func GetInputStartTimeFromTaskVariable(tv *task.VariableSet) (time.Time, error) {
-	return task.GetTypedVariableFromTaskVariable[time.Time](tv, InputStartTimeTaskID.String(), time.Time{})
+	return task.GetTypedVariableFromTaskVariable[time.Time](tv, InputStartTimeTaskID.ReferenceIDString(), time.Time{})
 }
 
 var InputKindFilterTaskID = taskid.NewDefaultImplementationID[*queryutil.SetFilterParseResult](GCPPrefix + "input/kinds")
@@ -331,7 +331,7 @@ var InputKindFilterTask = form.NewInputFormDefinitionBuilder(InputKindFilterTask
 	Build()
 
 func GetInputKindNameFromTaskVariable(tv *task.VariableSet) (*queryutil.SetFilterParseResult, error) {
-	return task.GetTypedVariableFromTaskVariable[*queryutil.SetFilterParseResult](tv, InputKindFilterTaskID.String(), nil)
+	return task.GetTypedVariableFromTaskVariable[*queryutil.SetFilterParseResult](tv, InputKindFilterTaskID.ReferenceIDString(), nil)
 }
 
 var InputNamespaceFilterTaskID = taskid.NewDefaultImplementationID[*queryutil.SetFilterParseResult](GCPPrefix + "input/namespaces")
@@ -363,7 +363,7 @@ var InputNamespaceFilterTask = form.NewInputFormDefinitionBuilder(InputNamespace
 	Build()
 
 func GetInputNamespaceFilterFromTaskVariable(tv *task.VariableSet) (*queryutil.SetFilterParseResult, error) {
-	return task.GetTypedVariableFromTaskVariable[*queryutil.SetFilterParseResult](tv, InputNamespaceFilterTaskID.String(), nil)
+	return task.GetTypedVariableFromTaskVariable[*queryutil.SetFilterParseResult](tv, InputNamespaceFilterTaskID.ReferenceIDString(), nil)
 }
 
 var InputNodeNameFilterTaskID = taskid.NewDefaultImplementationID[[]string](GCPPrefix + "input/node-name-filter")
@@ -402,7 +402,7 @@ var InputNodeNameFilterTask = form.NewInputFormDefinitionBuilder(InputNodeNameFi
 }).Build()
 
 func GetNodeNameFilterFromTaskVaraible(tv *task.VariableSet) ([]string, error) {
-	return task.GetTypedVariableFromTaskVariable[[]string](tv, InputNodeNameFilterTaskID.String(), nil)
+	return task.GetTypedVariableFromTaskVariable[[]string](tv, InputNodeNameFilterTaskID.ReferenceIDString(), nil)
 }
 
 var InputLocationsTaskID = taskid.NewDefaultImplementationID[string](GCPPrefix + "input/location")
@@ -412,7 +412,7 @@ var InputLocationsTask = form.NewInputFormDefinitionBuilder(InputLocationsTaskID
 ).Build()
 
 func GetInputLocationsFromTaskVariable(tv *task.VariableSet) (string, error) {
-	return task.GetTypedVariableFromTaskVariable[string](tv, InputLocationsTaskID.String(), "")
+	return task.GetTypedVariableFromTaskVariable[string](tv, InputLocationsTaskID.ReferenceIDString(), "")
 }
 
 func toTimeDurationWithTimezone(startTime time.Time, endTime time.Time, timezone *time.Location, withTimezone bool) string {

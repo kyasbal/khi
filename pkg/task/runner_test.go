@@ -28,11 +28,11 @@ import (
 func createMockTask(id string, dependencies []string, runFunc func(ctx context.Context, taskMode int, v *VariableSet) (any, error)) UntypedDefinition {
 	deps := make([]taskid.UntypedTaskReference, len(dependencies))
 	for i, dep := range dependencies {
-		deps[i] = taskid.NewTaskReference(dep)
+		deps[i] = taskid.NewTaskReference[any](dep)
 	}
 
 	return NewDefinitionFromFunc(
-		taskid.NewTaskImplementationId(id),
+		taskid.NewDefaultImplementationID[any](id),
 		deps,
 		runFunc,
 	)
@@ -69,7 +69,7 @@ func TestLocalRunner_SingleTask(t *testing.T) {
 		t.Fatalf("Failed to get result: %v", err)
 	}
 
-	val, err := GetTypedVariableFromTaskVariable[string](result, "task1", "")
+	val, err := GetTypedVariableFromTaskVariable(result, "task1", "")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -94,7 +94,7 @@ func TestLocalRunner_TasksWithDependencies(t *testing.T) {
 		executionOrder = append(executionOrder, "task2")
 		mu.Unlock()
 
-		_, err := GetTypedVariableFromTaskVariable[string](v, "task1", "")
+		_, err := GetTypedVariableFromTaskVariable(v, "task1", "")
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}

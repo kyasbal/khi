@@ -33,7 +33,7 @@ import (
 
 var SerializerTaskID = taskid.NewDefaultImplementationID[*inspectiondata.FileSystemStore](inspection_task.InspectionTaskPrefix + "serialize")
 
-var SerializeTask = inspection_task.NewInspectionProcessor(SerializerTaskID, []taskid.UntypedTaskReference{inspection_task.InspectionMainSubgraphName + "-done", ioconfig.IOConfigTaskID, inspection_task.BuilderGeneratorTaskID}, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (*inspectiondata.FileSystemStore, error) {
+var SerializeTask = inspection_task.NewInspectionProcessor(SerializerTaskID, []taskid.UntypedTaskReference{inspection_task.InspectionMainSubgraphDoneTaskID, ioconfig.IOConfigTaskID, inspection_task.BuilderGeneratorTaskID}, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (*inspectiondata.FileSystemStore, error) {
 	if taskMode == inspection_task.TaskModeDryRun {
 		slog.DebugContext(ctx, "Skipping because this is in dryrun mode")
 		return nil, nil

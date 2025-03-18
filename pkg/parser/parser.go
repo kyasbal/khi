@@ -70,7 +70,7 @@ func NewParserTaskFromParser(taskId taskid.TaskImplementationID[any], parser Par
 		if err != nil {
 			return nil, err
 		}
-		logs, err := task.GetTypedVariableFromTaskVariable[[]*log.LogEntity](v, parser.LogTask().String(), nil)
+		logs, err := task.GetTypedVariableFromTaskVariable[[]*log.LogEntity](v, parser.LogTask().ReferenceIDString(), nil)
 		if err != nil {
 			return nil, err
 		}

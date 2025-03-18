@@ -21,7 +21,7 @@ import (
 )
 
 // Deprecated: Use testtask package instead.
-func MockProcessorTaskFromTaskID(taskId string, value any) task.Definition {
+func MockProcessorTaskFromTaskID(taskId string, value any) task.UntypedDefinition {
 	return task.NewProcessorTask(taskId, []string{}, func(ctx context.Context, taskMode int, v *task.VariableSet) (any, error) {
 		return value, nil
 	})
@@ -29,8 +29,8 @@ func MockProcessorTaskFromTaskID(taskId string, value any) task.Definition {
 
 // Deprecated: Use testtask package instead.
 // RunTaskGraph executes the task graph just with provided dependency tasks
-func RunTaskGraph(target task.Definition, mode int, initialParameters map[string]any, dependencies ...task.Definition) (*task.VariableSet, error) {
-	sourceDs, err := task.NewSet([]task.Definition{target})
+func RunTaskGraph(target task.UntypedDefinition, mode int, initialParameters map[string]any, dependencies ...task.UntypedDefinition) (*task.VariableSet, error) {
+	sourceDs, err := task.NewSet([]task.UntypedDefinition{target})
 	if err != nil {
 		return nil, err
 	}

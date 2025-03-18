@@ -14,7 +14,10 @@
 
 package testtask
 
-import "github.com/GoogleCloudPlatform/khi/pkg/task"
+import (
+	"github.com/GoogleCloudPlatform/khi/pkg/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
+)
 
 // TestRunTaskParameterOpt is type used for the Functional Option Pattern on RunSingleTask
 type TestRunTaskParameterOpt interface {
@@ -34,17 +37,17 @@ func (p *priorTaskResultOpt) AddParam(params map[string]any) {
 var _ TestRunTaskParameterOpt = (*priorTaskResultOpt)(nil)
 
 // PriorTaskResult returns RunSingleTaskParameterOpt to fill a parameter of a task result with given value.
-func PriorTaskResult(task task.Definition, parameter any) TestRunTaskParameterOpt {
+func PriorTaskResult(task task.UntypedDefinition, parameter any) TestRunTaskParameterOpt {
 	return &priorTaskResultOpt{
-		taskId:    task.ID().String(),
+		taskId:    task.UntypedID().String(),
 		parameter: parameter,
 	}
 }
 
 // PriorTaskResultFromID returns RunSingleTaskParameterOpt to fill a parameter of a task result with given value.
-func PriorTaskResultFromID(id string, parameter any) TestRunTaskParameterOpt {
+func PriorTaskResultFromID(id taskid.UntypedTaskReference, parameter any) TestRunTaskParameterOpt {
 	return &priorTaskResultOpt{
-		taskId:    id,
+		taskId:    id.String(),
 		parameter: parameter,
 	}
 }

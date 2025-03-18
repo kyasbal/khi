@@ -42,7 +42,7 @@ func TestProjectIdInput(t *testing.T) {
 			Name:          "With valid project ID",
 			Input:         "foo-project",
 			ExpectedValue: "foo-project",
-			Dependencies: []task.Definition{
+			Dependencies: []task.UntypedDefinition{
 				testClusterNamePrefix,
 			},
 			ExpectedFormField: form.FormField{
@@ -59,7 +59,7 @@ func TestProjectIdInput(t *testing.T) {
 			Name:          "With fixed project ID from environment variable",
 			Input:         "foo-project",
 			ExpectedValue: "bar-project",
-			Dependencies: []task.Definition{
+			Dependencies: []task.UntypedDefinition{
 				testClusterNamePrefix,
 			},
 			ExpectedFormField: form.FormField{
@@ -84,7 +84,7 @@ func TestProjectIdInput(t *testing.T) {
 			Name:          "With invalid project ID",
 			Input:         "A invalid project ID",
 			ExpectedValue: "",
-			Dependencies: []task.Definition{
+			Dependencies: []task.UntypedDefinition{
 				testClusterNamePrefix,
 			},
 			ExpectedFormField: form.FormField{
@@ -102,7 +102,7 @@ func TestProjectIdInput(t *testing.T) {
 			Name:          "Spaces around project ID must be trimmed",
 			Input:         "  project-foo   ",
 			ExpectedValue: "project-foo",
-			Dependencies: []task.Definition{
+			Dependencies: []task.UntypedDefinition{
 				testClusterNamePrefix,
 			},
 			ExpectedFormField: form.FormField{
@@ -119,7 +119,7 @@ func TestProjectIdInput(t *testing.T) {
 			Name:          "With valid old style project ID",
 			Input:         "  deprecated.com:but-still-usable-project-id   ",
 			ExpectedValue: "deprecated.com:but-still-usable-project-id",
-			Dependencies: []task.Definition{
+			Dependencies: []task.UntypedDefinition{
 				testClusterNamePrefix,
 			},
 			ExpectedFormField: form.FormField{
@@ -145,7 +145,7 @@ func TestClusterNameInput(t *testing.T) {
 			Name:          "with valid cluster name",
 			Input:         "foo-cluster",
 			ExpectedValue: "foo-cluster",
-			Dependencies:  []task.Definition{mockClusterNamesTask1, testClusterNamePrefix},
+			Dependencies:  []task.UntypedDefinition{mockClusterNamesTask1, testClusterNamePrefix},
 			ExpectedFormField: form.FormField{
 				Priority:    1,
 				Id:          GCPPrefix + "input/cluster-name",
@@ -161,7 +161,7 @@ func TestClusterNameInput(t *testing.T) {
 			Name:          "spaces around cluster name must be trimmed",
 			Input:         "  foo-cluster   ",
 			ExpectedValue: "foo-cluster",
-			Dependencies:  []task.Definition{mockClusterNamesTask1, testClusterNamePrefix},
+			Dependencies:  []task.UntypedDefinition{mockClusterNamesTask1, testClusterNamePrefix},
 			ExpectedFormField: form.FormField{
 				Priority:    1,
 				Id:          GCPPrefix + "input/cluster-name",
@@ -177,7 +177,7 @@ func TestClusterNameInput(t *testing.T) {
 			Name:          "invalid cluster name",
 			Input:         "An invalid cluster name",
 			ExpectedValue: "foo-cluster",
-			Dependencies:  []task.Definition{mockClusterNamesTask1, testClusterNamePrefix},
+			Dependencies:  []task.UntypedDefinition{mockClusterNamesTask1, testClusterNamePrefix},
 			ExpectedFormField: form.FormField{
 				Priority:        1,
 				Id:              GCPPrefix + "input/cluster-name",
@@ -194,7 +194,7 @@ func TestClusterNameInput(t *testing.T) {
 			Name:          "non existing cluster should show a hint",
 			Input:         "nonexisting-cluster",
 			ExpectedValue: "nonexisting-cluster",
-			Dependencies:  []task.Definition{mockClusterNamesTask1, testClusterNamePrefix},
+			Dependencies:  []task.UntypedDefinition{mockClusterNamesTask1, testClusterNamePrefix},
 			ExpectedFormField: form.FormField{
 				Priority:        1,
 				Id:              GCPPrefix + "input/cluster-name",
@@ -225,7 +225,7 @@ func TestDurationInput(t *testing.T) {
 			Name:          "With valid time duration",
 			Input:         "10m",
 			ExpectedValue: time.Duration(time.Minute) * 10,
-			Dependencies:  []task.Definition{endTimeTask, currentTimeTask1, timezoneTaskUTC},
+			Dependencies:  []task.UntypedDefinition{endTimeTask, currentTimeTask1, timezoneTaskUTC},
 			ExpectedFormField: form.FormField{
 				Label:       expectedLabel,
 				Description: expectedDescription,
@@ -243,7 +243,7 @@ func TestDurationInput(t *testing.T) {
 			Name:          "With invalid time duration",
 			Input:         "foo",
 			ExpectedValue: time.Hour,
-			Dependencies:  []task.Definition{endTimeTask, currentTimeTask1, timezoneTaskUTC},
+			Dependencies:  []task.UntypedDefinition{endTimeTask, currentTimeTask1, timezoneTaskUTC},
 			ExpectedFormField: form.FormField{
 				Label:           expectedLabel,
 				Description:     expectedDescription,
@@ -258,7 +258,7 @@ func TestDurationInput(t *testing.T) {
 			Name:          "With invalid time duration(negative)",
 			Input:         "-10m",
 			ExpectedValue: time.Hour,
-			Dependencies:  []task.Definition{endTimeTask, currentTimeTask1, timezoneTaskUTC},
+			Dependencies:  []task.UntypedDefinition{endTimeTask, currentTimeTask1, timezoneTaskUTC},
 			ExpectedFormField: form.FormField{
 				Label:           expectedLabel,
 				Description:     expectedDescription,
@@ -273,7 +273,7 @@ func TestDurationInput(t *testing.T) {
 			Name:          "with longer duration starting before than 30 days",
 			Input:         "672h", // starting time will be 30 days before the inspection time
 			ExpectedValue: time.Hour * 672,
-			Dependencies:  []task.Definition{endTimeTask, currentTimeTask1, timezoneTaskUTC},
+			Dependencies:  []task.UntypedDefinition{endTimeTask, currentTimeTask1, timezoneTaskUTC},
 			ExpectedFormField: form.FormField{
 				Type:        "Text",
 				Label:       expectedLabel,
@@ -294,7 +294,7 @@ Query range:
 			Name:          "With non UTC timezone",
 			Input:         "1h",
 			ExpectedValue: time.Hour,
-			Dependencies:  []task.Definition{endTimeTask, currentTimeTask1, timezoneTaskJST},
+			Dependencies:  []task.UntypedDefinition{endTimeTask, currentTimeTask1, timezoneTaskJST},
 			ExpectedFormField: form.FormField{
 				Type:        "Text",
 				Label:       expectedLabel,
@@ -331,7 +331,7 @@ func TestInputEndtime(t *testing.T) {
 			Name:          "with empty",
 			Input:         "",
 			ExpectedValue: expectedValue1,
-			Dependencies:  []task.Definition{inspection_task.TestInspectionTimeTaskProducer("2020-01-02T03:04:05Z"), timezoneTaskUTC},
+			Dependencies:  []task.UntypedDefinition{inspection_task.TestInspectionTimeTaskProducer("2020-01-02T03:04:05Z"), timezoneTaskUTC},
 			ExpectedFormField: form.FormField{
 				Label:           expectedLabel,
 				Description:     expectedDescription,
@@ -346,7 +346,7 @@ func TestInputEndtime(t *testing.T) {
 			Name:          "with valid timestamp and UTC timezone",
 			Input:         "2020-01-02T00:00:00Z",
 			ExpectedValue: expectedValue2,
-			Dependencies:  []task.Definition{inspection_task.TestInspectionTimeTaskProducer("2020-01-02T03:04:05Z"), timezoneTaskUTC},
+			Dependencies:  []task.UntypedDefinition{inspection_task.TestInspectionTimeTaskProducer("2020-01-02T03:04:05Z"), timezoneTaskUTC},
 			ExpectedFormField: form.FormField{
 				Label:           expectedLabel,
 				Description:     expectedDescription,
@@ -361,7 +361,7 @@ func TestInputEndtime(t *testing.T) {
 			Name:          "with valid timestamp and non UTC timezone",
 			Input:         "2020-01-02T00:00:00Z",
 			ExpectedValue: expectedValue2,
-			Dependencies:  []task.Definition{inspection_task.TestInspectionTimeTaskProducer("2020-01-02T03:04:05Z"), timezoneTaskJST},
+			Dependencies:  []task.UntypedDefinition{inspection_task.TestInspectionTimeTaskProducer("2020-01-02T03:04:05Z"), timezoneTaskJST},
 			ExpectedFormField: form.FormField{
 				Label:           expectedLabel,
 				Description:     expectedDescription,
@@ -530,7 +530,7 @@ func TestNodeNameFiltertask(t *testing.T) {
 			Name:          "With an empty input",
 			Input:         "",
 			ExpectedValue: []string{},
-			Dependencies:  []task.Definition{},
+			Dependencies:  []task.UntypedDefinition{},
 			ExpectedFormField: form.FormField{
 				Label:       wantLabelName,
 				Description: wantDescription,
@@ -543,7 +543,7 @@ func TestNodeNameFiltertask(t *testing.T) {
 			Name:          "With a single node name substring",
 			Input:         "node-name-1",
 			ExpectedValue: []string{"node-name-1"},
-			Dependencies:  []task.Definition{},
+			Dependencies:  []task.UntypedDefinition{},
 			ExpectedFormField: form.FormField{
 				Label:       wantLabelName,
 				Description: wantDescription,
@@ -556,7 +556,7 @@ func TestNodeNameFiltertask(t *testing.T) {
 			Name:          "With multiple node name substrings",
 			Input:         "node-name-1 node-name-2 node-name-3",
 			ExpectedValue: []string{"node-name-1", "node-name-2", "node-name-3"},
-			Dependencies:  []task.Definition{},
+			Dependencies:  []task.UntypedDefinition{},
 			ExpectedFormField: form.FormField{
 				Label:       wantLabelName,
 				Description: wantDescription,
@@ -569,7 +569,7 @@ func TestNodeNameFiltertask(t *testing.T) {
 			Name:          "With invalid node name substring",
 			Input:         "node-name-1 invalid=node=name node-name-3",
 			ExpectedValue: []string{},
-			Dependencies:  []task.Definition{},
+			Dependencies:  []task.UntypedDefinition{},
 			ExpectedFormField: form.FormField{
 				Label:           wantLabelName,
 				Description:     wantDescription,
@@ -583,7 +583,7 @@ func TestNodeNameFiltertask(t *testing.T) {
 			Name:          "With spaces around node name substring",
 			Input:         "  node-name-1  node-name-2  ",
 			ExpectedValue: []string{"node-name-1", "node-name-2"},
-			Dependencies:  []task.Definition{},
+			Dependencies:  []task.UntypedDefinition{},
 			ExpectedFormField: form.FormField{
 				Label:       wantLabelName,
 				Description: wantDescription,
@@ -601,7 +601,7 @@ func TestLocationInput(t *testing.T) {
 			Name:          "With valid location",
 			Input:         "asia-northeast1",
 			ExpectedValue: "asia-northeast1",
-			Dependencies:  []task.Definition{},
+			Dependencies:  []task.UntypedDefinition{},
 			ExpectedFormField: form.FormField{
 				Priority:    1,
 				Id:          GCPPrefix + "input/location",

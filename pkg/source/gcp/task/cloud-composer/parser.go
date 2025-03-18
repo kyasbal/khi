@@ -28,7 +28,8 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/grouper"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/khi/pkg/parser"
-	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
+	composer_inspection_type "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer/inspectiontype"
+	composer_taskid "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
@@ -81,7 +82,7 @@ func tiStatusToVerb(ti *model.AirflowTaskInstance) (enum.RevisionVerb, enum.Revi
 	}
 }
 
-var AirflowSchedulerLogParseJob = parser.NewParserTaskFromParser(taskid.NewDefaultImplementationID[any](gcp_task.GCPPrefix+"composer/scheduler"), &AirflowSchedulerParser{}, false, inspection_task.InspectionTypeLabel(InspectionTypeId))
+var AirflowSchedulerLogParseJob = parser.NewParserTaskFromParser(composer_taskid.AirflowSchedulerLogParserTaskID, &AirflowSchedulerParser{}, false, inspection_task.InspectionTypeLabel(composer_inspection_type.InspectionTypeId))
 
 // Parse airflow-scheduler logs and make them into TaskInstances.
 // This parser will detect these lifecycles;
@@ -100,9 +101,7 @@ func (t *AirflowSchedulerParser) TargetLogType() enum.LogType {
 var _ parser.Parser = &AirflowSchedulerParser{}
 
 func (*AirflowSchedulerParser) Dependencies() []taskid.UntypedTaskReference {
-	return []taskid.UntypedTaskReference{
-		ComposerSchedulerLogQueryTaskName,
-	}
+	return []taskid.UntypedTaskReference{}
 }
 
 func (*AirflowSchedulerParser) Grouper() grouper.LogGrouper {
@@ -118,7 +117,7 @@ func (*AirflowSchedulerParser) GetParserName() string {
 }
 
 func (*AirflowSchedulerParser) LogTask() taskid.TaskReference[[]*log.LogEntity] {
-	return ComposerSchedulerLogQueryTaskName.GetTaskReference()
+	return composer_taskid.ComposerSchedulerLogQueryTaskID.GetTaskReference()
 }
 
 func (t *AirflowSchedulerParser) Parse(ctx context.Context, l *log.LogEntity, cs *history.ChangeSet, builder *history.Builder, variables *task.VariableSet) error {
@@ -212,7 +211,7 @@ var (
 	airflowWorkerMarkingStatusTemplate = regexp.MustCompile(`.*Marking task as\s(?P<state>\S+).\sdag_id=(?P<dagid>\S+),\stask_id=(?P<taskid>\S+),\s(map_index=(?P<mapIndex>\d+),\s)?.+`)
 )
 
-var AirflowWorkerLogParseJob = parser.NewParserTaskFromParser(taskid.NewDefaultImplementationID[any](gcp_task.GCPPrefix+"composer/worker"), &AirflowWorkerParser{}, false, inspection_task.InspectionTypeLabel(InspectionTypeId))
+var AirflowWorkerLogParseJob = parser.NewParserTaskFromParser(composer_taskid.AirflowWorkerLogParserTaskID, &AirflowWorkerParser{}, false, inspection_task.InspectionTypeLabel(composer_inspection_type.InspectionTypeId))
 
 // Parse airflow-scheduler logs and make them into TaskInstances.
 // This parser will detect these lifecycles;
@@ -229,7 +228,7 @@ func (a *AirflowWorkerParser) TargetLogType() enum.LogType {
 
 // Dependencies implements parser.Parser.
 func (*AirflowWorkerParser) Dependencies() []taskid.UntypedTaskReference {
-	return []taskid.UntypedTaskReference{ComposerWorkerLogQueryTaskName}
+	return []taskid.UntypedTaskReference{}
 }
 
 // DependsOnPast implements parser.Parser.
@@ -249,7 +248,7 @@ func (*AirflowWorkerParser) GetParserName() string {
 
 // LogTask implements parser.Parser.
 func (*AirflowWorkerParser) LogTask() taskid.TaskReference[[]*log.LogEntity] {
-	return ComposerWorkerLogQueryTaskName.GetTaskReference()
+	return composer_taskid.ComposerWorkerLogQueryTaskID.GetTaskReference()
 }
 
 // Parse implements parser.Parser.
@@ -367,7 +366,7 @@ type airflowParserFn interface {
 	fn(inputLog *log.LogEntity) (*model.AirflowTaskInstance, error)
 }
 
-var AirflowDagProcessorLogParseJob = parser.NewParserTaskFromParser(taskid.NewDefaultImplementationID[any](gcp_task.GCPPrefix+"composer/dagprocessor"), &AirflowDagProcessorParser{"/home/airflow/gcs/dags/"}, false, inspection_task.InspectionTypeLabel(InspectionTypeId))
+var AirflowDagProcessorLogParseJob = parser.NewParserTaskFromParser(composer_taskid.AirflowDagProcessorManagerLogParserTaskID, &AirflowDagProcessorParser{"/home/airflow/gcs/dags/"}, false, inspection_task.InspectionTypeLabel(composer_inspection_type.InspectionTypeId))
 
 type AirflowDagProcessorParser struct {
 	dagFilePath string
@@ -381,9 +380,7 @@ func (a *AirflowDagProcessorParser) TargetLogType() enum.LogType {
 var _ parser.Parser = (*AirflowDagProcessorParser)(nil)
 
 func (*AirflowDagProcessorParser) Dependencies() []taskid.UntypedTaskReference {
-	return []taskid.UntypedTaskReference{
-		ComposerDagProcessorManagerLogQueryTaskName,
-	}
+	return []taskid.UntypedTaskReference{}
 }
 
 func (*AirflowDagProcessorParser) Description() string {
@@ -400,7 +397,7 @@ func (*AirflowDagProcessorParser) Grouper() grouper.LogGrouper {
 }
 
 func (*AirflowDagProcessorParser) LogTask() taskid.TaskReference[[]*log.LogEntity] {
-	return ComposerDagProcessorManagerLogQueryTaskName.GetTaskReference()
+	return composer_taskid.ComposerDagProcessorManagerLogQueryTaskID.GetTaskReference()
 }
 
 func (a *AirflowDagProcessorParser) Parse(ctx context.Context, l *log.LogEntity, cs *history.ChangeSet, builder *history.Builder, variables *task.VariableSet) error {

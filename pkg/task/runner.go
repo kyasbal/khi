@@ -164,7 +164,7 @@ func NewLocalRunner(taskSet *DefinitionSet) (*LocalRunner, error) {
 		// lock the task waiter until its task finished.
 		waiter := sync.RWMutex{}
 		waiter.Lock()
-		taskWaiters.Store(taskSet.definitions[i].UntypedID().GetUntypedReference().String(), &waiter)
+		taskWaiters.Store(taskSet.definitions[i].UntypedID().ReferenceIDString(), &waiter)
 	}
 	return &LocalRunner{
 		resolvedDefinitionSet: taskSet,
@@ -204,7 +204,7 @@ func (r *LocalRunner) waitDependencies(ctx context.Context, dependencies []taski
 		case <-func() chan struct{} {
 			ch := make(chan struct{})
 			go func() {
-				waiter, _ := r.taskWaiters.Load(dependency.String())
+				waiter, _ := r.taskWaiters.Load(dependency.ReferenceIDString())
 				taskWaiter := waiter.(*sync.RWMutex)
 				taskWaiter.RLock()
 				close(ch)
