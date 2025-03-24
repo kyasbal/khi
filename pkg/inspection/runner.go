@@ -155,14 +155,14 @@ func (i *InspectionRunner) SetFeatureList(featureList []string) error {
 }
 
 // withRunContextValues returns a context with the value specific to a single run of task.
-func (i *InspectionRunner) withRunContextValues(ctx context.Context, taskInput map[string]any) context.Context {
+func (i *InspectionRunner) withRunContextValues(ctx context.Context, runMode inspection_task_interface.InspectionTaskMode, taskInput map[string]any) context.Context {
 	rid := generateRandomString()
 	runCtx := khictx.WithValue(ctx, inspection_task_contextkey.InspectionTaskRunID, rid)
 	runCtx = khictx.WithValue(runCtx, inspection_task_contextkey.InspectionTaskInspectionID, i.ID)
 	runCtx = khictx.WithValue(runCtx, inspection_task_contextkey.InspectionSharedMap, i.inspectionSharedMap)
 	runCtx = khictx.WithValue(runCtx, inspection_task_contextkey.GlobalSharedMap, inspectionRunnerGlobalSharedMap)
 	runCtx = khictx.WithValue(runCtx, inspection_task_contextkey.InspectionTaskInput, taskInput)
-	return khictx.WithValue(runCtx, inspection_task_contextkey.InspectionTaskMode, inspection_task_interface.TaskModeRun)
+	return khictx.WithValue(runCtx, inspection_task_contextkey.InspectionTaskMode, runMode)
 }
 
 func (i *InspectionRunner) Run(ctx context.Context, req *inspection_task.InspectionRequest) error {
@@ -177,7 +177,7 @@ func (i *InspectionRunner) Run(ctx context.Context, req *inspection_task.Inspect
 		return err
 	}
 
-	runCtx := i.withRunContextValues(ctx, req.Values)
+	runCtx := i.withRunContextValues(ctx, inspection_task_interface.TaskModeRun, req.Values)
 
 	runMetadata := i.generateMetadataForRun(ctx, &header.Header{
 		InspectTimeUnixSeconds: time.Now().Unix(),
@@ -290,7 +290,7 @@ func (i *InspectionRunner) DryRun(ctx context.Context, req *inspection_task.Insp
 		return nil, err
 	}
 
-	runCtx := i.withRunContextValues(ctx, req.Values)
+	runCtx := i.withRunContextValues(ctx, inspection_task_interface.TaskModeDryRun, req.Values)
 
 	dryrunMetadata := i.generateMetadataForDryRun(runCtx, &header.Header{}, runnableTaskGraph)
 

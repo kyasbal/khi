@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/grouper"
+	inspection_task_interface "github.com/GoogleCloudPlatform/khi/pkg/inspection/interface"
 	"github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata/progress"
 	inspection_task "github.com/GoogleCloudPlatform/khi/pkg/inspection/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/model"
@@ -34,16 +35,13 @@ import (
 
 var Task = inspection_task.NewInspectionTask(k8saudittask.TimelineGroupingTaskID, []taskid.UntypedTaskReference{
 	k8saudittask.CommonLogParseTaskID,
-}, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) ([]*types.TimelineGrouperResult, error) {
-	if taskMode == inspection_task.TaskModeDryRun {
+}, func(ctx context.Context, taskMode inspection_task_interface.InspectionTaskMode, tp *progress.TaskProgress) ([]*types.TimelineGrouperResult, error) {
+	if taskMode == inspection_task_interface.TaskModeDryRun {
 		return nil, nil
 	}
-	preStepParseResult, err := task.GetTypedVariableFromTaskVariable[[]*types.ResourceSpecificParserInput](v, k8saudittask.CommonLogParseTaskID.ReferenceIDString(), nil)
-	if err != nil {
-		return nil, err
-	}
+	preStepParseResult := task.GetTaskResult(ctx, k8saudittask.CommonLogParseTaskID.GetTaskReference())
 	progressUpdater := progress.NewIndeterminateUpdator(tp, time.Second)
-	err = progressUpdater.Start("Grouping logs by timeline")
+	err := progressUpdater.Start("Grouping logs by timeline")
 	if err != nil {
 		return nil, err
 	}
