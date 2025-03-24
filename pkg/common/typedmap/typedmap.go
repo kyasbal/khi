@@ -121,7 +121,7 @@ func Get[T any](m ReadableTypedMap, key TypedKey[T]) (T, bool) {
 	// Type assertion
 	typed, ok := v.(T)
 	if !ok {
-		panic(fmt.Sprintf("expected map value at %s is convertible to %T, but got %T", key.key, *new(T), v))
+		panic(fmt.Sprintf("expected map value at %s is convertible to %T, but got %T.\nThis error rarely happens unless users forcibly casting the key types or a bug in KHI.\n Please report a bug. https://github.com/GoogleCloudPlatform/khi/issues", key.key, *new(T), v))
 	}
 
 	return typed, true
