@@ -91,7 +91,7 @@ func ParseResourceSpecificParserInputWithoutResourceBody(ctx context.Context, l 
 	}, nil
 }
 
-var Task = inspection_task.NewInspectionProcessor(k8saudittask.CommonLogParseTaskID, []taskid.UntypedTaskReference{
+var Task = inspection_task.NewInspectionTask(k8saudittask.CommonLogParseTaskID, []taskid.UntypedTaskReference{
 	k8saudittask.K8sAuditQueryTaskID,
 }, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) ([]*types.ResourceSpecificParserInput, error) {
 	if taskMode == inspection_task.TaskModeDryRun {

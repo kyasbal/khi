@@ -270,7 +270,7 @@ func GetInputEndTimeFromTaskVariable(tv *task.VariableSet) (time.Time, error) {
 
 var InputStartTimeTaskID = taskid.NewDefaultImplementationID[time.Time](GCPPrefix + "input/start-time")
 
-var InputStartTimeTask = common_task.NewInspectionProcessor(InputStartTimeTaskID, []taskid.UntypedTaskReference{
+var InputStartTimeTask = common_task.NewInspectionTask(InputStartTimeTaskID, []taskid.UntypedTaskReference{
 	InputEndTimeTaskID,
 	InputDurationTaskID,
 }, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (time.Time, error) {

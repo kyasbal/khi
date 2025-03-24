@@ -28,7 +28,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
-var Task = inspection_task.NewInspectionProcessor(k8saudittask.LogConvertTaskID, []taskid.UntypedTaskReference{
+var Task = inspection_task.NewInspectionTask(k8saudittask.LogConvertTaskID, []taskid.UntypedTaskReference{
 	inspection_task.BuilderGeneratorTask.ID(),
 	k8saudittask.K8sAuditQueryTaskID,
 }, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {

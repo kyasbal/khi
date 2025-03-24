@@ -26,7 +26,7 @@ import (
 
 var TimeZoneShiftInputTaskID = taskid.NewDefaultImplementationID[*time.Location](GCPPrefix + "input/timezone-shift")
 
-var TimeZoneShiftInputTask = inspection_task.NewInspectionProcessor(TimeZoneShiftInputTaskID, []taskid.UntypedTaskReference{}, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (*time.Location, error) {
+var TimeZoneShiftInputTask = inspection_task.NewInspectionTask(TimeZoneShiftInputTaskID, []taskid.UntypedTaskReference{}, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (*time.Location, error) {
 	req, err := inspection_task.GetInspectionRequestFromVariable(v)
 	if err != nil {
 		return nil, err

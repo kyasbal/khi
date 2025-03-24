@@ -38,7 +38,7 @@ import (
 
 var bodyPlaceholderForMetadataLevelAuditLog = "# Resource data is unavailable. Audit logs for this resource is recorded at metadata level."
 
-var Task = inspection_task.NewInspectionProcessor(k8saudittask.ManifestGenerateTaskID, []taskid.UntypedTaskReference{
+var Task = inspection_task.NewInspectionTask(k8saudittask.ManifestGenerateTaskID, []taskid.UntypedTaskReference{
 	inspection_task.ReaderFactoryGeneratorTaskID,
 	k8saudittask.TimelineGroupingTaskID,
 	gcp_task.GCPDefaultK8sResourceMergeConfigTask.ID(),

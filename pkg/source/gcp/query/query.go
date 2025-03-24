@@ -47,7 +47,7 @@ type QueryGeneratorFunc = func(context.Context, int, *task.VariableSet) ([]strin
 var queryThreadPool = worker.NewPool(16)
 
 func NewQueryGeneratorTask(taskId taskid.TaskImplementationID[[]*log.LogEntity], readableQueryName string, logType enum.LogType, dependencies []taskid.UntypedTaskReference, generator QueryGeneratorFunc, sampleQuery string) task.Definition[[]*log.LogEntity] {
-	return inspection_task.NewInspectionProcessor(taskId, append(dependencies, gcp_task.InputProjectIdTaskID, gcp_task.InputStartTimeTaskID, gcp_task.InputEndTimeTaskID, inspection_task.ReaderFactoryGeneratorTaskID), func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) ([]*log.LogEntity, error) {
+	return inspection_task.NewInspectionTask(taskId, append(dependencies, gcp_task.InputProjectIdTaskID, gcp_task.InputStartTimeTaskID, gcp_task.InputEndTimeTaskID, inspection_task.ReaderFactoryGeneratorTaskID), func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) ([]*log.LogEntity, error) {
 		client, err := api.DefaultGCPClientFactory.NewClient()
 		if err != nil {
 			return nil, err

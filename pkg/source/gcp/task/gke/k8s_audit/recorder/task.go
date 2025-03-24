@@ -57,7 +57,7 @@ func (r *RecorderTaskManager) AddRecorder(name string, dependencies []taskid.Unt
 		k8saudittask.LogConvertTaskID,
 		k8saudittask.ManifestGenerateTaskID,
 	}
-	newTask := inspection_task.NewInspectionProcessor(r.GetRecorderTaskName(name), append(dependenciesBase, dependencies...), func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
+	newTask := inspection_task.NewInspectionTask(r.GetRecorderTaskName(name), append(dependenciesBase, dependencies...), func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
 		if taskMode == inspection_task.TaskModeDryRun {
 			return struct{}{}, nil
 		}
@@ -127,7 +127,7 @@ func (r *RecorderTaskManager) Register(server *inspection.InspectionTaskServer) 
 		}
 		recorderTaskIds = append(recorderTaskIds, recorder.UntypedID().GetUntypedReference())
 	}
-	waiterTask := inspection_task.NewInspectionProcessor(taskid.NewDefaultImplementationID[any](fmt.Sprintf("%s/feature/audit-parser-v2", gcp_task.GCPPrefix)), recorderTaskIds, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (any, error) {
+	waiterTask := inspection_task.NewInspectionTask(taskid.NewDefaultImplementationID[any](fmt.Sprintf("%s/feature/audit-parser-v2", gcp_task.GCPPrefix)), recorderTaskIds, func(ctx context.Context, taskMode int, v *task.VariableSet, progress *progress.TaskProgress) (any, error) {
 		return struct{}{}, nil
 	}, inspection_task.FeatureTaskLabel("Kubernetes Audit Log", `Gather kubernetes audit logs and visualize resource modifications.`, enum.LogTypeAudit, true))
 	err := server.AddTaskDefinition(waiterTask)

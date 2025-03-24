@@ -61,7 +61,7 @@ type Parser interface {
 }
 
 func NewParserTaskFromParser(taskId taskid.TaskImplementationID[any], parser Parser, isDefaultFeature bool, labelOpts ...task.LabelOpt) task.Definition[any] {
-	return inspection_task.NewInspectionProcessor(taskId, append(parser.Dependencies(), parser.LogTask(), inspection_task.BuilderGeneratorTaskID), func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
+	return inspection_task.NewInspectionTask(taskId, append(parser.Dependencies(), parser.LogTask(), inspection_task.BuilderGeneratorTaskID), func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
 		if taskMode == inspection_task.TaskModeDryRun {
 			slog.DebugContext(ctx, "Skipping task because this is dry run mode")
 			return struct{}{}, nil

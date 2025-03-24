@@ -32,7 +32,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
-var Task = inspection_task.NewInspectionProcessor(k8saudittask.TimelineGroupingTaskID, []taskid.UntypedTaskReference{
+var Task = inspection_task.NewInspectionTask(k8saudittask.TimelineGroupingTaskID, []taskid.UntypedTaskReference{
 	k8saudittask.CommonLogParseTaskID,
 }, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) ([]*types.TimelineGrouperResult, error) {
 	if taskMode == inspection_task.TaskModeDryRun {

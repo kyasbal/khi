@@ -40,7 +40,6 @@ type LocalRunner struct {
 	taskWaiters           *sync.Map // sync.Map[string(taskRefID), sync.RWMutex], runner acquire the write lock at the beginning. All dependents will acquire read lock, it will be released when the task run finished.
 	waiter                chan interface{}
 	taskStatuses          []*LocalRunnerTaskStat
-	cache                 TaskVariableCache
 }
 
 type LocalRunnerTaskStat struct {
@@ -175,13 +174,7 @@ func NewLocalRunner(taskSet *DefinitionSet) (*LocalRunner, error) {
 		taskWaiters:           &taskWaiters,
 		waiter:                make(chan interface{}),
 		taskStatuses:          taskStatuses,
-		cache:                 &GlobalTaskVariableCache{},
 	}, nil
-}
-
-func (r *LocalRunner) WithCacheProvider(cache TaskVariableCache) *LocalRunner {
-	r.cache = cache
-	return r
 }
 
 func (r *LocalRunner) markDone() {

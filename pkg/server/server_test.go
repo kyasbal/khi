@@ -101,7 +101,7 @@ func createTestInspectionServer() (*inspection.InspectionTaskServer, error) {
 			DataDestination: "/tmp/",
 			TemporaryFolder: "/tmp/",
 		})),
-		inspection_task.NewInspectionProcessor(debugTaskImplID("neverend"), []taskid.UntypedTaskReference{}, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
+		inspection_task.NewInspectionTask(debugTaskImplID("neverend"), []taskid.UntypedTaskReference{}, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
 			tp.Update(0.5, "test")
 			select {
 			case <-time.After(time.Hour * time.Duration(1000000)):
@@ -121,16 +121,16 @@ func createTestInspectionServer() (*inspection.InspectionTaskServer, error) {
 		}).Build(inspection_task.InspectionTypeLabel("foo")),
 		task_test.MockProcessorTaskFromTaskID(gcp_task.TimeZoneShiftInputTaskID, time.UTC),
 		form.NewInputFormDefinitionBuilder(taskid.NewDefaultImplementationID[string]("bar-input"), 1, "A input field for bar").Build(inspection_task.InspectionTypeLabel("bar")),
-		inspection_task.NewInspectionProcessor(debugTaskImplID("feature-foo1"), []taskid.UntypedTaskReference{debugRef("foo-input")}, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
+		inspection_task.NewInspectionTask(debugTaskImplID("feature-foo1"), []taskid.UntypedTaskReference{debugRef("foo-input")}, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
 			return "feature-foo1-value", nil
 		}, inspection_task.InspectionTypeLabel("foo"), inspection_task.FeatureTaskLabel("foo feature1", "test-feature", enum.LogTypeAudit, false)),
-		inspection_task.NewInspectionProcessor(debugTaskImplID("feature-foo2"), []taskid.UntypedTaskReference{debugRef("foo-input")}, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
+		inspection_task.NewInspectionTask(debugTaskImplID("feature-foo2"), []taskid.UntypedTaskReference{debugRef("foo-input")}, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
 			return "feature-foo2-value", nil
 		}, inspection_task.InspectionTypeLabel("foo"), inspection_task.FeatureTaskLabel("foo feature2", "test-feature", enum.LogTypeAudit, false)),
-		inspection_task.NewInspectionProcessor(debugTaskImplID("feature-bar"), []taskid.UntypedTaskReference{debugRef("bar-input"), debugRef("neverend")}, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
+		inspection_task.NewInspectionTask(debugTaskImplID("feature-bar"), []taskid.UntypedTaskReference{debugRef("bar-input"), debugRef("neverend")}, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
 			return "feature-bar1-value", nil
 		}, inspection_task.InspectionTypeLabel("bar"), inspection_task.FeatureTaskLabel("bar feature1", "test-feature", enum.LogTypeAudit, false)),
-		inspection_task.NewInspectionProcessor(debugTaskImplID("feature-qux"), []taskid.UntypedTaskReference{debugRef("errorend")}, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
+		inspection_task.NewInspectionTask(debugTaskImplID("feature-qux"), []taskid.UntypedTaskReference{debugRef("errorend")}, func(ctx context.Context, taskMode int, v *task.VariableSet, tp *progress.TaskProgress) (any, error) {
 			return "feature-bar1-value", nil
 		}, inspection_task.InspectionTypeLabel("qux"), inspection_task.FeatureTaskLabel("qux feature1", "test-feature", enum.LogTypeAudit, false)),
 		ioconfig.TestIOConfig,
