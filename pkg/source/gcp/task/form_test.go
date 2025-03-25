@@ -15,6 +15,7 @@
 package task
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -23,20 +24,18 @@ import (
 	inspection_task_interface "github.com/GoogleCloudPlatform/khi/pkg/inspection/interface"
 	"github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata/form"
 	inspection_task "github.com/GoogleCloudPlatform/khi/pkg/inspection/task"
+	inspection_task_test "github.com/GoogleCloudPlatform/khi/pkg/inspection/test"
 	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/query/queryutil"
 	"github.com/GoogleCloudPlatform/khi/pkg/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
+	task_test "github.com/GoogleCloudPlatform/khi/pkg/task/test"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	form_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/form"
-	task_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testtask"
 
 	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
-
-var testClusterNamePrefix = task_test.MockProcessorTaskFromTaskID(taskid.NewImplementationID(ClusterNamePrefixTaskID, "test"), "")
 
 func TestProjectIdInput(t *testing.T) {
 	form_test.TestTextForms(t, "gcp-project-id", InputProjectIdTask, []*form_test.FormTestCase{
@@ -387,10 +386,11 @@ func TestInputStartTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	startTime, err := testtask.RunSingleTask[time.Time](InputStartTimeTask, inspection_task_interface.TaskModeDryRun,
-		testtask.PriorTaskResultFromID(InputDurationTaskID, duration),
-		testtask.PriorTaskResultFromID(InputEndTimeTaskID, endTime),
-		testtask.PriorTaskResultFromID(TimeZoneShiftInputTaskID, time.UTC),
+	ctx := inspection_task_test.WithDefaultTestInspectionTaskContext(context.Background())
+	startTime, err := inspection_task_test.RunInspectionTask(ctx, InputStartTimeTask, inspection_task_interface.TaskModeDryRun, map[string]any{},
+		task_test.NewTaskDependencyValuePair(InputDurationTaskID.GetTaskReference(), duration),
+		task_test.NewTaskDependencyValuePair(InputEndTimeTaskID.GetTaskReference(), endTime),
+		task_test.NewTaskDependencyValuePair(TimeZoneShiftInputTaskID.GetTaskReference(), time.UTC),
 	)
 	if err != nil {
 		t.Errorf("unexpected error\n%v", err)

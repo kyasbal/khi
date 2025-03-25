@@ -179,7 +179,7 @@ func (i *InspectionRunner) Run(ctx context.Context, req *inspection_task.Inspect
 
 	runCtx := i.withRunContextValues(ctx, inspection_task_interface.TaskModeRun, req.Values)
 
-	runMetadata := i.generateMetadataForRun(ctx, &header.Header{
+	runMetadata := i.generateMetadataForRun(runCtx, &header.Header{
 		InspectTimeUnixSeconds: time.Now().Unix(),
 		InspectionType:         currentInspectionType.Name,
 		InspectionTypeIconPath: currentInspectionType.Icon,
