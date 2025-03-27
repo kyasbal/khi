@@ -24,6 +24,7 @@ import (
 	error_metadata "github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata/error"
 	"github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata/form"
 	"github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata/header"
+	"github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata/progress"
 	"github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata/query"
 	"github.com/GoogleCloudPlatform/khi/pkg/task"
 	task_test "github.com/GoogleCloudPlatform/khi/pkg/task/test"
@@ -42,11 +43,21 @@ func WithDefaultTestInspectionTaskContext(baseContext context.Context) context.C
 }
 
 // RunInspectionTask execute a single task with given context. Use WithDefaultTestInspectionTaskContext to get the context.
-func RunInspectionTask[T any](baseContext context.Context, task task.Definition[T], mode inspection_task_interface.InspectionTaskMode, input map[string]any, taskDependencyValues ...task_test.TaskDependencyValuePair) (T, error) {
+func RunInspectionTask[T any](baseContext context.Context, task task.Definition[T], mode inspection_task_interface.InspectionTaskMode, input map[string]any, taskDependencyValues ...task_test.TaskDependencyValuePair) (T, *typedmap.ReadonlyTypedMap, error) {
 	taskCtx := khictx.WithValue(baseContext, inspection_task_contextkey.InspectionTaskInput, input)
 	taskCtx = khictx.WithValue(taskCtx, inspection_task_contextkey.InspectionTaskMode, mode)
 
-	return task_test.RunTask(taskCtx, task, taskDependencyValues...)
+	result, err := task_test.RunTask(taskCtx, task, taskDependencyValues...)
+	metadata := khictx.MustGetValue(taskCtx, inspection_task_contextkey.InspectionRunMetadata)
+	return result, metadata, err
+}
+
+func RunInspectionTaskWithDependency[T any](baseContext context.Context, mainTask task.Definition[T], dependencies []task.UntypedDefinition, mode inspection_task_interface.InspectionTaskMode, input map[string]any) (T, *typedmap.ReadonlyTypedMap, error) {
+	taskCtx := khictx.WithValue(baseContext, inspection_task_contextkey.InspectionTaskInput, input)
+	taskCtx = khictx.WithValue(taskCtx, inspection_task_contextkey.InspectionTaskMode, mode)
+	result, err := task_test.RunTaskWithDependency(taskCtx, mainTask, dependencies)
+	metadata := khictx.MustGetValue(taskCtx, inspection_task_contextkey.InspectionRunMetadata)
+	return result, metadata, err
 }
 
 func generateTestMetadata() *typedmap.ReadonlyTypedMap {
@@ -55,5 +66,6 @@ func generateTestMetadata() *typedmap.ReadonlyTypedMap {
 	typedmap.Set(writableMetadata, error_metadata.ErrorMessageSetMetadataKey, error_metadata.NewErrorMessageSet())
 	typedmap.Set(writableMetadata, form.FormFieldSetMetadataKey, form.NewFormFieldSet())
 	typedmap.Set(writableMetadata, query.QueryMetadataKey, query.NewQueryMetadata())
+	typedmap.Set(writableMetadata, progress.ProgressMetadataKey, progress.NewProgress())
 	return writableMetadata.AsReadonly()
 }

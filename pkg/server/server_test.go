@@ -40,6 +40,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/server/config"
 	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
+	task_test "github.com/GoogleCloudPlatform/khi/pkg/task/test"
 	"github.com/GoogleCloudPlatform/khi/pkg/testutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -96,11 +97,11 @@ func createTestInspectionServer() (*inspection.InspectionTaskServer, error) {
 		return nil, err
 	}
 	taskDefinitions := []task.UntypedDefinition{
-		task_test.MockProcessorTaskFromTaskID(inspection_task.BuilderGeneratorTask.ID(), history.NewBuilder(&ioconfig.IOConfig{
+		task_test.MockTask(inspection_task.BuilderGeneratorTask, history.NewBuilder(&ioconfig.IOConfig{
 			ApplicationRoot: "/",
 			DataDestination: "/tmp/",
 			TemporaryFolder: "/tmp/",
-		})),
+		}), nil),
 		inspection_task.NewInspectionTask(debugTaskImplID("neverend"), []taskid.UntypedTaskReference{}, func(ctx context.Context, taskMode inspection_task_interface.InspectionTaskMode, tp *progress.TaskProgress) (any, error) {
 			tp.Update(0.5, "test")
 			select {
@@ -119,7 +120,7 @@ func createTestInspectionServer() (*inspection.InspectionTaskServer, error) {
 			}
 			return "", nil
 		}).Build(inspection_task.InspectionTypeLabel("foo")),
-		task_test.MockProcessorTaskFromTaskID(gcp_task.TimeZoneShiftInputTaskID, time.UTC),
+		task_test.MockTask(gcp_task.TimeZoneShiftInputTask, time.UTC, nil),
 		form.NewInputFormDefinitionBuilder(taskid.NewDefaultImplementationID[string]("bar-input"), 1, "A input field for bar").Build(inspection_task.InspectionTypeLabel("bar")),
 		inspection_task.NewInspectionTask(debugTaskImplID("feature-foo1"), []taskid.UntypedTaskReference{debugRef("foo-input")}, func(ctx context.Context, taskMode inspection_task_interface.InspectionTaskMode, tp *progress.TaskProgress) (any, error) {
 			return "feature-foo1-value", nil
@@ -558,7 +559,7 @@ func TestApiResponses(t *testing.T) {
 			ExpectedCode:  200,
 			RequestMethod: "GET",
 			RequestPath:   "/foo/api/v2/inspection/tasks",
-			BodyValidator: taskCompare("task-3", `{"error":{"errorMessages":[]},"progress":{"phase":"ERROR","progresses":[],"totalProgress":{"id":"Total","indeterminate":false,"label":"Total","message":"0 of 2 tasks complete","percentage":0}}}`, "header"),
+			BodyValidator: taskCompare("task-3", `{"error":{"errorMessages":[]},"progress":{"phase":"ERROR","progresses":[],"totalProgress":{"id":"Total","indeterminate":false,"label":"Total","message":"1 of 3 tasks complete","percentage":0.33333334}}}`, "header"),
 		},
 		{
 			// 032

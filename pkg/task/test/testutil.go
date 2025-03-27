@@ -16,6 +16,7 @@ package task_test
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
@@ -48,12 +49,74 @@ func NewTaskDependencyValuePair[T any](key taskid.TaskReference[T], value T) Tas
 }
 
 func RunTask[T any](baseContext context.Context, task task.Definition[T], taskDependencyValues ...TaskDependencyValuePair) (T, error) {
+	taskCtx := prepareTaskContext(baseContext, task, taskDependencyValues...)
+	return task.Run(taskCtx)
+}
+
+func RunTaskWithDependency[T any](baseContext context.Context, mainTask task.Definition[T], dependencies []task.UntypedDefinition) (T, error) {
+	taskCtx := prepareTaskContext(baseContext, mainTask)
+
+	taskSet, err := task.NewSet([]task.UntypedDefinition{mainTask})
+	if err != nil {
+		return *new(T), err
+	}
+	allTaskSet, err := task.NewSet(dependencies)
+	if err != nil {
+		return *new(T), err
+	}
+	resolvedTaskSet, err := taskSet.ResolveTask(allTaskSet)
+	if err != nil {
+		return *new(T), err
+	}
+
+	runner, err := task.NewLocalRunner(resolvedTaskSet)
+	if err != nil {
+		return *new(T), err
+	}
+
+	err = runner.Run(taskCtx)
+	if err != nil {
+		return *new(T), err
+	}
+
+	<-runner.Wait()
+
+	variableMap, err := runner.Result()
+	if err != nil {
+		return *new(T), err
+	}
+
+	result, found := typedmap.Get(variableMap, typedmap.NewTypedKey[T](mainTask.ID().ReferenceIDString()))
+	if !found {
+		return *new(T), fmt.Errorf("failed to get the result from the task")
+	}
+
+	return result, nil
+}
+
+func prepareTaskContext(baseContext context.Context, task task.UntypedDefinition, taskDependencyValues ...TaskDependencyValuePair) context.Context {
 	taskCtx := khictx.WithValue(baseContext, task_contextkey.TaskImplementationIDContextKey, task.UntypedID())
 
 	resultMap := typedmap.NewTypedMap()
 	for _, taskDependencyValue := range taskDependencyValues {
 		taskDependencyValue.Register(resultMap)
 	}
+
 	taskCtx = khictx.WithValue(taskCtx, task_contextkey.TaskResultMapContextKey, resultMap)
-	return task.Run(taskCtx)
+
+	return taskCtx
+}
+
+// MockTask wraps a given task to return the constant values given without calling the original task.
+func MockTask[T any](mockTarget task.Definition[T], mockResult T, mockError error) task.Definition[T] {
+	return task.NewTask(mockTarget.ID(), []taskid.UntypedTaskReference{}, func(ctx context.Context) (T, error) {
+		return mockResult, mockError
+	}, task.FromLabels(mockTarget.Labels())...)
+}
+
+// MockTaskFromReferenceID creates a new test task return the given constant value of its result.
+func MockTaskFromReferenceID[T any](mockTargetReference taskid.TaskReference[T], mockResult T, mockError error) task.Definition[T] {
+	return task.NewTask(taskid.NewDefaultImplementationID[T](mockTargetReference.ReferenceIDString()), []taskid.UntypedTaskReference{}, func(ctx context.Context) (T, error) {
+		return mockResult, mockError
+	})
 }

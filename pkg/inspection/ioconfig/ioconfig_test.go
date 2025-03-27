@@ -29,7 +29,7 @@ import (
 func TestTestIOConfigCanFindTheRoot(t *testing.T) {
 	ctx := inspection_task_test.WithDefaultTestInspectionTaskContext(context.Background())
 
-	ioConfig, err := inspection_task_test.RunInspectionTask(ctx, TestIOConfig, inspection_task_interface.TaskModeRun, map[string]any{})
+	ioConfig, _, err := inspection_task_test.RunInspectionTask(ctx, TestIOConfig, inspection_task_interface.TaskModeRun, map[string]any{})
 	if err != nil {
 		t.Errorf("unxepected error %v", err)
 	}
@@ -45,7 +45,7 @@ func TestTestIOConfigCanFindTheRoot(t *testing.T) {
 func TestProductionIOConfigConvertPathToAbs(t *testing.T) {
 	ctx := inspection_task_test.WithDefaultTestInspectionTaskContext(context.Background())
 
-	ioConfig, err := inspection_task_test.RunInspectionTask(ctx, ProductionIOConfig, inspection_task_interface.TaskModeRun, map[string]any{})
+	ioConfig, _, err := inspection_task_test.RunInspectionTask(ctx, ProductionIOConfig, inspection_task_interface.TaskModeRun, map[string]any{})
 	if err != nil {
 		t.Errorf("unxepected error %v", err)
 	}

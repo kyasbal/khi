@@ -181,7 +181,7 @@ func TestTextFormDefinitionBuilder(t *testing.T) {
 			taskCtx := context.Background()
 			taskCtx = inspection_task_test.WithDefaultTestInspectionTaskContext(taskCtx)
 
-			_, err := inspection_task_test.RunInspectionTask(taskCtx, taskDef, inspection_task_interface.TaskModeDryRun, map[string]any{
+			_, _, err := inspection_task_test.RunInspectionTask(taskCtx, taskDef, inspection_task_interface.TaskModeDryRun, map[string]any{
 				"foo": testCase.RequestValue,
 			})
 			if testCase.ExpectedError != "" {
@@ -209,7 +209,7 @@ func TestTextFormDefinitionBuilder(t *testing.T) {
 			if testCase.ExpectedError != "" {
 				taskCtx := context.Background()
 				taskCtx = inspection_task_test.WithDefaultTestInspectionTaskContext(taskCtx)
-				result, err := inspection_task_test.RunInspectionTask(taskCtx, taskDef, inspection_task_interface.TaskModeRun, map[string]any{
+				result, _, err := inspection_task_test.RunInspectionTask(taskCtx, taskDef, inspection_task_interface.TaskModeRun, map[string]any{
 					"foo": testCase.RequestValue,
 				})
 
