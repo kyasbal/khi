@@ -26,8 +26,7 @@ describe('GoogleDriveExtension-LoginDialog', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [LoginDialogComponent],
-      imports: [MatDialogModule, MatButtonModule],
+      imports: [MatDialogModule, MatButtonModule, LoginDialogComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginDialogComponent);

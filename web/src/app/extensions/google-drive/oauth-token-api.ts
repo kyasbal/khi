@@ -125,7 +125,9 @@ export class OAuthTokenAPI {
           const refreshedToken = await this.requestAccessToken(true);
           return await apiCall(refreshedToken);
         } catch (e) {
-          throw new Error('Failed to call api with refreshed OAuth token');
+          throw new Error(
+            'Failed to call api with refreshed OAuth token.\n' + e,
+          );
         }
       }
       throw new Error(

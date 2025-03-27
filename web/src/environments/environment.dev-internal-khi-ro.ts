@@ -23,13 +23,13 @@ import { PublicKHIExtension } from 'src/app/extensions/public/module';
 
 export const environment = {
   production: false,
-  viewerMode: true,
   bugReportUrl:
     'https://b.corp.google.com/issues/new?component=1265687&template=1747079',
   documentUrl: 'http://go/khi',
   pluginModules: [PrivateKHIExtension, PublicKHIExtension],
   options: {
     GTAG_ID: 'G-JJ6G0C6V06',
+    VIEWER_MODE: true,
   } as Record<string, unknown>,
 };
 

@@ -15,6 +15,7 @@
  */
 
 import { environment } from 'src/environments/environment';
+import { VERSION } from 'src/environments/version';
 import {
   FrontendAnalytics,
   KHIAnalyticsActivityMetadata,
@@ -42,11 +43,10 @@ export class FrontendAnalyticsWithGA implements FrontendAnalytics {
     }
     if (this._enabled) {
       this.injectGTagCode();
-
+      const viewerMode = environment.options['VIEWER_MODE'];
       const gaLabels: { [key: string]: string | boolean } = {
         debug_mode: !environment.production,
-        version:
-          process.env['NG_APP_VERSION'] + (environment.viewerMode ? '-ro' : ''),
+        version: VERSION + (viewerMode ? '-ro' : ''),
         pageType: pageType,
         ...this.gatherGAMetaTagLabels(),
       };
@@ -76,9 +76,10 @@ export class FrontendAnalyticsWithGA implements FrontendAnalytics {
   }
 
   private injectGTagCode(): void {
+    const gtagId = environment.options['GTAG_ID'];
     const scriptTag = document.createElement('script');
     scriptTag.async = true;
-    scriptTag.src = `${FrontendAnalyticsWithGA.GTAG_ADDRESS}?id=${process.env['NG_APP_GTAG_ID']}`;
+    scriptTag.src = `${FrontendAnalyticsWithGA.GTAG_ADDRESS}?id=${gtagId}`;
     document.head.appendChild(scriptTag);
   }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { TimelineEntry, TimelineLayer } from 'src/app/store/timeline';
+import { ResourceTimeline, TimelineLayer } from 'src/app/store/timeline';
 import {
   DisplayableTimelineNavigatorExtension,
   TimelineNavigatorExtension,
@@ -35,7 +35,7 @@ export class PlaybookBindingWithComponentNameAnnotation
     private readonly linkUrl: string,
   ) {}
 
-  show(timeline: TimelineEntry): boolean {
+  show(timeline: ResourceTimeline): boolean {
     return (
       timeline.layer === TimelineLayer.Name &&
       TimelineNavigatorExtensionUtil.anyOfManifestBodyFieldInRevisions(
@@ -64,14 +64,14 @@ export class PlaybookBindingWithComponentNameAnnotation
  * EveDashboardBindingForNode is a TimelineNavigatorExtension showing EveDashboard for the specific node version.
  */
 export class EveDashboardBindingForNode implements TimelineNavigatorExtension {
-  show(timeline: TimelineEntry): boolean {
+  show(timeline: ResourceTimeline): boolean {
     return (
       timeline.layer === TimelineLayer.Name &&
       TimelineFilterFacade.isNodeOrNodeChildren(timeline)
     );
   }
   getDisplayable(
-    timeline: TimelineEntry,
+    timeline: ResourceTimeline,
   ): DisplayableTimelineNavigatorExtension {
     const kubeletVersions =
       TimelineNavigatorExtensionUtil.getSetOfManifestBodyFieldInRevisions(
@@ -95,7 +95,7 @@ export class EveDashboardBindingForNode implements TimelineNavigatorExtension {
 export class EveDashboardBindingForComponent
   implements TimelineNavigatorExtension
 {
-  show(timeline: TimelineEntry): boolean {
+  show(timeline: ResourceTimeline): boolean {
     return (
       timeline.layer === TimelineLayer.Name &&
       TimelineNavigatorExtensionUtil.anyOfManifestBodyFieldInRevisions(
@@ -111,7 +111,7 @@ export class EveDashboardBindingForComponent
     );
   }
   getDisplayable(
-    timeline: TimelineEntry,
+    timeline: ResourceTimeline,
   ): DisplayableTimelineNavigatorExtension {
     const componentNames =
       TimelineNavigatorExtensionUtil.getSetOfManifestBodyFieldInRevisions(

@@ -37,10 +37,6 @@ deploy-analytics:
 generate-oss-repository:
 	./scripts/private/generate-oss-repository.sh
 
-.PHONY=add-licenses
-add-licenses:
-	$(GOPATH)/bin/addlicense  -c "Google LLC" -l apache .
-
 .PHONY=cleanup-khi-ro-versions
 cleanup-khi-ro-versions:
 	gcloud app versions --project google.com:khi-ro list --format json | jq '[.[] |select(.id != "main")|select( .id != "beta")]|sort_by(.version.createTime)|reverse|.[].id' -r | tail -n +30 | xargs -I@ bash -c -x "gcloud app versions delete @ --project google.com:khi-ro"

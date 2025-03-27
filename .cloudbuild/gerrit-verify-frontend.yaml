@@ -24,13 +24,17 @@ steps:
     waitFor:
       - "-"
   - id: generate frontend codes
-    name: golang:1.23
+    name: golang:1.24
     entrypoint: /bin/bash
     args:
       - -c
       - |
         apt-get update && apt-get install jq -y
         make prepare-frontend
+        cp web/src/environments/version.dev.ts web/src/environments/version.dev-internal.ts
+        cp web/src/environments/version.dev.ts web/src/environments/version.dev-internal-khi-ro.ts
+        cp web/src/environments/version.prod.ts web/src/environments/version.prod-internal.ts
+        cp web/src/environments/version.prod.ts web/src/environments/version.prod-internal-khi-ro.ts
     waitFor:
       - npm install
   - id: angular test
@@ -78,9 +82,5 @@ steps:
       - |
         apt-get update && apt-get install jq -y
         cd web && cat angular.json | jq '.projects.frontend.architect.build.configurations|to_entries[]|.key' -r | xargs -I@ bash -c -x "npx ng build --configuration @"
-    waitFor:
-      - "check format web"
-      - "lint web"
-      - "angular test"
 options:
   machineType: E2_HIGHCPU_32

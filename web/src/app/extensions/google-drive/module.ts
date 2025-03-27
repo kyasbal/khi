@@ -16,10 +16,7 @@
 
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatDialogModule } from '@angular/material/dialog';
 import { GoogleDriveAPI } from './google-drive-api';
-import { LoginDialogComponent } from './login-dialog/login.component';
 import {
   GOOGLE_OAUTH2_LIB,
   LOCALSTORAGE,
@@ -30,8 +27,7 @@ import { GoogleDriveURLDataOpenerExtension } from './url-data-opener-extensions'
 import { GoogleDriveDataLoaderService } from './google-drive';
 
 @NgModule({
-  declarations: [LoginDialogComponent],
-  imports: [CommonModule, MatDialogModule, MatButtonModule],
+  imports: [CommonModule],
   providers: [
     GoogleDriveDataLoaderService,
     KHIExtensionBundle.forExtension(initExtension),

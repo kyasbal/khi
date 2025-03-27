@@ -15,9 +15,13 @@
  */
 
 import { Component } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialogModule } from '@angular/material/dialog';
 
 @Component({
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.sass'],
+  imports: [MatDialogModule, MatButtonModule],
+  standalone: true,
 })
 export class LoginDialogComponent {}
