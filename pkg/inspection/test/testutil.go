@@ -43,7 +43,7 @@ func WithDefaultTestInspectionTaskContext(baseContext context.Context) context.C
 }
 
 // RunInspectionTask execute a single task with given context. Use WithDefaultTestInspectionTaskContext to get the context.
-func RunInspectionTask[T any](baseContext context.Context, task task.Definition[T], mode inspection_task_interface.InspectionTaskMode, input map[string]any, taskDependencyValues ...task_test.TaskDependencyValuePair) (T, *typedmap.ReadonlyTypedMap, error) {
+func RunInspectionTask[T any](baseContext context.Context, task task.Definition[T], mode inspection_task_interface.InspectionTaskMode, input map[string]any, taskDependencyValues ...task_test.TaskDependencyValues) (T, *typedmap.ReadonlyTypedMap, error) {
 	taskCtx := khictx.WithValue(baseContext, inspection_task_contextkey.InspectionTaskInput, input)
 	taskCtx = khictx.WithValue(taskCtx, inspection_task_contextkey.InspectionTaskMode, mode)
 
@@ -52,6 +52,7 @@ func RunInspectionTask[T any](baseContext context.Context, task task.Definition[
 	return result, metadata, err
 }
 
+// RunInspectionTaskWithDependency execute a task as a graph. Supply dependencies needed to be used with the mainTask.
 func RunInspectionTaskWithDependency[T any](baseContext context.Context, mainTask task.Definition[T], dependencies []task.UntypedDefinition, mode inspection_task_interface.InspectionTaskMode, input map[string]any) (T, *typedmap.ReadonlyTypedMap, error) {
 	taskCtx := khictx.WithValue(baseContext, inspection_task_contextkey.InspectionTaskInput, input)
 	taskCtx = khictx.WithValue(taskCtx, inspection_task_contextkey.InspectionTaskMode, mode)

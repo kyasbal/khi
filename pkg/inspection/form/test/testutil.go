@@ -27,7 +27,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-type FormTestCase struct {
+// TextFormTestCase is the type to represent a test case of an inspection task to generate a text field.
+type TextFormTestCase struct {
 	Name              string
 	Input             string
 	ExpectedValue     any
@@ -37,7 +38,8 @@ type FormTestCase struct {
 	After             func()
 }
 
-func TestTextForms[T any](t *testing.T, label string, formTask task.Definition[T], testCases []*FormTestCase, cmpOptions ...cmp.Option) {
+// TestTextForms tests an inspection task generating a TextForm in the metadata.
+func TestTextForms[T any](t *testing.T, label string, formTask task.Definition[T], testCases []*TextFormTestCase, cmpOptions ...cmp.Option) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			if testCase.Before != nil {

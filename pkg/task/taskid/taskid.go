@@ -164,10 +164,12 @@ func NewImplementationID[TaskResult any](baseReference TaskReference[TaskResult]
 	return taskImplementationIDImpl[TaskResult]{referenceId: baseReference.String(), implementationHash: implementationHash}
 }
 
+// ReinterpretTaskReference casts UntypedTaskReference to TaskReference[T]. Use this with caution.
 func ReinterpretTaskReference[T any](ref UntypedTaskReference) TaskReference[T] {
 	return ref.(TaskReference[T])
 }
 
+// ReinterpretTaskImplementationID casts UntypedImplementationID to TaskImplementationID[T]. Use this with caution.
 func ReinterpretTaskImplementationID[T any](id UntypedTaskImplementationID) TaskImplementationID[T] {
 	return id.(TaskImplementationID[T])
 }

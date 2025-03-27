@@ -94,8 +94,7 @@ func NewInputFormDefinitionBuilder[T any](id taskid.TaskImplementationID[T], pri
 			return nil, nil
 		},
 		converter: func(ctx context.Context, value string) (T, error) {
-			var anyValue any
-			anyValue = value
+			var anyValue any = value // This is needed for forcible cast from string to T.
 			return anyValue.(T), nil
 		},
 		hintGenerator: func(ctx context.Context, value string, convertedValue any) (string, form_metadata.FormFieldHintType, error) {
@@ -167,7 +166,7 @@ func (b *TextFormDefinitionBuilder[T]) WithConverter(converter TextFormValueConv
 }
 
 func (b *TextFormDefinitionBuilder[T]) Build(labelOpts ...common_task.LabelOpt) common_task.Definition[T] {
-	return common_task.NewTask[T](b.id, b.dependencies, func(ctx context.Context) (T, error) {
+	return common_task.NewTask(b.id, b.dependencies, func(ctx context.Context) (T, error) {
 		taskMode := khictx.MustGetValue(ctx, inspection_task_contextkey.InspectionTaskMode)
 		m := khictx.MustGetValue(ctx, inspection_task_contextkey.InspectionRunMetadata)
 		req := khictx.MustGetValue(ctx, inspection_task_contextkey.InspectionTaskInput)

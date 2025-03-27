@@ -25,7 +25,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
-type TaskDependencyValuePair interface {
+type TaskDependencyValues interface {
 	Register(resultMap *typedmap.TypedMap)
 }
 
@@ -39,20 +39,23 @@ func (t *taskDependencyValuePair[T]) Register(resultMap *typedmap.TypedMap) {
 	typedmap.Set(resultMap, typedmap.NewTypedKey[T](t.Key.ReferenceIDString()), t.Value)
 }
 
-var _ TaskDependencyValuePair = (*taskDependencyValuePair[any])(nil)
+var _ TaskDependencyValues = (*taskDependencyValuePair[any])(nil)
 
-func NewTaskDependencyValuePair[T any](key taskid.TaskReference[T], value T) TaskDependencyValuePair {
+// NewTaskDependencyValuePair returns a new pair of a task reference and its value.
+func NewTaskDependencyValuePair[T any](key taskid.TaskReference[T], value T) TaskDependencyValues {
 	return &taskDependencyValuePair[T]{
 		Value: value,
 		Key:   key,
 	}
 }
 
-func RunTask[T any](baseContext context.Context, task task.Definition[T], taskDependencyValues ...TaskDependencyValuePair) (T, error) {
+// RunTask runs a single task.
+func RunTask[T any](baseContext context.Context, task task.Definition[T], taskDependencyValues ...TaskDependencyValues) (T, error) {
 	taskCtx := prepareTaskContext(baseContext, task, taskDependencyValues...)
 	return task.Run(taskCtx)
 }
 
+// RunTaskWithDependency runs a task as a graph. Supply the dependencies of the main task to resolve the graph correctly.
 func RunTaskWithDependency[T any](baseContext context.Context, mainTask task.Definition[T], dependencies []task.UntypedDefinition) (T, error) {
 	taskCtx := prepareTaskContext(baseContext, mainTask)
 
@@ -94,7 +97,7 @@ func RunTaskWithDependency[T any](baseContext context.Context, mainTask task.Def
 	return result, nil
 }
 
-func prepareTaskContext(baseContext context.Context, task task.UntypedDefinition, taskDependencyValues ...TaskDependencyValuePair) context.Context {
+func prepareTaskContext(baseContext context.Context, task task.UntypedDefinition, taskDependencyValues ...TaskDependencyValues) context.Context {
 	taskCtx := khictx.WithValue(baseContext, task_contextkey.TaskImplementationIDContextKey, task.UntypedID())
 
 	resultMap := typedmap.NewTypedMap()

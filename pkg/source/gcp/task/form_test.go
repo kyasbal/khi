@@ -37,7 +37,7 @@ import (
 
 func TestProjectIdInput(t *testing.T) {
 	testClusterNamePrefix := task_test.MockTaskFromReferenceID(ClusterNamePrefixTaskID, "", nil)
-	form_task_test.TestTextForms(t, "gcp-project-id", InputProjectIdTask, []*form_task_test.FormTestCase{
+	form_task_test.TestTextForms(t, "gcp-project-id", InputProjectIdTask, []*form_task_test.TextFormTestCase{
 		{
 			Name:          "With valid project ID",
 			Input:         "foo-project",
@@ -141,7 +141,7 @@ func TestClusterNameInput(t *testing.T) {
 		ClusterNames: []string{"foo-cluster", "bar-cluster"},
 		Error:        "",
 	}, nil)
-	form_task_test.TestTextForms(t, "cluster name", InputClusterNameTask, []*form_task_test.FormTestCase{
+	form_task_test.TestTextForms(t, "cluster name", InputClusterNameTask, []*form_task_test.TextFormTestCase{
 		{
 			Name:          "with valid cluster name",
 			Input:         "foo-cluster",
@@ -221,7 +221,7 @@ func TestDurationInput(t *testing.T) {
 	currentTimeTask1 := task_test.MockTask(inspection_task.InspectionTimeProducer, time.Date(2023, time.April, 5, 12, 0, 0, 0, time.UTC), nil)
 	endTimeTask := task_test.MockTask(InputEndTimeTask, time.Date(2023, time.April, 1, 12, 0, 0, 0, time.UTC), nil)
 
-	form_task_test.TestTextForms(t, "duration", InputDurationTask, []*form_task_test.FormTestCase{
+	form_task_test.TestTextForms(t, "duration", InputDurationTask, []*form_task_test.TextFormTestCase{
 		{
 			Name:          "With valid time duration",
 			Input:         "10m",
@@ -327,7 +327,7 @@ func TestInputEndtime(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error\n%s", err)
 	}
-	form_task_test.TestTextForms(t, "endtime", InputEndTimeTask, []*form_task_test.FormTestCase{
+	form_task_test.TestTextForms(t, "endtime", InputEndTimeTask, []*form_task_test.TextFormTestCase{
 		{
 			Name:          "with empty",
 			Input:         "",
@@ -408,7 +408,7 @@ func TestInputStartTime(t *testing.T) {
 func TestInputKindName(t *testing.T) {
 	expectedDescription := ""
 	expectedLabel := "Kind"
-	form_task_test.TestTextForms(t, "kind", InputKindFilterTask, []*form_task_test.FormTestCase{
+	form_task_test.TestTextForms(t, "kind", InputKindFilterTask, []*form_task_test.TextFormTestCase{
 		{
 			Input: "",
 			ExpectedValue: &queryutil.SetFilterParseResult{
@@ -466,7 +466,7 @@ func TestInputKindName(t *testing.T) {
 func TestInputNamespaces(t *testing.T) {
 	expectedDescription := ""
 	expectedLabel := "Namespaces"
-	form_task_test.TestTextForms(t, "namespaces", InputNamespaceFilterTask, []*form_task_test.FormTestCase{
+	form_task_test.TestTextForms(t, "namespaces", InputNamespaceFilterTask, []*form_task_test.TextFormTestCase{
 		{
 			Input: "",
 			ExpectedValue: &queryutil.SetFilterParseResult{
@@ -527,7 +527,7 @@ func TestInputNamespaces(t *testing.T) {
 func TestNodeNameFiltertask(t *testing.T) {
 	wantLabelName := "Node names"
 	wantDescription := "A space-separated list of node name substrings used to collect node-related logs. If left blank, KHI gathers logs from all nodes in the cluster."
-	form_task_test.TestTextForms(t, "node-name", InputNodeNameFilterTask, []*form_task_test.FormTestCase{
+	form_task_test.TestTextForms(t, "node-name", InputNodeNameFilterTask, []*form_task_test.TextFormTestCase{
 		{
 			Name:          "With an empty input",
 			Input:         "",
@@ -598,7 +598,7 @@ func TestNodeNameFiltertask(t *testing.T) {
 }
 
 func TestLocationInput(t *testing.T) {
-	form_task_test.TestTextForms(t, "gcp-location", InputLocationsTask, []*form_task_test.FormTestCase{
+	form_task_test.TestTextForms(t, "gcp-location", InputLocationsTask, []*form_task_test.TextFormTestCase{
 		{
 			Name:          "With valid location",
 			Input:         "asia-northeast1",
