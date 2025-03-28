@@ -24,6 +24,8 @@ import (
 	parser_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/parser"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
 func TestComputeApiParser_Parse_OperationFirstLog(t *testing.T) {
@@ -31,7 +33,7 @@ func TestComputeApiParser_Parse_OperationFirstLog(t *testing.T) {
 	serviceAccountName := "serviceaccount@project-id.iam.gserviceaccount.com"
 	operationId := "operation-1726191739294-621f6556f5492-0777bde4-78d02b5a"
 	wantLogSummary := "v1.compute.instances.insert Started"
-	cs, err := parser_test.ParseFromYamlLogFile("test/logs/compute_api/operation_first.yaml", &computeAPIParser{}, nil, nil)
+	cs, err := parser_test.ParseFromYamlLogFile("test/logs/compute_api/operation_first.yaml", &computeAPIParser{}, nil)
 	if err != nil {
 		t.Errorf("got error %v, want nil", err)
 	}
@@ -69,7 +71,7 @@ func TestComputeApiParser_Parse_OperationLastLog(t *testing.T) {
 	serviceAccountName := "serviceaccount@project-id.iam.gserviceaccount.com"
 	operationId := "operation-1726191739294-621f6556f5492-0777bde4-78d02b5a"
 	wantLogSummary := "v1.compute.instances.insert Finished"
-	cs, err := parser_test.ParseFromYamlLogFile("test/logs/compute_api/operation_last.yaml", &computeAPIParser{}, nil, nil)
+	cs, err := parser_test.ParseFromYamlLogFile("test/logs/compute_api/operation_last.yaml", &computeAPIParser{}, nil)
 	if err != nil {
 		t.Errorf("got error %v, want nil", err)
 	}

@@ -21,16 +21,17 @@ import (
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/parserutil"
 	"github.com/GoogleCloudPlatform/khi/pkg/log"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/grouper"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/khi/pkg/parser"
-	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
+	composer_inspection_type "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer/inspectiontype"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke"
-	"github.com/GoogleCloudPlatform/khi/pkg/task"
+	serialport_taskid "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/serialport/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 
 	inspection_task "github.com/GoogleCloudPlatform/khi/pkg/inspection/task"
-	composer_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer"
 )
 
 var serialportSequenceConverters = []parserutil.SpecialSequenceConverter{
@@ -44,9 +45,14 @@ var serialportSequenceConverters = []parserutil.SpecialSequenceConverter{
 type SerialPortLogParser struct {
 }
 
+// TargetLogType implements parser.Parser.
+func (s *SerialPortLogParser) TargetLogType() enum.LogType {
+	return enum.LogTypeSerialPort
+}
+
 // Description implements parser.Parser.
 func (*SerialPortLogParser) Description() string {
-	return `Serial port logs of worker nodes. Serial port logging feature must be enabled on instances to query logs correctly.`
+	return `Gather serialport logs of GKE nodes. This helps detailed investigation on VM bootstrapping issue on GKE node.`
 }
 
 // GetParserName implements parser.Parser.
@@ -54,12 +60,12 @@ func (*SerialPortLogParser) GetParserName() string {
 	return "Node serial port logs"
 }
 
-func (*SerialPortLogParser) Dependencies() []string {
-	return []string{}
+func (*SerialPortLogParser) Dependencies() []taskid.UntypedTaskReference {
+	return []taskid.UntypedTaskReference{}
 }
 
-func (*SerialPortLogParser) LogTask() string {
-	return SerialPortLogQueryTaskID
+func (*SerialPortLogParser) LogTask() taskid.TaskReference[[]*log.LogEntity] {
+	return serialport_taskid.SerialPortLogQueryTaskID.GetTaskReference()
 }
 
 func (*SerialPortLogParser) Grouper() grouper.LogGrouper {
@@ -67,7 +73,7 @@ func (*SerialPortLogParser) Grouper() grouper.LogGrouper {
 }
 
 // Parse implements parser.Parser.
-func (*SerialPortLogParser) Parse(ctx context.Context, l *log.LogEntity, cs *history.ChangeSet, builder *history.Builder, v *task.VariableSet) error {
+func (*SerialPortLogParser) Parse(ctx context.Context, l *log.LogEntity, cs *history.ChangeSet, builder *history.Builder) error {
 
 	// Label field contains `.` in its key. the value needs to be retrived from the low level API.
 	nodeName := "unknown"
@@ -97,4 +103,4 @@ func (*SerialPortLogParser) Parse(ctx context.Context, l *log.LogEntity, cs *his
 
 var _ parser.Parser = (*SerialPortLogParser)(nil)
 
-var GKESerialPortLogParseTask = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/serialport", &SerialPortLogParser{}, false, inspection_task.InspectionTypeLabel(gke.InspectionTypeId, composer_task.InspectionTypeId))
+var GKESerialPortLogParseTask = parser.NewParserTaskFromParser(serialport_taskid.SerialPortLogParserTaskID, &SerialPortLogParser{}, false, inspection_task.InspectionTypeLabel(gke.InspectionTypeId, composer_inspection_type.InspectionTypeId))

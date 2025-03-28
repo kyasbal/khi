@@ -20,23 +20,28 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/log"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/grouper"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/khi/pkg/parser"
-	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/task"
+	k8s_event_taskid "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_event/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
-var GKEK8sEventLogParseJob = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/event-parser", &k8sEventParser{}, true)
+var GKEK8sEventLogParseJob = parser.NewParserTaskFromParser(k8s_event_taskid.GKEK8sEventLogParserTaskID, &k8sEventParser{}, true)
 
 type k8sEventParser struct {
 }
 
+// TargetLogType implements parser.Parser.
+func (k *k8sEventParser) TargetLogType() enum.LogType {
+	return enum.LogTypeEvent
+}
+
 // Description implements parser.Parser.
 func (*k8sEventParser) Description() string {
-	return `Visualize Kubernetes event logs on GKE.
-This parser shows events associated to K8s resources`
+	return `Gather kubernetes event logs and visualize these on the associated resource timeline.`
 }
 
 // GetParserName implements parser.Parser.
@@ -44,12 +49,12 @@ func (*k8sEventParser) GetParserName() string {
 	return `Kubernetes Event Logs`
 }
 
-func (*k8sEventParser) Dependencies() []string {
-	return []string{}
+func (*k8sEventParser) Dependencies() []taskid.UntypedTaskReference {
+	return []taskid.UntypedTaskReference{}
 }
 
-func (*k8sEventParser) LogTask() string {
-	return GKEK8sEventLogQueryTaskID
+func (*k8sEventParser) LogTask() taskid.TaskReference[[]*log.LogEntity] {
+	return k8s_event_taskid.GKEK8sEventLogQueryTaskID.GetTaskReference()
 }
 
 func (*k8sEventParser) Grouper() grouper.LogGrouper {
@@ -57,7 +62,7 @@ func (*k8sEventParser) Grouper() grouper.LogGrouper {
 }
 
 // Parse implements parser.Parser.
-func (*k8sEventParser) Parse(ctx context.Context, l *log.LogEntity, cs *history.ChangeSet, builder *history.Builder, v *task.VariableSet) error {
+func (*k8sEventParser) Parse(ctx context.Context, l *log.LogEntity, cs *history.ChangeSet, builder *history.Builder) error {
 	if kind, err := l.GetString("jsonPayload.kind"); err != nil {
 		// Event exporter ingests cluster scoped logs without jsonPayload
 		if textPayload, err := l.GetString("textPayload"); err == nil {
@@ -67,10 +72,8 @@ func (*k8sEventParser) Parse(ctx context.Context, l *log.LogEntity, cs *history.
 			return nil
 		}
 		return err
-	} else {
-		if kind != "Event" {
-			return fmt.Errorf("skipping kind:%s", kind)
-		}
+	} else if kind != "Event" {
+		return fmt.Errorf("skipping kind:%s", kind)
 	}
 	apiVersion := l.GetStringOrDefault("jsonPayload.involvedObject.apiVersion", "v1")
 

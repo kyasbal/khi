@@ -108,9 +108,9 @@ func TestGenerateK8sAuditQueryIsValid(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
 			query := GenerateK8sAuditQuery(tc.ClusterName, tc.KindFilter, tc.NamespaceFilter)
-			err := gcp_test.IsValidLogQuery(query)
+			err := gcp_test.IsValidLogQuery(t, query)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Errorf("%s", err.Error())
 			}
 		})
 	}

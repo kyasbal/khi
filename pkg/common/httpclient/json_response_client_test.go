@@ -22,6 +22,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
 type mockHttpClient struct {
@@ -53,10 +55,11 @@ func TestDoWithContext(t *testing.T) {
 }`)),
 		},
 	})
-	result, _, err := jsonClient.DoWithContext(context.Background(), &http.Request{})
+	result, resp, err := jsonClient.DoWithContext(context.Background(), &http.Request{})
 	if err != nil {
 		t.Errorf("unexpected err:%s", err.Error())
 	}
+	defer resp.Body.Close()
 	if diff := cmp.Diff(&testJsonType{
 		Foo: "foo-val",
 		Bar: "bar-val",

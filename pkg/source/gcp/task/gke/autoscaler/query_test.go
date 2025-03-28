@@ -80,9 +80,9 @@ func TestGeneratedAutoscalerQueryIsValid(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
 			query := GenerateAutoscalerQuery(tc.ProjectId, tc.ClusterName, tc.ExcludeStatus)
-			err := gcp_test.IsValidLogQuery(query)
+			err := gcp_test.IsValidLogQuery(t, query)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Errorf("%s", err.Error())
 			}
 		})
 	}

@@ -15,22 +15,23 @@
 package v2manifestgenerate
 
 import (
+	"context"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata"
+	inspection_task_interface "github.com/GoogleCloudPlatform/khi/pkg/inspection/interface"
 	"github.com/GoogleCloudPlatform/khi/pkg/inspection/task"
+	inspection_task_test "github.com/GoogleCloudPlatform/khi/pkg/inspection/test"
 	"github.com/GoogleCloudPlatform/khi/pkg/log"
-	"github.com/GoogleCloudPlatform/khi/pkg/log/structure"
-	"github.com/GoogleCloudPlatform/khi/pkg/log/structure/structuredatastore"
 	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/k8saudittask"
-	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/types"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/v2commonlogparse"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/v2timelinegrouping"
 	base_task "github.com/GoogleCloudPlatform/khi/pkg/task"
+	task_test "github.com/GoogleCloudPlatform/khi/pkg/task/test"
 	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testlog"
-	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testtask"
 	"github.com/google/go-cmp/cmp"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
 func TestBodyMergerTask(t *testing.T) {
@@ -45,7 +46,7 @@ func TestBodyMergerTask(t *testing.T) {
 		Name: "Standard non patching merge",
 		baseLog: `insertId: foo
 protoPayload:
-  authenticationInfo: 
+  authenticationInfo:
     principalEmail: user@example.com
   methodName: io.k8s.core.v1.pods.create
   resourceName: core/v1/namespaces/default/pods/my-pod
@@ -76,7 +77,7 @@ timestamp: 2024-01-01T00:00:00+09:00`,
 		Name: "Standard patching merge",
 		baseLog: `insertId: foo
 protoPayload:
-  authenticationInfo: 
+  authenticationInfo:
     principalEmail: user@example.com
   methodName: io.k8s.core.v1.pods.create
   resourceName: core/v1/namespaces/default/pods/my-pod
@@ -107,7 +108,7 @@ qux: qux1`,
 		Name: "Standard patching merge with middle ignored failed patch request",
 		baseLog: `insertId: foo
 protoPayload:
-  authenticationInfo: 
+  authenticationInfo:
     principalEmail: user@example.com
   methodName: io.k8s.core.v1.pods.create
   resourceName: core/v1/namespaces/default/pods/my-pod
@@ -138,7 +139,7 @@ qux: qux1
 		Name: "response field should be ignored when it was deleteoption",
 		baseLog: `insertId: foo
 protoPayload:
-  authenticationInfo: 
+  authenticationInfo:
     principalEmail: user@example.com
   methodName: io.k8s.core.v1.pods.create
   resourceName: core/v1/namespaces/default/pods/my-pod
@@ -168,7 +169,7 @@ qux: qux1
 		Name: "Metadata level audit logs",
 		baseLog: `insertId: foo
 protoPayload:
-  authenticationInfo: 
+  authenticationInfo:
     principalEmail: user@example.com
   methodName: io.k8s.core.v1.pods.create
   resourceName: core/v1/namespaces/default/pods/my-pod
@@ -188,15 +189,14 @@ timestamp: 2024-01-01T00:00:00+09:00`,
 				logs = append(logs, logBase.With(logOpts...).MustBuildLogEntity(&log.UnreachableCommonFieldExtractor{}))
 			}
 
-			result, err := testtask.RunMultipleTask[[]*types.TimelineGrouperResult](Task, []base_task.Definition{
+			ctx := inspection_task_test.WithDefaultTestInspectionTaskContext(context.Background())
+			result, _, err := inspection_task_test.RunInspectionTaskWithDependency(ctx, Task, []base_task.UntypedDefinition{
 				v2timelinegrouping.Task,
 				v2commonlogparse.Task,
+				task_test.MockTaskFromReferenceID(k8saudittask.K8sAuditQueryTaskID.GetTaskReference(), logs, nil),
 				gcp_task.GCPDefaultK8sResourceMergeConfigTask,
-			}, task.TaskModeRun,
-				testtask.PriorTaskResultFromID(task.MetadataVariableName, metadata.NewSet()),
-				testtask.PriorTaskResultFromID(task.ReaderFactoryGeneratorTaskID, structure.NewReaderFactory(&structuredatastore.OnMemoryStructureDataStore{})),
-				testtask.PriorTaskResultFromID(k8saudittask.K8sAuditQueryTaskID, logs))
-
+				task.ReaderFactoryGeneratorTask,
+			}, inspection_task_interface.TaskModeRun, map[string]any{})
 			if err != nil {
 				t.Error(err)
 			}

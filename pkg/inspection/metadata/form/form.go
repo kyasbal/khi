@@ -17,12 +17,14 @@ package form
 import (
 	"fmt"
 	"slices"
+	"sync"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	"github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata"
 	"github.com/GoogleCloudPlatform/khi/pkg/task"
 )
 
-const FormFieldSetMetadataKey = "form"
+var FormFieldSetMetadataKey = metadata.NewMetadataKey[*FormFieldSet]("form")
 
 type FormFieldHintType string
 
@@ -47,13 +49,14 @@ type FormField struct {
 
 // FormFieldSet is a metadata type used in frontend to generate the form fields.
 type FormFieldSet struct {
-	fields []*FormField
+	fieldsLock sync.RWMutex
+	fields     []FormField
 }
 
 var _ metadata.Metadata = (*FormFieldSet)(nil)
 
 // Labels implements Metadata.
-func (*FormFieldSet) Labels() *task.LabelSet {
+func (*FormFieldSet) Labels() *typedmap.ReadonlyTypedMap {
 	return task.NewLabelSet(metadata.IncludeInDryRunResult())
 }
 
@@ -61,7 +64,9 @@ func (f *FormFieldSet) ToSerializable() interface{} {
 	return f.fields
 }
 
-func (f *FormFieldSet) SetField(newField *FormField) error {
+func (f *FormFieldSet) SetField(newField FormField) error {
+	f.fieldsLock.Lock()
+	defer f.fieldsLock.Unlock()
 	if newField.Id == "" {
 		return fmt.Errorf("id must not be empty")
 	}
@@ -71,7 +76,7 @@ func (f *FormFieldSet) SetField(newField *FormField) error {
 		}
 	}
 	f.fields = append(f.fields, newField)
-	slices.SortFunc(f.fields, func(a, b *FormField) int {
+	slices.SortFunc(f.fields, func(a, b FormField) int {
 		return b.Priority - a.Priority
 	})
 	return nil
@@ -79,23 +84,19 @@ func (f *FormFieldSet) SetField(newField *FormField) error {
 
 // DangerouslyGetField shouldn't be used in non testing code. Because a field shouldn't depend on the other field metadata.
 // This is only for testing purpose.
-func (f *FormFieldSet) DangerouslyGetField(id string) *FormField {
+func (f *FormFieldSet) DangerouslyGetField(id string) FormField {
+	f.fieldsLock.RLock()
+	defer f.fieldsLock.RUnlock()
 	for _, field := range f.fields {
 		if field.Id == id {
 			return field
 		}
 	}
-	return nil
+	return FormField{}
 }
 
-type FormFieldSetMetadataFactory struct{}
-
-// Instanciate implements metadata.MetadataFactory.
-func (f *FormFieldSetMetadataFactory) Instanciate() metadata.Metadata {
+func NewFormFieldSet() *FormFieldSet {
 	return &FormFieldSet{
-		fields: make([]*FormField, 0),
+		fields: make([]FormField, 0),
 	}
 }
-
-// FormFieldSetMetadataFactory implements metadata.MetadataFactory
-var _ (metadata.MetadataFactory) = (*FormFieldSetMetadataFactory)(nil)

@@ -21,12 +21,14 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
 	parser_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/parser"
 	"github.com/google/go-cmp/cmp"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
 func TestSerialPortLogParser_ParseBasicSerialPortLog(t *testing.T) {
 	wantLogSummary := "[ OK ] Stopped getty@tty1.service."
 
-	cs, err := parser_test.ParseFromYamlLogFile("test/logs/serialport/basic-serialport-log.yaml", &SerialPortLogParser{}, nil, nil)
+	cs, err := parser_test.ParseFromYamlLogFile("test/logs/serialport/basic-serialport-log.yaml", &SerialPortLogParser{}, nil)
 	if err != nil {
 		t.Errorf("got error %v, want nil", err)
 	}

@@ -27,7 +27,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/recorder"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/types"
-	"github.com/GoogleCloudPlatform/khi/pkg/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 
 	goyaml "gopkg.in/yaml.v3"
 )
@@ -50,7 +50,7 @@ type endpointsParseResult struct {
 }
 
 func Register(manager *recorder.RecorderTaskManager) error {
-	manager.AddRecorder("endpointslices", []string{}, func(ctx context.Context, resourcePath string, currentLog *types.ResourceSpecificParserInput, prevStateInGroup any, cs *history.ChangeSet, builder *history.Builder, vs *task.VariableSet) (any, error) {
+	manager.AddRecorder("endpointslices", []taskid.UntypedTaskReference{}, func(ctx context.Context, resourcePath string, currentLog *types.ResourceSpecificParserInput, prevStateInGroup any, cs *history.ChangeSet, builder *history.Builder) (any, error) {
 		var prevEndpointSlice *model.EndpointSlice
 		if prevStateInGroup != nil {
 			prevEndpointSlice = prevStateInGroup.(*model.EndpointSlice)
@@ -158,13 +158,14 @@ func parseSingleEndpoint(ctx context.Context, endpoint *model.EndpointSliceEndpo
 	isEndpointForPod := endpoint.TargetRef != nil && endpoint.TargetRef.Kind == "Pod"                                    // target of this endpoint is a Pod.
 	hasConditionChanged := endpoint.Conditions != nil && (prev == nil || !endpoint.Conditions.SameWith(prev.Conditions)) // the condition state is changed.
 	if hasConditionChanged {
-		if endpoint.Conditions.Ready {
+		switch {
+		case endpoint.Conditions.Ready:
 			state = enum.RevisionStateEndpointReady
 			verb = enum.RevisionVerbReady
-		} else if endpoint.Conditions.Terminating {
+		case endpoint.Conditions.Terminating:
 			state = enum.RevisionStateEndpointTerminating
 			verb = enum.RevisionVerbTerminating
-		} else {
+		default:
 			state = enum.RevisionStateEndpointUnready
 			verb = enum.RevisionVerbNonReady
 		}

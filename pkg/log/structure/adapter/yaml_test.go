@@ -18,6 +18,8 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/log/structure/structuredatastore"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
 func TestYamlAdapter(t *testing.T) {
@@ -25,7 +27,7 @@ func TestYamlAdapter(t *testing.T) {
 	yamlAdapter := Yaml("textPayload: hello world")
 	reader, err := yamlAdapter.GetReaderBackedByStore(&store)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 	if reader.ReadStringOrDefault("textPayload", "") != "hello world" {
 		t.Errorf("expected hello world, got %s", reader.ReadStringOrDefault("textPayload", ""))

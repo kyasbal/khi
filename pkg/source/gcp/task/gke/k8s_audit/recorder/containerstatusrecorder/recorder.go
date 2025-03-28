@@ -24,13 +24,13 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/manifestutil"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/recorder"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/types"
-	"github.com/GoogleCloudPlatform/khi/pkg/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 )
 
 func Register(manager *recorder.RecorderTaskManager) error {
-	manager.AddRecorder("containers", []string{}, func(ctx context.Context, resourcePath string, currentLog *types.ResourceSpecificParserInput, prevStateInGroup any, cs *history.ChangeSet, builder *history.Builder, vs *task.VariableSet) (any, error) {
+	manager.AddRecorder("containers", []taskid.UntypedTaskReference{}, func(ctx context.Context, resourcePath string, currentLog *types.ResourceSpecificParserInput, prevStateInGroup any, cs *history.ChangeSet, builder *history.Builder) (any, error) {
 		var prevPod *corev1.Pod
 		if prevStateInGroup != nil {
 			prevPod = prevStateInGroup.(*corev1.Pod)
@@ -73,8 +73,9 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 		tb := builder.GetTimelineBuilder(cpath.Path)
 		last := tb.GetLatestRevision()
 		if changed {
-			// Current container is running
-			if status.State.Running != nil {
+			switch {
+			case status.State.Running != nil:
+				// Current container is running
 				running := status.State.Running
 				time := running.StartedAt.Time
 				if last != nil && time.Sub(last.ChangeTime) > 0 && log.Log.Timestamp().Sub(time) > 0 && status.Ready {
@@ -111,7 +112,8 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 					})
 
 				}
-			} else if status.State.Terminated != nil { // Current container is terminated
+			case status.State.Terminated != nil:
+				// Current container is terminated
 				terminated := status.State.Terminated
 				if terminated.FinishedAt.Time.Unix() == errorTimestampInUnix {
 					// Pod termination status can have errornous timestamp when it can't be determined.
@@ -136,7 +138,8 @@ func recordChangeSetForLog(ctx context.Context, resourcePath string, log *types.
 					})
 				}
 
-			} else if status.State.Waiting != nil { // Current container is waiting
+			case status.State.Waiting != nil:
+				// Current container is waiting
 				cs.RecordRevision(cpath, &history.StagingResourceRevision{
 					Verb:       enum.RevisionVerbContainerWaiting,
 					Body:       string(statusYaml),

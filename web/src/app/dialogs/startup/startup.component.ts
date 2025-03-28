@@ -33,7 +33,6 @@ import { BackendAPIUtil } from 'src/app/services/api/backend-api.service';
 import { InspectionDataLoaderService } from 'src/app/services/data-loader.service';
 import { InspectionMetadataDialogComponent } from '../inspection-metadata/inspection-metadata.component';
 import { openNewInspectionDialog } from '../new-inspection/new-inspection.component';
-import { NgxEnvModule } from '@ngx-env/core';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -49,6 +48,7 @@ import {
   PROGRESS_DIALOG_STATUS_UPDATOR,
   ProgressDialogStatusUpdator,
 } from 'src/app/services/progress/progress-interface';
+import { VERSION } from 'src/environments/version';
 
 export type ProgressBarViewModel = {
   id: string;
@@ -83,13 +83,7 @@ export type TaskListViewModel = {
   templateUrl: './startup.component.html',
   styleUrls: ['./startup.component.sass'],
   standalone: true,
-  imports: [
-    CommonModule,
-    NgxEnvModule,
-    MatIconModule,
-    MatTooltipModule,
-    MatButtonModule,
-  ],
+  imports: [CommonModule, MatIconModule, MatTooltipModule, MatButtonModule],
 })
 export class StartupDialogComponent {
   /**
@@ -97,13 +91,15 @@ export class StartupDialogComponent {
    */
   static UI_TIME_REFRESH_INTERVAL = 1000;
 
-  isViewerMode = environment.viewerMode;
+  isViewerMode = this.backendAPI.getConfig().pipe(map((v) => v.viewerMode));
 
   bugReportUrl = environment.bugReportUrl;
 
   documentUrl = environment.documentUrl;
 
   tasks = this.backendConnection.tasks();
+
+  version = VERSION;
 
   taskListViewModel = combineLatest([
     interval(StartupDialogComponent.UI_TIME_REFRESH_INTERVAL).pipe(

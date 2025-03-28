@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
+import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
 import { map, shareReplay } from 'rxjs';
 import { EXTENSION_STORE } from 'src/app/extensions/extension-common/extension-store';
 import { DisplayableTimelineNavigatorExtension } from 'src/app/extensions/extension-common/extension-types/timeline-navigator';
 import { SelectionManagerService } from 'src/app/services/selection-manager.service';
-import { TimelineEntry } from 'src/app/store/timeline';
+import { ResourceTimeline } from 'src/app/store/timeline';
 
 interface NavigatorLayer {
   label: string;
@@ -36,6 +38,7 @@ interface NavigatorLayer {
   templateUrl: './navigator.component.html',
   styleUrl: './navigator.component.sass',
   selector: 'khi-timeline-navigator',
+  imports: [CommonModule, MatIconModule],
 })
 export class NavigatorComponent {
   private readonly extensionStore = inject(EXTENSION_STORE);
@@ -47,7 +50,7 @@ export class NavigatorComponent {
    */
   timelinesInHierarchyPath = this.selectedTimeline.pipe(
     map((tl) => {
-      const layers: TimelineEntry[] = [];
+      const layers: ResourceTimeline[] = [];
       while (tl) {
         layers.push(tl);
         tl = tl.parent;

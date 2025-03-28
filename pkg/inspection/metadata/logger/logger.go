@@ -20,14 +20,17 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	inspection_task_contextkey "github.com/GoogleCloudPlatform/khi/pkg/inspection/contextkey"
 	"github.com/GoogleCloudPlatform/khi/pkg/inspection/logger"
 	"github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata"
 	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
 	"github.com/GoogleCloudPlatform/khi/pkg/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
+	task_contextkey "github.com/GoogleCloudPlatform/khi/pkg/task/contextkey"
 )
 
-var LoggerMetadataKey = "log"
+var LoggerMetadataKey = metadata.NewMetadataKey[*Logger]("log")
 
 // similarLogThrottlingLogCount is the count of similar logs to start preventing output.
 var similarLogThrottlingLogCount = 10
@@ -140,7 +143,7 @@ type Logger struct {
 var _ metadata.Metadata = (*Logger)(nil)
 
 // Labels implements metadata.Metadata.
-func (*Logger) Labels() *task.LabelSet {
+func (*Logger) Labels() *typedmap.ReadonlyTypedMap {
 	return task.NewLabelSet(
 		metadata.IncludeInRunResult(),
 	)
@@ -160,12 +163,12 @@ func (l *Logger) MakeTaskLogger(ctx context.Context, minLevel slog.Level) *TaskL
 	if parameters.Debug.NoColor != nil && *parameters.Debug.NoColor {
 		stdoutWithColor = false
 	}
-	iidAny := ctx.Value("iid")
-	if iid, convertible := iidAny.(string); convertible {
-		tidAny := ctx.Value("tid")
-		if tid, convertible := tidAny.(taskid.TaskImplementationId); convertible {
-			ridAny := ctx.Value("rid")
-			if rid, convertible := ridAny.(string); convertible {
+	tid, err := khictx.GetValue(ctx, task_contextkey.TaskImplementationIDContextKey)
+	if err == nil {
+		iid, err := khictx.GetValue(ctx, inspection_task_contextkey.InspectionTaskInspectionID)
+		if err == nil {
+			rid, err := khictx.GetValue(ctx, inspection_task_contextkey.InspectionTaskRunID)
+			if err == nil {
 				lb := new(bytes.Buffer)
 				th := &TaskSlogHandler{
 					minLogLevel:   minLevel,
@@ -180,27 +183,23 @@ func (l *Logger) MakeTaskLogger(ctx context.Context, minLevel slog.Level) *TaskL
 					logHandler: th,
 					logBuffer:  lb,
 				}
-				logger.RegisterTaskLogger(iid, tid.String(), rid, th)
+				logger.RegisterTaskLogger(iid, tid, rid, th)
 				l.loggers = append(l.loggers, tl)
 				return tl
 			} else {
 				slog.Error("given context is not associated with any run id")
 			}
 		} else {
-			slog.Error("given context is not associated with any task id")
+			slog.Error("given context is not associated with any inspection id")
 		}
 	} else {
-		slog.Error("given context is not associated with any inspection id")
+		slog.Error("given context is not associated with any task id")
 	}
 	return nil
 }
 
-type LoggerMetadataFactory struct{}
-
-// Instanciate implements metadata.MetadataFactory.
-func (l *LoggerMetadataFactory) Instanciate() metadata.Metadata {
-	return &Logger{loggers: []*TaskLogger{}}
+func NewLogger() *Logger {
+	return &Logger{
+		loggers: make([]*TaskLogger, 0),
+	}
 }
-
-// LoggerMetadataFactory implements metadata.MetadataFactory
-var _ metadata.MetadataFactory = (*LoggerMetadataFactory)(nil)

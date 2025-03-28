@@ -32,6 +32,9 @@ type InspectionType struct {
 	Description string `json:"description"`
 	Icon        string `json:"icon"`
 	Priority    int    `json:"-"`
+
+	// Document properties
+	DocumentDescription string `json:"-"`
 }
 
 type FeatureListItem struct {
@@ -52,8 +55,8 @@ type InspectionRunResult struct {
 
 // InspectionTaskServer manages tasks and provides apis to get task related information in JSON convertible type.
 type InspectionTaskServer struct {
-	// rootTaskSet is the set of the all definitions in KHI.
-	rootTaskSet *task.DefinitionSet
+	// RootTaskSet is the set of the all definitions in KHI.
+	RootTaskSet *task.DefinitionSet
 	// inspectionTypes are kinds of tasks. Users will select this at first to filter togglable feature tasks.
 	inspectionTypes []*InspectionType
 	// tasks are generated tasks
@@ -61,12 +64,12 @@ type InspectionTaskServer struct {
 }
 
 func NewServer() (*InspectionTaskServer, error) {
-	ns, err := task.NewSet([]task.Definition{})
+	ns, err := task.NewSet([]task.UntypedDefinition{})
 	if err != nil {
 		return nil, err
 	}
 	return &InspectionTaskServer{
-		rootTaskSet:     ns,
+		RootTaskSet:     ns,
 		inspectionTypes: make([]*InspectionType, 0),
 		tasks:           map[string]*InspectionRunner{},
 	}, nil
@@ -84,17 +87,16 @@ func (s *InspectionTaskServer) AddInspectionType(newInspectionType InspectionTyp
 	if _, exist := idMap[newInspectionType.Id]; exist {
 		return fmt.Errorf("inspection type id:%s is duplicated. InspectionType ID must be unique", newInspectionType.Id)
 	}
-	inspectionTypesCandidate := append(s.inspectionTypes, &newInspectionType)
-	slices.SortFunc(inspectionTypesCandidate, func(a *InspectionType, b *InspectionType) int {
+	s.inspectionTypes = append(s.inspectionTypes, &newInspectionType)
+	slices.SortFunc(s.inspectionTypes, func(a *InspectionType, b *InspectionType) int {
 		return b.Priority - a.Priority
 	})
-	s.inspectionTypes = inspectionTypesCandidate
 	return nil
 }
 
 // AddTaskDefinition register a task definition usable for the inspection tasks
-func (s *InspectionTaskServer) AddTaskDefinition(taskDefinition task.Definition) error {
-	return s.rootTaskSet.Add(taskDefinition)
+func (s *InspectionTaskServer) AddTaskDefinition(taskDefinition task.UntypedDefinition) error {
+	return s.RootTaskSet.Add(taskDefinition)
 }
 
 // CreateInspection generates an inspection and returns inspection ID
@@ -135,6 +137,6 @@ func (s *InspectionTaskServer) GetAllRunners() []*InspectionRunner {
 }
 
 // GetAllRegisteredTasks returns a cloned list of all definitions registered in this server.
-func (s *InspectionTaskServer) GetAllRegisteredTasks() []task.Definition {
-	return s.rootTaskSet.GetAll()
+func (s *InspectionTaskServer) GetAllRegisteredTasks() []task.UntypedDefinition {
+	return s.RootTaskSet.GetAll()
 }

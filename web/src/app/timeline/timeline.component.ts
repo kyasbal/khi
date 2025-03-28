@@ -59,7 +59,10 @@ import {
   TimelineViewModel,
 } from './timeline.component.vm';
 import { LogEntry } from '../store/log';
-import { ResourceRevisionChangePair, TimelineEntry } from '../store/timeline';
+import {
+  ResourceRevisionChangePair,
+  ResourceTimeline,
+} from '../store/timeline';
 import {
   LogType,
   ParentRelationshipMetadataType,
@@ -70,6 +73,15 @@ import {
   TimelineFilter,
 } from '../services/timeline-filter.service';
 import { ToTextReferenceFromKHIFileBinary } from '../common/loader/reference-type';
+import { CommonModule } from '@angular/common';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { NavigatorComponent } from './navigator/navigator.component';
+import {
+  LongTimestampFormatPipe,
+  TimestampFormatPipe,
+} from '../common/timestamp-format.pipe';
+import { MatIconModule } from '@angular/material/icon';
+import { KHICommonModule } from '../common/common.module';
 
 interface HoverViewStateLog {
   time: number;
@@ -120,6 +132,15 @@ const DEFAULT_HOVER_VIEW_STATE: HoverViewState = {
     CanvasKeyEventHandler,
     TimelinesScrollStrategy,
     TimelineRendererService,
+  ],
+  imports: [
+    CommonModule,
+    KHICommonModule,
+    MatTooltipModule,
+    NavigatorComponent,
+    LongTimestampFormatPipe,
+    TimestampFormatPipe,
+    MatIconModule,
   ],
 })
 export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -381,7 +402,7 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectionManager.selectedTimeline
       .pipe(
         takeUntil(this.destoroyed),
-        filter((timeline): timeline is TimelineEntry => !!timeline),
+        filter((timeline): timeline is ResourceTimeline => !!timeline),
       )
       .subscribe((timeline) =>
         this.timelineScrollStrategy.scrollToTimeline(timeline),
@@ -597,11 +618,11 @@ export class TimelineComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
-  onTimelineHeaderClick(timeline: TimelineEntry) {
+  onTimelineHeaderClick(timeline: ResourceTimeline) {
     this.selectionManager.onSelectTimeline(timeline);
   }
 
-  onTimelineHeaderMouseOver(timeline: TimelineEntry) {
+  onTimelineHeaderMouseOver(timeline: ResourceTimeline) {
     this.selectionManager.onHighlightTimeline(timeline);
   }
 

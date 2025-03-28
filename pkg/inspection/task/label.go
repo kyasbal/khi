@@ -14,31 +14,40 @@
 
 package task
 
-import common_task "github.com/GoogleCloudPlatform/khi/pkg/task"
+import (
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	common_task "github.com/GoogleCloudPlatform/khi/pkg/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
+)
+
+//TODO: move task label related constants to ./label
 
 const (
-	InspectionTaskPrefix                 = common_task.KHISystemPrefix + "inspection/"
-	LabelKeyInspectionFeatureFlag        = InspectionTaskPrefix + "feature"
-	LabelKeyInspectionDefaultFeatureFlag = InspectionTaskPrefix + "default-feature"
-	LabelKeyInspectionRequiredFlag       = InspectionTaskPrefix + "required"
-	LabelKeyProgressReportable           = InspectionTaskPrefix + "progress-reportable"
-	// A []string typed label of Definition. Task registry will filter task units by given inspection type at first.
-	LabelKeyInspectionTypes  = InspectionTaskPrefix + "inspection-type"
-	LabelKeyFeatureTaskTitle = InspectionTaskPrefix + "feature/title"
-
-	LabelKeyFeatureTaskDescription = InspectionTaskPrefix + "feature/description"
+	InspectionTaskPrefix = common_task.KHISystemPrefix + "inspection/"
 
 	InspectionMainSubgraphName = InspectionTaskPrefix + "inspection-main"
+)
 
-	TaskModeDryRun = 1
-	TaskModeRun    = 2
+var InspectionMainSubgraphInitTaskID = taskid.NewDefaultImplementationID[any](InspectionMainSubgraphName + "-init")
+var InspectionMainSubgraphDoneTaskID = taskid.NewDefaultImplementationID[any](InspectionMainSubgraphName + "-done")
+
+var (
+	LabelKeyInspectionFeatureFlag        = common_task.NewTaskLabelKey[bool](InspectionTaskPrefix + "feature")
+	LabelKeyInspectionDefaultFeatureFlag = common_task.NewTaskLabelKey[bool](InspectionTaskPrefix + "default-feature")
+	LabelKeyInspectionRequiredFlag       = common_task.NewTaskLabelKey[bool](InspectionTaskPrefix + "required")
+	LabelKeyProgressReportable           = common_task.NewTaskLabelKey[bool](InspectionTaskPrefix + "progress-reportable")
+	LabelKeyInspectionTypes              = common_task.NewTaskLabelKey[[]string](InspectionTaskPrefix + "inspection-type")
+	LabelKeyFeatureTaskTitle             = common_task.NewTaskLabelKey[string](InspectionTaskPrefix + "feature/title")
+	LabelKeyFeatureTaskTargetLogType     = common_task.NewTaskLabelKey[enum.LogType](InspectionTaskPrefix + "feature/log-type")
+	LabelKeyFeatureTaskDescription       = common_task.NewTaskLabelKey[string](InspectionTaskPrefix + "feature/description")
 )
 
 type ProgressReportableTaskLabelOptImpl struct{}
 
 // Write implements task.LabelOpt.
-func (i *ProgressReportableTaskLabelOptImpl) Write(label *common_task.LabelSet) {
-	label.Set(LabelKeyProgressReportable, true)
+func (i *ProgressReportableTaskLabelOptImpl) Write(label *typedmap.TypedMap) {
+	typedmap.Set(label, LabelKeyProgressReportable, true)
 }
 
 var _ common_task.LabelOpt = (*ProgressReportableTaskLabelOptImpl)(nil)
@@ -48,14 +57,16 @@ var _ common_task.LabelOpt = (*ProgressReportableTaskLabelOptImpl)(nil)
 type FeatureTaskLabelImpl struct {
 	title            string
 	description      string
+	logType          enum.LogType
 	isDefaultFeature bool
 }
 
-func (ftl *FeatureTaskLabelImpl) Write(label *common_task.LabelSet) {
-	label.Set(LabelKeyInspectionFeatureFlag, true)
-	label.Set(LabelKeyFeatureTaskTitle, ftl.title)
-	label.Set(LabelKeyFeatureTaskDescription, ftl.description)
-	label.Set(LabelKeyInspectionDefaultFeatureFlag, ftl.isDefaultFeature)
+func (ftl *FeatureTaskLabelImpl) Write(label *typedmap.TypedMap) {
+	typedmap.Set(label, LabelKeyInspectionFeatureFlag, true)
+	typedmap.Set(label, LabelKeyFeatureTaskTargetLogType, ftl.logType)
+	typedmap.Set(label, LabelKeyFeatureTaskTitle, ftl.title)
+	typedmap.Set(label, LabelKeyFeatureTaskDescription, ftl.description)
+	typedmap.Set(label, LabelKeyInspectionDefaultFeatureFlag, ftl.isDefaultFeature)
 }
 
 func (ftl *FeatureTaskLabelImpl) WithDescription(description string) *FeatureTaskLabelImpl {
@@ -65,10 +76,11 @@ func (ftl *FeatureTaskLabelImpl) WithDescription(description string) *FeatureTas
 
 var _ common_task.LabelOpt = (*FeatureTaskLabelImpl)(nil)
 
-func FeatureTaskLabel(title string, description string, isDefaultFeature bool) *FeatureTaskLabelImpl {
+func FeatureTaskLabel(title string, description string, logType enum.LogType, isDefaultFeature bool) *FeatureTaskLabelImpl {
 	return &FeatureTaskLabelImpl{
 		title:            title,
 		description:      description,
+		logType:          logType,
 		isDefaultFeature: isDefaultFeature,
 	}
 }
@@ -78,8 +90,8 @@ type InspectionTypeLabelImpl struct {
 }
 
 // Write implements task.LabelOpt.
-func (itl *InspectionTypeLabelImpl) Write(label *common_task.LabelSet) {
-	label.Set(LabelKeyInspectionTypes, itl.inspectionTypes)
+func (itl *InspectionTypeLabelImpl) Write(label *typedmap.TypedMap) {
+	typedmap.Set(label, LabelKeyInspectionTypes, itl.inspectionTypes)
 }
 
 var _ common_task.LabelOpt = (*InspectionTypeLabelImpl)(nil)
@@ -93,8 +105,8 @@ func InspectionTypeLabel(types ...string) *InspectionTypeLabelImpl {
 
 type RequriredTaskLabelImpl struct{}
 
-func (r *RequriredTaskLabelImpl) Write(label *common_task.LabelSet) {
-	label.Set(LabelKeyInspectionRequiredFlag, true)
+func (r *RequriredTaskLabelImpl) Write(label *typedmap.TypedMap) {
+	typedmap.Set(label, LabelKeyInspectionRequiredFlag, true)
 }
 
 // InspectionTypeLabel returns a LabelOpt to mark the task is always included in the result task graph.

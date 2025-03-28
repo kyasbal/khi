@@ -19,10 +19,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
 func TestGetTaskProgress(t *testing.T) {
-	progress := (&ProgressMetadataFactory{}).Instanciate().(*Progress)
+	progress := NewProgress()
 	tp, err := progress.GetTaskProgress("foo")
 	if err != nil {
 		t.Errorf("unexpected error %s", err)
@@ -50,7 +52,7 @@ func TestGetTaskProgress(t *testing.T) {
 }
 
 func TestResolveTasks(t *testing.T) {
-	progress := (&ProgressMetadataFactory{}).Instanciate().(*Progress)
+	progress := NewProgress()
 	progress.SetTotalTaskCount(2)
 	progress.GetTaskProgress("foo")
 	progress.GetTaskProgress("bar")
@@ -71,7 +73,7 @@ func TestResolveTasks(t *testing.T) {
 }
 
 func TestDoneClearTasks(t *testing.T) {
-	progress := (&ProgressMetadataFactory{}).Instanciate().(*Progress)
+	progress := NewProgress()
 	progress.SetTotalTaskCount(2)
 	progress.GetTaskProgress("foo")
 	progress.GetTaskProgress("bar")
@@ -87,7 +89,7 @@ func TestDoneClearTasks(t *testing.T) {
 }
 
 func TestCancelClearTasks(t *testing.T) {
-	progress := (&ProgressMetadataFactory{}).Instanciate().(*Progress)
+	progress := NewProgress()
 	progress.SetTotalTaskCount(2)
 	progress.GetTaskProgress("foo")
 	progress.GetTaskProgress("bar")

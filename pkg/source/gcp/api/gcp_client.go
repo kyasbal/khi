@@ -27,9 +27,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/common/cache"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/httpclient"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/token"
-	"github.com/GoogleCloudPlatform/khi/pkg/task"
 )
 
 var ErrorRateLimitExceeds = errors.New("ratelimit exceeds. retry it later")
@@ -133,7 +133,7 @@ func (pi *GCPClientImpl) Digest() string {
 	return "singleton"
 }
 
-var _ task.CachableDependency = (*GCPClientImpl)(nil)
+var _ cache.CacheDependency = (*GCPClientImpl)(nil)
 
 var _ GCPClient = (*GCPClientImpl)(nil)
 
@@ -146,7 +146,7 @@ func NewGCPClient(refresher token.TokenRefresher, headerProviders []httpclient.H
 }
 
 func (c *GCPClientImpl) CreateGCPHttpRequest(ctx context.Context, method string, url string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequest(method, url, body)
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, err
 	}
@@ -518,7 +518,10 @@ func (c *GCPClientImpl) GetComposerEnvironmentNames(ctx context.Context, project
 			}
 
 			client := httpclient.NewJsonResponseHttpClient[environmentListResponse](c.BaseClient)
-			response, _, err := client.DoWithContext(ctx, req)
+			response, httpResponse, err := client.DoWithContext(ctx, req)
+			if httpResponse != nil && httpResponse.Body != nil {
+				defer httpResponse.Body.Close()
+			}
 			if err != nil {
 				return nil, fmt.Errorf("failed to get JSON response: %w", err)
 			}
@@ -586,6 +589,9 @@ func (c *GCPClientImpl) ListLogEntries(ctx context.Context, projectId string, fi
 			}
 			client := httpclient.NewJsonResponseHttpClient[logEntriesListResponse](c.BaseClient)
 			response, httpResponse, err := client.DoWithContext(ctx, req)
+			if httpResponse != nil && httpResponse.Body != nil {
+				defer httpResponse.Body.Close()
+			}
 			if err != nil {
 				if httpResponse != nil {
 					slog.ErrorContext(ctx, fmt.Sprintf("Unretriable error found: %d:%s", httpResponse.StatusCode, httpResponse.Status))

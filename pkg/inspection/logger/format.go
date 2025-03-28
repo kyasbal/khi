@@ -20,7 +20,8 @@ import (
 	"io"
 	"log/slog"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
+	task_contextkey "github.com/GoogleCloudPlatform/khi/pkg/task/contextkey"
 )
 
 var reset = "\033[0m"
@@ -52,9 +53,9 @@ func (*KHILogFormatHandler) Enabled(context.Context, slog.Level) bool {
 
 // Handle implements slog.Handler.
 func (lh *KHILogFormatHandler) Handle(ctx context.Context, r slog.Record) error {
-	tidAny := ctx.Value("tid")
+	tid, found := khictx.GetValue(ctx, task_contextkey.TaskImplementationIDContextKey)
 	var logLine string
-	if tid, convertible := tidAny.(taskid.TaskImplementationId); convertible {
+	if found == nil {
 		logLine = fmt.Sprintf("%s%s >%s %s %s\n", lh.taskIdToColor(tid.String()), tid, lh.resetColor(), lh.wrapColorByLevel(r.Level, r.Level.String()), lh.wrapColorByLevel(r.Level, r.Message))
 	} else {
 		logLine = fmt.Sprintf("global > %s %s\n", lh.wrapColorByLevel(r.Level, r.Level.String()), lh.wrapColorByLevel(r.Level, r.Message))
@@ -102,16 +103,16 @@ func (lh *KHILogFormatHandler) wrapColorByLevel(level slog.Level, msg string) st
 	}
 	var colorBegin string
 	if level.Level() == slog.LevelDebug {
-		colorBegin = "\033[90m" //bright black
+		colorBegin = "\033[90m" // bright black
 	}
 	if level.Level() == slog.LevelInfo {
-		colorBegin = "\033[96m" //bright cyan
+		colorBegin = "\033[96m" // bright cyan
 	}
 	if level.Level() == slog.LevelWarn {
-		colorBegin = "\033[93m" //bright yellow
+		colorBegin = "\033[93m" // bright yellow
 	}
 	if level.Level() == slog.LevelError {
-		colorBegin = "\033[97;101m" //bright yellow
+		colorBegin = "\033[97;101m" // bright yellow
 	}
 	return fmt.Sprintf("%s%s%s", colorBegin, msg, reset)
 }

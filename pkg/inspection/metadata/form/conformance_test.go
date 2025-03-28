@@ -19,11 +19,13 @@ import (
 
 	"github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata"
 	metadata_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/metadata"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
 func newFormFieldsForConformanceTest() metadata.Metadata {
-	forms := (&FormFieldSetMetadataFactory{}).Instanciate().(*FormFieldSet)
-	forms.SetField(&FormField{})
+	forms := NewFormFieldSet()
+	forms.SetField(FormField{})
 	return forms
 }
 

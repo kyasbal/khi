@@ -37,6 +37,7 @@ import { SelectionManagerService } from '../services/selection-manager.service';
 import {
   CdkVirtualScrollViewport,
   FixedSizeVirtualScrollStrategy,
+  ScrollingModule,
   VIRTUAL_SCROLL_STRATEGY,
 } from '@angular/cdk/scrolling';
 import { TIMELINE_ANNOTATOR_RESOLVER } from '../annotator/timeline/resolver';
@@ -44,10 +45,15 @@ import { CHANGE_PAIR_TOOL_ANNOTATOR_RESOLVER } from '../annotator/change-pair-to
 import { CHANGE_PAIR_ANNOTATOR_RESOLVER } from '../annotator/change-pair/resolver';
 import {
   ResourceRevisionChangePair,
-  TimelineEntry,
+  ResourceTimeline,
   TimelineLayer,
 } from '../store/timeline';
 import { ResourceRevision } from '../store/revision';
+import { CommonModule } from '@angular/common';
+import { ParsePrincipalPipe } from './diff-view-pipes';
+import { TimestampFormatPipe } from '../common/timestamp-format.pipe';
+import { UnifiedDiffComponent } from 'ngx-diff';
+import { HighlightModule } from 'ngx-highlightjs';
 
 class DiffViewScrollStrategy extends FixedSizeVirtualScrollStrategy {
   constructor() {
@@ -60,7 +66,7 @@ interface DiffViewSelectionMoveCommand {
 }
 
 type DiffViewViewModel = {
-  selectedTimeline: TimelineEntry | null;
+  selectedTimeline: ResourceTimeline | null;
   selectedLogIndex: number;
   highlightedLogIndex: Set<number>;
   currentRevision: ResourceRevision | null;
@@ -71,6 +77,15 @@ type DiffViewViewModel = {
   selector: 'khi-diff-view',
   templateUrl: './diff-view.component.html',
   styleUrls: ['./diff-view.component.sass'],
+  imports: [
+    CommonModule,
+    ScrollingModule,
+    CdkVirtualScrollViewport,
+    ParsePrincipalPipe,
+    TimestampFormatPipe,
+    UnifiedDiffComponent,
+    HighlightModule,
+  ],
   providers: [
     { provide: VIRTUAL_SCROLL_STRATEGY, useClass: DiffViewScrollStrategy },
   ],
@@ -103,7 +118,7 @@ export class DiffViewComponent implements OnInit, OnDestroy {
 
   @ViewChild(CdkVirtualScrollViewport) viewPort!: CdkVirtualScrollViewport;
 
-  public timeline = new BehaviorSubject<TimelineEntry | null>(null);
+  public timeline = new BehaviorSubject<ResourceTimeline | null>(null);
 
   timelineAnnotators = this.timelineAnnotatorResolver.getResolvedAnnotators(
     this.timeline,

@@ -30,6 +30,8 @@ import (
 	log_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/log"
 	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testchangeset"
 	corev1 "k8s.io/api/core/v1"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
 func TestRecordChangeSetForLog(t *testing.T) {
@@ -93,6 +95,9 @@ containerid: ""
 started: false
 allocatedresources: {}
 resources: null
+volumemounts: []
+user: null
+allocatedresourcesstatus: []
 `,
 						},
 					},
@@ -121,6 +126,9 @@ containerid: ""
 started: false
 allocatedresources: {}
 resources: null
+volumemounts: []
+user: null
+allocatedresourcesstatus: []
 `,
 						},
 					},
@@ -157,6 +165,9 @@ containerid: containerd://a0d5e6840fd995139f7d1b81c59c190bd6668997d0ea917ed49bac
 started: true
 allocatedresources: {}
 resources: null
+volumemounts: []
+user: null
+allocatedresourcesstatus: []
 `,
 						}},
 					&testchangeset.HasRevision{
@@ -183,6 +194,9 @@ containerid: containerd://5043bea481844f45aa284f214ef5fed1bf71eae0fc83f6633c293d
 started: true
 allocatedresources: {}
 resources: null
+volumemounts: []
+user: null
+allocatedresourcesstatus: []
 `,
 						},
 					},

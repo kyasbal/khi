@@ -22,11 +22,9 @@ import {
   WindowConnectorService,
 } from '../services/frame-connection/window-connector.service';
 import { InMemoryWindowConnectionProvider } from '../services/frame-connection/window-connection-provider.service';
-import { NgxEnvModule } from '@ngx-env/core';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { KHICommonModule } from '../common/common.module';
-import { MatMenuModule } from '@angular/material/menu';
+import { GetConfigResponse } from '../common/schema/api-types';
+import { of } from 'rxjs';
+import { BACKEND_API } from '../services/api/backend-api-interface';
 
 describe('TitlebarComponent', () => {
   let component: TitleBarComponent;
@@ -34,19 +32,21 @@ describe('TitlebarComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [TitleBarComponent],
-      imports: [
-        NgxEnvModule,
-        MatIconModule,
-        MatButtonModule,
-        KHICommonModule,
-        MatMenuModule,
-      ],
       providers: [
         WindowConnectorService,
         {
           provide: WINDOW_CONNECTION_PROVIDER,
           useValue: new InMemoryWindowConnectionProvider(),
+        },
+        {
+          provide: BACKEND_API,
+          useValue: {
+            getConfig: () => {
+              return of<GetConfigResponse>({
+                viewerMode: false,
+              });
+            },
+          },
         },
       ],
     }).compileComponents();

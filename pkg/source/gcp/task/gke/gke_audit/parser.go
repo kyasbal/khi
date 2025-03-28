@@ -26,23 +26,28 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/grouper"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/khi/pkg/parser"
-	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
-	composer_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer"
+	composer_inspection_type "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer/inspectiontype"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke"
-	"github.com/GoogleCloudPlatform/khi/pkg/task"
+	gke_audit_taskid "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/gke_audit/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
 type gkeAuditLogParser struct {
 }
 
+// TargetLogType implements parser.Parser.
+func (p *gkeAuditLogParser) TargetLogType() enum.LogType {
+	return enum.LogTypeGkeAudit
+}
+
 // Dependencies implements parser.Parser.
-func (*gkeAuditLogParser) Dependencies() []string {
-	return []string{}
+func (*gkeAuditLogParser) Dependencies() []taskid.UntypedTaskReference {
+	return []taskid.UntypedTaskReference{}
 }
 
 // Description implements parser.Parser.
 func (*gkeAuditLogParser) Description() string {
-	return `GKE audit log including cluster creation,deletion and upgrades.`
+	return `Gather GKE audit log to show creation/upgrade/deletion of logs cluster/nodepool`
 }
 
 // GetParserName implements parser.Parser.
@@ -51,8 +56,8 @@ func (*gkeAuditLogParser) GetParserName() string {
 }
 
 // LogTask implements parser.Parser.
-func (*gkeAuditLogParser) LogTask() string {
-	return GKEAuditLogQueryTaskID
+func (*gkeAuditLogParser) LogTask() taskid.TaskReference[[]*log.LogEntity] {
+	return gke_audit_taskid.GKEAuditLogQueryTaskID.GetTaskReference()
 }
 
 func (*gkeAuditLogParser) Grouper() grouper.LogGrouper {
@@ -60,7 +65,7 @@ func (*gkeAuditLogParser) Grouper() grouper.LogGrouper {
 }
 
 // Parse implements parser.Parser.
-func (p *gkeAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, cs *history.ChangeSet, builder *history.Builder, variables *task.VariableSet) error {
+func (p *gkeAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, cs *history.ChangeSet, builder *history.Builder) error {
 	clusterName := l.GetStringOrDefault("resource.labels.cluster_name", "unknown")
 	isFirst := l.Has("operation.first")
 	isLast := l.Has("operation.last")
@@ -170,11 +175,12 @@ func (p *gkeAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, cs *his
 		})
 	}
 
-	if isFirst && !isLast {
+	switch {
+	case isFirst && !isLast:
 		cs.RecordLogSummary(fmt.Sprintf("%s Started", methodName))
-	} else if !isFirst && isLast {
+	case !isFirst && isLast:
 		cs.RecordLogSummary(fmt.Sprintf("%s Finished", methodName))
-	} else {
+	default:
 		cs.RecordLogSummary(methodName)
 	}
 	return nil
@@ -190,4 +196,4 @@ func getRelatedNodepool(l *log.LogEntity) (string, error) {
 
 var _ parser.Parser = (*gkeAuditLogParser)(nil)
 
-var GKEAuditLogParseJob = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/gke-audit-parser", &gkeAuditLogParser{}, true, inspection_task.InspectionTypeLabel(gke.InspectionTypeId, composer_task.InspectionTypeId))
+var GKEAuditLogParseJob = parser.NewParserTaskFromParser(gke_audit_taskid.GKEAuditParserTaskID, &gkeAuditLogParser{}, true, inspection_task.InspectionTypeLabel(gke.InspectionTypeId, composer_inspection_type.InspectionTypeId))

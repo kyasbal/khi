@@ -20,6 +20,8 @@ import (
 
 	"github.com/GoogleCloudPlatform/khi/pkg/log/structure/structuredata"
 	"github.com/GoogleCloudPlatform/khi/pkg/log/structure/structuredatastore"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
 // testYamlAdapter is the copy of YamlAdapter in adapter package just for generating test structuredata from yaml string in test.
@@ -118,7 +120,7 @@ func TestReader(t *testing.T) {
 		{
 			Input: `foo:
 - bar: 1
-  qux: 
+  qux:
   - apple
   - banana
 - bar: 2
@@ -178,11 +180,8 @@ func TestReader(t *testing.T) {
 							return
 						}
 						t.Fatal("no error returned")
-					} else {
-						if len(readers) != ctc.resultCount {
-							t.Errorf("the result is not matching with the expected count: expected:%d,actual:%d\n \nvalues:%v", ctc.resultCount, len(readers), readers)
-
-						}
+					} else if len(readers) != ctc.resultCount {
+						t.Errorf("the result is not matching with the expected count: expected:%d,actual:%d\n \nvalues:%v", ctc.resultCount, len(readers), readers)
 					}
 				})
 			}

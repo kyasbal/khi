@@ -22,6 +22,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
 type testPopupForm struct{}
@@ -62,7 +64,7 @@ func TestPopupManager(t *testing.T) {
 		go func() {
 			popupResult, err := pm.ShowPopup(&testPopupForm{})
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Errorf("%s", err.Error())
 			}
 			if popupResult != "ok" {
 				t.Errorf("expected ok but got %s", popupResult)
@@ -98,7 +100,7 @@ func TestPopupManager(t *testing.T) {
 				Value: "ng",
 			})
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Errorf("%s", err.Error())
 			}
 			if result.ValidationError != "answer for test popup must contain ok" {
 				t.Errorf("expected answer for test popup must contain ok but got %s", result.ValidationError)
@@ -109,7 +111,7 @@ func TestPopupManager(t *testing.T) {
 				Value: "ok",
 			})
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Errorf("%s", err.Error())
 			}
 			if result.ValidationError != "" {
 				t.Errorf("expected empty but got %s", result.ValidationError)
@@ -138,7 +140,7 @@ func TestPopupManager(t *testing.T) {
 				Value: "ok",
 			})
 			if err != CurrentPopupIsntMatchingWithGivenId {
-				t.Errorf(err.Error())
+				t.Errorf("%s", err.Error())
 			}
 			pm.Answer(&PopupAnswerResponse{
 				Id:    p.Id,

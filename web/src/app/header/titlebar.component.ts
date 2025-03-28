@@ -14,18 +14,40 @@
  * limitations under the License.
  */
 
-import { Component, Input } from '@angular/core';
+import { Component, inject, Input } from '@angular/core';
 import { WindowConnectorService } from '../services/frame-connection/window-connector.service';
 import { map } from 'rxjs';
+import { CommonModule } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { RainbowPipe } from '../common/rainbow.pipe';
+import { VERSION } from 'src/environments/version';
+import { MatButtonModule } from '@angular/material/button';
+import { BACKEND_API } from '../services/api/backend-api-interface';
 
 @Component({
   selector: 'khi-title',
   templateUrl: './titlebar.component.html',
   styleUrls: ['./titlebar.component.sass'],
+  imports: [
+    CommonModule,
+    MatIconModule,
+    MatButtonModule,
+    MatMenuModule,
+    RainbowPipe,
+  ],
 })
 export class TitleBarComponent {
   @Input()
   pageName = 'N/A';
+
+  backendAPI = inject(BACKEND_API);
+
+  version = VERSION;
+
+  isViewerMode = this.backendAPI
+    .getConfig()
+    .pipe(map((config) => config.viewerMode));
 
   mainPageConenctionEstablished =
     this.windowConnector.mainPageConenctionEstablished;

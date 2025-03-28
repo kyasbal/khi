@@ -22,16 +22,24 @@ import {
   inject,
 } from '@angular/core';
 import { InspectionDataStoreService } from '../services/inspection-data-store.service';
-import { Subject, map, shareReplay, startWith, withLatestFrom } from 'rxjs';
+import {
+  ReplaySubject,
+  map,
+  shareReplay,
+  startWith,
+  withLatestFrom,
+} from 'rxjs';
 import {
   LOG_ANNOTATOR_RESOLVER,
   LogAnnotatorResolver,
 } from '../annotator/log/resolver';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'khi-log-header',
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.sass'],
+  imports: [CommonModule],
 })
 export class LogHeaderComponent {
   private readonly envInjector = inject(EnvironmentInjector);
@@ -41,7 +49,7 @@ export class LogHeaderComponent {
     this.logIndexObservable.next(index);
   }
 
-  private logIndexObservable = new Subject<number>();
+  private logIndexObservable = new ReplaySubject<number>(1);
 
   public logEntryObservable = this.logIndexObservable.pipe(
     startWith(0),

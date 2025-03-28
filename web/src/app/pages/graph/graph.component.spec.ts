@@ -15,29 +15,35 @@
  */
 
 import { TestBed } from '@angular/core/testing';
-import { MatIconModule } from '@angular/material/icon';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { NgxEnvModule } from '@ngx-env/core';
 import { GraphComponent } from './graph.component';
-import { ArchitectureGraphComponent } from './architecture-graph/architecture-graph.component';
 import {
   WINDOW_CONNECTION_PROVIDER,
   WindowConnectorService,
 } from '../../services/frame-connection/window-connector.service';
 import { InMemoryWindowConnectionProvider } from '../../services/frame-connection/window-connection-provider.service';
-import { HeaderModule } from 'src/app/header/header.module';
 import { GraphPageDataSource } from 'src/app/services/frame-connection/frames/graph-page-datasource.service';
+import { BACKEND_API } from 'src/app/services/api/backend-api-interface';
+import { GetConfigResponse } from 'src/app/common/schema/api-types';
+import { of } from 'rxjs';
 
 describe('GraphComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [GraphComponent, ArchitectureGraphComponent],
-      imports: [NgxEnvModule, MatToolbarModule, MatIconModule, HeaderModule],
       providers: [
         WindowConnectorService,
         {
           provide: WINDOW_CONNECTION_PROVIDER,
           useValue: new InMemoryWindowConnectionProvider(),
+        },
+        {
+          provide: BACKEND_API,
+          useValue: {
+            getConfig: () => {
+              return of<GetConfigResponse>({
+                viewerMode: false,
+              });
+            },
+          },
         },
         GraphPageDataSource,
       ],

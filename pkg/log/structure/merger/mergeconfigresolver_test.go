@@ -14,7 +14,11 @@
 
 package merger
 
-import "testing"
+import (
+	"testing"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
+)
 
 func TestMergeConfigResolverWithoutParent(t *testing.T) {
 	type resolverTestCase struct {
@@ -148,7 +152,7 @@ func TestMergeConfigResolverWithoutParent(t *testing.T) {
 						}
 					} else {
 						if err != nil {
-							t.Errorf(err.Error())
+							t.Errorf("%s", err.Error())
 						}
 						if key != tc.mergeKey {
 							t.Errorf("expected %s, but %s was given", tc.mergeKey, key)

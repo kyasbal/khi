@@ -15,8 +15,8 @@
 -->
 
 <h1 class="title">Kubernetes History Inspector</h1>
-<p class="version">v {{ ("NG_APP_VERSION" | env) || "Dev" }}</p>
-<p class="viewer-mode" *ngIf="'NG_APP_VIEWER_MODE' | env">
+<p class="version">{{ version }}</p>
+<p class="viewer-mode" *ngIf="isViewerMode | async">
   <mat-icon class="icon">visibility</mat-icon>
   <span>viewer mode</span>
 </p>

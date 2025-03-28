@@ -18,22 +18,25 @@ import (
 	"context"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/inspection/task"
+	inspection_task_interface "github.com/GoogleCloudPlatform/khi/pkg/inspection/interface"
+	inspection_task_test "github.com/GoogleCloudPlatform/khi/pkg/inspection/test"
 	"github.com/GoogleCloudPlatform/khi/pkg/log"
 	"github.com/GoogleCloudPlatform/khi/pkg/model"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/k8saudittask"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/types"
+	task_test "github.com/GoogleCloudPlatform/khi/pkg/task/test"
 	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testlog"
-	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testtask"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
 func TestParseResourceSpecificParserInput(t *testing.T) {
 	baseLog := `insertId: foo
 protoPayload:
-  authenticationInfo: 
+  authenticationInfo:
     principalEmail: user@example.com
   methodName: io.k8s.core.v1.pods.create
   resourceName: core/v1/namespaces/default/pods/my-pod
@@ -104,7 +107,7 @@ timestamp: 2024-01-01T00:00:00+09:00`
 					t.Errorf("the result is not valid:\n%s", diff)
 				}
 				if err != nil {
-					t.Errorf(err.Error())
+					t.Errorf("%s", err.Error())
 				}
 			}
 		})
@@ -114,7 +117,7 @@ timestamp: 2024-01-01T00:00:00+09:00`
 func TestPrestepParseTaskFinishWithSuccess(t *testing.T) {
 	baseLog := `insertId: foo
 protoPayload:
-  authenticationInfo: 
+  authenticationInfo:
     principalEmail: user@example.com
   methodName: io.k8s.core.v1.pods.create
   resourceName: core/v1/namespaces/default/pods/my-pod
@@ -139,11 +142,13 @@ timestamp: 2024-01-01T00:00:00+09:00`
 		},
 		Code: 200,
 	}
+	ctx := inspection_task_test.WithDefaultTestInspectionTaskContext(context.Background())
+	res, _, err := inspection_task_test.RunInspectionTask(ctx, Task, inspection_task_interface.TaskModeRun, map[string]any{}, task_test.NewTaskDependencyValuePair(
+		k8saudittask.K8sAuditQueryTaskID.GetTaskReference(), logs,
+	))
 
-	res, err := testtask.RunSingleTask[[]*types.ResourceSpecificParserInput](Task, task.TaskModeRun,
-		testtask.PriorTaskResultFromID(k8saudittask.K8sAuditQueryTaskID, logs))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	if len(res) != len(logs) {
@@ -159,7 +164,7 @@ timestamp: 2024-01-01T00:00:00+09:00`
 func TestPrestepParseIgnoreErrornousLogs(t *testing.T) {
 	baseLog := `insertId: foo
 protoPayload:
-  authenticationInfo: 
+  authenticationInfo:
     principalEmail: user@example.com
   resourceName: core/v1/namespaces/default/pods/my-pod
   status:
@@ -189,10 +194,12 @@ timestamp: 2024-01-01T00:00:00+09:00`
 		Code: 200,
 	}
 
-	res, err := testtask.RunSingleTask[[]*types.ResourceSpecificParserInput](Task, task.TaskModeRun,
-		testtask.PriorTaskResultFromID(k8saudittask.K8sAuditQueryTaskID, logs))
+	ctx := inspection_task_test.WithDefaultTestInspectionTaskContext(context.Background())
+	res, _, err := inspection_task_test.RunInspectionTask(ctx, Task, inspection_task_interface.TaskModeRun, map[string]any{}, task_test.NewTaskDependencyValuePair(
+		k8saudittask.K8sAuditQueryTaskID.GetTaskReference(), logs,
+	))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	if len(res) != 50 {

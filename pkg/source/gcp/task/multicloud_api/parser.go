@@ -27,23 +27,28 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/grouper"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/khi/pkg/parser"
-	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
 	aws "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke-on-aws"
 	azure "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke-on-azure"
-	"github.com/GoogleCloudPlatform/khi/pkg/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/multicloud_api/multicloud_api_taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
 type multiCloudAuditLogParser struct {
 }
 
+// TargetLogType implements parser.Parser.
+func (m *multiCloudAuditLogParser) TargetLogType() enum.LogType {
+	return enum.LogTypeMulticloudAPI
+}
+
 // Dependencies implements parser.Parser.
-func (*multiCloudAuditLogParser) Dependencies() []string {
-	return []string{}
+func (*multiCloudAuditLogParser) Dependencies() []taskid.UntypedTaskReference {
+	return []taskid.UntypedTaskReference{}
 }
 
 // Description implements parser.Parser.
 func (*multiCloudAuditLogParser) Description() string {
-	return `Anthos Multicloud audit log including cluster creation,deletion and upgrades.`
+	return `Gather Anthos Multicloud audit log including cluster creation,deletion and upgrades.`
 }
 
 // GetParserName implements parser.Parser.
@@ -52,8 +57,8 @@ func (*multiCloudAuditLogParser) GetParserName() string {
 }
 
 // LogTask implements parser.Parser.
-func (*multiCloudAuditLogParser) LogTask() string {
-	return MultiCloudAPIQueryTaskID
+func (*multiCloudAuditLogParser) LogTask() taskid.TaskReference[[]*log.LogEntity] {
+	return multicloud_api_taskid.MultiCloudAPIQueryTaskID.GetTaskReference()
 }
 
 func (*multiCloudAuditLogParser) Grouper() grouper.LogGrouper {
@@ -61,7 +66,7 @@ func (*multiCloudAuditLogParser) Grouper() grouper.LogGrouper {
 }
 
 // Parse implements parser.Parser.
-func (*multiCloudAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, cs *history.ChangeSet, builder *history.Builder, variables *task.VariableSet) error {
+func (*multiCloudAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, cs *history.ChangeSet, builder *history.Builder) error {
 	resourceName := l.GetStringOrDefault("protoPayload.resourceName", "")
 	resource := parseResourceNameOfMulticloudAPI(resourceName)
 	isFirst := l.Has("operation.first")
@@ -71,7 +76,9 @@ func (*multiCloudAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, cs
 	principal := l.GetStringOrDefault("protoPayload.authenticationInfo.principalEmail", "unknown")
 	code := l.GetStringOrDefault("protoPayload.status.code", "0")
 	isSucceedRequest := code == "0"
-	operationResourcePath := resourcepath.ResourcePath{}
+
+	var operationResourcePath resourcepath.ResourcePath
+
 	if resource.NodepoolName == "" {
 		// assume this is a cluster operation
 		clusterResourcePath := resourcepath.Cluster(resource.ClusterName)
@@ -154,11 +161,12 @@ func (*multiCloudAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, cs
 		})
 	}
 
-	if isFirst && !isLast {
+	switch {
+	case isFirst && !isLast:
 		cs.RecordLogSummary(fmt.Sprintf("%s Started", methodName))
-	} else if !isFirst && isLast {
+	case !isFirst && isLast:
 		cs.RecordLogSummary(fmt.Sprintf("%s Finished", methodName))
-	} else {
+	default:
 		cs.RecordLogSummary(methodName)
 	}
 	return nil
@@ -166,7 +174,7 @@ func (*multiCloudAuditLogParser) Parse(ctx context.Context, l *log.LogEntity, cs
 
 var _ parser.Parser = (*multiCloudAuditLogParser)(nil)
 
-var MultiCloudAuditLogParseJob = parser.NewParserTaskFromParser(gcp_task.GCPPrefix+"feature/multicloud-audit-parser", &multiCloudAuditLogParser{}, true, inspection_task.InspectionTypeLabel(aws.InspectionTypeId, azure.InspectionTypeId))
+var MultiCloudAuditLogParseJob = parser.NewParserTaskFromParser(multicloud_api_taskid.MultiCloudAPIParserTaskID, &multiCloudAuditLogParser{}, true, inspection_task.InspectionTypeLabel(aws.InspectionTypeId, azure.InspectionTypeId))
 
 type multiCloudResource struct {
 	ClusterType  string // aws or azure

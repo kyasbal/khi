@@ -15,28 +15,31 @@
 package v2timelinegrouping
 
 import (
+	"context"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata"
-	"github.com/GoogleCloudPlatform/khi/pkg/inspection/task"
+	inspection_task_interface "github.com/GoogleCloudPlatform/khi/pkg/inspection/interface"
+	inspection_task_test "github.com/GoogleCloudPlatform/khi/pkg/inspection/test"
 	"github.com/GoogleCloudPlatform/khi/pkg/log"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/k8saudittask"
-	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/types"
+	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/query"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke/k8s_audit/v2commonlogparse"
-	base_task "github.com/GoogleCloudPlatform/khi/pkg/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/task"
+	task_test "github.com/GoogleCloudPlatform/khi/pkg/task/test"
 	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testlog"
-	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testtask"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
 func TestGroupByTimelineTask(t *testing.T) {
 	t.Run("it ignores dryrun mode", func(t *testing.T) {
-		result, err := testtask.RunSingleTask[struct{}](Task, task.TaskModeDryRun,
-			testtask.PriorTaskResultFromID(task.MetadataVariableName, metadata.NewSet()),
-			testtask.PriorTaskResultFromID(k8saudittask.CommonLogParseTaskID, struct{}{}))
+		ctx := inspection_task_test.WithDefaultTestInspectionTaskContext(context.Background())
+		result, _, err := inspection_task_test.RunInspectionTask(ctx, Task, inspection_task_interface.TaskModeDryRun, map[string]any{},
+			task_test.NewTaskDependencyValuePair(k8saudittask.CommonLogParseTaskID.GetTaskReference(), nil))
 		if err != nil {
 			t.Error(err)
 		}
-		if result != struct{}{} {
+		if result != nil {
 			t.Errorf("the result is not valid")
 		}
 	})
@@ -44,7 +47,7 @@ func TestGroupByTimelineTask(t *testing.T) {
 	t.Run("it grups logs by timleines", func(t *testing.T) {
 		baseLog := `insertId: foo
 protoPayload:
-  authenticationInfo: 
+  authenticationInfo:
     principalEmail: user@example.com
   methodName: io.k8s.core.v1.pods.create
   status:
@@ -71,19 +74,19 @@ timestamp: 2024-01-01T00:00:00+09:00`
 			logs = append(logs, tl.With(opt...).MustBuildLogEntity(&log.UnreachableCommonFieldExtractor{}))
 		}
 
-		result, err := testtask.RunMultipleTask[[]*types.TimelineGrouperResult](Task, []base_task.Definition{v2commonlogparse.Task}, task.TaskModeRun,
-			testtask.PriorTaskResultFromID(task.MetadataVariableName, metadata.NewSet()),
-			testtask.PriorTaskResultFromID(k8saudittask.K8sAuditQueryTaskID, logs))
+		ctx := inspection_task_test.WithDefaultTestInspectionTaskContext(context.Background())
+		result, _, err := inspection_task_test.RunInspectionTaskWithDependency(ctx, Task, []task.UntypedDefinition{
+			v2commonlogparse.Task,
+			task_test.MockTask(query.Task, logs, nil),
+		}, inspection_task_interface.TaskModeRun, map[string]any{})
 		if err != nil {
 			t.Error(err)
 		}
 		for _, result := range result {
 			if count, found := expectedLogCounts[result.TimelineResourcePath]; !found {
 				t.Errorf("unexpected timeline %s not found", result.TimelineResourcePath)
-			} else {
-				if count != len(result.PreParsedLogs) {
-					t.Errorf("expected log count is not matching in a timeline:%s", result.TimelineResourcePath)
-				}
+			} else if count != len(result.PreParsedLogs) {
+				t.Errorf("expected log count is not matching in a timeline:%s", result.TimelineResourcePath)
 			}
 		}
 	})

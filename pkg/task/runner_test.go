@@ -16,228 +16,224 @@ package task
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
-type debugRunnable struct {
-	waitFor     int
-	shouldError bool
-	resolves    []string
+func createMockTask(id string, dependencies []string, runFunc func(ctx context.Context) (any, error)) UntypedDefinition {
+	deps := make([]taskid.UntypedTaskReference, len(dependencies))
+	for i, dep := range dependencies {
+		deps[i] = taskid.NewTaskReference[any](dep)
+	}
+
+	return NewTask(
+		taskid.NewDefaultImplementationID[any](id),
+		deps,
+		runFunc,
+	)
 }
 
-var errFoo = fmt.Errorf("an error for test")
+func TestLocalRunner_SingleTask(t *testing.T) {
+	taskResult := "task_result"
+	task := createMockTask("task1", nil, func(ctx context.Context) (any, error) {
+		return taskResult, nil
+	})
 
-func (r *debugRunnable) Run(ctx context.Context, v *VariableSet) error {
-	select {
-	case <-time.After(time.Millisecond * time.Duration(r.waitFor)):
-		break
-	case <-ctx.Done():
-		return context.Canceled
+	definitionSet, err := NewSet([]UntypedDefinition{task})
+	if err != nil {
+		t.Fatalf("Failed to create definition set: %v", err)
 	}
-	if r.shouldError {
-		return errFoo
+
+	sortResult := definitionSet.sortTaskGraph()
+	runnableSet := &DefinitionSet{definitions: sortResult.TopologicalSortedTasks, runnable: true}
+
+	runner, err := NewLocalRunner(runnableSet)
+	if err != nil {
+		t.Fatalf("Failed to create runner: %v", err)
 	}
-	for _, resolve := range r.resolves {
-		v.Set(resolve, struct{}{})
+
+	err = runner.Run(context.Background())
+	if err != nil {
+		t.Fatalf("Failed to run task: %v", err)
 	}
-	return nil
+
+	<-runner.Wait()
+
+	val, found := GetTaskResultFromLocalRunner(runner, taskid.NewTaskReference[string]("task1"))
+	if !found {
+		t.Errorf("Expected task result to be found")
+	}
+	if val != taskResult {
+		t.Errorf("Expected task result '%v', got '%v'", taskResult, val)
+	}
 }
 
-func newDebugRunnable(waitFor int, resolve ...string) *debugRunnable {
-	return &debugRunnable{
-		waitFor:     waitFor,
-		shouldError: false,
-		resolves:    resolve,
+func TestLocalRunner_TasksWithDependencies(t *testing.T) {
+	executionOrder := []string{}
+	var mu sync.Mutex
+
+	task1 := createMockTask("task1", nil, func(ctx context.Context) (any, error) {
+		mu.Lock()
+		executionOrder = append(executionOrder, "task1")
+		mu.Unlock()
+		return "result1", nil
+	})
+
+	task2 := createMockTask("task2", []string{"task1"}, func(ctx context.Context) (any, error) {
+		mu.Lock()
+		executionOrder = append(executionOrder, "task2")
+		mu.Unlock()
+
+		task1Result := GetTaskResult(ctx, taskid.NewTaskReference[string]("task1"))
+		if task1Result != "result1" {
+			panic("task1 result is not matching")
+		}
+		return "result2", nil
+	})
+
+	definitionSet, err := NewSet([]UntypedDefinition{task1, task2})
+	if err != nil {
+		t.Fatalf("Failed to create definition set: %v", err)
+	}
+
+	sortResult := definitionSet.sortTaskGraph()
+	runnableSet := &DefinitionSet{definitions: sortResult.TopologicalSortedTasks, runnable: true}
+
+	runner, err := NewLocalRunner(runnableSet)
+	if err != nil {
+		t.Fatalf("Failed to create runner: %v", err)
+	}
+
+	err = runner.Run(context.Background())
+	if err != nil {
+		t.Fatalf("Failed to run task: %v", err)
+	}
+
+	<-runner.Wait()
+
+	if len(executionOrder) != 2 {
+		t.Errorf("Expected 2 tasks to be executed, got %d", len(executionOrder))
+	}
+	if executionOrder[0] != "task1" {
+		t.Errorf("Expected task1 to be executed first, got %s", executionOrder[0])
+	}
+	if executionOrder[1] != "task2" {
+		t.Errorf("Expected task2 to be executed second, got %s", executionOrder[1])
+	}
+
+	task1Result, found := GetTaskResultFromLocalRunner(runner, taskid.NewTaskReference[string]("task1"))
+	if !found {
+		t.Errorf("Expected task result to be found")
+	}
+	if task1Result != "result1" {
+		t.Errorf("Expected task1 result 'result1', got '%v'", task1Result)
+	}
+
+	task2Result, found := GetTaskResultFromLocalRunner(runner, taskid.NewTaskReference[string]("task2"))
+	if !found {
+		t.Errorf("Expected task result to be found")
+	}
+	if task2Result != "result2" {
+		t.Errorf("Expected task2 result 'result2', got '%v'", task2Result)
 	}
 }
 
-func newErrorDebugRunnable(waitFor int) *debugRunnable {
-	return &debugRunnable{
-		waitFor:     waitFor,
-		shouldError: true,
+func TestLocalRunner_TaskError(t *testing.T) {
+	expectedErr := errors.New("task error")
+
+	task1 := createMockTask("task1", nil, func(ctx context.Context) (any, error) {
+		return nil, expectedErr
+	})
+
+	task2Executed := false
+	task2 := createMockTask("task2", []string{"task1"}, func(ctx context.Context) (any, error) {
+		task2Executed = true
+		return "result2", nil
+	})
+
+	definitionSet, err := NewSet([]UntypedDefinition{task1, task2})
+	if err != nil {
+		t.Fatalf("Failed to create definition set: %v", err)
+	}
+
+	sortResult := definitionSet.sortTaskGraph()
+	runnableSet := &DefinitionSet{definitions: sortResult.TopologicalSortedTasks, runnable: true}
+
+	runner, err := NewLocalRunner(runnableSet)
+	if err != nil {
+		t.Fatalf("Failed to create runner: %v", err)
+	}
+
+	err = runner.Run(context.Background())
+	if err != nil {
+		t.Fatalf("Failed to run task: %v", err)
+	}
+
+	<-runner.Wait()
+
+	_, err = runner.Result()
+	if err == nil {
+		t.Error("Expected an error, got nil")
+	}
+	if !strings.Contains(err.Error(), expectedErr.Error()) {
+		t.Errorf("Expected error containing '%s', got '%s'", expectedErr.Error(), err.Error())
+	}
+
+	if task2Executed {
+		t.Error("Dependent task should not be executed when a dependency fails")
 	}
 }
 
-var _ Runnable = (*debugRunnable)(nil)
+func TestLocalRunner_ContextCancellation(t *testing.T) {
+	taskStarted := make(chan struct{})
 
-func TestLocalRunnerToBeCompleted(t *testing.T) {
-	testCases := []struct {
-		definitions    []Definition
-		expectError    bool
-		expectedStatus []*LocalRunnerTaskStat
-	}{
-		{
-			definitions: []Definition{
-				newDebugDefinition("foo1", []string{}).WithRunnable(newDebugRunnable(100, "foo1")),
-				newDebugDefinition("foo2", []string{"foo1"}).WithRunnable(newDebugRunnable(100, "foo2")),
-				newDebugDefinition("foo3", []string{"foo1"}).WithRunnable(newDebugRunnable(100, "foo3")),
-			},
-			expectError: false,
-			expectedStatus: []*LocalRunnerTaskStat{
-				{
-					Phase: LocalRunnerTaskStatPhaseStopped,
-					Error: nil,
-				},
-				{
-					Phase: LocalRunnerTaskStatPhaseStopped,
-					Error: nil,
-				},
-				{
-					Phase: LocalRunnerTaskStatPhaseStopped,
-					Error: nil,
-				},
-			},
-		},
-		{
-			definitions: []Definition{
-				newDebugDefinition("foo1", []string{}).WithRunnable(newDebugRunnable(100, "foo1")).WithThreadUnsafeLabel(),
-				newDebugDefinition("foo2", []string{"foo1"}).WithRunnable(newDebugRunnable(100, "foo2")).WithThreadUnsafeLabel(),
-				newDebugDefinition("foo3", []string{"foo2"}).WithRunnable(newDebugRunnable(100, "foo3")).WithThreadUnsafeLabel(),
-			},
-			expectError: false,
-			expectedStatus: []*LocalRunnerTaskStat{
-				{
-					Phase: LocalRunnerTaskStatPhaseStopped,
-					Error: nil,
-				},
-				{
-					Phase: LocalRunnerTaskStatPhaseStopped,
-					Error: nil,
-				},
-				{
-					Phase: LocalRunnerTaskStatPhaseStopped,
-					Error: nil,
-				},
-			},
-		},
-		{
-			definitions: []Definition{
-				newDebugDefinition("foo1", []string{}).WithRunnable(newErrorDebugRunnable(100)),
-				newDebugDefinition("foo2", []string{"foo1"}).WithRunnable(newDebugRunnable(100, "foo2")),
-				newDebugDefinition("foo3", []string{"foo1"}).WithRunnable(newDebugRunnable(100, "foo3")),
-			},
-			expectError: true,
-			expectedStatus: []*LocalRunnerTaskStat{
-				{
-					Phase: LocalRunnerTaskStatPhaseStopped,
-					Error: errFoo,
-				},
-				{
-					Phase: LocalRunnerTaskStatPhaseWaiting,
-					Error: nil,
-				},
-				{
-					Phase: LocalRunnerTaskStatPhaseWaiting,
-					Error: nil,
-				},
-			},
-		},
-		{
-			definitions: []Definition{
-				newDebugDefinition("foo1", []string{}).WithRunnable(newErrorDebugRunnable(100)).WithThreadUnsafeLabel(),
-				newDebugDefinition("foo2", []string{"foo1"}).WithRunnable(newDebugRunnable(100, "foo2")).WithThreadUnsafeLabel(),
-				newDebugDefinition("foo3", []string{"foo2"}).WithRunnable(newDebugRunnable(100, "foo3")).WithThreadUnsafeLabel(),
-			},
-			expectError: true,
-			expectedStatus: []*LocalRunnerTaskStat{
-				{
-					Phase: LocalRunnerTaskStatPhaseStopped,
-					Error: errFoo,
-				},
-				{
-					Phase: LocalRunnerTaskStatPhaseWaiting,
-					Error: nil,
-				},
-				{
-					Phase: LocalRunnerTaskStatPhaseWaiting,
-					Error: nil,
-				},
-			},
-		},
-		{
-			definitions: []Definition{
-				newDebugDefinition("foo1", []string{}).WithRunnable(newErrorDebugRunnable(100)),
-				newDebugDefinition("foo2", []string{}).WithRunnable(newDebugRunnable(1000, "foo2")),
-				newDebugDefinition("foo3", []string{"foo1", "foo2"}).WithRunnable(newDebugRunnable(100, "foo3")).WithThreadUnsafeLabel(),
-			},
-			expectError: true,
-			expectedStatus: []*LocalRunnerTaskStat{
-				{
-					Phase: LocalRunnerTaskStatPhaseStopped,
-					Error: errFoo,
-				},
-				{
-					Phase: LocalRunnerTaskStatPhaseStopped,
-					Error: context.Canceled,
-				},
-				{
-					Phase: LocalRunnerTaskStatPhaseWaiting,
-					Error: nil,
-				},
-			},
-		},
+	task := createMockTask("task1", nil, func(ctx context.Context) (any, error) {
+		close(taskStarted)
+
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(5 * time.Second):
+			return "unexpected completion", nil
+		}
+	})
+
+	definitionSet, err := NewSet([]UntypedDefinition{task})
+	if err != nil {
+		t.Fatalf("Failed to create definition set: %v", err)
 	}
-	for testIndex, testCase := range testCases {
-		t.Run(fmt.Sprintf("testcase-%d", testIndex), func(t *testing.T) {
-			defSet, err := NewSet(testCase.definitions)
-			if err != nil {
-				t.Errorf("unexpected error %v", err)
-			}
-			defSet, err = defSet.ResolveTask(defSet)
-			if err != nil {
-				t.Errorf("unexpected error %v", err)
-			}
-			runner, err := NewLocalRunner(defSet)
-			if err != nil {
-				t.Errorf("unexpected error %v", err)
-			}
-			err = runner.Run(context.Background(), 0, map[string]any{})
-			if err != nil {
-				t.Errorf("unexpected error %v", err)
-			}
-			<-runner.Wait()
-			v, err := runner.Result()
-			if !testCase.expectError {
-				if err != nil {
-					t.Errorf("unexpected error %v", err)
-				}
-				if v == nil {
-					t.Errorf("the result variable is empty")
-				}
-			} else {
-				if err == nil {
-					t.Errorf("error hasn't been thrown")
-				}
-				if v != nil {
-					t.Errorf("the result variable contains a value, but it was expected to be nil\n%v", v)
-				}
-			}
-			status := runner.TaskStatuses()
-			if diff := cmp.Diff(status, testCase.expectedStatus, cmpopts.IgnoreUnexported(), cmpopts.IgnoreFields(LocalRunnerTaskStat{}, "StartTime", "EndTime", "Error")); diff != "" {
-				t.Errorf("task status is not matching with the expected status\n%s", diff)
-			}
-			for taskIndex, stat := range status {
-				if testCase.expectedStatus[taskIndex].Error == nil {
-					if stat.Error != nil {
-						t.Errorf("task index:%d must end without an error", taskIndex)
-					}
-				} else {
-					if stat.Error == nil {
-						t.Errorf("task index:%d must end with an error. But got err=nil", taskIndex)
-					} else {
-						actualErr := testCase.expectedStatus[taskIndex].Error.Error()
-						expectedErr := stat.Error.Error()
-						if actualErr != expectedErr {
-							t.Errorf("task index:%d must end with an error `%s`. But got err=%s", taskIndex, expectedErr, actualErr)
-						}
-					}
-				}
-			}
-		})
+
+	sortResult := definitionSet.sortTaskGraph()
+	runnableSet := &DefinitionSet{definitions: sortResult.TopologicalSortedTasks, runnable: true}
+
+	runner, err := NewLocalRunner(runnableSet)
+	if err != nil {
+		t.Fatalf("Failed to create runner: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	err = runner.Run(ctx)
+	if err != nil {
+		t.Fatalf("Failed to run task: %v", err)
+	}
+
+	<-taskStarted
+
+	cancel()
+
+	<-runner.Wait()
+
+	_, err = runner.Result()
+	if err == nil {
+		t.Error("Expected an error, got nil")
+	}
+	if !strings.Contains(err.Error(), context.Canceled.Error()) {
+		t.Errorf("Expected error containing '%s', got '%s'", context.Canceled.Error(), err.Error())
 	}
 }
