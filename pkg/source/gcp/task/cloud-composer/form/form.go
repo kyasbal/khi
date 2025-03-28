@@ -32,10 +32,10 @@ import (
 var AutocompleteComposerEnvironmentNames = inspection_cached_task.NewCachedTask(composer_taskid.AutocompleteComposerEnvironmentNamesTaskID, []taskid.UntypedTaskReference{
 	gcp_task.InputLocationsTaskID,
 	gcp_task.InputProjectIdTaskID,
-}, func(ctx context.Context, prevValue inspection_cached_task.CachableResult[[]string]) (inspection_cached_task.CachableResult[[]string], error) {
+}, func(ctx context.Context, prevValue inspection_cached_task.PreviousTaskResult[[]string]) (inspection_cached_task.PreviousTaskResult[[]string], error) {
 	client, err := api.DefaultGCPClientFactory.NewClient()
 	if err != nil {
-		return inspection_cached_task.CachableResult[[]string]{}, err
+		return inspection_cached_task.PreviousTaskResult[[]string]{}, err
 	}
 	projectID := task.GetTaskResult(ctx, gcp_task.InputProjectIdTaskID.GetTaskReference())
 	location := task.GetTaskResult(ctx, gcp_task.InputLocationsTaskID.GetTaskReference())
@@ -49,17 +49,17 @@ var AutocompleteComposerEnvironmentNames = inspection_cached_task.NewCachedTask(
 		clusterNames, err := client.GetComposerEnvironmentNames(ctx, projectID, location)
 		if err != nil {
 			slog.WarnContext(ctx, fmt.Sprintf("Failed to read the composer environments in the (project,location) (%s, %s) \n%s", projectID, location, err))
-			return inspection_cached_task.CachableResult[[]string]{
+			return inspection_cached_task.PreviousTaskResult[[]string]{
 				DependencyDigest: dependencyDigest,
 				Value:            []string{},
 			}, nil
 		}
-		return inspection_cached_task.CachableResult[[]string]{
+		return inspection_cached_task.PreviousTaskResult[[]string]{
 			DependencyDigest: dependencyDigest,
 			Value:            clusterNames,
 		}, nil
 	}
-	return inspection_cached_task.CachableResult[[]string]{
+	return inspection_cached_task.PreviousTaskResult[[]string]{
 		DependencyDigest: dependencyDigest,
 		Value:            []string{},
 	}, nil

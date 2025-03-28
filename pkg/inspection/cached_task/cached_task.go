@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package inspection_cached_task
+package cached_task
 
 import (
 	"context"
@@ -25,16 +25,21 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
-type CachableResult[T any] struct {
-	Value            T
+// PreviousTaskResult is the combination of the cached value and a digest of its dependency.
+type PreviousTaskResult[T any] struct {
+	// Value is the value used previous run.
+	Value T
+	// DependencyDigest is a string representation of digest of its inputs.
+	// Task must generate a different value for the different combination of the input and task should compare the current digest generated from the current inputs and the previous value digest, then it should return the previous value only when the digest is not changed.
 	DependencyDigest string
 }
 
-func NewCachedTask[T any](taskID taskid.TaskImplementationID[T], depdendencies []taskid.UntypedTaskReference, f func(ctx context.Context, prevValue CachableResult[T]) (CachableResult[T], error), labelOpt ...task.LabelOpt) task.Definition[T] {
+// NewCachedTask generates a task which can reuse the value last time.
+func NewCachedTask[T any](taskID taskid.TaskImplementationID[T], depdendencies []taskid.UntypedTaskReference, f func(ctx context.Context, prevValue PreviousTaskResult[T]) (PreviousTaskResult[T], error), labelOpt ...task.LabelOpt) task.Definition[T] {
 	return task.NewTask(taskID, depdendencies, func(ctx context.Context) (T, error) {
 		inspectionSharedMap := khictx.MustGetValue(ctx, inspection_task_contextkey.GlobalSharedMap)
-		cacheKey := typedmap.NewTypedKey[CachableResult[T]](fmt.Sprintf("cached_result-%s", taskID.String()))
-		cachedResult := typedmap.GetOrDefault(inspectionSharedMap, cacheKey, CachableResult[T]{
+		cacheKey := typedmap.NewTypedKey[PreviousTaskResult[T]](fmt.Sprintf("cached_result-%s", taskID.String()))
+		cachedResult := typedmap.GetOrDefault(inspectionSharedMap, cacheKey, PreviousTaskResult[T]{
 			Value:            *new(T),
 			DependencyDigest: "",
 		})

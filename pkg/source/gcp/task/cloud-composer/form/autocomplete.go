@@ -31,10 +31,10 @@ import (
 
 var AutocompleteClusterNames = inspection_cached_task.NewCachedTask(composer_taskid.AutocompleteClusterNamesTaskID, []taskid.UntypedTaskReference{
 	gcp_task.InputProjectIdTaskID,
-}, func(ctx context.Context, prevValue inspection_cached_task.CachableResult[*gcp_task.AutocompleteClusterNameList]) (inspection_cached_task.CachableResult[*gcp_task.AutocompleteClusterNameList], error) {
+}, func(ctx context.Context, prevValue inspection_cached_task.PreviousTaskResult[*gcp_task.AutocompleteClusterNameList]) (inspection_cached_task.PreviousTaskResult[*gcp_task.AutocompleteClusterNameList], error) {
 	client, err := api.DefaultGCPClientFactory.NewClient()
 	if err != nil {
-		return inspection_cached_task.CachableResult[*gcp_task.AutocompleteClusterNameList]{}, err
+		return inspection_cached_task.PreviousTaskResult[*gcp_task.AutocompleteClusterNameList]{}, err
 	}
 
 	projectID := task.GetTaskResult(ctx, gcp_task.InputProjectIdTaskID.GetTaskReference())
@@ -46,7 +46,7 @@ var AutocompleteClusterNames = inspection_cached_task.NewCachedTask(composer_tas
 		clusterNames, err := client.GetClusterNames(ctx, projectID)
 		if err != nil {
 			slog.WarnContext(ctx, fmt.Sprintf("Failed to read the cluster names in the project %s\n%s", projectID, err))
-			return inspection_cached_task.CachableResult[*gcp_task.AutocompleteClusterNameList]{
+			return inspection_cached_task.PreviousTaskResult[*gcp_task.AutocompleteClusterNameList]{
 				DependencyDigest: projectID,
 				Value: &gcp_task.AutocompleteClusterNameList{
 					ClusterNames: []string{},
@@ -54,7 +54,7 @@ var AutocompleteClusterNames = inspection_cached_task.NewCachedTask(composer_tas
 				},
 			}, nil
 		}
-		return inspection_cached_task.CachableResult[*gcp_task.AutocompleteClusterNameList]{
+		return inspection_cached_task.PreviousTaskResult[*gcp_task.AutocompleteClusterNameList]{
 			DependencyDigest: projectID,
 			Value: &gcp_task.AutocompleteClusterNameList{
 				ClusterNames: clusterNames,
@@ -62,7 +62,7 @@ var AutocompleteClusterNames = inspection_cached_task.NewCachedTask(composer_tas
 			},
 		}, nil
 	}
-	return inspection_cached_task.CachableResult[*gcp_task.AutocompleteClusterNameList]{
+	return inspection_cached_task.PreviousTaskResult[*gcp_task.AutocompleteClusterNameList]{
 		DependencyDigest: projectID,
 		Value: &gcp_task.AutocompleteClusterNameList{
 			ClusterNames: []string{},
