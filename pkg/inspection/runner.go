@@ -154,6 +154,25 @@ func (i *InspectionTaskRunner) SetFeatureList(featureList []string) error {
 	return nil
 }
 
+func (i *InspectionTaskRunner) UpdateFeatureMap(featureMap map[string]bool) error {
+	for featureId, _ := range featureMap {
+		definition, err := i.availableTasks.Get(featureId)
+		if err != nil {
+			return err
+		}
+		if !typedmap.GetOrDefault(definition.Labels(), inspection_task.LabelKeyInspectionFeatureFlag, false) {
+			return fmt.Errorf("task `%s` is not marked as a feature but requested to be included in the feature set of an inspection", definition.UntypedID())
+		}
+		if featureMap[featureId] {
+			i.featureTasks.Add(definition)
+		} else {
+			i.featureTasks.Remove(featureId)
+		}
+		i.enabledFeatures[featureId] = featureMap[featureId]
+	}
+	return nil
+}
+
 // withRunContextValues returns a context with the value specific to a single run of task.
 func (i *InspectionTaskRunner) withRunContextValues(ctx context.Context, runMode inspection_task_interface.InspectionTaskMode, taskInput map[string]any) context.Context {
 	rid := generateRandomString()

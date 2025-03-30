@@ -83,13 +83,12 @@
         </div>
         <div
           class="features-footer"
-          *ngIf="currentEnabledFeatures | async; let features"
         >
-          <p *ngIf="features.size === 0" class="errmsg-no-selected-feature">
+          <p *ngIf="!(featuresEnabled | async)" class="errmsg-no-selected-feature">
             Select at least a feature
           </p>
           <button
-            [disabled]="features.size === 0"
+            [disabled]="!(featuresEnabled | async)"
             mat-flat-button
             color="primary"
             matStepperNext
