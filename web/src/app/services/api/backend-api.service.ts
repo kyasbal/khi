@@ -147,10 +147,10 @@ export class BackendAPIImpl implements BackendAPI {
     return this.http.get<GetInspectionTaskFeatureResponse>(url);
   }
 
-  public setEnabledFeatures(taskId: string, featureIds: {[key: string]: boolean}) {
+  public setEnabledFeatures(taskId: string, featureMap: {[key: string]: boolean}) {
     const url = this.baseUrl + `/api/v2/inspection/tasks/${taskId}/features`;
     const request: PatchInspectionTaskFeatureRequest = {
-      features: featureIds,
+      features: featureMap,
     };
     return this.http.patch(url, request, {
       responseType: 'text',

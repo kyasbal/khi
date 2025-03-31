@@ -154,6 +154,9 @@ func (i *InspectionTaskRunner) SetFeatureList(featureList []string) error {
 	return nil
 }
 
+// UpdateFeatureMap updates the enabledFeatures and featureDefinitions
+// inputs: 
+// featureMap: map of featureId and bool. If the value is true, the feature is enabled.
 func (i *InspectionTaskRunner) UpdateFeatureMap(featureMap map[string]bool) error {
 	for featureId, _ := range featureMap {
 		definition, err := i.availableTasks.Get(featureId)
