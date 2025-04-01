@@ -381,8 +381,19 @@ describe('InspectionTaskClient testing', () => {
   });
 
   it('sets the features list by calling setFeatures', () => {
-    taskClient.setFeatures(Object.fromEntries([['feat1', true], ['feat2', false]]));
-    expect(backendAPISpy.setEnabledFeatures).toHaveBeenCalledWith('test', Object.fromEntries([['feat1', true], ['feat2', false]]));
+    taskClient.setFeatures(
+      Object.fromEntries([
+        ['feat1', true],
+        ['feat2', false],
+      ]),
+    );
+    expect(backendAPISpy.setEnabledFeatures).toHaveBeenCalledWith(
+      'test',
+      Object.fromEntries([
+        ['feat1', true],
+        ['feat2', false],
+      ]),
+    );
   });
 
   it('call run with right parameter set', (done) => {

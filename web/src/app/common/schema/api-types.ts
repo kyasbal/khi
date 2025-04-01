@@ -134,7 +134,7 @@ export interface PatchInspectionTaskFeatureRequest {
   /**
    * Map of features mapped against true if enabled
    */
-  features: {[key: string]: boolean};
+  features: { [key: string]: boolean };
 }
 
 /**

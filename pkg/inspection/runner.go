@@ -155,19 +155,19 @@ func (i *InspectionTaskRunner) SetFeatureList(featureList []string) error {
 }
 
 // UpdateFeatureMap updates the enabledFeatures and featureDefinitions
-// inputs: 
+// inputs:
 // featureMap: map of featureId and bool. If the value is true, the feature is enabled.
 func (i *InspectionTaskRunner) UpdateFeatureMap(featureMap map[string]bool) error {
 	for featureId, _ := range featureMap {
-		definition, err := i.availableTasks.Get(featureId)
+		task, err := i.availableTasks.Get(featureId)
 		if err != nil {
 			return err
 		}
-		if !typedmap.GetOrDefault(definition.Labels(), inspection_task.LabelKeyInspectionFeatureFlag, false) {
-			return fmt.Errorf("task `%s` is not marked as a feature but requested to be included in the feature set of an inspection", definition.UntypedID())
+		if !typedmap.GetOrDefault(task.Labels(), inspection_task.LabelKeyInspectionFeatureFlag, false) {
+			return fmt.Errorf("task `%s` is not marked as a feature but requested to be included in the feature set of an inspection", task.UntypedID())
 		}
 		if featureMap[featureId] {
-			i.featureTasks.Add(definition)
+			i.featureTasks.Add(task)
 		} else {
 			i.featureTasks.Remove(featureId)
 		}

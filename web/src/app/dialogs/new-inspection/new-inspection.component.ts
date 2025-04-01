@@ -120,7 +120,7 @@ export class NewInspectionDialogComponent implements OnDestroy {
         takeUntil(this.destoroyed),
         withLatestFrom(this.featureStatusMap),
         map(([featureId, currentFeatures]) => {
-          return Object.fromEntries([[featureId, !currentFeatures[featureId]]])
+          return Object.fromEntries([[featureId, !currentFeatures[featureId]]]);
         }),
         withLatestFrom(this.currentTaskClient),
       )
@@ -177,18 +177,21 @@ export class NewInspectionDialogComponent implements OnDestroy {
   public currentTaskFeatures = this.currentTaskClient.pipe(
     switchMap((tc) => tc.features),
   );
- 
+
   /**
    * A map of feature id and its status - true if enabled
    */
   public featureStatusMap = this.currentTaskFeatures.pipe(
-    map(
-      (features) => Object.fromEntries(features.map((feature) => [feature.id, feature.enabled])),
+    map((features) =>
+      Object.fromEntries(
+        features.map((feature) => [feature.id, feature.enabled]),
+      ),
     ),
   );
 
   public featuresEnabled = this.currentTaskFeatures.pipe(
-    map((features) => features.some((f) => f.enabled)))
+    map((features) => features.some((f) => f.enabled)),
+  );
 
   private featureToggleRequest = new Subject<string>();
 

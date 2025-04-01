@@ -147,7 +147,10 @@ export class BackendAPIImpl implements BackendAPI {
     return this.http.get<GetInspectionTaskFeatureResponse>(url);
   }
 
-  public setEnabledFeatures(taskId: string, featureMap: {[key: string]: boolean}) {
+  public setEnabledFeatures(
+    taskId: string,
+    featureMap: { [key: string]: boolean },
+  ) {
     const url = this.baseUrl + `/api/v2/inspection/tasks/${taskId}/features`;
     const request: PatchInspectionTaskFeatureRequest = {
       features: featureMap,
@@ -312,7 +315,7 @@ export class InspectionTaskClient {
       .subscribe((features) => this.features.next(features));
   }
 
-  public setFeatures(featuresMap: {[key: string]: boolean} ) {
+  public setFeatures(featuresMap: { [key: string]: boolean }) {
     return this.api
       .setEnabledFeatures(this.taskId, featuresMap)
       .subscribe(() => {
