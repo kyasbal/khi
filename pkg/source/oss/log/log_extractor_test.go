@@ -25,6 +25,8 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/log/structure/structuredatastore"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/khi/pkg/testutil"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
 func logFromYAML(yaml string) (*log.LogEntity, error) {

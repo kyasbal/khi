@@ -20,6 +20,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
 // Mock UploadFileVerifier for testing.
