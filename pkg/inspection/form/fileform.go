@@ -88,16 +88,17 @@ func (b *FileFormTaskBuilder) Build(labelOpts ...common_task.LabelOpt) common_ta
 // setFormHintsFromUploadResult sets the appropriate hint and hint type on a form field
 // based on the upload result status and any errors encountered during the upload process.
 func setFormHintsFromUploadResult(result upload.UploadResult, field form_metadata.FileParameterFormField) form_metadata.FileParameterFormField {
-	if result.UploadError != nil {
+	switch {
+	case result.UploadError != nil:
 		field.Hint = result.UploadError.Error()
 		field.HintType = form_metadata.Error
-	} else if result.VerificationError != nil {
+	case result.VerificationError != nil:
 		field.Hint = result.VerificationError.Error()
 		field.HintType = form_metadata.Error
-	} else if result.Status == upload.UploadStatusWaiting {
+	case result.Status == upload.UploadStatusWaiting:
 		field.Hint = "Waiting a file to be uploaded."
 		field.HintType = form_metadata.Error
-	} else if result.Status != upload.UploadStatusCompleted {
+	case result.Status != upload.UploadStatusCompleted:
 		field.Hint = "File is being processed. Please wait a moment."
 		field.HintType = form_metadata.Error
 	}
