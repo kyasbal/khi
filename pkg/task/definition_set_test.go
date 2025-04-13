@@ -473,9 +473,9 @@ func TestAddDefinitionToSet(t *testing.T) {
 }
 
 func TestRemoveDefinitionFromSet(t *testing.T) {
-	ds, err := NewSet([]UntypedDefinition{
-		newDebugDefinition("bar", []string{"qux", "quux"}),
-		newDebugDefinition("foo", []string{"qux", "quux"}),
+	ds, err := NewSet([]UntypedTask{
+		newDebugTask("bar", []string{"qux", "quux"}),
+		newDebugTask("foo", []string{"qux", "quux"}),
 	})
 	if err != nil {
 		t.Errorf("unexpected err:%s", err)
