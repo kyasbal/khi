@@ -22,10 +22,11 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
-func createMockTask(id string, dependencies []string, runFunc func(ctx context.Context) (any, error)) UntypedDefinition {
+func createMockTask(id string, dependencies []string, runFunc func(ctx context.Context) (any, error)) UntypedTask {
 	deps := make([]taskid.UntypedTaskReference, len(dependencies))
 	for i, dep := range dependencies {
 		deps[i] = taskid.NewTaskReference[any](dep)
@@ -44,13 +45,13 @@ func TestLocalRunner_SingleTask(t *testing.T) {
 		return taskResult, nil
 	})
 
-	definitionSet, err := NewSet([]UntypedDefinition{task})
+	taskSet, err := NewSet([]UntypedTask{task})
 	if err != nil {
-		t.Fatalf("Failed to create definition set: %v", err)
+		t.Fatalf("Failed to create task set: %v", err)
 	}
 
-	sortResult := definitionSet.sortTaskGraph()
-	runnableSet := &DefinitionSet{definitions: sortResult.TopologicalSortedTasks, runnable: true}
+	sortResult := taskSet.sortTaskGraph()
+	runnableSet := &TaskSet{tasks: sortResult.TopologicalSortedTasks, runnable: true}
 
 	runner, err := NewLocalRunner(runnableSet)
 	if err != nil {
@@ -96,13 +97,13 @@ func TestLocalRunner_TasksWithDependencies(t *testing.T) {
 		return "result2", nil
 	})
 
-	definitionSet, err := NewSet([]UntypedDefinition{task1, task2})
+	taskSet, err := NewSet([]UntypedTask{task1, task2})
 	if err != nil {
-		t.Fatalf("Failed to create definition set: %v", err)
+		t.Fatalf("Failed to create task set: %v", err)
 	}
 
-	sortResult := definitionSet.sortTaskGraph()
-	runnableSet := &DefinitionSet{definitions: sortResult.TopologicalSortedTasks, runnable: true}
+	sortResult := taskSet.sortTaskGraph()
+	runnableSet := &TaskSet{tasks: sortResult.TopologicalSortedTasks, runnable: true}
 
 	runner, err := NewLocalRunner(runnableSet)
 	if err != nil {
@@ -156,13 +157,13 @@ func TestLocalRunner_TaskError(t *testing.T) {
 		return "result2", nil
 	})
 
-	definitionSet, err := NewSet([]UntypedDefinition{task1, task2})
+	taskSet, err := NewSet([]UntypedTask{task1, task2})
 	if err != nil {
-		t.Fatalf("Failed to create definition set: %v", err)
+		t.Fatalf("Failed to create task set: %v", err)
 	}
 
-	sortResult := definitionSet.sortTaskGraph()
-	runnableSet := &DefinitionSet{definitions: sortResult.TopologicalSortedTasks, runnable: true}
+	sortResult := taskSet.sortTaskGraph()
+	runnableSet := &TaskSet{tasks: sortResult.TopologicalSortedTasks, runnable: true}
 
 	runner, err := NewLocalRunner(runnableSet)
 	if err != nil {
@@ -203,13 +204,13 @@ func TestLocalRunner_ContextCancellation(t *testing.T) {
 		}
 	})
 
-	definitionSet, err := NewSet([]UntypedDefinition{task})
+	taskSet, err := NewSet([]UntypedTask{task})
 	if err != nil {
-		t.Fatalf("Failed to create definition set: %v", err)
+		t.Fatalf("Failed to create task set: %v", err)
 	}
 
-	sortResult := definitionSet.sortTaskGraph()
-	runnableSet := &DefinitionSet{definitions: sortResult.TopologicalSortedTasks, runnable: true}
+	sortResult := taskSet.sortTaskGraph()
+	runnableSet := &TaskSet{tasks: sortResult.TopologicalSortedTasks, runnable: true}
 
 	runner, err := NewLocalRunner(runnableSet)
 	if err != nil {

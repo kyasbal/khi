@@ -48,9 +48,9 @@ steps:
     args:
       - -c
       - |
-        docker build --file=./Dockerfile -t gcr.io/kubernetes-history-inspector/standalone:latest -t gcr.io/kubernetes-history-inspector/standalone:$(cat ./VERSION) .
-        docker push gcr.io/kubernetes-history-inspector/standalone:latest
-        docker push gcr.io/kubernetes-history-inspector/standalone:$(cat ./VERSION)
+        docker build --file=./Dockerfile -t gcr.io/khi-internal/standalone:latest -t gcr.io/khi-internal/standalone:$(cat ./VERSION) .
+        docker push gcr.io/khi-internal/standalone:latest
+        docker push gcr.io/khi-internal/standalone:$(cat ./VERSION)
     waitFor:
       - build web
   - id: build web viewer mode
@@ -73,6 +73,6 @@ steps:
     waitFor:
       - build web viewer mode
 images:
-  - gcr.io/kubernetes-history-inspector/standalone:latest
+  - gcr.io/khi-internal/standalone:latest
 options:
   machineType: E2_HIGHCPU_32

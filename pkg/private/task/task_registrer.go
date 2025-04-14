@@ -17,11 +17,11 @@ package task
 import "github.com/GoogleCloudPlatform/khi/pkg/inspection"
 
 func PrepareInspectionServer(inspectionServer *inspection.InspectionTaskServer) error {
-	err := inspectionServer.AddTaskDefinition(FilenameHeaderMetadataGeneratorTask)
+	err := inspectionServer.AddTask(FilenameHeaderMetadataGeneratorTask)
 	if err != nil {
 		return err
 	}
-	err = inspectionServer.AddTaskDefinition(JustificationFormTask)
+	err = inspectionServer.AddTask(JustificationFormTask)
 	if err != nil {
 		return err
 	}

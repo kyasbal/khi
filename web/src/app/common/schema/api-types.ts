@@ -19,9 +19,9 @@
  * Defines the API schemas used between KHI backend and frontend
  */
 
+import { ParameterFormField } from './form-types';
 import {
   InspectionMetadataErrorSet,
-  InspectionMetadataFormField,
   InspectionMetadataHeader,
   InspectionMetadataLog,
   InspectionMetadataPlan,
@@ -128,6 +128,16 @@ export interface PutInspectionTaskFeatureRequest {
 }
 
 /**
+ * Request schema of PATCH /api/v2/inspection/tasks/<task-id>/features .
+ */
+export interface PatchInspectionTaskFeatureRequest {
+  /**
+   * Map of features mapped against true if enabled
+   */
+  features: { [key: string]: boolean };
+}
+
+/**
  * Response schema of POST /api/v2/inspection/tasks/<inspection task id>/dryrun .
  */
 export type InspectionDryRunResponse = {
@@ -161,7 +171,7 @@ export type InspectionMetadataInDryrun = {
   /**
    * List of form fields to be filled to run this inspection task.
    */
-  form: InspectionMetadataFormField[];
+  form: ParameterFormField[];
 
   /**
    * List of queries to be run with this inspection task.

@@ -22,4 +22,4 @@ import (
 )
 
 var GKEAuditLogQueryTaskID = taskid.NewDefaultImplementationID[[]*log.LogEntity](query.GKEQueryPrefix + "gke-audit")
-var GKEAuditParserTaskID = taskid.NewDefaultImplementationID[any](gcp_task.GCPPrefix + "feature/gke-audit-parser")
+var GKEAuditParserTaskID = taskid.NewDefaultImplementationID[struct{}](gcp_task.GCPPrefix + "feature/gke-audit-parser")

@@ -31,45 +31,49 @@ import (
 	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 )
 
-type testFormConfigurator = func(builder *TextFormDefinitionBuilder[string])
+type testFormConfigurator = func(builder *TextFormTaskBuilder[string])
 
 func TestTextFormDefinitionBuilder(t *testing.T) {
 	testCases := []struct {
 		Name              string
 		FormConfigurator  testFormConfigurator
 		RequestValue      string
-		ExpectedFormField form_metadata.FormField
+		ExpectedFormField form_metadata.ParameterFormField
 		ExpectedValue     any
 		ExpectedError     string
 	}{
 		{
 			Name:             "A text form with given parameter",
-			FormConfigurator: func(builder *TextFormDefinitionBuilder[string]) {},
+			FormConfigurator: func(builder *TextFormTaskBuilder[string]) {},
 			RequestValue:     "bar",
 			ExpectedValue:    "bar",
 			ExpectedError:    "",
-			ExpectedFormField: form_metadata.FormField{
-				AllowEdit: true,
-				HintType:  form_metadata.HintTypeInfo,
+			ExpectedFormField: form_metadata.TextParameterFormField{
+				Readonly: false,
+				ParameterFormFieldBase: form_metadata.ParameterFormFieldBase{
+					HintType: form_metadata.None,
+				},
 			},
 		},
 		{
 			Name: "A text form with default parameter",
-			FormConfigurator: func(builder *TextFormDefinitionBuilder[string]) {
+			FormConfigurator: func(builder *TextFormTaskBuilder[string]) {
 				builder.WithDefaultValueConstant("foo-default", true)
 			},
 			RequestValue:  "",
 			ExpectedValue: "foo-default",
 			ExpectedError: "",
-			ExpectedFormField: form_metadata.FormField{
-				AllowEdit: true,
-				Default:   "foo-default",
-				HintType:  form_metadata.HintTypeInfo,
+			ExpectedFormField: form_metadata.TextParameterFormField{
+				ParameterFormFieldBase: form_metadata.ParameterFormFieldBase{
+					HintType: form_metadata.None,
+				},
+				Readonly: false,
+				Default:  "foo-default",
 			},
 		},
 		{
 			Name: "A text form with validator",
-			FormConfigurator: func(builder *TextFormDefinitionBuilder[string]) {
+			FormConfigurator: func(builder *TextFormTaskBuilder[string]) {
 				builder.WithValidator(func(ctx context.Context, value string) (string, error) {
 					return "foo validation error", nil
 				})
@@ -77,78 +81,88 @@ func TestTextFormDefinitionBuilder(t *testing.T) {
 			RequestValue:  "",
 			ExpectedValue: "foo-default",
 			ExpectedError: "",
-			ExpectedFormField: form_metadata.FormField{
-				AllowEdit:       true,
-				ValidationError: "foo validation error",
-				HintType:        form_metadata.HintTypeInfo,
+			ExpectedFormField: form_metadata.TextParameterFormField{
+				ParameterFormFieldBase: form_metadata.ParameterFormFieldBase{
+					HintType: form_metadata.Error,
+					Hint:     "foo validation error",
+				},
+				Readonly: false,
 			},
 		},
 		{
 			Name: "A text form with allow edit hand",
-			FormConfigurator: func(builder *TextFormDefinitionBuilder[string]) {
-				builder.WithAllowEditFunc(func(ctx context.Context) (bool, error) {
-					return false, nil
+			FormConfigurator: func(builder *TextFormTaskBuilder[string]) {
+				builder.WithReadonlyFunc(func(ctx context.Context) (bool, error) {
+					return true, nil
 				})
 			},
 			RequestValue:  "",
 			ExpectedValue: "",
 			ExpectedError: "",
-			ExpectedFormField: form_metadata.FormField{
-				AllowEdit: false,
-				HintType:  form_metadata.HintTypeInfo,
+			ExpectedFormField: form_metadata.TextParameterFormField{
+				ParameterFormFieldBase: form_metadata.ParameterFormFieldBase{
+					HintType: form_metadata.None,
+				},
+				Readonly: true,
 			},
 		},
 		{
 			Name: "A text form with non allow edit hand but with parameter",
-			FormConfigurator: func(builder *TextFormDefinitionBuilder[string]) {
-				builder.WithAllowEditFunc(func(ctx context.Context) (bool, error) {
-					return false, nil
+			FormConfigurator: func(builder *TextFormTaskBuilder[string]) {
+				builder.WithReadonlyFunc(func(ctx context.Context) (bool, error) {
+					return true, nil
 				}).WithDefaultValueConstant("foo-from-default", true)
 			},
 			RequestValue:  "bar-from-request",
 			ExpectedValue: "foo-from-default",
 			ExpectedError: "",
-			ExpectedFormField: form_metadata.FormField{
-				AllowEdit: false,
-				Default:   "foo-from-default",
-				HintType:  form_metadata.HintTypeInfo,
+			ExpectedFormField: form_metadata.TextParameterFormField{
+				ParameterFormFieldBase: form_metadata.ParameterFormFieldBase{
+					HintType: form_metadata.None,
+				},
+				Readonly: true,
+				Default:  "foo-from-default",
 			},
 		},
 		{
 			Name: "A text form with hint",
-			FormConfigurator: func(builder *TextFormDefinitionBuilder[string]) {
-				builder.WithHintFunc(func(ctx context.Context, value string, convertedValue any) (string, form_metadata.FormFieldHintType, error) {
-					return "foo-hint", form_metadata.HintTypeInfo, nil
+			FormConfigurator: func(builder *TextFormTaskBuilder[string]) {
+				builder.WithHintFunc(func(ctx context.Context, value string, convertedValue any) (string, form_metadata.ParameterHintType, error) {
+					return "foo-hint", form_metadata.Info, nil
 				})
 			},
 			RequestValue:  "bar-from-request",
 			ExpectedValue: "bar-from-request",
 			ExpectedError: "",
-			ExpectedFormField: form_metadata.FormField{
-				AllowEdit: true,
-				Hint:      "foo-hint",
-				HintType:  form_metadata.HintTypeInfo,
+			ExpectedFormField: form_metadata.TextParameterFormField{
+				ParameterFormFieldBase: form_metadata.ParameterFormFieldBase{
+					HintType: form_metadata.Info,
+					Hint:     "foo-hint",
+				},
+				Readonly: false,
 			},
 		},
 		{
 			Name: "A text form with allow edit but with parameter",
-			FormConfigurator: func(builder *TextFormDefinitionBuilder[string]) {
-				builder.WithAllowEditFunc(func(ctx context.Context) (bool, error) {
+			FormConfigurator: func(builder *TextFormTaskBuilder[string]) {
+				builder.WithReadonlyFunc(func(ctx context.Context) (bool, error) {
 					return true, nil
 				}).WithDefaultValueConstant("foo-from-default", true)
 			},
 			RequestValue:  "bar-from-request",
 			ExpectedValue: "bar-from-request",
 			ExpectedError: "",
-			ExpectedFormField: form_metadata.FormField{
-				AllowEdit: true,
-				Default:   "foo-from-default",
-				HintType:  form_metadata.HintTypeInfo,
+			ExpectedFormField: form_metadata.TextParameterFormField{
+				ParameterFormFieldBase: form_metadata.ParameterFormFieldBase{
+					HintType: form_metadata.None,
+				},
+				Readonly: true,
+				Default:  "foo-from-default",
 			},
 		},
 		{
 			Name: "A text form with suggestions",
-			FormConfigurator: func(builder *TextFormDefinitionBuilder[string]) {
+			FormConfigurator: func(builder *TextFormTaskBuilder[string]) {
 				builder.WithSuggestionsConstant([]string{
 					"foo-suggest1",
 					"foo-suggest2",
@@ -158,24 +172,26 @@ func TestTextFormDefinitionBuilder(t *testing.T) {
 			RequestValue:  "bar-from-request",
 			ExpectedValue: "bar-from-request",
 			ExpectedError: "",
-			ExpectedFormField: form_metadata.FormField{
-				AllowEdit: true,
+			ExpectedFormField: form_metadata.TextParameterFormField{
+				ParameterFormFieldBase: form_metadata.ParameterFormFieldBase{
+					HintType: form_metadata.None,
+				},
+				Readonly: false,
 				Suggestions: []string{
 					"foo-suggest1",
 					"foo-suggest2",
 					"foo-suggest3",
 				},
-				HintType: form_metadata.HintTypeInfo,
 			},
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			originalBuilder := NewInputFormDefinitionBuilder(taskid.NewDefaultImplementationID[string]("foo"), 1, "foo label")
+			originalBuilder := NewTextFormTaskBuilder(taskid.NewDefaultImplementationID[string]("foo"), 1, "foo label")
 			testCase.FormConfigurator(originalBuilder)
 			taskDef := originalBuilder.Build()
-			formFields := []form_metadata.FormField{}
+			formFields := []form_metadata.ParameterFormField{}
 
 			// Execute task as DryRun mode
 			taskCtx := context.Background()
@@ -241,7 +257,7 @@ func TestTextFormDefinitionBuilder(t *testing.T) {
 					t.Errorf("form field is different between DryRun mode and Run mode with same parameter.\n%s", diff)
 				}
 			}
-			if diff := cmp.Diff(formFields[0], testCase.ExpectedFormField, cmpopts.IgnoreFields(form_metadata.FormField{}, "Id", "Priority", "Type", "Label")); diff != "" {
+			if diff := cmp.Diff(formFields[0], testCase.ExpectedFormField, cmpopts.IgnoreFields(form_metadata.TextParameterFormField{}, "ID", "Priority", "Type", "Label")); diff != "" {
 				t.Errorf("the generated form field is different from the expected\n%s", diff)
 			}
 		})

@@ -30,6 +30,8 @@ import {
 } from '../../common/schema/api-types';
 import { InspectionTaskClient } from './backend-api.service';
 import { InjectionToken } from '@angular/core';
+import { UploadToken } from 'src/app/common/schema/form-types';
+import { HttpEvent } from '@angular/common/http';
 
 /**
  * A function type to report the progress of download.
@@ -79,9 +81,12 @@ export interface BackendAPI {
    * Expected called endpoint: PUT /api/v2/inspection/tasks/<task-id>/features
    *
    * @param taskId inspection task ID to set the selected feature
-   * @param featureIds list of feature Ids
+   * @param featureStatusMap Map of features mapped against true if enabled
    */
-  setEnabledFeatures(taskId: string, featureIds: string[]): Observable<void>;
+  setEnabledFeatures(
+    taskId: string,
+    featureStatusMap: { [key: string]: boolean },
+  ): Observable<void>;
 
   /**
    * Get the metadata of an inspection with taskId.
@@ -152,4 +157,9 @@ export interface BackendAPI {
    * Expected called endpoint: POST /api/v2/popup/answer
    */
   answerPopup(answer: PopupAnswerResponse): Observable<void>;
+
+  /**
+   * Upload the file as the one bound to the token.
+   */
+  uploadFile(token: UploadToken, file: File): Observable<HttpEvent<unknown>>;
 }

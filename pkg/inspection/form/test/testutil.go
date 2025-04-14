@@ -32,14 +32,14 @@ type TextFormTestCase struct {
 	Name              string
 	Input             string
 	ExpectedValue     any
-	ExpectedFormField form.FormField
-	Dependencies      []task.UntypedDefinition
+	ExpectedFormField form.TextParameterFormField
+	Dependencies      []task.UntypedTask
 	Before            func()
 	After             func()
 }
 
 // TestTextForms tests an inspection task generating a TextForm in the metadata.
-func TestTextForms[T any](t *testing.T, label string, formTask task.Definition[T], testCases []*TextFormTestCase, cmpOptions ...cmp.Option) {
+func TestTextForms[T any](t *testing.T, label string, formTask task.Task[T], testCases []*TextFormTestCase, cmpOptions ...cmp.Option) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			if testCase.Before != nil {
@@ -63,13 +63,17 @@ func TestTextForms[T any](t *testing.T, label string, formTask task.Definition[T
 				t.Fatalf("form field metadata not found!")
 			}
 			field := formFields.DangerouslyGetField(formTask.UntypedID().GetUntypedReference().String())
-			if field.Type != "Text" {
-				t.Errorf("the generated form has type %s and it's not Text", field.Type)
+			textField, convertible := field.(form.TextParameterFormField)
+			if !convertible {
+				t.Fatal("the generated form is not a TextParameterFormField")
 			}
-			if field.Id == "" {
+			if textField.ParameterFormFieldBase.Type != "text" {
+				t.Errorf("the generated form has type %s and it's not text", textField.ParameterFormFieldBase.Type)
+			}
+			if textField.ParameterFormFieldBase.ID == "" {
 				t.Errorf("the generated form had the empty Id")
 			}
-			if diff := cmp.Diff(testCase.ExpectedFormField, field, cmpopts.IgnoreFields(form.FormField{}, "Priority", "Id", "Type")); diff != "" {
+			if diff := cmp.Diff(testCase.ExpectedFormField, field, cmpopts.IgnoreFields(form.ParameterFormFieldBase{}, "Priority", "ID", "Type")); diff != "" {
 				t.Errorf("the form task didn't generate the expected form field metadata\n%s", diff)
 			}
 		})

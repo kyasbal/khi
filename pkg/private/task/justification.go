@@ -52,13 +52,15 @@ var JustificationFormTask = inspection_task.NewInspectionTask(private_taskid.Jus
 		if !found {
 			return "", fmt.Errorf("failed to get form fields")
 		}
-		formFields.SetField(form_metadata.FormField{
-			Id:        private_taskid.JustificationFormTaskID.ReferenceIDString(),
-			Priority:  math.MaxInt32,
-			Type:      "Text",
-			Label:     "Justification",
-			AllowEdit: false,
-			Default:   justification,
+		formFields.SetField(form_metadata.TextParameterFormField{
+			ParameterFormFieldBase: form_metadata.ParameterFormFieldBase{
+				ID:       private_taskid.JustificationFormTaskID.ReferenceIDString(),
+				Priority: math.MaxInt32,
+				Type:     "Text",
+				Label:    "Justification",
+			},
+			Readonly: true,
+			Default:  justification,
 		})
 		return justification, nil
 	}
