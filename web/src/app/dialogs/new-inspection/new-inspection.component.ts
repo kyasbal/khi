@@ -147,7 +147,7 @@ export class NewInspectionDialogComponent implements OnDestroy {
   ) {
     this.featureToggleRequest
       .pipe(
-        takeUntil(this.destoroyed),
+        takeUntil(this.destroyed),
         withLatestFrom(this.featureStatusMap),
         map(([featureId, currentFeatures]) => {
           return Object.fromEntries([[featureId, !currentFeatures[featureId]]]);
