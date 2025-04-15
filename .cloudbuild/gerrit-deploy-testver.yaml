@@ -31,10 +31,6 @@ steps:
       - |
         apt-get update && apt-get install jq -y
         make prepare-frontend
-        cp web/src/environments/version.dev.ts web/src/environments/version.dev-internal.ts
-        cp web/src/environments/version.dev.ts web/src/environments/version.dev-internal-khi-ro.ts
-        cp web/src/environments/version.prod.ts web/src/environments/version.prod-internal.ts
-        cp web/src/environments/version.prod.ts web/src/environments/version.prod-internal-khi-ro.ts
     waitFor:
       - npm install
   - id: build web for internal version
