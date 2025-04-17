@@ -40,8 +40,8 @@ type SortTaskGraphResult struct {
 	// MissingDependencies is the list of task reference Ids missed to resolve task dependencies.
 	// This must be empty array when the sorting succeeded.
 	MissingDependencies []taskid.UntypedTaskReference
-	// HasCyclicDependency indicates if the task graph containing any cyclic dependencies.
-	HasCyclicDependency bool
+	// CyclicDependencyPath is the path of task dependencies. Runnable became  false if this field is present.
+	CyclicDependencyPath string
 	// Runnable indicate if this task graph is runnable or not. It means the tasks are sorted in topoligical order and all of input dependencies are resolved.
 	Runnable bool
 }
@@ -162,40 +162,37 @@ func (s *TaskSet) sortTaskGraph() *SortTaskGraphResult {
 	currentMissingTaskDependencies := map[string]map[string]interface{}{}
 	currentMissingTaskSourceCount := map[string]int{}
 	taskCount := 0
+
+	// Initialize currentMissingTaskDependencies and currentMissingTaskSourceCount for all tasks.
 	for _, task := range s.tasks {
-		id := task.UntypedID()
-		dependencies := task.Dependencies()
-		if _, found := currentMissingTaskDependencies[id.String()]; found {
-			continue
-		}
-		currentMissingTaskDependencies[id.String()] = map[string]interface{}{}
+		taskID := task.UntypedID()
+
 		sourceCount := 0
-		for _, dependency := range dependencies {
-			currentMissingTaskDependencies[id.String()][dependency.ReferenceIDString()] = struct{}{}
-			sourceCount += 1
+		missingDependencies := map[string]interface{}{}
+		for _, dependency := range task.Dependencies() {
+			if _, found := missingDependencies[dependency.ReferenceIDString()]; !found {
+				missingDependencies[dependency.ReferenceIDString()] = struct{}{}
+				sourceCount += 1
+			}
 		}
-		nonResolvedTasksMap[id.String()] = task
-		currentMissingTaskSourceCount[id.String()] = sourceCount
+		currentMissingTaskDependencies[taskID.String()] = missingDependencies
+		nonResolvedTasksMap[taskID.String()] = task
+		currentMissingTaskSourceCount[taskID.String()] = sourceCount
 		taskCount += 1
 	}
 
 	topologicalSortedTasks := []UntypedTask{}
 	for i := 0; i < taskCount; i++ {
-		var nextResolveTaskId string = "N/A"
-		nextResolvedTaskIdThreadUnsafeCandidate := "N/A"
+		var nextTaskID string = "N/A"
 		for _, taskId := range sortedMapKeys(nonResolvedTasksMap) { // Needs task sorting to get the same result every time.
 			if currentMissingTaskSourceCount[taskId] == 0 {
-				if nextResolvedTaskIdThreadUnsafeCandidate == "N/A" {
-					nextResolvedTaskIdThreadUnsafeCandidate = taskId
-				}
+				nextTaskID = taskId
 			}
 		}
-		if nextResolveTaskId == "N/A" {
-			nextResolveTaskId = nextResolvedTaskIdThreadUnsafeCandidate
-		}
-		if nextResolveTaskId != "N/A" {
-			nextTask := nonResolvedTasksMap[nextResolveTaskId]
-			delete(nonResolvedTasksMap, nextResolveTaskId)
+
+		if nextTaskID != "N/A" {
+			nextTask := nonResolvedTasksMap[nextTaskID]
+			delete(nonResolvedTasksMap, nextTaskID)
 			removingDependencyId := nextTask.UntypedID().ReferenceIDString()
 			for taskId := range nonResolvedTasksMap {
 				if _, exist := currentMissingTaskDependencies[taskId][removingDependencyId]; exist {
@@ -209,35 +206,12 @@ func (s *TaskSet) sortTaskGraph() *SortTaskGraphResult {
 			// Gathers the cause of the failure.
 			missingTaskIdsInMap := map[string]interface{}{}
 			for taskId := range nonResolvedTasksMap {
-				for source := range currentMissingTaskDependencies[taskId] {
-					missingTaskIdsInMap[source] = struct{}{}
+				for dependency := range currentMissingTaskDependencies[taskId] {
+					missingTaskIdsInMap[dependency] = struct{}{}
 				}
 			}
 			for _, task := range nonResolvedTasksMap {
 				delete(missingTaskIdsInMap, task.UntypedID().ReferenceIDString())
-			}
-
-			// When there were no task runnable only with the missing sources,
-			// the task graph shape is at least cyclic.
-			hasCyclicDependencies := true
-			for taskId := range nonResolvedTasksMap {
-				canBeNextStartingPoint := true
-				for source := range currentMissingTaskDependencies[taskId] {
-					if _, exist := missingTaskIdsInMap[source]; !exist {
-						canBeNextStartingPoint = false
-						break
-					}
-				}
-				if canBeNextStartingPoint {
-					hasCyclicDependencies = false
-					break
-				}
-			}
-
-			if !hasCyclicDependencies {
-				for _, task := range nonResolvedTasksMap {
-					delete(missingTaskIdsInMap, task.UntypedID().ReferenceIDString())
-				}
 			}
 
 			missingSources := []taskid.UntypedTaskReference{}
@@ -245,10 +219,68 @@ func (s *TaskSet) sortTaskGraph() *SortTaskGraphResult {
 				missingSources = append(missingSources, taskid.NewTaskReference[any](source))
 			}
 
+			if len(missingSources) == 0 {
+				for _, taskID := range sortedMapKeys(nonResolvedTasksMap) {
+					dependentFrom := map[string]string{} // A map tracks the path where the task depended from.
+					dependentFrom[taskID] = "START"
+					queue := map[string]struct{}{}
+					queue[taskID] = struct{}{}
+
+					for len(queue) > 0 {
+						nextTaskID := sortedMapKeys(queue)[0]
+						delete(queue, nextTaskID)
+						for dependency := range currentMissingTaskDependencies[nextTaskID] {
+							prevParent := ""
+							for visitedTask := range dependentFrom {
+								// The task ID contains implementation hash(#default), it should match with the prefix.
+								if strings.HasPrefix(visitedTask, dependency) {
+									prevParent = dependentFrom[visitedTask]
+									break
+								}
+							}
+							if prevParent != "" {
+								if prevParent == "START" {
+									// now we found the path to loop back to the START. trace back the cyclic path.
+									path := []string{}
+									queue := map[string]struct{}{}
+									queue[nextTaskID] = struct{}{}
+									for len(queue) > 0 {
+										nextTaskID := sortedMapKeys(queue)[0]
+										if nextTaskID == "START" {
+											break
+										}
+										delete(queue, nextTaskID)
+										path = append(path, nextTaskID)
+										queue[dependentFrom[nextTaskID]] = struct{}{}
+									}
+
+									return &SortTaskGraphResult{
+										Runnable:               false,
+										TopologicalSortedTasks: nil,
+										CyclicDependencyPath:   fmt.Sprintf("... -> %s] -> [%s] -> [%s -> ...", path[len(path)-1], strings.Join(path, " -> "), path[0]),
+										MissingDependencies:    missingSources,
+									}
+								}
+							} else {
+								for taskID := range nonResolvedTasksMap {
+									if strings.HasPrefix(taskID, dependency) {
+										dependentFrom[taskID] = nextTaskID
+										queue[taskID] = struct{}{}
+										break
+									}
+								}
+							}
+
+						}
+					}
+				}
+				panic("unreachable")
+			}
+
 			return &SortTaskGraphResult{
 				Runnable:               false,
 				TopologicalSortedTasks: nil,
-				HasCyclicDependency:    hasCyclicDependencies,
+				CyclicDependencyPath:   "",
 				MissingDependencies:    missingSources,
 			}
 		}
@@ -258,7 +290,7 @@ func (s *TaskSet) sortTaskGraph() *SortTaskGraphResult {
 		Runnable:               true,
 		TopologicalSortedTasks: topologicalSortedTasks,
 		MissingDependencies:    []taskid.UntypedTaskReference{},
-		HasCyclicDependency:    false,
+		CyclicDependencyPath:   "",
 	}
 }
 
@@ -301,6 +333,11 @@ func (s *TaskSet) ResolveTask(availableTaskSet *TaskSet) (*TaskSet, error) {
 				missingTaskId = missingSource
 			}
 		}
+
+		if sortResult.CyclicDependencyPath != "" {
+			return nil, fmt.Errorf("failed to resolve the task graph. \n The graph contains cyclic dependency\n%s", sortResult.CyclicDependencyPath)
+		}
+
 		if !resolutionFailure {
 			tasks := append(slices.Clone(sourceTaskSet.tasks), complementedTask...)
 			sourceTaskSet = &TaskSet{
@@ -309,7 +346,7 @@ func (s *TaskSet) ResolveTask(availableTaskSet *TaskSet) (*TaskSet, error) {
 			}
 			return sourceTaskSet.ResolveTask(availableTaskSet)
 		}
-		return nil, fmt.Errorf("Failed to resolve the task set.\n Missing %s\nAvailable tasks:\n%v", missingTaskId.ReferenceIDString(), dumpTaskIDList(availableTaskSet))
+		return nil, fmt.Errorf("failed to resolve the task set.\n Missing %s\nAvailable tasks:\n%v", missingTaskId.ReferenceIDString(), dumpTaskIDList(availableTaskSet))
 	}
 }
 
