@@ -33,14 +33,14 @@ type TaskSet struct {
 	runnable bool
 }
 
-// SortTaskGraphResult represents result of topological sorting tasks.
-type SortTaskGraphResult struct {
+// sortTaskResult represents result of topological sorting tasks.
+type sortTaskResult struct {
 	// TopologicalSortedTasks is the list of tasks in topological order.
 	TopologicalSortedTasks []UntypedTask
 	// MissingDependencies is the list of task reference Ids missed to resolve task dependencies.
 	// This must be empty array when the sorting succeeded.
 	MissingDependencies []taskid.UntypedTaskReference
-	// CyclicDependencyPath is the path of task dependencies. Runnable became  false if this field is present.
+	// CyclicDependencyPath is the path of task dependencies. Runnable became false if this field is "".
 	CyclicDependencyPath string
 	// Runnable indicate if this task graph is runnable or not. It means the tasks are sorted in topoligical order and all of input dependencies are resolved.
 	Runnable bool
@@ -154,7 +154,7 @@ func (s *TaskSet) WrapGraph(subgraphId taskid.UntypedTaskImplementationID, subgr
 	return NewTaskSet(rewiredTasks)
 }
 
-func (s *TaskSet) sortTaskGraph() *SortTaskGraphResult {
+func (s *TaskSet) sortTaskGraph() *sortTaskResult {
 	// To check if there were no cyclic task path or missing inputs,
 	// perform the topological sorting algorithm known as Kahn's algorithm
 	// Reference: https://en.wikipedia.org/wiki/Topological_sorting
@@ -220,64 +220,12 @@ func (s *TaskSet) sortTaskGraph() *SortTaskGraphResult {
 			}
 
 			if len(missingSources) == 0 {
-				for _, taskID := range sortedMapKeys(nonResolvedTasksMap) {
-					dependentFrom := map[string]string{} // A map tracks the path where the task depended from.
-					dependentFrom[taskID] = "START"
-					queue := map[string]struct{}{}
-					queue[taskID] = struct{}{}
-
-					for len(queue) > 0 {
-						nextTaskID := sortedMapKeys(queue)[0]
-						delete(queue, nextTaskID)
-						for dependency := range currentMissingTaskDependencies[nextTaskID] {
-							prevParent := ""
-							for visitedTask := range dependentFrom {
-								// The task ID contains implementation hash(#default), it should match with the prefix.
-								if strings.HasPrefix(visitedTask, dependency) {
-									prevParent = dependentFrom[visitedTask]
-									break
-								}
-							}
-							if prevParent != "" {
-								if prevParent == "START" {
-									// now we found the path to loop back to the START. trace back the cyclic path.
-									path := []string{}
-									queue := map[string]struct{}{}
-									queue[nextTaskID] = struct{}{}
-									for len(queue) > 0 {
-										nextTaskID := sortedMapKeys(queue)[0]
-										if nextTaskID == "START" {
-											break
-										}
-										delete(queue, nextTaskID)
-										path = append(path, nextTaskID)
-										queue[dependentFrom[nextTaskID]] = struct{}{}
-									}
-
-									return &SortTaskGraphResult{
-										Runnable:               false,
-										TopologicalSortedTasks: nil,
-										CyclicDependencyPath:   fmt.Sprintf("... -> %s] -> [%s] -> [%s -> ...", path[len(path)-1], strings.Join(path, " -> "), path[0]),
-										MissingDependencies:    missingSources,
-									}
-								}
-							} else {
-								for taskID := range nonResolvedTasksMap {
-									if strings.HasPrefix(taskID, dependency) {
-										dependentFrom[taskID] = nextTaskID
-										queue[taskID] = struct{}{}
-										break
-									}
-								}
-							}
-
-						}
-					}
-				}
-				panic("unreachable")
+				// If there are no missing dependencies but still can't resolve the graph,
+				// it means there is a cyclic dependency
+				return getSortTaskResultWithDetailCyclicDependency(nonResolvedTasksMap, currentMissingTaskDependencies, missingSources)
 			}
 
-			return &SortTaskGraphResult{
+			return &sortTaskResult{
 				Runnable:               false,
 				TopologicalSortedTasks: nil,
 				CyclicDependencyPath:   "",
@@ -286,7 +234,7 @@ func (s *TaskSet) sortTaskGraph() *SortTaskGraphResult {
 		}
 	}
 
-	return &SortTaskGraphResult{
+	return &sortTaskResult{
 		Runnable:               true,
 		TopologicalSortedTasks: topologicalSortedTasks,
 		MissingDependencies:    []taskid.UntypedTaskReference{},
@@ -398,6 +346,76 @@ func sortedMapKeys[T any](inputMap map[string]T) []string {
 
 func graphVizValidId(id string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(id, "-", "_"), "/", "_"), ".", "_"), "#", "_")
+}
+
+// getSortTaskResultWithDetailCyclicDependency detects and reports cyclic dependencies in the task graph.
+// It returns a sortTaskResult with the details of the cyclic dependency.
+func getSortTaskResultWithDetailCyclicDependency(
+	nonResolvedTasksMap map[string]UntypedTask,
+	currentMissingTaskDependencies map[string]map[string]interface{},
+	missingSources []taskid.UntypedTaskReference,
+) *sortTaskResult {
+	for _, taskID := range sortedMapKeys(nonResolvedTasksMap) {
+		dependentFrom := map[string]string{} // A map tracks the path where the task depended from.
+		dependentFrom[taskID] = "START"
+		queue := map[string]struct{}{}
+		queue[taskID] = struct{}{}
+
+		for len(queue) > 0 {
+			nextTaskID := sortedMapKeys(queue)[0]
+			delete(queue, nextTaskID)
+			for dependency := range currentMissingTaskDependencies[nextTaskID] {
+				prevParent := ""
+				for visitedTask := range dependentFrom {
+					// The task ID contains implementation hash(#default), it should match with the prefix.
+					if strings.HasPrefix(visitedTask, dependency) {
+						prevParent = dependentFrom[visitedTask]
+						break
+					}
+				}
+				if prevParent != "" {
+					if prevParent == "START" {
+						// now we found the path to loop back to the START. trace back the cyclic path.
+						path := []string{}
+						queue := map[string]struct{}{}
+						queue[nextTaskID] = struct{}{}
+						for len(queue) > 0 {
+							nextTaskID := sortedMapKeys(queue)[0]
+							if nextTaskID == "START" {
+								break
+							}
+							delete(queue, nextTaskID)
+							path = append(path, nextTaskID)
+							queue[dependentFrom[nextTaskID]] = struct{}{}
+						}
+
+						return &sortTaskResult{
+							Runnable:               false,
+							TopologicalSortedTasks: nil,
+							CyclicDependencyPath:   fmt.Sprintf("... -> %s] -> [%s] -> [%s -> ...", path[len(path)-1], strings.Join(path, " -> "), path[0]),
+							MissingDependencies:    missingSources,
+						}
+					}
+				} else {
+					for taskID := range nonResolvedTasksMap {
+						if strings.HasPrefix(taskID, dependency) {
+							dependentFrom[taskID] = nextTaskID
+							queue[taskID] = struct{}{}
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	nonResolvedTaskKeys := sortedMapKeys(nonResolvedTasksMap)
+	missingSourceDependencyInfo := []string{}
+	for missingDependencyKey, missingDependency := range currentMissingTaskDependencies {
+
+		missingSourceDependencyInfo = append(missingSourceDependencyInfo, fmt.Sprintf("%s -> %v", missingDependencyKey, sortedMapKeys(missingDependency)))
+	}
+	// This should be unreachable if the graph has a cyclic dependency
+	panic(fmt.Sprintf("unreachable. findCyclicDependency was called on a task graph with a task graph without any cyclic dependency. \n debug info: \n non resolved tasks: %v \n missing dependencies: %s", nonResolvedTaskKeys, missingSourceDependencyInfo))
 }
 
 func dumpTaskIDList(taskSet *TaskSet) string {
