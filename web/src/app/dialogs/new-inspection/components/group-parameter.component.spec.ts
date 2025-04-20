@@ -154,7 +154,7 @@ describe('GroupParameterComponent', () => {
       type: ParameterInputType.Group,
       label: 'group',
       description: 'this is a test description',
-      collapsable: true,
+      collapsible: true,
       collapsedByDefault: false,
       hintType: ParameterHintType.None,
       children: [
