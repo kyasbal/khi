@@ -104,6 +104,6 @@ export class GroupParameterComponent {
    * Toggle the collapsed status for children.
    */
   toggle() {
-    this.collapsedFromUserInput.set(this.childrenStatus() === 'collapsed');
+    this.collapsedFromUserInput.set(this.childrenStatus() === 'expanded');
   }
 }

@@ -123,10 +123,10 @@ describe('GroupParameterComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
 
     const containerElement = fixture.debugElement.query(By.css('.container'));
-    expect(containerElement.classes['collapsable']).toBeFalsy();
+    expect(containerElement.classes['collapsible']).toBeFalsy();
   });
 
-  it('becomes collapsable when `collapsable` = true', () => {
+  it('becomes collapsible when `collapsible` = true', () => {
     fixture.componentRef.setInput('parameter', {
       type: ParameterInputType.Group,
       label: 'group',
@@ -145,7 +145,7 @@ describe('GroupParameterComponent', () => {
     fixture.detectChanges();
 
     const containerElement = fixture.debugElement.query(By.css('.container'));
-    expect(containerElement.classes['collapsable']).toBeTruthy();
+    expect(containerElement.classes['collapsible']).toBeTruthy();
     expect(fixture.componentInstance.childrenStatus()).toBe('collapsed');
   });
 
