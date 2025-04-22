@@ -48,7 +48,7 @@ steps:
       - build
       - --file=./Dockerfile
       - -t
-      - gcr.io/kubernetes-history-inspector/standalone:$COMMIT_SHA
+      - gcr.io/khi-internal/standalone:$COMMIT_SHA
       - .
     waitFor:
       - build web for internal version
@@ -72,6 +72,6 @@ steps:
     waitFor:
       - build web for internal khi-ro version
 images:
-  - gcr.io/kubernetes-history-inspector/standalone:$COMMIT_SHA
+  - gcr.io/khi-internal/standalone:$COMMIT_SHA
 options:
   machineType: E2_HIGHCPU_32
