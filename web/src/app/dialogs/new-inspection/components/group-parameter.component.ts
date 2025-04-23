@@ -92,8 +92,15 @@ export class GroupParameterComponent {
    */
   parameter = input.required<GroupParameterFormField>();
 
+  /**
+   * This signal becomes true when user clicked the expander to collapse the children items.
+   * It's null when user haven't click the expander yet.
+   */
   private readonly collapsedFromUserInput = signal<boolean | null>(null);
 
+  /**
+   * Current status of children items (expanded or collapsed).
+   */
   childrenStatus = computed(() => {
     const fromUserInput = this.collapsedFromUserInput();
     const fromDefaultValue = this.parameter().collapsedByDefault;
