@@ -90,7 +90,7 @@ var QueryResourceNameInputTask = inspection_task.NewInspectionTask(gcp_taskid.Lo
 			Hint:        "",
 		},
 		Children:           queryForms,
-		Collapsable:        true,
+		Collapsible:        true,
 		CollapsedByDefault: true,
 	}
 	err := formFields.SetField(groupForm)
