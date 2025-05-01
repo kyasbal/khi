@@ -60,14 +60,14 @@ type ProjectIDDefaultResourceNamesGenerator struct{}
 
 // GenerateResourceNames implements DefaultResourceNamesGenerator.
 func (p *ProjectIDDefaultResourceNamesGenerator) GenerateResourceNames(ctx context.Context) ([]string, error) {
-	projectID := task.GetTaskResult(ctx, gcp_task.InputProjectIdTaskID.GetTaskReference())
+	projectID := task.GetTaskResult(ctx, gcp_task.InputProjectIdTaskID.Ref())
 	return []string{fmt.Sprintf("projects/%s", projectID)}, nil
 }
 
 // GetDependentTasks implements DefaultResourceNamesGenerator.
 func (p *ProjectIDDefaultResourceNamesGenerator) GetDependentTasks() []taskid.UntypedTaskReference {
 	return []taskid.UntypedTaskReference{
-		gcp_task.InputProjectIdTaskID.GetTaskReference(),
+		gcp_task.InputProjectIdTaskID.Ref(),
 	}
 }
 
@@ -89,7 +89,7 @@ func NewQueryGeneratorTask(taskId taskid.TaskImplementationID[[]*log.LogEntity],
 		}
 
 		metadata := khictx.MustGetValue(ctx, inspection_task_contextkey.InspectionRunMetadata)
-		resourceNames := task.GetTaskResult(ctx, gcp_taskid.LoggingFilterResourceNameInputTaskID.GetTaskReference())
+		resourceNames := task.GetTaskResult(ctx, gcp_taskid.LoggingFilterResourceNameInputTaskID.Ref())
 		taskInput := khictx.MustGetValue(ctx, inspection_task_contextkey.InspectionTaskInput)
 
 		defaultResourceNames, err := resourceNamesGenerator.GenerateResourceNames(ctx)
@@ -102,7 +102,7 @@ func NewQueryGeneratorTask(taskId taskid.TaskImplementationID[[]*log.LogEntity],
 		resourceNamesFromInput := defaultResourceNames
 		inputStr, found := taskInput[queryResourceNamePair.GetInputID()]
 		if found {
-			resourceNamesFromInput := strings.Split(inputStr.(string), " ")
+			resourceNamesFromInput = strings.Split(inputStr.(string), " ")
 			resourceNamesList := []string{}
 			hadError := false
 			for _, resourceNameFromInput := range resourceNamesFromInput {
