@@ -223,7 +223,7 @@ func metadataIgnoredBodyCompare(expected string, ignoredMetadata ...string) func
 
 func taskCompare(taskPlaceholder string, expected string, ignoredMetadata ...string) func(t *testing.T, body string, stat map[string]string) {
 	return func(t *testing.T, body string, stat map[string]string) {
-		var response GetInspectionTasksResponse
+		var response GetInspectionsResponse
 
 		err := json.Unmarshal([]byte(body), &response)
 		if err != nil {
@@ -231,9 +231,9 @@ func taskCompare(taskPlaceholder string, expected string, ignoredMetadata ...str
 		}
 		taskId := stat[taskPlaceholder]
 		for _, ignored := range ignoredMetadata {
-			delete(response.Tasks[taskId], ignored)
+			delete(response.Inspections[taskId], ignored)
 		}
-		serialized, err := json.Marshal(response.Tasks[taskId])
+		serialized, err := json.Marshal(response.Inspections[taskId])
 		if err != nil {
 			t.Errorf("The task is not serializable\n%s", err)
 		}
@@ -263,50 +263,50 @@ func TestApiResponses(t *testing.T) {
 			// 000
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/types",
+			RequestPath:   "/foo/api/v3/inspection/types",
 			BodyValidator: bodyCompareWithStringExpectedValue(`{"types":[{"id":"qux","name":"qux-name","description":"qux-description","icon":"qux-icon"},{"id":"bar","name":"bar-name","description":"bar-description","icon":"bar-icon"},{"id":"foo","name":"foo-name","description":"foo-description","icon":"foo-icon"}]}`),
 		},
 		{
 			// 001
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks",
-			BodyValidator: bodyCompareWithStringExpectedValue(`{"tasks":{},"serverStat":{"totalMemoryAvailable":1000}}`),
+			RequestPath:   "/foo/api/v3/inspection",
+			BodyValidator: bodyCompareWithStringExpectedValue(`{"inspections":{},"serverStat":{"totalMemoryAvailable":1000}}`),
 		},
 		{
 			// 002
 			ExpectedCode:  404,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/inspection/types/not-existing-task",
+			RequestPath:   "/foo/api/v3/inspection/types/not-existing-task",
 		},
 		{
 			// 003
 			ExpectedCode:  202,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/inspection/types/foo",
+			RequestPath:   "/foo/api/v3/inspection/types/foo",
 			BodyValidator: func(t *testing.T, body string, stat map[string]string) {
-				var response PostInspectionTaskResponse
+				var response PostInspectionResponse
 				err := json.Unmarshal([]byte(body), &response)
 				if err != nil {
 					t.Errorf("failed to decode response json\n%v", err)
 				}
-				stat["task-1"] = response.InspectionId
+				stat["task-1"] = response.InspectionID
 			},
 		},
 		{
 			// 004
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/features",
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/features",
 			BodyValidator: bodyCompareWithStringExpectedValue(`{"features":[{"id":"feature-foo1#default","label":"foo feature1","description":"test-feature","enabled":false},{"id":"feature-foo2#default","label":"foo feature2","description":"test-feature","enabled":false}]}`),
 		},
 		{
 			// 005
 			ExpectedCode:  202,
 			RequestMethod: "PUT",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/features",
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/features",
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
-				return PutInspectionTaskFeatureRequest{
+				return PutInspectionFeatureRequest{
 					Features: []string{
 						"feature-foo2#default",
 					},
@@ -318,7 +318,7 @@ func TestApiResponses(t *testing.T) {
 			// 006
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/features",
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/features",
 			BodyValidator: bodyCompareWithStringExpectedValue(`{"features":[{"id":"feature-foo1#default","label":"foo feature1","description":"test-feature","enabled":false},{"id":"feature-foo2#default","label":"foo feature2","description":"test-feature","enabled":true}]}`),
 		},
 		{
@@ -326,7 +326,7 @@ func TestApiResponses(t *testing.T) {
 			// Dryrun without any parameter
 			ExpectedCode:  200,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/dryrun",
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/dryrun",
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
 				return map[string]any{}
 			},
@@ -337,7 +337,7 @@ func TestApiResponses(t *testing.T) {
 			// Dryrun with a value without a validation error
 			ExpectedCode:  200,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/dryrun",
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/dryrun",
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
 				return map[string]any{
 					"foo-input": "foo-input-value",
@@ -350,7 +350,7 @@ func TestApiResponses(t *testing.T) {
 			// Dryrun with a value with a validation error
 			ExpectedCode:  200,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/dryrun",
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/dryrun",
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
 				return map[string]any{
 					"foo-input": "foo-input-invalid-value",
@@ -363,38 +363,30 @@ func TestApiResponses(t *testing.T) {
 			// Attempting to access non started task result
 			ExpectedCode:  400,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/data",
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/data",
 			BodyValidator: bodyCompareWithStringExpectedValue("this task is not yet started"),
 		},
 		{
 			// 011
-			// Attempting to access non started task result
+			// Attempting to access non started task metadata
 			ExpectedCode:  400,
-			RequestMethod: "HEAD",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/data",
+			RequestMethod: "GET",
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/metadata",
 			BodyValidator: bodyCompareWithStringExpectedValue("this task is not yet started"),
 		},
 		{
 			// 012
-			// Attempting to access non started task metadata
+			// Attempting to cancel non started task result
 			ExpectedCode:  400,
-			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/metadata",
+			RequestMethod: "POST",
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/cancel",
 			BodyValidator: bodyCompareWithStringExpectedValue("this task is not yet started"),
 		},
 		{
 			// 013
-			// Attempting to cancel non started task result
-			ExpectedCode:  400,
-			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/cancel",
-			BodyValidator: bodyCompareWithStringExpectedValue("this task is not yet started"),
-		},
-		{
-			// 014
 			ExpectedCode:  202,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/run",
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/run",
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
 				return map[string]any{
 					"foo-input": "foo-input-value",
@@ -404,23 +396,23 @@ func TestApiResponses(t *testing.T) {
 			WaitAfter:     time.Second,
 		},
 		{
+			// 014
+			ExpectedCode:  200,
+			RequestMethod: "GET",
+			RequestPath:   "/foo/api/v3/inspection",
+			BodyValidator: taskCompare("task-1", `{"error":{"errorMessages":[]},"progress":{"phase":"DONE","progresses":[],"totalProgress":{"id":"Total","indeterminate":false,"label":"Total","message":"2 of 2 tasks complete","percentage":1}}}`, "header"),
+		},
+		{
 			// 015
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks",
-			BodyValidator: taskCompare("task-1", `{"error":{"errorMessages":[]},"progress":{"phase":"DONE","progresses":[],"totalProgress":{"id":"Total","indeterminate":false,"label":"Total","message":"2 of 2 tasks complete","percentage":1}}}`, "header"),
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/metadata",
 		},
 		{
 			// 016
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/metadata",
-		},
-		{
-			// 017
-			ExpectedCode:  200,
-			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/data",
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/data",
 			BodyValidator: func(t *testing.T, body string, stat map[string]string) {
 				if !strings.HasPrefix(body, "KHI") {
 					t.Errorf("the inspection data is not starting with KHI magic bytes\n%s", body)
@@ -428,22 +420,10 @@ func TestApiResponses(t *testing.T) {
 			},
 		},
 		{
-			// 018
-			ExpectedCode:  200,
-			RequestMethod: "HEAD",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/data",
-			BodyValidator: func(t *testing.T, body string, stat map[string]string) {
-				if len(body) > 0 {
-					// RFC 9110 (https://www.ietf.org/rfc/rfc9110.txt) - 9.3.2. HEAD
-					t.Errorf("HEAD shouldn't have any body data\n%s", body)
-				}
-			},
-		},
-		{
-			// 019
+			// 017
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/data?start=1",
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/data?start=1",
 			BodyValidator: func(t *testing.T, body string, stat map[string]string) {
 				if !strings.HasPrefix(body, "HI") {
 					t.Errorf("server didn't respond data with respecting start query parameter\n%s", body)
@@ -451,10 +431,10 @@ func TestApiResponses(t *testing.T) {
 			},
 		},
 		{
-			// 020
+			// 018
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/data?start=1&maxSize=1",
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/data?start=1&maxSize=1",
 			BodyValidator: func(t *testing.T, body string, stat map[string]string) {
 				if body != "H" {
 					t.Errorf("server didn't respond data with respecting start query and max size parameter\n%s", body)
@@ -462,32 +442,32 @@ func TestApiResponses(t *testing.T) {
 			},
 		},
 		{
-			// 021
+			// 019
 			ExpectedCode:  400,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-1>/cancel",
+			RequestPath:   "/foo/api/v3/inspection/<task-1>/cancel",
 		},
 		{
-			// 022
+			// 020
 			ExpectedCode:  202,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/inspection/types/bar",
+			RequestPath:   "/foo/api/v3/inspection/types/bar",
 			BodyValidator: func(t *testing.T, body string, stat map[string]string) {
-				var response PostInspectionTaskResponse
+				var response PostInspectionResponse
 				err := json.Unmarshal([]byte(body), &response)
 				if err != nil {
 					t.Errorf("failed to decode response json\n%v", err)
 				}
-				stat["task-2"] = response.InspectionId
+				stat["task-2"] = response.InspectionID
 			},
 		},
 		{
-			// 023
+			// 021
 			ExpectedCode:  202,
 			RequestMethod: "PUT",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-2>/features",
+			RequestPath:   "/foo/api/v3/inspection/<task-2>/features",
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
-				return PutInspectionTaskFeatureRequest{
+				return PutInspectionFeatureRequest{
 					Features: []string{
 						"feature-bar#default",
 					},
@@ -496,10 +476,10 @@ func TestApiResponses(t *testing.T) {
 			BodyValidator: bodyCompareWithStringExpectedValue(`ok`),
 		},
 		{
-			// 024
+			// 022
 			ExpectedCode:  202,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-2>/run",
+			RequestPath:   "/foo/api/v3/inspection/<task-2>/run",
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
 				return map[string]any{}
 			},
@@ -507,67 +487,60 @@ func TestApiResponses(t *testing.T) {
 			WaitAfter:     time.Second,
 		},
 		{
-			// 025
+			// 023
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks",
+			RequestPath:   "/foo/api/v3/inspection",
 			BodyValidator: taskCompare("task-2", `{"error":{"errorMessages":[]},"progress":{"phase":"RUNNING","progresses":[{"id":"neverend#default","indeterminate":false,"label":"neverend#default","message":"test","percentage":0.5}],"totalProgress":{"id":"Total","indeterminate":false,"label":"Total","message":"0 of 3 tasks complete","percentage":0}}}`, "header"),
 		},
 		{
-			// 026
+			// 024
 			ExpectedCode:  400,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-2>/data",
+			RequestPath:   "/foo/api/v3/inspection/<task-2>/data",
 			BodyValidator: bodyCompareWithStringExpectedValue("this task runner hasn't finished yet"),
 		},
 		{
-			// 027
-			ExpectedCode:  400,
-			RequestMethod: "HEAD",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-2>/data",
-			BodyValidator: bodyCompareWithStringExpectedValue("this task runner hasn't finished yet"),
-		},
-		{
-			// 028
+			// 025
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-2>/metadata",
+			RequestPath:   "/foo/api/v3/inspection/<task-2>/metadata",
 		},
 		{
-			// 029
+			// 026
 			ExpectedCode:  200,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-2>/cancel",
+			RequestPath:   "/foo/api/v3/inspection/<task-2>/cancel",
 			WaitAfter:     time.Second,
 		},
 		{
-			// 030
+			// 027
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks",
+			RequestPath:   "/foo/api/v3/inspection",
 			BodyValidator: taskCompare("task-2", `{"error":{"errorMessages":[]},"progress":{"phase":"CANCELLED","progresses":[],"totalProgress":{"id":"Total","indeterminate":false,"label":"Total","message":"1 of 3 tasks complete","percentage":0.33333334}}}`, "header"),
 		},
 		{
-			// 031
+			// 028
 			ExpectedCode:  202,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/inspection/types/qux",
+			RequestPath:   "/foo/api/v3/inspection/types/qux",
 			BodyValidator: func(t *testing.T, body string, stat map[string]string) {
-				var response PostInspectionTaskResponse
+				var response PostInspectionResponse
 				err := json.Unmarshal([]byte(body), &response)
 				if err != nil {
 					t.Errorf("failed to decode response json\n%v", err)
 				}
-				stat["task-3"] = response.InspectionId
+				stat["task-3"] = response.InspectionID
 			},
 		},
 		{
-			// 032
+			// 029
 			ExpectedCode:  202,
 			RequestMethod: "PUT",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-3>/features",
+			RequestPath:   "/foo/api/v3/inspection/<task-3>/features",
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
-				return PutInspectionTaskFeatureRequest{
+				return PutInspectionFeatureRequest{
 					Features: []string{
 						"feature-qux#default",
 					},
@@ -576,10 +549,10 @@ func TestApiResponses(t *testing.T) {
 			BodyValidator: bodyCompareWithStringExpectedValue(`ok`),
 		},
 		{
-			// 033
+			// 030
 			ExpectedCode:  202,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/inspection/tasks/<task-3>/run",
+			RequestPath:   "/foo/api/v3/inspection/<task-3>/run",
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
 				return map[string]any{}
 			},
@@ -587,17 +560,17 @@ func TestApiResponses(t *testing.T) {
 			WaitAfter:     time.Second,
 		},
 		{
-			// 034
+			// 031
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/inspection/tasks",
+			RequestPath:   "/foo/api/v3/inspection",
 			BodyValidator: taskCompare("task-3", `{"error":{"errorMessages":[]},"progress":{"phase":"ERROR","progresses":[],"totalProgress":{"id":"Total","indeterminate":false,"label":"Total","message":"1 of 3 tasks complete","percentage":0.33333334}}}`, "header"),
 		},
 		{
-			// 035
+			// 032
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/popup",
+			RequestPath:   "/foo/api/v3/popup",
 			BodyValidator: bodyCompareWithStringExpectedValue(""),
 			After: func(stat map[string]string) {
 				go func() {
@@ -609,10 +582,10 @@ func TestApiResponses(t *testing.T) {
 			},
 		},
 		{
-			// 036
+			// 033
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/popup",
+			RequestPath:   "/foo/api/v3/popup",
 			BodyValidator: bodyCompareWithStruct(
 				&popup.PopupFormRequest{
 					Title:       "foo",
@@ -623,10 +596,10 @@ func TestApiResponses(t *testing.T) {
 			),
 		},
 		{
-			// 037
+			// 034
 			ExpectedCode:  200,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/popup/validate",
+			RequestPath:   "/foo/api/v3/popup/validate",
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
 				return popup.PopupAnswerResponse{
 					Id:    stat["popup-id"],
@@ -640,10 +613,10 @@ func TestApiResponses(t *testing.T) {
 			),
 		},
 		{
-			// 038
+			// 035
 			ExpectedCode:  200,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/popup/validate",
+			RequestPath:   "/foo/api/v3/popup/validate",
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
 				return popup.PopupAnswerResponse{
 					Id:    stat["popup-id"],
@@ -657,10 +630,10 @@ func TestApiResponses(t *testing.T) {
 			),
 		},
 		{
-			// 039
+			// 036
 			ExpectedCode:  400,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/popup/validate",
+			RequestPath:   "/foo/api/v3/popup/validate",
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
 				return popup.PopupAnswerResponse{
 					Id:    "non-valid-id",
@@ -670,10 +643,10 @@ func TestApiResponses(t *testing.T) {
 			BodyValidator: bodyCompareWithStringExpectedValue("given id is not matching with the current popup"),
 		},
 		{
-			// 040
+			// 037
 			ExpectedCode:  400,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/popup/answer",
+			RequestPath:   "/foo/api/v3/popup/answer",
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
 				return popup.PopupAnswerResponse{
 					Id:    "non-valid-id",
@@ -683,10 +656,10 @@ func TestApiResponses(t *testing.T) {
 			BodyValidator: bodyCompareWithStringExpectedValue("given id is not matching with the current popup"),
 		},
 		{
-			// 041
+			// 038
 			ExpectedCode:  200,
 			RequestMethod: "POST",
-			RequestPath:   "/foo/api/v2/popup/answer",
+			RequestPath:   "/foo/api/v3/popup/answer",
 			RequestGenerator: func(t *testing.T, stat map[string]string) any {
 				return popup.PopupAnswerResponse{
 					Id:    stat["popup-id"],
@@ -699,17 +672,17 @@ func TestApiResponses(t *testing.T) {
 			},
 		},
 		{
-			// 042
+			// 039
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/popup",
+			RequestPath:   "/foo/api/v3/popup",
 			BodyValidator: bodyCompareWithStringExpectedValue(""),
 		},
 		{
-			// 043
+			// 040
 			ExpectedCode:  200,
 			RequestMethod: "GET",
-			RequestPath:   "/foo/api/v2/config",
+			RequestPath:   "/foo/api/v3/config",
 			Before: func() {
 				parameters.Server.ViewerMode = testutil.P(true)
 			},
@@ -769,7 +742,7 @@ func TestKHIServer_EndpointExistsWithConfigs(t *testing.T) {
 			name:           "custom server base path on non-viewer mode",
 			serverBasePath: "/custom/base/path/foo",
 			requestMethod:  "GET",
-			requestPath:    "/custom/base/path/foo/api/v2/inspection/types",
+			requestPath:    "/custom/base/path/foo/api/v3/inspection/types",
 			wantCode:       200,
 		},
 		{
@@ -796,7 +769,7 @@ func TestKHIServer_EndpointExistsWithConfigs(t *testing.T) {
 			name:          "viewer mode shouldn't serve task related endpoints",
 			viewerMode:    true,
 			requestMethod: "GET",
-			requestPath:   "/api/v2/inspection/tasks",
+			requestPath:   "/api/v3/inspection",
 			wantCode:      404,
 		},
 		{
@@ -967,7 +940,7 @@ func TestKHIDirectFileUpload(t *testing.T) {
 			writer.Close()
 
 			recorder := httptest.NewRecorder()
-			req, _ := http.NewRequest("POST", "/foo/api/v2/upload", &buf)
+			req, _ := http.NewRequest("POST", "/foo/api/v3/upload", &buf)
 			req.Header.Set("Content-Type", writer.FormDataContentType())
 			engine.ServeHTTP(recorder, req)
 			if recorder.Code != tc.wantCode {

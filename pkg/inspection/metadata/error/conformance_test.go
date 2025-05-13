@@ -25,7 +25,7 @@ import (
 func TestProgressConformance(t *testing.T) {
 	metadata_test.ConformanceMetadataTypeTest(t, &ErrorMessageSet{
 		[]*ErrorMessage{
-			NewNotFoundErrorMessage("foo-bar"),
+			{},
 		},
 	})
 }

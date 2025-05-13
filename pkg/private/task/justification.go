@@ -69,18 +69,18 @@ var JustificationFormTask = inspection_task.NewInspectionTask(private_taskid.Jus
 	inspection_task.NewRequiredTaskLabel())
 
 var FilenameHeaderMetadataGeneratorTask = inspection_task.NewInspectionTask(private_taskid.FileNameHeaderMetadataGeneratorTask, []taskid.UntypedTaskReference{
-	private_taskid.JustificationFormTaskID,
-	gcp_task.InputClusterNameTaskID,
-	gcp_task.InputEndTimeTaskID,
-	gcp_task.InputStartTimeTaskID,
+	private_taskid.JustificationFormTaskID.Ref(),
+	gcp_task.InputClusterNameTaskID.Ref(),
+	gcp_task.InputEndTimeTaskID.Ref(),
+	gcp_task.InputStartTimeTaskID.Ref(),
 }, func(ctx context.Context, taskMode inspection_task_interface.InspectionTaskMode) (struct{}, error) {
 	metadataSet := khictx.MustGetValue(ctx, inspection_task_contextkey.InspectionRunMetadata)
 	header := typedmap.GetOrDefault(metadataSet, header.HeaderMetadataKey, &header.Header{})
 
-	clusterName := task.GetTaskResult(ctx, gcp_task.InputClusterNameTaskID.GetTaskReference())
-	endTime := task.GetTaskResult(ctx, gcp_task.InputEndTimeTaskID.GetTaskReference())
-	startTime := task.GetTaskResult(ctx, gcp_task.InputStartTimeTaskID.GetTaskReference())
-	justification := task.GetTaskResult(ctx, private_taskid.JustificationFormTaskID.GetTaskReference())
+	clusterName := task.GetTaskResult(ctx, gcp_task.InputClusterNameTaskID.Ref())
+	endTime := task.GetTaskResult(ctx, gcp_task.InputEndTimeTaskID.Ref())
+	startTime := task.GetTaskResult(ctx, gcp_task.InputStartTimeTaskID.Ref())
+	justification := task.GetTaskResult(ctx, private_taskid.JustificationFormTaskID.Ref())
 
 	header.SuggestedFileName = fmt.Sprintf("%s-%s-%s-%s.khi", justification, clusterName, endTime.Format("01021504"), startTime.Format("01021504"))
 	return struct{}{}, nil

@@ -1,4 +1,4 @@
-// Copyright 2024 Google LLC
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package schema
+package gcp_taskid
 
-// Log severity used in KHI.
-// There would be more various severity depending on the log type.
-// But KHI only has these 4 different type and each parser should change the severity to them if the original severity was not in there.
-type KHILogSeverity = string
+import (
+	gcp_types "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/types"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
+)
 
-const SeverityInfo = "INFO"
-const SeverityWarn = "WARN"
-const SeverityError = "ERROR"
-const SeverityFatal = "FATAL"
-const SeverityUnknown = "UNKNOWN"
+var LoggingFilterResourceNameInputTaskID = taskid.NewDefaultImplementationID[*gcp_types.ResourceNamesInput]("logging-filter-resource-name-input")
