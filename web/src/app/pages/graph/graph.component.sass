@@ -15,14 +15,30 @@
  */
 
 .root
-    height: 100%
+    height: 100vh
+    width: 100vw
     display: grid
     grid-template-areas: "title" "graph"
-    grid-template-rows: auto 1fr
-    .graph-wrapper
+    grid-template-rows: auto minmax(0, 1fr)
+    grid-template-columns: minmax(0,1fr)
+    overflow: hidden
+    diagram-viewport
         grid-area: graph
-        overflow: hidden
-    graph-title-bar
-        grid-area: title
-    graph-graph-seek-tool
-        position: absolute
+.minimap-container
+    position: fixed
+    right: 30px
+    bottom: 30px
+    padding: 10px
+    background-color: gray
+
+.container
+    padding: 100px
+    width: 2000px
+    display: flex
+    gap: 100px
+
+.lod-0
+    background-color: yellow
+
+.lod-1
+    background-color: purple
