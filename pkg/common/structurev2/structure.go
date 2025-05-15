@@ -19,13 +19,14 @@ import "errors"
 type NodeType int
 
 const (
+	InvalidNodeType = 0
 	// ScalarNodeType is a NodeType for scalar values.
 	// The scalar type currently supported is nil,bool,string,int,float and time.Time.
-	ScalarNodeType = 0
+	ScalarNodeType = 1
 	// SequenceNdoeType is a NodeType for sequence(array, slices) values.
-	SequenceNodeType = 1
+	SequenceNodeType = 2
 	// MapNodeType is a NodeType for map(dictionary) values. It needs to retain the order of keys.
-	MapNodeType = 2
+	MapNodeType = 3
 )
 
 // NodeChildrenIterator is a type to represent the iterator returned from the Children method of Node interface.

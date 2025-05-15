@@ -49,37 +49,41 @@ func MergeNode(prev Node, patch Node, config MergeConfiguration) (Node, error) {
 	return mergeNode([]string{}, prev, patch, config)
 }
 
-func mergeNode(fieldPath []string, prev Node, patch Node, config MergeConfiguration) (Node, error) {
+func mergeNode(fieldPath []string, prev Node, patch Node, inheritingMergeConfig MergeConfiguration) (Node, error) {
+	var patchWithoutDirectives Node
+	var mergeConfig MergeConfiguration
 	if patch != nil {
 		var err error
-		patch, config, err = handleStrategicMergePatchDirectives(fieldPath, patch, config)
+		patchWithoutDirectives, mergeConfig, err = handleStrategicMergePatchDirectives(fieldPath, patch, inheritingMergeConfig)
 		if err != nil {
 			return nil, err
 		}
-		if config.patchDirectiveDelete {
+		if mergeConfig.patchDirectiveDelete {
 			return nil, nil
 		}
+	} else {
+		mergeConfig = inheritingMergeConfig
 	}
 
-	if prev != nil && patch != nil {
-		if prev.Type() != patch.Type() {
+	if prev != nil && patchWithoutDirectives != nil {
+		if prev.Type() != patchWithoutDirectives.Type() {
 			// prev node type and patch node type is different, use replace strategy
-			return cloneStandardNodeFromNode(patch)
+			return cloneStandardNodeFromNode(patchWithoutDirectives)
 		}
 	}
 	var nodeType NodeType
 	if prev != nil {
 		nodeType = prev.Type()
-	} else if patch != nil {
-		nodeType = patch.Type()
+	} else if patchWithoutDirectives != nil {
+		nodeType = patchWithoutDirectives.Type()
 	}
 	switch nodeType {
 	case ScalarNodeType:
-		return mergeScalarNode(prev, patch)
+		return mergeScalarNode(prev, patchWithoutDirectives)
 	case SequenceNodeType:
-		return mergeSequenceNode(fieldPath, prev, patch, config)
+		return mergeSequenceNode(fieldPath, prev, patchWithoutDirectives, mergeConfig)
 	case MapNodeType:
-		return mergeMapNode(fieldPath, prev, patch, config)
+		return mergeMapNode(fieldPath, prev, patchWithoutDirectives, mergeConfig)
 	default:
 		return nil, fmt.Errorf("unknown node type %v", nodeType)
 	}
@@ -96,27 +100,23 @@ func mergeScalarNode(prev Node, patch Node) (Node, error) {
 }
 
 func mergeSequenceNode(fieldPath []string, prev Node, patch Node, config MergeConfiguration) (Node, error) {
-	isFirstNode := true
 	var sequenceChildNodeType NodeType
 	if prev != nil {
-		for _, value := range prev.Children() {
-			nodeType := value.Type()
-			if !isFirstNode && nodeType != sequenceChildNodeType {
-				return nil, fmt.Errorf("child node type mismatch in a sequence node")
-			}
-			sequenceChildNodeType = nodeType
-			isFirstNode = false
+		var err error
+		sequenceChildNodeType, err = getSequenceElementType(prev)
+		if err != nil {
+			return nil, err
 		}
 	}
 	if patch != nil {
-		for _, value := range patch.Children() {
-			nodeType := value.Type()
-			if !isFirstNode && nodeType != sequenceChildNodeType {
-				return nil, fmt.Errorf("child node type mismatch in a sequence node")
-			}
-			sequenceChildNodeType = nodeType
-			isFirstNode = false
+		sequenceChildNodeTypeFromPatch, err := getSequenceElementType(patch)
+		if err != nil {
+			return nil, err
 		}
+		if prev != nil && sequenceChildNodeType != sequenceChildNodeTypeFromPatch {
+			return nil, fmt.Errorf("child element type is different between prev and patch prev: %d and patch: %d", sequenceChildNodeType, sequenceChildNodeTypeFromPatch)
+		}
+		sequenceChildNodeType = sequenceChildNodeTypeFromPatch
 	}
 
 	fieldPath = append(fieldPath, "[]")
@@ -238,49 +238,14 @@ func mergeMapSequenceNodeWithMergeStrategy(fieldPath []string, mergeKey string, 
 		value: []Node{},
 	}
 
-	var err error
-	prevValues := map[string]Node{}
-	prevItemKeys := []string{}
-	if prev != nil {
-		for _, value := range prev.Children() {
-			var itemKey string
-			for keyInChild, valueOfKeyInChild := range value.Children() {
-				if keyInChild.Key == mergeKey {
-					itemKey, err = getScalarAs[string](valueOfKeyInChild)
-					if err != nil {
-						return nil, err
-					}
-					break
-				}
-			}
-			if itemKey == "" {
-				return nil, fmt.Errorf("merge sequence key not found in array at %s (merge key %s)", strings.Join(fieldPath, "."), mergeKey)
-			}
-			prevValues[itemKey] = value
-			prevItemKeys = append(prevItemKeys, itemKey)
-		}
+	prevValues, prevItemKeys, err := getSequenceElementsWithFieldKey(fieldPath, prev, mergeKey)
+	if err != nil {
+		return nil, err
 	}
 
-	patchValues := map[string]Node{}
-	patchItemKeys := []string{}
-	if patch != nil {
-		for _, value := range patch.Children() {
-			var itemKey string
-			for keyInChild, valueOfKeyInChild := range value.Children() {
-				if keyInChild.Key == mergeKey {
-					itemKey, err = getScalarAs[string](valueOfKeyInChild)
-					if err != nil {
-						return nil, err
-					}
-					break
-				}
-			}
-			if itemKey == "" {
-				return nil, fmt.Errorf("merge sequence key not found in array at %s (merge key %s)", strings.Join(fieldPath, "."), mergeKey)
-			}
-			patchValues[itemKey] = value
-			patchItemKeys = append(patchItemKeys, itemKey)
-		}
+	patchValues, patchItemKeys, err := getSequenceElementsWithFieldKey(fieldPath, patch, mergeKey)
+	if err != nil {
+		return nil, err
 	}
 
 	if config.setElementOrderDirectiveList != nil {
@@ -343,23 +308,9 @@ func mergeMapNode(fieldPath []string, prev Node, patch Node, config MergeConfigu
 	if config.patchDirectiveReplace {
 		return cloneStandardNodeFromNode(patch)
 	}
-	prevKeys := []string{}
-	prevValues := map[string]Node{}
-	if prev != nil {
-		for key, value := range prev.Children() {
-			prevKeys = append(prevKeys, key.Key)
-			prevValues[key.Key] = value
-		}
-	}
 
-	patchKeys := []string{}
-	patchValues := map[string]Node{}
-	if patch != nil {
-		for key, value := range patch.Children() {
-			patchKeys = append(patchKeys, key.Key)
-			patchValues[key.Key] = value
-		}
-	}
+	prevValues, prevKeys := getMapElements(prev)
+	patchValues, patchKeys := getMapElements(patch)
 
 	// find keys only existing in the strategic patch-merge directives
 	directiveKeysForChildren := []string{}
@@ -458,6 +409,64 @@ func mergeMapNode(fieldPath []string, prev Node, patch Node, config MergeConfigu
 	}
 
 	return &mapNode, nil
+}
+
+// getSequenceElementType gets the type of elements in the given sequence node.
+// This method expect all the elements are same NodeType. Otherwise, this method returns an error.
+func getSequenceElementType(parent Node) (NodeType, error) {
+	if parent.Type() != SequenceNodeType {
+		return InvalidNodeType, fmt.Errorf("parent node is not a sequence node")
+	}
+	isFirstNode := true
+	var sequenceChildNodeType NodeType
+	for _, value := range parent.Children() {
+		nodeType := value.Type()
+		if !isFirstNode && nodeType != sequenceChildNodeType {
+			return InvalidNodeType, fmt.Errorf("child node type mismatch in a sequence node")
+		}
+		sequenceChildNodeType = nodeType
+		isFirstNode = false
+	}
+	return sequenceChildNodeType, nil
+}
+
+// getSequenceElementsWithFieldKey gets the children nodes as map with bounding them with their key at specific field.
+func getSequenceElementsWithFieldKey(fieldPath []string, node Node, fieldKey string) (itemValues map[string]Node, itemKeys []string, err error) {
+	itemValues = map[string]Node{}
+	itemKeys = make([]string, 0)
+	if node != nil {
+		for _, value := range node.Children() {
+			var itemKey string
+			for keyInChild, valueOfKeyInChild := range value.Children() {
+				if keyInChild.Key == fieldKey {
+					itemKey, err = getScalarAs[string](valueOfKeyInChild)
+					if err != nil {
+						return nil, nil, err
+					}
+					break
+				}
+			}
+			if itemKey == "" {
+				return nil, nil, fmt.Errorf("merge sequence key not found in array at %s (merge key %s)", strings.Join(fieldPath, "."), fieldKey)
+			}
+			itemValues[itemKey] = value
+			itemKeys = append(itemKeys, itemKey)
+		}
+	}
+	return
+}
+
+// getMapElements read node Children and return them as map and list of keys keeping the order in the map.
+func getMapElements(node Node) (mapElements map[string]Node, orderedKeys []string) {
+	orderedKeys = []string{}
+	mapElements = map[string]Node{}
+	if node != nil {
+		for key, value := range node.Children() {
+			orderedKeys = append(orderedKeys, key.Key)
+			mapElements[key.Key] = value
+		}
+	}
+	return
 }
 
 // handleStrategicMergePatchDirectives reads the strategic patch directives like $patch, $deleteFromPrimitiveList, $setElementOrder ...etc defined in https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/strategic-merge-patch.md#list-of-maps-2
