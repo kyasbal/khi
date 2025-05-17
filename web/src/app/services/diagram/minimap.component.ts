@@ -47,7 +47,7 @@ import { LOD } from './lod.service';
   providers: [
     {
       provide: DIAGRAM_ELEMENT_ROLE,
-      useValue: DiagramElementRole.MINIMAP,
+      useValue: DiagramElementRole.Minimap,
     },
     {
       provide: MAX_LOD,
@@ -79,7 +79,7 @@ export class MinimapComponent {
 
   minimapContentScaleTransform = computed(() => {
     const state = this.viewportState();
-    return `scale(${Math.min(this.width() / state.contentWidth, this.height() / state.contentHeight) * state.contentScale})`;
+    return `scale(${Math.min(this.width() / state.contentWidth, this.height() / state.contentHeight)})`;
   });
 
   /**
