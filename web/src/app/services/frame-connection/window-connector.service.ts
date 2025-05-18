@@ -17,11 +17,13 @@
 import { Inject, Injectable, InjectionToken } from '@angular/core';
 import {
   BehaviorSubject,
+  concatMap,
   filter,
   map,
   Observable,
   ReplaySubject,
   Subscription,
+  take,
   takeUntil,
 } from 'rxjs';
 
@@ -39,6 +41,11 @@ export interface KHIWindowPacket<T> {
   sourceFrameId?: string;
   destinationFrameId?: string;
   data: T;
+}
+
+export interface KHIWindowRPCPacket<T> {
+  rpcBody: T;
+  callID: string;
 }
 
 export interface WindowConnectionProvider {
@@ -272,6 +279,86 @@ export class WindowConnectorService {
       destinationFrameId,
     };
     this.connectionProvider.send(packet);
+  }
+
+  /**
+   * Registers an RPC (Remote Procedure Call) handler for serving requests from other frames
+   *
+   * This method sets up a server-side handler that listens for RPC requests of a specific type
+   * and automatically sends back responses to the requesting frame. It hides the complexity
+   * of message passing and allows you to focus on the actual procedure implementation.
+   *
+   * @param type - The base RPC message type identifier (will be suffixed with "-request" and "-response" internally)
+   * @param procedure - Function that processes the request and returns an Observable of the response
+   * @typeparam Request - Type of the data received in the request
+   * @typeparam Response - Type of the data to be sent in the response
+   *
+   * @example
+   * // Setup a handler for asynchronous calculation requests
+   * service.serveRPC<{id: string}, number>('fetch-data', (req) => {
+   *   return this.httpClient.get<number>(`/api/data/${req.id}`);
+   * });
+   */
+  serveRPC<Request, Response>(
+    type: string,
+    procedure: (req: Request) => Observable<Response>,
+  ) {
+    this.receiver<KHIWindowRPCPacket<Request>>(type + '-request')
+      .pipe(
+        concatMap((packet) =>
+          procedure(packet.data.rpcBody).pipe(
+            map((response) => ({ response, requestPacket: packet })),
+          ),
+        ),
+      )
+      .subscribe((packets) => {
+        const response: KHIWindowRPCPacket<Response> = {
+          callID: packets.requestPacket.data.callID,
+          rpcBody: packets.response,
+        };
+        this.unicast(
+          type + '-response',
+          response,
+          packets.requestPacket.sourceFrameId!,
+        );
+      });
+  }
+
+  /**
+   * Calls a remote procedure in another frame and returns the response as an Observable
+   *
+   * Sends an RPC request to all connected frames and waits for a response from the frame
+   * that has a matching RPC handler registered via `serveRPC`. Each call generates a unique
+   * ID to ensure the response is properly matched to this specific request.
+   *
+   * @param type - The base RPC message type identifier (must match the one registered with serveRPC)
+   * @param request - The request data to send to the remote procedure
+   * @returns An Observable that emits the response data when received and then completes
+   * @typeparam Request - Type of the data to send in the request
+   * @typeparam Response - Type of the data expected in the response
+   *
+   * @example
+   * // Call a remote procedure and subscribe to the result
+   * service.callRPC<{a: number, b: number}, number>('calculate-sum', {a: 5, b: 3})
+   *   .subscribe(sum => console.log(`The sum is: ${sum}`));
+   */
+  callRPC<Request, Response>(
+    type: string,
+    request: Request,
+  ): Observable<Response> {
+    const callID = randomString();
+    const observer = this.messageSource.pipe(
+      filter((message) => message.type === type + '-response'),
+      map((message) => message.data as KHIWindowRPCPacket<Response>),
+      filter((message) => message.callID === callID),
+      take(1),
+      map((rpcPacket) => rpcPacket.rpcBody),
+    );
+    this.broadcast(type + '-request', {
+      callID,
+      rpcBody: request,
+    } as KHIWindowRPCPacket<Request>);
+    return observer;
   }
 
   /**

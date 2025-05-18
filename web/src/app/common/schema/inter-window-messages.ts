@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { DiagramModel } from 'src/app/services/diagram/diagram-model-types';
 import { ResourceTimeline } from 'src/app/store/timeline';
 
 export const DIFF_PAGE_OPEN = 'DIFF_PAGE_OPEN';
@@ -33,4 +34,23 @@ export interface UpdateSelectedResourceMessage {
 export interface DiffPageViewModel {
   timeline: ResourceTimeline;
   logIndex: number;
+}
+
+/**
+ * Message type for getting the diagram model for specified time.
+ */
+export const QUERY_DIAGRAM_DATA = 'QUERY_DIAGRAM_DATA';
+
+/**
+ * Request body type for QUERY_DIAGRAM_DATA message.
+ */
+export interface QueryDiagramDataRequest {
+  ts: number;
+}
+
+/**
+ * Response body type for QUERY_DIAGRAM_DATA message.
+ */
+export interface QueryDiagramDataResponse {
+  model: DiagramModel;
 }

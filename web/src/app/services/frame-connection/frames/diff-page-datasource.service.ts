@@ -16,12 +16,11 @@
 
 import { Injectable } from '@angular/core';
 import { InterframeDatasource } from '../inter-frame-datasource.service';
-import { distinctUntilChanged, map, Subject } from 'rxjs';
+import { distinctUntilChanged, Subject } from 'rxjs';
 import { WindowConnectorService } from '../window-connector.service';
 import { Router } from '@angular/router';
 import {
   DiffPageViewModel,
-  UPDATE_SELECTED_RESOURCE_MESSAGE_KEY,
   UpdateSelectedResourceMessage,
 } from 'src/app/common/schema/inter-window-messages';
 import { ResourceTimeline, TimelineLayer } from 'src/app/store/timeline';
@@ -52,18 +51,16 @@ export class DiffPageDataSource extends InterframeDatasource<DiffPageViewModel> 
     }
     this.enabled = true;
     this.connector
-      .receiver<UpdateSelectedResourceMessage>(
-        UPDATE_SELECTED_RESOURCE_MESSAGE_KEY,
-      )
-      .pipe(
-        map((message) => ({
-          timeline: ResourceTimeline.clone(message.data.timeline),
-          logIndex: message.data.logIndex,
-        })),
-      )
-      .subscribe(this.rawUpdateRequest$);
+      .callRPC<object, UpdateSelectedResourceMessage>('DIFF_PAGE_OPEN', {})
+      .subscribe((response) => {
+        if (response.timeline !== null) {
+          this.rawUpdateRequest$.next({
+            timeline: ResourceTimeline.clone(response.timeline),
+            logIndex: response.logIndex,
+          });
+        }
+      });
     this.data$.subscribe((data) => this.updatePath(data));
-    this.connector.broadcast('DIFF_PAGE_OPEN', {});
   }
 
   override disable(): void {
