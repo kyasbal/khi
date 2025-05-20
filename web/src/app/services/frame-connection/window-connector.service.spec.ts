@@ -18,6 +18,7 @@ import { delay, firstValueFrom, of, toArray } from 'rxjs';
 import { InMemoryWindowConnectionProvider } from './window-connection-provider.service';
 import {
   KHIWindowPacket,
+  KHIWindowRPCType,
   WindowConnectorService,
 } from './window-connector.service';
 
@@ -118,23 +119,21 @@ describe('WindowConnectorService', () => {
 
     const serverConnector = new WindowConnectorService(connectionProvider);
     await serverConnector.createSession(1);
+    const calculateSumRPCKey = new KHIWindowRPCType<
+      { a: number; b: number },
+      number
+    >('calculate-sum');
 
-    serverConnector.serveRPC<{ a: number; b: number }, number>(
-      'calculate-sum',
-      (req) => {
-        return of(req.a + req.b).pipe(delay(300));
-      },
-    );
+    serverConnector.serveRPC(calculateSumRPCKey, (req) => {
+      return of(req.a + req.b).pipe(delay(300));
+    });
 
     const clientConnector = new WindowConnectorService(connectionProvider);
     await clientConnector.joinSession(1, 'Diagram');
 
     const results = await firstValueFrom(
       clientConnector
-        .callRPC<
-          { a: number; b: number },
-          number
-        >('calculate-sum', { a: 5, b: 3 })
+        .callRPC(calculateSumRPCKey, { a: 5, b: 3 })
         .pipe(toArray()),
     );
 
