@@ -16,10 +16,7 @@
 
 import { Injectable } from '@angular/core';
 import { WindowConnectorService } from '../window-connector.service';
-import {
-  DIFF_PAGE_OPEN,
-  UpdateSelectedResourceMessage,
-} from 'src/app/common/schema/inter-window-messages';
+import { DIFF_PAGE_OPEN } from 'src/app/common/schema/inter-window-messages';
 import { SelectionManagerService } from '../../selection-manager.service';
 import { map, of, withLatestFrom } from 'rxjs';
 
@@ -51,7 +48,7 @@ export class DiffPageDataSourceServer {
           return {
             timeline,
             logIndex: revision.logIndex,
-          } as UpdateSelectedResourceMessage;
+          };
         }),
       );
     });
