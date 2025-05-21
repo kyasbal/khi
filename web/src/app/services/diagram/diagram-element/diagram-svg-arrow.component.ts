@@ -16,7 +16,7 @@
 
 import { Component, computed, inject, input } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { combineLatest, map, switchMap } from 'rxjs';
+import { combineLatest, map, switchMap, tap } from 'rxjs';
 import {
   OptionalPosition,
   WaypointManagerService,
@@ -160,7 +160,7 @@ export class DiagramSVGArrowComponent {
                 ),
               ),
           ),
-        ),
+        ).pipe(tap((w) => console.log('waypoint updated', new Date(), w))),
       ),
       map((resolvedWaypoints) => {
         const result = new Array<DOMPoint>(resolvedWaypoints.length);

@@ -18,6 +18,7 @@ export interface K8sResource {
   apiVersion: string;
   kind: string;
   metadata?: K8sMetadata;
+  [label: string]: unknown;
 }
 
 export interface K8sControlledResource<

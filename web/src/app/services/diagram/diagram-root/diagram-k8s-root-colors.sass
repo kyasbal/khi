@@ -37,11 +37,26 @@ $k8s-color-900: #122B4D
     --pod-element-border: #{$k8s-color-400}
     --pod-element-bg: #{$k8s-color-50}
     --pod-element-fg: #{$k8s-color-500}
+    --pod-phase-pending: #FFA726
+    --pod-phase-running: #4CAF50
+    --pod-phase-succeeded: #26A69A
+    --pod-phase-failed: #EF5350
+    --pod-phase-unknown: #9E9E9E
     
     // Container element colors
     --container-element-border: #{$k8s-color-300}
     --container-element-fg: #{$k8s-color-500}
     --container-element-bg: #{$k8s-color-100}
+    --container-type-bg: #{$k8s-color-300}
+    --container-type-fg: #{$k8s-color-50}
+    
+    // Container status colors
+    --container-status-unknown: #9E9E9E
+    --container-status-waiting: #FFD54F
+    --container-status-notready:  #FFA726
+    --container-status-ready: #4CAF50
+    --container-status-terminatedsuccess: #26A69A
+    --container-status-terminatedfailure: #EF5350
     
     // General K8s resource element colors
     --general-k8s-element-border: #{$k8s-color-500}

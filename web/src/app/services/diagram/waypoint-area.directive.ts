@@ -24,12 +24,12 @@ import {
 } from '@angular/core';
 import { WaypointManagerService } from './waypoint-manager.service';
 import {
-  animationFrames,
   distinctUntilChanged,
   map,
   shareReplay,
   Subject,
   takeUntil,
+  tap,
 } from 'rxjs';
 import {
   DIAGRAM_ELEMENT_ROLE,
@@ -53,25 +53,37 @@ export class DiagramWaypointAreaDirective implements AfterViewInit, OnDestroy {
    */
   readonly waypointAreaID = input.required<string>();
 
+  readonly debugLog = input<boolean>(false);
+
   /**
    * Observable that tracks the bounding rectangle of the waypoint area
    * Updates on animation frames and only emits when dimensions or position change
    */
-  readonly waypointAreaRectObservable = animationFrames().pipe(
-    takeUntil(this.destroyed),
-    map(() => this.element.nativeElement.getBoundingClientRect()),
-    distinctUntilChanged(
-      (a, b) =>
-        a.x === b.x &&
-        a.y === b.y &&
-        a.width === b.width &&
-        a.height === b.height,
-    ),
-    shareReplay({
-      bufferSize: 1,
-      refCount: true,
-    }),
-  );
+  readonly waypointAreaRectObservable =
+    this.waypointManager.waypointUpdateTick.pipe(
+      takeUntil(this.destroyed),
+      map(() => this.element.nativeElement.getBoundingClientRect()),
+      distinctUntilChanged(
+        (a, b) =>
+          a.x === b.x &&
+          a.y === b.y &&
+          a.width === b.width &&
+          a.height === b.height,
+      ),
+      shareReplay({
+        bufferSize: 1,
+        refCount: true,
+      }),
+      tap((rect) => {
+        if (this.debugLog()) {
+          console.log(
+            'recalculated waypoint area rect',
+            this.waypointAreaID(),
+            rect,
+          );
+        }
+      }),
+    );
 
   /**
    * Lifecycle hook that registers this waypoint area with the manager

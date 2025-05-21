@@ -18,7 +18,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, output, signal } from '@angular/core';
 import { DiagramModelFrameStore } from '../diagram-model-frame-store';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { filter, interval, map } from 'rxjs';
+import { filter, interval, map, take } from 'rxjs';
 
 /**
  * Component for controlling diagram timeline visualization
@@ -122,13 +122,17 @@ export class DiagramControlComponent {
     if (current) {
       this.diagramModelFrameStore.stopAnimation();
     } else {
-      this.diagramModelFrameStore.setAnimator(
-        interval(100).pipe(
-          map((frame) => {
-            return frame % this.maxFrameCount();
-          }),
-        ),
-      );
+      this.diagramModelFrameStore.currentFrameIndex
+        .pipe(take(1))
+        .subscribe((initialFrameIndex) => {
+          this.diagramModelFrameStore.setAnimator(
+            interval(100).pipe(
+              map((frame) => {
+                return (frame + initialFrameIndex) % this.maxFrameCount();
+              }),
+            ),
+          );
+        });
     }
     this.animationPlaying.set(!current);
   }

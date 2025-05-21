@@ -37,7 +37,7 @@
 .pod-header
   padding: 8px 10px
   color: var(--pod-element-fg)
-  height: 1.7rem
+  height: 2.5rem
   
   .pod-name
     height: 1rem
@@ -50,6 +50,32 @@
     font-size: 0.5rem
     opacity: 0.9
     margin: 0px 0px 3px 0px
+  .pod-phase
+    font-size: 0.5rem
+    margin: 0px 0px 3px 0px
+    padding: 0px 6px
+    border-radius: 3px
+    display: inline-block
+    
+    &.Pending
+      background-color: var(--pod-phase-pending)
+      color: white
+    
+    &.Running
+      background-color: var(--pod-phase-running)
+      color: white
+    
+    &.Succeeded
+      background-color: var(--pod-phase-succeeded)
+      color: white
+    
+    &.Failed
+      background-color: var(--pod-phase-failed)
+      color: white
+    
+    &.Unknown
+      background-color: var(--pod-phase-unknown)
+      color: white
 
 // Containers section
 .containers-list
@@ -60,7 +86,6 @@
   background-color: var(--container-element-bg)
   border: 1px solid var(--container-element-border)
   margin-bottom: 6px
-  height: 5rem
   position: relative
   overflow: hidden
   color: var(--container-element-fg)
@@ -72,15 +97,49 @@
     .container-name
       font-weight: bold
       font-size: 0.85rem
-  
+      
+  // Container details
   .container-details
-    padding: 4px 8px
-    display: flex
-    flex-direction: column
-    
-    .container-image, .container-id
-      font-size: 0.75rem
-      margin: 2px 0
+    padding: 0 8px 6px 8px
+    font-size: 0.6rem
+  
+    .container-status
+      display: inline-block
+      padding: 2px 5px
+      border-radius: 2px
+      margin-bottom: 3px
+      
+      &.status-unknown
+        background-color: var(--container-status-unknown)
+        color: white
+      
+      &.status-waiting
+        background-color: var(--container-status-waiting)
+        color: white
+      
+      &.status-notready
+        background-color: var(--container-status-notready)
+        color: white
+      
+      &.status-ready
+        background-color: var(--container-status-ready)
+        color: white
+      
+      &.status-terminatedsuccess
+        background-color: var(--container-status-terminatedsuccess)
+        color: white
+      
+      &.status-terminatedfailure
+        background-color: var(--container-status-terminatedfailure)
+        color: white
+  
+    .container-info
+      display: flex
+      justify-content: space-between
+      margin-top: 3px
+      
+      .restart-count, .exit-code
+        opacity: 0.8
 
 .container-type-label
     position: absolute
@@ -91,3 +150,9 @@
     background-color: var(--container-element-border)
     p
         margin: 0px
+
+.container-type
+  background-color: var(--container-type-bg)
+  margin: 0 0 0 10px
+  padding: 0 10px
+  color: var(--container-type-fg)

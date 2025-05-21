@@ -15,6 +15,7 @@
  */
 
 import {
+  combineLatest,
   distinctUntilChanged,
   map,
   Observable,
@@ -22,6 +23,9 @@ import {
   Subject,
 } from 'rxjs';
 import { DiagramWaypointAreaDirective } from './waypoint-area.directive';
+import { DiagramModelFrameStore } from './diagram-model-frame-store';
+import { inject } from '@angular/core';
+import { DiagramViewportService } from './diagram-viewport.service';
 
 /**
  * WaypointArea represents rectangular area on the diagram where can be used as a connector of lines.
@@ -46,6 +50,15 @@ export interface OptionalPosition {
 export class WaypointManagerService {
   private readonly waypointAreaSubjects: { [id: string]: Subject<DOMRect> } =
     {};
+
+  private readonly frameStore = inject(DiagramModelFrameStore);
+
+  private readonly viewportService = inject(DiagramViewportService);
+
+  public readonly waypointUpdateTick = combineLatest([
+    this.frameStore.currentFrameIndex.pipe(distinctUntilChanged()),
+    this.viewportService.viewportState,
+  ]);
 
   /**
    * monitorWaypoint get the observable to monitor a point at the specified area.

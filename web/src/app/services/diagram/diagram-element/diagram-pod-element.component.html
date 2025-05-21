@@ -30,6 +30,9 @@
     @if (lod > LOD.CONTAINER_ONLY) {
       <div class="pod-namespace">NS: {{ currentPod.namespace }}</div>
       <div class="pod-name">{{ currentPod.name }}</div>
+      <div class="pod-phase" [ngClass]="[currentPod.phase]">
+        {{ currentPod.phase }}
+      </div>
     }
   </div>
 
@@ -42,9 +45,38 @@
         @if (lod > LOD.CONTAINER_ONLY) {
           <div class="container-header">
             <span class="container-name">{{ container.name }}</span>
+            @if (container.containerType !== ContainerType.Standard) {
+              <span class="container-type">{{
+                ContainerTypeLabelMap[container.containerType]
+              }}</span>
+            }
           </div>
+
+          <!-- 新しい情報表示部分 -->
           <div class="container-details">
-            <span class="container-image">Image: {{ container.image }}</span>
+            <div
+              class="container-status"
+              [ngClass]="
+                'status-' + ContainerStatus[container.status].toLowerCase()
+              "
+            >
+              Status: {{ ContainerStatus[container.status] }}
+              @if (container.reason) {
+                ({{ container.reason }})
+              }
+            </div>
+
+            <div class="container-info">
+              <span class="restart-count"
+                >Restarts: {{ container.restartCount }}</span
+              >
+              @if (
+                container.status === ContainerStatus.TerminatedSuccess ||
+                container.status === ContainerStatus.TerminatedFailure
+              ) {
+                <span class="exit-code">Exit: {{ container.exitCode }}</span>
+              }
+            </div>
           </div>
         }
       </div>

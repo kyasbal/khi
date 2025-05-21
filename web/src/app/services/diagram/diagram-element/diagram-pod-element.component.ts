@@ -18,7 +18,13 @@ import { Component, input } from '@angular/core';
 import { DiagramElementDirective } from '../diagram-element.directive';
 import { LOD } from '../lod.service';
 import { DiagramWaypointAreaDirective } from '../waypoint-area.directive';
-import { PodDiagramElement } from '../diagram-model-types';
+import {
+  ContainerType,
+  ContainerTypeLabelMap,
+  ContainerStatus,
+  PodDiagramElement,
+} from '../diagram-model-types';
+import { CommonModule } from '@angular/common';
 
 /**
  * Component to display a Kubernetes Pod element with its containers
@@ -27,11 +33,18 @@ import { PodDiagramElement } from '../diagram-model-types';
   selector: 'diagram-pod-element',
   templateUrl: './diagram-pod-element.component.html',
   styleUrl: './diagram-pod-element.component.sass',
-  imports: [DiagramElementDirective, DiagramWaypointAreaDirective],
+  imports: [
+    CommonModule,
+    DiagramElementDirective,
+    DiagramWaypointAreaDirective,
+  ],
   standalone: true,
 })
 export class DiagramPodElementComponent {
   LOD = LOD;
+  ContainerType = ContainerType;
+  ContainerTypeLabelMap = ContainerTypeLabelMap;
+  ContainerStatus = ContainerStatus;
 
   /**
    * The pod data to be displayed

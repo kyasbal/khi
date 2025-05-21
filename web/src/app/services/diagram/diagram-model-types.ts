@@ -212,6 +212,31 @@ export interface PodDiagramElement extends BasicDiagramNamespacedElement {
    * A pod may contain one or more containers sharing network and storage
    */
   containers: ContainerDiagramElement[];
+
+  phase: string;
+}
+
+export enum ContainerType {
+  Invalid,
+  Init,
+  Standard,
+  Ephemeral,
+}
+
+export const ContainerTypeLabelMap: Record<ContainerType, string> = {
+  [ContainerType.Invalid]: 'Invalid',
+  [ContainerType.Init]: 'Init',
+  [ContainerType.Standard]: 'Standard',
+  [ContainerType.Ephemeral]: 'Ephemeral',
+};
+
+export enum ContainerStatus {
+  Unknown,
+  Waiting,
+  NotReady,
+  Ready,
+  TerminatedSuccess,
+  TerminatedFailure,
 }
 
 /**
@@ -220,9 +245,14 @@ export interface PodDiagramElement extends BasicDiagramNamespacedElement {
  */
 export interface ContainerDiagramElement extends BasicDiagramElement {
   type: DiagramElementType.Container;
-  /**
-   * Container image name
-   * Includes repository, name and tag (e.g., nginx:1.21)
-   */
-  image: string;
+
+  containerType: ContainerType;
+
+  restartCount: number;
+
+  status: ContainerStatus;
+
+  exitCode: number;
+
+  reason: string;
 }

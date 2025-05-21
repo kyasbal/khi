@@ -27,7 +27,8 @@ import {
 } from '@angular/core';
 import { DiagramViewportService } from './diagram-viewport.service';
 import { CommonModule } from '@angular/common';
-import { fromEvent, Subject, takeUntil } from 'rxjs';
+import { distinctUntilChanged, fromEvent, Subject, takeUntil } from 'rxjs';
+import { DiagramModelFrameStore } from './diagram-model-frame-store';
 
 const scalingStep = 0.03;
 
@@ -50,6 +51,7 @@ export class DiagramViewportComponent implements AfterViewInit, OnDestroy {
   private readonly contentHostElement =
     viewChild<ElementRef<HTMLDivElement>>('contentHost');
   private readonly viewportService = inject(DiagramViewportService);
+  private readonly frameStore = inject(DiagramModelFrameStore);
 
   readonly scalingFactor = signal(1);
 
@@ -63,6 +65,11 @@ export class DiagramViewportComponent implements AfterViewInit, OnDestroy {
     // monitor window resize event to recalculate the viewport size.
     fromEvent(window, 'resize')
       .pipe(takeUntil(this.destroy))
+      .subscribe(() => {
+        this.reportVisibleArea();
+      });
+    this.frameStore.currentFrameIndex
+      .pipe(takeUntil(this.destroy), distinctUntilChanged())
       .subscribe(() => {
         this.reportVisibleArea();
       });
@@ -89,7 +96,7 @@ export class DiagramViewportComponent implements AfterViewInit, OnDestroy {
         viewportRect.width / contentHostRect.width,
         viewportRect.height / contentHostRect.height,
       );
-      const sn = Math.max(minScale, s + event.deltaY * -1 * scalingStep);
+      const sn = Math.min(minScale, s + event.deltaY * -1 * scalingStep);
       if (sn === s) return;
 
       this.scalingFactor.set(sn);
