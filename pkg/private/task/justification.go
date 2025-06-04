@@ -55,8 +55,9 @@ var JustificationFormTask = inspection_task.NewInspectionTask(private_taskid.Jus
 			ParameterFormFieldBase: form_metadata.ParameterFormFieldBase{
 				ID:       private_taskid.JustificationFormTaskID.ReferenceIDString(),
 				Priority: math.MaxInt32,
-				Type:     "Text",
+				Type:     form_metadata.Text,
 				Label:    "Justification",
+				HintType: form_metadata.None,
 			},
 			Readonly: true,
 			Default:  justification,
