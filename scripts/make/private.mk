@@ -29,9 +29,9 @@ build-web-internal-khi-ro: prepare-frontend ./web/**/*.ts ./web/**/*.html ./web/
 
 .PHONY=deploy-analytics
 deploy-analytics:
-	docker build --file ./Dockerfile-analytics . --tag gcr.io/kubernetes-history-inspector/analytics:latest
-	docker push gcr.io/kubernetes-history-inspector/analytics:latest
-	$(GCLOUD) run deploy khi-analytics --image gcr.io/kubernetes-history-inspector/analytics:latest --region us-central1 --no-allow-unauthenticated
+	podman build --platform linux/amd64 --file ./Dockerfile-analytics . --tag gcr.io/khi-internal/analytics:latest
+	podman push gcr.io/khi-internal/analytics:latest
+	$(GCLOUD) run deploy khi-analytics --image gcr.io/khi-internal/analytics:latest --region us-central1 --allow-unauthenticated
 
 .PHONY=generate-oss-repository
 generate-oss-repository:

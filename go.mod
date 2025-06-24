@@ -10,6 +10,7 @@ require (
 )
 
 require (
+	cloud.google.com/go/bigquery v1.69.0
 	github.com/crazy3lf/colorconv v1.2.0
 	github.com/google/uuid v1.6.0
 	golang.org/x/oauth2 v0.30.0
