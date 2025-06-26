@@ -15,7 +15,12 @@
  */
 
 import { Subject } from 'rxjs';
-import { OAuthTokenAPI } from './oauth-token-api';
+import {
+  GOOGLE_OAUTH2_LIB,
+  LOCALSTORAGE,
+  OAuthTokenAPI,
+} from './oauth-token-api';
+import { TestBed } from '@angular/core/testing';
 
 describe('OAuthTokenAPI', () => {
   class MockLocalStorage {
@@ -48,10 +53,18 @@ describe('OAuthTokenAPI', () => {
     const oauthRefSpy = jasmine.createSpyObj('oauth2', ['initTokenClient']);
     oauthRefSpy.initTokenClient.and.returnValue(oauthClientSpy);
 
-    const oauthAPI = new OAuthTokenAPI(
-      oauthRefSpy,
-      new MockLocalStorage() as unknown as Storage,
-    );
+    TestBed.configureTestingModule({
+      providers: [
+        OAuthTokenAPI,
+        { provide: GOOGLE_OAUTH2_LIB, useValue: oauthRefSpy },
+        {
+          provide: LOCALSTORAGE,
+          useValue: new MockLocalStorage() as unknown as Storage,
+        },
+      ],
+    });
+
+    const oauthAPI = TestBed.inject(OAuthTokenAPI);
     const tokenCallback =
       oauthRefSpy.initTokenClient.calls.first().args[0].callback;
     onRequestAccessTokenCalled.subscribe(() =>

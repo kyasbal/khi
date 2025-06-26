@@ -12,20 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+GOLANGCILINT_VERSION := v2.1.6
+
 .PHONY=lint-web
 lint-web: prepare-frontend
 	cd web && npx ng lint
 
 .PHONY=lint-go
 lint-go:
-	go vet ./...
+	docker run --rm -v $(CURDIR):/app -w /app golangci/golangci-lint:$(GOLANGCILINT_VERSION) golangci-lint run --config=.golangci.yaml
+
 .PHONY=format-go
 format-go:
 	gofmt -s -w .
 
 .PHONY=format-web
 format-web: prepare-frontend
-	cd web && npx prettier --ignore-path .gitignore --write "./**/*.+(ts|json|html)"
+	cd web && npx prettier --ignore-path .gitignore --write "./**/*.+(ts|json|html|scss)"
 
 .PHONY=check-format-go
 check-format-go:
@@ -33,7 +36,7 @@ check-format-go:
 
 .PHONY=check-format-web
 check-format-web: prepare-frontend
-	cd web && npx prettier --ignore-path .gitignore --check "./**/*.+(ts|json|html)"
+	cd web && npx prettier --ignore-path .gitignore --check "./**/*.+(ts|json|html|scss)"
 
 .PHONY: lint-markdown
 lint-markdown:

@@ -42,7 +42,7 @@ import { ResourceTimeline } from '../store/timeline';
   standalone: true,
   imports: [CommonModule, MatIconModule, MatTooltipModule, ClipboardModule],
   templateUrl: './common-field-annotator.component.html',
-  styleUrl: './common-field-annotator.component.sass',
+  styleUrl: './common-field-annotator.component.scss',
 })
 export class CommonFieldAnnotatorComponent {
   private readonly clipboard = inject(Clipboard);
@@ -108,12 +108,15 @@ export class CommonFieldAnnotatorComponent {
     return (l?: LogEntry | null) => {
       if (!l) return DECISION_HIDDEN;
       const viewState = inject(ViewStateService);
-      const tsflongPipe = new LongTimestampFormatPipe(viewState);
       return {
         inputs: {
           icon,
           label,
-          value: tsflongPipe.transform(l.time),
+          value: viewState.timezoneShift.pipe(
+            map((t) =>
+              LongTimestampFormatPipe.toLongDisplayTimestamp(l.time, t),
+            ),
+          ),
         },
       };
     };

@@ -28,7 +28,7 @@ import { BACKEND_API } from '../services/api/backend-api-interface';
 @Component({
   selector: 'khi-title',
   templateUrl: './titlebar.component.html',
-  styleUrls: ['./titlebar.component.sass'],
+  styleUrls: ['./titlebar.component.scss'],
   imports: [
     CommonModule,
     MatIconModule,
@@ -38,6 +38,8 @@ import { BACKEND_API } from '../services/api/backend-api-interface';
   ],
 })
 export class TitleBarComponent {
+  private readonly windowConnector = inject(WindowConnectorService);
+
   @Input()
   pageName = 'N/A';
 
@@ -57,8 +59,6 @@ export class TitleBarComponent {
   );
 
   sessionPages = this.windowConnector.sessionPages;
-
-  constructor(private readonly windowConnector: WindowConnectorService) {}
 
   focusWindow(frameId: string) {
     this.windowConnector.focusWindow(frameId);

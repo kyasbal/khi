@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Inject, Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { GoogleDriveAPI } from './google-drive-api';
@@ -27,14 +27,13 @@ import { LoginDialogComponent } from './login-dialog/login.component';
 
 @Injectable()
 export class GoogleDriveDataLoaderService {
-  constructor(
-    @Inject(PROGRESS_DIALOG_STATUS_UPDATOR)
-    private progress: ProgressDialogStatusUpdator,
-    private loaderService: InspectionDataLoaderService,
-    private _dialog: MatDialog,
-    private _snackBar: MatSnackBar,
-    private _driveAPI: GoogleDriveAPI,
-  ) {}
+  private readonly progress = inject<ProgressDialogStatusUpdator>(
+    PROGRESS_DIALOG_STATUS_UPDATOR,
+  );
+  private loaderService = inject(InspectionDataLoaderService);
+  private _dialog = inject(MatDialog);
+  private _snackBar = inject(MatSnackBar);
+  private _driveAPI = inject(GoogleDriveAPI);
 
   public async load(fileId: string): Promise<void> {
     const dialogRef = this._dialog.open(LoginDialogComponent, {});

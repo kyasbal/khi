@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { GraphRenderer } from './graph/renderer';
 import { emptyGraphData } from '../../../common/schema/graph-schema';
 import { DownloadService } from '../services/donwload-service';
@@ -22,13 +28,11 @@ import { GraphPageDataSource } from 'src/app/services/frame-connection/frames/gr
 @Component({
   selector: 'graph-architecture-graph',
   templateUrl: './architecture-graph.component.html',
-  styleUrls: ['./architecture-graph.component.sass'],
+  styleUrls: ['./architecture-graph.component.scss'],
 })
 export class ArchitectureGraphComponent implements AfterViewInit {
-  constructor(
-    private dataStore: GraphPageDataSource,
-    private downloadService: DownloadService,
-  ) {}
+  private dataStore = inject(GraphPageDataSource);
+  private downloadService = inject(DownloadService);
 
   @ViewChild('graphContainer')
   graphContainer!: ElementRef<HTMLDivElement>;

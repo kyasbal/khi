@@ -28,10 +28,12 @@ import { ResourceTimeline } from 'src/app/store/timeline';
 @Component({
   selector: 'khi-diff-page',
   templateUrl: './diff.component.html',
-  styleUrls: ['./diff.component.sass'],
+  styleUrls: ['./diff.component.scss'],
   imports: [CommonModule, TitleBarComponent, SideBySideDiffComponent],
 })
 export class DiffComponent {
+  private readonly diffPageSource = inject(DiffPageDataSource);
+
   private readonly envInjector = inject(EnvironmentInjector);
 
   private readonly timelineAnnotatorResolver = inject(
@@ -68,6 +70,4 @@ export class DiffComponent {
     this.changePair,
     this.envInjector,
   );
-
-  constructor(private readonly diffPageSource: DiffPageDataSource) {}
 }

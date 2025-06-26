@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { OAuthTokenAPI } from './oauth-token-api';
 
 @Injectable({ providedIn: 'root' })
 export class GoogleDriveAPI {
-  constructor(private _oauthTokenAPI: OAuthTokenAPI) {}
+  private _oauthTokenAPI = inject(OAuthTokenAPI);
 
   public getFileAsText(fileId: string): Promise<ArrayBuffer> {
     return this._oauthTokenAPI.requestAPIWithOAuth(

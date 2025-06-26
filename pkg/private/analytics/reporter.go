@@ -16,6 +16,7 @@ package analytics
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -75,7 +76,7 @@ func (r *AnalyticsReporter) ReportEvent(event types.AnalyticsEvent, metadata map
 		return
 	}
 
-	req, err := http.NewRequest("POST", analyticsEndpoint, bytes.NewReader(marshalled))
+	req, err := http.NewRequestWithContext(context.Background(), "POST", analyticsEndpoint, bytes.NewReader(marshalled))
 	if err != nil {
 		slog.Warn(fmt.Sprintf("Failed to report the usage data\n%s", err))
 		return
@@ -88,4 +89,5 @@ func (r *AnalyticsReporter) ReportEvent(event types.AnalyticsEvent, metadata map
 		slog.Warn(fmt.Sprintf("Failed to report the usage data\n%d,%s\n%s", resp.StatusCode, resp.Status, err))
 		return
 	}
+	defer resp.Body.Close()
 }

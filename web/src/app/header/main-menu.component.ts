@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { StartupDialogComponent } from '../dialogs/startup/startup.component';
 import { MatIconModule } from '@angular/material/icon';
@@ -23,11 +23,11 @@ import { MatButtonModule } from '@angular/material/button';
 @Component({
   selector: 'khi-main-menu',
   templateUrl: './main-menu.component.html',
-  styleUrls: ['./main-menu.component.sass'],
+  styleUrls: ['./main-menu.component.scss'],
   imports: [MatIconModule, MatButtonModule],
 })
 export class MainMenuComponent {
-  constructor(private readonly dialog: MatDialog) {}
+  private readonly dialog = inject(MatDialog);
 
   openStartupMenu() {
     this.dialog.open(StartupDialogComponent, {

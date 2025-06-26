@@ -50,7 +50,7 @@ steps:
       - |
         docker build --file=./Dockerfile -t gcr.io/khi-internal/standalone:latest -t gcr.io/khi-internal/standalone:$(cat ./VERSION) .
         docker push gcr.io/khi-internal/standalone:latest
-        docker push gcr.io/khi-internal/standalone:$(cat ./VERSION)
+        docker push gcr.io/khi-internal/standalone:${_LOUHI_TAG_NAME}
     waitFor:
       - build web
   - id: build web viewer mode

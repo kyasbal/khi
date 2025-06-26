@@ -15,7 +15,7 @@
  */
 
 import { CommonModule } from '@angular/common';
-import { Component, Inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import {
   PROGRESS_DIALOG_STATUS_OBSERVER,
@@ -24,14 +24,13 @@ import {
 
 @Component({
   templateUrl: './progress.component.html',
-  styleUrls: ['./progress.component.sass'],
+  styleUrls: ['./progress.component.scss'],
   imports: [CommonModule, MatProgressBarModule],
 })
 export class ProgressDialogComponent {
-  public currentStatus = this.progressObserver.status();
+  private readonly progressObserver = inject<ProgressDialogStatusObserver>(
+    PROGRESS_DIALOG_STATUS_OBSERVER,
+  );
 
-  constructor(
-    @Inject(PROGRESS_DIALOG_STATUS_OBSERVER)
-    private progressObserver: ProgressDialogStatusObserver,
-  ) {}
+  public currentStatus = this.progressObserver.status();
 }

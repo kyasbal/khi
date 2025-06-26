@@ -71,7 +71,6 @@ require (
 )
 
 require (
-	cloud.google.com/go/bigquery v1.69.0
 	cloud.google.com/go/errorreporting v0.3.2
 	cloud.google.com/go/profiler v0.4.2
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect

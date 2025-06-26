@@ -15,15 +15,15 @@ watch-web-internal-khi-ro: prepare-frontend
 
 
 .PHONY=build-web-internal
-build-web-internal: prepare-frontend ./web/**/*.ts ./web/**/*.html ./web/**/*.sass
+build-web-internal: prepare-frontend ./web/**/*.ts ./web/**/*.html ./web/**/*.scss
 	cd web && NG_APP_VERSION="$(VERSION)" npx ng build --output-path ../dist -c prod-internal
 
 .PHONY=build-web-internal-beta
-build-web-internal-beta: prepare-frontend ./web/**/*.ts ./web/**/*.html ./web/**/*.sass
+build-web-internal-beta: prepare-frontend ./web/**/*.ts ./web/**/*.html ./web/**/*.scss
 	cd web && NG_APP_VERSION="beta-$(VERSION)@$(GIT_SHORT_HASH)" npx ng build --output-path ../dist --optimization=false -c dev-internal
 
 .PHONY=build-web-internal-khi-ro
-build-web-internal-khi-ro: prepare-frontend ./web/**/*.ts ./web/**/*.html ./web/**/*.sass
+build-web-internal-khi-ro: prepare-frontend ./web/**/*.ts ./web/**/*.html ./web/**/*.scss
 	cd web && NG_APP_VIEWER_MODE=true NG_APP_VERSION="$(VERSION)" npx ng build --output-path ../dist -c prod-internal
 
 

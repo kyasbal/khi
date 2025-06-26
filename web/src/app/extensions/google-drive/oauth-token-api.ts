@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Inject, Injectable, InjectionToken } from '@angular/core';
+import { Injectable, InjectionToken, inject } from '@angular/core';
 import { Subject, Subscription } from 'rxjs';
 
 interface OAuthTokenResponse {
@@ -53,14 +53,13 @@ export class OAuthTokenAPI {
     'https://www.googleapis.com/auth/drive.readonly';
   private readonly oauthObservable: Subject<OAuthTokenResponse> = new Subject();
   private oAuthClient: GoogleOAuth2Client;
+  private readonly oAuth2Lib =
+    inject<GoogleOAuth2ClientLibrary>(GOOGLE_OAUTH2_LIB);
+  private readonly localStorage =
+    inject<typeof window.localStorage>(LOCALSTORAGE);
 
-  constructor(
-    @Inject(GOOGLE_OAUTH2_LIB)
-    oAuth2Lib: GoogleOAuth2ClientLibrary,
-    @Inject(LOCALSTORAGE)
-    private localStorage: typeof window.localStorage,
-  ) {
-    this.oAuthClient = oAuth2Lib.initTokenClient({
+  constructor() {
+    this.oAuthClient = this.oAuth2Lib.initTokenClient({
       client_id:
         '173883494332-f5o6gkmpb5fku5u3vp43279mqbj24pe5.apps.googleusercontent.com', // TODO: Client ID is not secret and this code won't be released as a part of OSS. This should be specified on some configuration file, but I will keep this here.
       scope: OAuthTokenAPI.OAUTH_SCOPE,

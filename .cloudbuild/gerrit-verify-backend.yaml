@@ -43,9 +43,15 @@ steps:
       - -c
       - |
         make check-format-go
-        make lint-go
     waitFor:
       - "-"
+  - name: 'golangci/golangci-lint:v2.1.6'
+    entrypoint: 'golangci-lint'
+    args: ['run', '--config=.golangci.yaml']
+    id: 'Run-golangci-lint'
+    waitFor:
+      - '-'
+
 artifacts:
   objects:
     location: 'gs://kubernetes-history-inspector_cloudbuild/artifacts/$COMMIT_SHA'
