@@ -21,7 +21,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
-	inspection_task_contextkey "github.com/GoogleCloudPlatform/khi/pkg/inspection/contextkey"
+	inspectioncontract "github.com/GoogleCloudPlatform/khi/pkg/inspection/contract"
 	inspection_task_interface "github.com/GoogleCloudPlatform/khi/pkg/inspection/interface"
 	form_metadata "github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata/form"
 	"github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata/header"
@@ -46,7 +46,7 @@ var JustificationFormTask = inspection_task.NewInspectionTask(private_taskid.Jus
 		gaLabelsMap = parameters.Private.GetMapOfGALabels()
 	}
 	if justification, found := gaLabelsMap["justification"]; found {
-		metadataSet := khictx.MustGetValue(ctx, inspection_task_contextkey.InspectionRunMetadata)
+		metadataSet := khictx.MustGetValue(ctx, inspectioncontract.InspectionRunMetadata)
 		formFields, found := typedmap.Get(metadataSet, form_metadata.FormFieldSetMetadataKey)
 		if !found {
 			return "", fmt.Errorf("failed to get form fields")
@@ -75,7 +75,7 @@ var FilenameHeaderMetadataGeneratorTask = inspection_task.NewInspectionTask(priv
 	gcp_task.InputEndTimeTaskID.Ref(),
 	gcp_task.InputStartTimeTaskID.Ref(),
 }, func(ctx context.Context, taskMode inspection_task_interface.InspectionTaskMode) (struct{}, error) {
-	metadataSet := khictx.MustGetValue(ctx, inspection_task_contextkey.InspectionRunMetadata)
+	metadataSet := khictx.MustGetValue(ctx, inspectioncontract.InspectionRunMetadata)
 	header := typedmap.GetOrDefault(metadataSet, header.HeaderMetadataKey, &header.Header{})
 
 	clusterName := task.GetTaskResult(ctx, gcp_task.InputClusterNameTaskID.Ref())
