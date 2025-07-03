@@ -29,7 +29,7 @@ steps:
     args:
       - -c
       - |
-        echo ${LOUHI_TAG_NAME} > VERSION
+        echo ${_LOUHI_TAG_NAME} > VERSION
         apt-get update && apt-get install jq -y
         make prepare-frontend
     waitFor:
