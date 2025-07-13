@@ -22,14 +22,14 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/idgenerator"
 	"github.com/GoogleCloudPlatform/khi/pkg/private/analytics/types"
 	"github.com/GoogleCloudPlatform/khi/pkg/private/parameters"
 )
 
 var analyticsEndpoint = "https://khi-analytics-5dxktvcd7q-uc.a.run.app"
 
-var sessionID = common.NewUUID()
+var sessionID = idgenerator.NewFixedLengthIDGenerator(32).Generate()
 
 type AnalyticsReporter struct {
 	debug          bool
