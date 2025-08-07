@@ -23,7 +23,6 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	inspectioncontract "github.com/GoogleCloudPlatform/khi/pkg/inspection/contract"
-	inspection_task_interface "github.com/GoogleCloudPlatform/khi/pkg/inspection/interface"
 	form_metadata "github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata/form"
 	"github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata/header"
 	inspection_task "github.com/GoogleCloudPlatform/khi/pkg/inspection/task"
@@ -40,7 +39,7 @@ import (
 
 var availableForAllGCPInspectionTypes = inspection_task.InspectionTypeLabel(gke.InspectionTypeId, aws.InspectionTypeId, azure.InspectionTypeId, baremetal.InspectionTypeId, vmware.InspectionTypeId)
 
-var JustificationFormTask = inspection_task.NewInspectionTask(private_taskid.JustificationFormTaskID, []taskid.UntypedTaskReference{}, func(ctx context.Context, taskMode inspection_task_interface.InspectionTaskMode) (string, error) {
+var JustificationFormTask = inspection_task.NewInspectionTask(private_taskid.JustificationFormTaskID, []taskid.UntypedTaskReference{}, func(ctx context.Context, taskMode inspectioncontract.InspectionTaskModeType) (string, error) {
 	gaLabelsMap := map[string]string{}
 	if parameters.Private.GALabels != nil {
 		gaLabelsMap = parameters.Private.GetMapOfGALabels()
@@ -74,7 +73,7 @@ var FilenameHeaderMetadataGeneratorTask = inspection_task.NewInspectionTask(priv
 	gcp_task.InputClusterNameTaskID.Ref(),
 	gcp_task.InputEndTimeTaskID.Ref(),
 	gcp_task.InputStartTimeTaskID.Ref(),
-}, func(ctx context.Context, taskMode inspection_task_interface.InspectionTaskMode) (struct{}, error) {
+}, func(ctx context.Context, taskMode inspectioncontract.InspectionTaskModeType) (struct{}, error) {
 	metadataSet := khictx.MustGetValue(ctx, inspectioncontract.InspectionRunMetadata)
 	header := typedmap.GetOrDefault(metadataSet, header.HeaderMetadataKey, &header.Header{})
 
