@@ -14,9 +14,11 @@
 
 package task
 
-import "github.com/GoogleCloudPlatform/khi/pkg/inspection"
+import (
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+)
 
-func PrepareInspectionServer(inspectionServer *inspection.InspectionTaskServer) error {
+func PrepareInspectionServer(inspectionServer *coreinspection.InspectionTaskServer) error {
 	err := inspectionServer.AddTask(FilenameHeaderMetadataGeneratorTask)
 	if err != nil {
 		return err
