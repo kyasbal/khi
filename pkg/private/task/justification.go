@@ -21,6 +21,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	inspectioncontract "github.com/GoogleCloudPlatform/khi/pkg/inspection/contract"
 	inspection_task_interface "github.com/GoogleCloudPlatform/khi/pkg/inspection/interface"
 	form_metadata "github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata/form"
@@ -34,7 +35,6 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke"
 	aws "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke-on-aws"
 	azure "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke-on-azure"
-	"github.com/GoogleCloudPlatform/khi/pkg/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
@@ -78,10 +78,10 @@ var FilenameHeaderMetadataGeneratorTask = inspection_task.NewInspectionTask(priv
 	metadataSet := khictx.MustGetValue(ctx, inspectioncontract.InspectionRunMetadata)
 	header := typedmap.GetOrDefault(metadataSet, header.HeaderMetadataKey, &header.Header{})
 
-	clusterName := task.GetTaskResult(ctx, gcp_task.InputClusterNameTaskID.Ref())
-	endTime := task.GetTaskResult(ctx, gcp_task.InputEndTimeTaskID.Ref())
-	startTime := task.GetTaskResult(ctx, gcp_task.InputStartTimeTaskID.Ref())
-	justification := task.GetTaskResult(ctx, private_taskid.JustificationFormTaskID.Ref())
+	clusterName := coretask.GetTaskResult(ctx, gcp_task.InputClusterNameTaskID.Ref())
+	endTime := coretask.GetTaskResult(ctx, gcp_task.InputEndTimeTaskID.Ref())
+	startTime := coretask.GetTaskResult(ctx, gcp_task.InputStartTimeTaskID.Ref())
+	justification := coretask.GetTaskResult(ctx, private_taskid.JustificationFormTaskID.Ref())
 
 	header.SuggestedFileName = fmt.Sprintf("%s-%s-%s-%s.khi", justification, clusterName, endTime.Format("01021504"), startTime.Format("01021504"))
 	return struct{}{}, nil
