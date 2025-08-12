@@ -34,7 +34,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke"
 	aws "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke-on-aws"
 	azure "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke-on-azure"
-	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/task/core/contract/taskid"
 )
 
 var availableForAllGCPInspectionTypes = inspection_task.InspectionTypeLabel(gke.InspectionTypeId, aws.InspectionTypeId, azure.InspectionTypeId, baremetal.InspectionTypeId, vmware.InspectionTypeId)
