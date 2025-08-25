@@ -6,7 +6,7 @@ test-web: prepare-frontend ## Run frontend tests
 	cd web && npx ng test --watch=false
 
 .PHONY: test-go
-test-go: ## Run backend tests
+test-go: generate-backend ## Run backend tests
 	go test ./...
 
 .PHONY: coverage-web
