@@ -1,8 +1,8 @@
 package private_taskid
 
 import (
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/task/core/contract/taskid"
 )
 
 // JustificationFormTaskID is a task for a non editable input form to show the justification.

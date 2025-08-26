@@ -21,11 +21,10 @@ import (
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	inspectioncontract "github.com/GoogleCloudPlatform/khi/pkg/inspection/contract"
-	form_metadata "github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata/form"
-	"github.com/GoogleCloudPlatform/khi/pkg/inspection/metadata/header"
-	inspection_task "github.com/GoogleCloudPlatform/khi/pkg/inspection/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/private/parameters"
 	private_taskid "github.com/GoogleCloudPlatform/khi/pkg/private/taskid"
 	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
@@ -34,29 +33,29 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke"
 	aws "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke-on-aws"
 	azure "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/gke-on-azure"
-	"github.com/GoogleCloudPlatform/khi/pkg/task/core/contract/taskid"
+	inspection_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/contract"
 )
 
-var availableForAllGCPInspectionTypes = inspection_task.InspectionTypeLabel(gke.InspectionTypeId, aws.InspectionTypeId, azure.InspectionTypeId, baremetal.InspectionTypeId, vmware.InspectionTypeId)
+var availableForAllGCPInspectionTypes = inspection_contract.InspectionTypeLabel(gke.InspectionTypeId, aws.InspectionTypeId, azure.InspectionTypeId, baremetal.InspectionTypeId, vmware.InspectionTypeId)
 
-var JustificationFormTask = inspection_task.NewInspectionTask(private_taskid.JustificationFormTaskID, []taskid.UntypedTaskReference{}, func(ctx context.Context, taskMode inspectioncontract.InspectionTaskModeType) (string, error) {
+var JustificationFormTask = inspectiontaskbase.NewInspectionTask(private_taskid.JustificationFormTaskID, []taskid.UntypedTaskReference{}, func(ctx context.Context, taskMode inspection_contract.InspectionTaskModeType) (string, error) {
 	gaLabelsMap := map[string]string{}
 	if parameters.Private.GALabels != nil {
 		gaLabelsMap = parameters.Private.GetMapOfGALabels()
 	}
 	if justification, found := gaLabelsMap["justification"]; found {
-		metadataSet := khictx.MustGetValue(ctx, inspectioncontract.InspectionRunMetadata)
-		formFields, found := typedmap.Get(metadataSet, form_metadata.FormFieldSetMetadataKey)
+		metadataSet := khictx.MustGetValue(ctx, inspection_contract.InspectionRunMetadata)
+		formFields, found := typedmap.Get(metadataSet, inspectionmetadata.FormFieldSetMetadataKey)
 		if !found {
 			return "", fmt.Errorf("failed to get form fields")
 		}
-		formFields.SetField(form_metadata.TextParameterFormField{
-			ParameterFormFieldBase: form_metadata.ParameterFormFieldBase{
+		formFields.SetField(inspectionmetadata.TextParameterFormField{
+			ParameterFormFieldBase: inspectionmetadata.ParameterFormFieldBase{
 				ID:       private_taskid.JustificationFormTaskID.ReferenceIDString(),
 				Priority: math.MaxInt32,
-				Type:     form_metadata.Text,
+				Type:     inspectionmetadata.Text,
 				Label:    "Justification",
-				HintType: form_metadata.None,
+				HintType: inspectionmetadata.None,
 			},
 			Readonly: true,
 			Default:  justification,
@@ -66,16 +65,16 @@ var JustificationFormTask = inspection_task.NewInspectionTask(private_taskid.Jus
 	return "", nil
 },
 	availableForAllGCPInspectionTypes,
-	inspection_task.NewRequiredTaskLabel())
+	inspection_contract.NewRequiredTaskLabel())
 
-var FilenameHeaderMetadataGeneratorTask = inspection_task.NewInspectionTask(private_taskid.FileNameHeaderMetadataGeneratorTask, []taskid.UntypedTaskReference{
+var FilenameHeaderMetadataGeneratorTask = inspectiontaskbase.NewInspectionTask(private_taskid.FileNameHeaderMetadataGeneratorTask, []taskid.UntypedTaskReference{
 	private_taskid.JustificationFormTaskID.Ref(),
 	gcp_task.InputClusterNameTaskID.Ref(),
 	gcp_task.InputEndTimeTaskID.Ref(),
 	gcp_task.InputStartTimeTaskID.Ref(),
-}, func(ctx context.Context, taskMode inspectioncontract.InspectionTaskModeType) (struct{}, error) {
-	metadataSet := khictx.MustGetValue(ctx, inspectioncontract.InspectionRunMetadata)
-	header := typedmap.GetOrDefault(metadataSet, header.HeaderMetadataKey, &header.Header{})
+}, func(ctx context.Context, taskMode inspection_contract.InspectionTaskModeType) (struct{}, error) {
+	metadataSet := khictx.MustGetValue(ctx, inspection_contract.InspectionRunMetadata)
+	header := typedmap.GetOrDefault(metadataSet, inspectionmetadata.HeaderMetadataKey, &inspectionmetadata.HeaderMetadata{})
 
 	clusterName := coretask.GetTaskResult(ctx, gcp_task.InputClusterNameTaskID.Ref())
 	endTime := coretask.GetTaskResult(ctx, gcp_task.InputEndTimeTaskID.Ref())
@@ -86,4 +85,4 @@ var FilenameHeaderMetadataGeneratorTask = inspection_task.NewInspectionTask(priv
 	return struct{}{}, nil
 },
 	availableForAllGCPInspectionTypes,
-	inspection_task.NewRequiredTaskLabel())
+	inspection_contract.NewRequiredTaskLabel())

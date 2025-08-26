@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/token"
-	"github.com/GoogleCloudPlatform/khi/pkg/popup"
 	privateParameters "github.com/GoogleCloudPlatform/khi/pkg/private/parameters"
+	"github.com/GoogleCloudPlatform/khi/pkg/server/popup"
 )
 
 type IAMTokenResolverPopupForm struct {

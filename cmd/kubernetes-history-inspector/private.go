@@ -46,7 +46,7 @@ func init() {
 
 	parameters.AddStore(privateParameters.Private)
 
-	taskSetRegistrer = append(taskSetRegistrer, task.PrepareInspectionServer)
+	taskSetRegistrer = append(taskSetRegistrer, task.Register)
 
 	privateIndex.RegisterAll()
 }
