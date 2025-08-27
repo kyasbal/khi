@@ -17,13 +17,13 @@ package lifecycle
 import (
 	"os"
 
+	googlecloudapi "github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/errorreport"
 	"github.com/GoogleCloudPlatform/khi/pkg/lifecycle"
 	"github.com/GoogleCloudPlatform/khi/pkg/private/analytics"
 	"github.com/GoogleCloudPlatform/khi/pkg/private/analytics/types"
 	"github.com/GoogleCloudPlatform/khi/pkg/private/api/iamtoken"
 	"github.com/GoogleCloudPlatform/khi/pkg/private/parameters"
-	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/api"
 )
 
 // NewAnalyticsLifecycleHandler returns a new LifecycleEventHandler to report analytics events on KHI lifecycle event.
@@ -76,8 +76,8 @@ func NewIAMTokenSetupLifecycleHandler() *lifecycle.LifecycleEventHandler {
 	return &lifecycle.LifecycleEventHandler{
 		OnInit: func() {
 			if *parameters.Private.InspectionMode {
-				api.DefaultGCPClientFactory.RegisterHeaderProvider(iamtoken.NewHeaderProvider(iamtoken.DefaultIAMTokenStore))
-				api.DefaultGCPClientFactory.RegisterRefreshableTokenStore(iamtoken.DefaultIAMTokenStore)
+				googlecloudapi.DefaultGCPClientFactory.RegisterHeaderProvider(iamtoken.NewHeaderProvider(iamtoken.DefaultIAMTokenStore))
+				googlecloudapi.DefaultGCPClientFactory.RegisterRefreshableTokenStore(iamtoken.DefaultIAMTokenStore)
 			}
 		},
 	}

@@ -20,6 +20,13 @@ steps:
       - -c
       - |
         gcloud auth print-access-token >> ./.token
+  - id: backend-generate
+    name: golang:1.24
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        make generate-backend
   - id: test go
     name: golang:1.24
     entrypoint: /bin/bash
@@ -36,6 +43,7 @@ steps:
         rm ./.token
         exit "$test_exit_code"
     waitFor:
+      - "backend-generate"
       - "get gcloud token"
   - name: golang:1.24
     entrypoint: /bin/bash
@@ -44,13 +52,13 @@ steps:
       - |
         make check-format-go
     waitFor:
-      - "-"
+      - "backend-generate"
   - name: 'golangci/golangci-lint:v2.1.6'
     entrypoint: 'golangci-lint'
     args: ['run', '--config=.golangci.yaml']
     id: 'Run-golangci-lint'
     waitFor:
-      - '-'
+      - 'backend-generate'
 
 artifacts:
   objects:

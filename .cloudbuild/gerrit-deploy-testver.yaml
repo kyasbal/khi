@@ -23,6 +23,13 @@ steps:
         npm ci
     waitFor:
       - "-"
+  - id: backend-generate
+    name: golang:1.24
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        make generate-backend
   - id: generate frontend codes
     name: golang:1.24
     entrypoint: /bin/bash
@@ -51,6 +58,7 @@ steps:
       - gcr.io/khi-internal/standalone:$COMMIT_SHA
       - .
     waitFor:
+      - backend-generate
       - build web for internal version
   - id: build web for internal khi-ro version
     name: node:20
@@ -60,6 +68,7 @@ steps:
       - |
         make build-web-internal-khi-ro
     waitFor:
+      - backend-generate
       - build test version container # This overwrite the result from build web. Thus it can't be run parallel with building container
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: /bin/bash

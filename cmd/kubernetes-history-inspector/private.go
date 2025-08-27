@@ -27,7 +27,6 @@ import (
 	privateLifecycle "github.com/GoogleCloudPlatform/khi/pkg/private/lifecycle"
 	privateParameters "github.com/GoogleCloudPlatform/khi/pkg/private/parameters"
 	privateIndex "github.com/GoogleCloudPlatform/khi/pkg/private/server/index"
-	"github.com/GoogleCloudPlatform/khi/pkg/private/task"
 )
 
 func init() {
@@ -45,8 +44,6 @@ func init() {
 	lifecycle.Default.AddHandler(privateLifecycle.NewErrorReportLifecycleHandler())
 
 	parameters.AddStore(privateParameters.Private)
-
-	taskSetRegistrer = append(taskSetRegistrer, task.Register)
 
 	privateIndex.RegisterAll()
 }
