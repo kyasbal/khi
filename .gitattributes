@@ -7,6 +7,7 @@ Dockerfile-analytics merge=ours
 cmd/analytics merge=ours
 cmd/kubernetes-history-inspector/private.go merge=ours
 pkg/private merge=ours
+pkg/task/inspection/private* merge=ours
 scripts/private merge=ours
 scripts/make/private.mk merge=ours
 web/src/environments/environment.*-internal*.ts merge=ours
