@@ -17,3 +17,4 @@ nodePool:
         strategy: SURGE
     version: 1.29.6
 parent: projects/your-project-id/locations/us-central1-a/clusters/gke-basic-1
+

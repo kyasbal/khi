@@ -24,3 +24,4 @@ notificationConfig: {}
 releaseChannel: {}
 shieldedNodes: {}
 subnetwork: projects/project-id/regions/us-central1/subnetworks/gke-basic-1-subnet
+

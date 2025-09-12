@@ -21,15 +21,18 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	history_test "github.com/GoogleCloudPlatform/khi/pkg/model/history/test"
 	"github.com/GoogleCloudPlatform/khi/pkg/testutil"
 	parser_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/parser"
-	"github.com/google/go-cmp/cmp"
+
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestGkeAuditLogParser_ClusterCreationStartLog(t *testing.T) {
 	userAccountName := "user@example.com"
 	operationId := "operation-1726191072114-d3db4945-ad7b-4fff-aff7-55a867e4bc54"
+	clusterResourcePath := resourcepath.Cluster("gke-basic-1")
+	operationResourcePath := resourcepath.Operation(clusterResourcePath, "CreateCluster", operationId)
 
 	cs, err := parser_test.ParseFromYamlLogFile(
 		"test/logs/gke_audit/cluster_creation_started.yaml",
@@ -39,38 +42,32 @@ func TestGkeAuditLogParser_ClusterCreationStartLog(t *testing.T) {
 		t.Errorf("got error %v, want nil", err)
 	}
 
-	gotRevisions := cs.GetRevisions(resourcepath.Cluster("gke-basic-1"))
-	wantRevisions := []*history.StagingResourceRevision{
-		{
-			Verb:       enum.RevisionVerbCreate,
-			State:      enum.RevisionStateProvisioning,
-			Requestor:  userAccountName,
-			ChangeTime: testutil.MustParseTimeRFC3339("2024-01-01T01:05:00Z"),
-		},
+	wantClusterRevision := &history.StagingResourceRevision{
+		Verb:       enum.RevisionVerbCreate,
+		State:      enum.RevisionStateProvisioning,
+		Requestor:  userAccountName,
+		ChangeTime: testutil.MustParseTimeRFC3339("2024-01-01T01:05:00Z"),
 	}
-	if diff := cmp.Diff(gotRevisions, wantRevisions, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
-	}
-	testutil.VerifyWithGolden(t, "cluster-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, clusterResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, clusterResourcePath, wantClusterRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, clusterResourcePath, "cluster-body")
 
-	gotRevisions = cs.GetRevisions(resourcepath.Operation(resourcepath.Cluster("gke-basic-1"), "CreateCluster", operationId))
-	wantRevisions = []*history.StagingResourceRevision{
-		{
-			Verb:       enum.RevisionVerbOperationStart,
-			State:      enum.RevisionStateOperationStarted,
-			Requestor:  userAccountName,
-			ChangeTime: testutil.MustParseTimeRFC3339("2024-01-01T01:05:00Z"),
-		},
+	wantOperationRevision := &history.StagingResourceRevision{
+		Verb:       enum.RevisionVerbOperationStart,
+		State:      enum.RevisionStateOperationStarted,
+		Requestor:  userAccountName,
+		ChangeTime: testutil.MustParseTimeRFC3339("2024-01-01T01:05:00Z"),
 	}
-	if diff := cmp.Diff(gotRevisions, wantRevisions, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
-	}
-	testutil.VerifyWithGolden(t, "operation-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, operationResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, operationResourcePath, wantOperationRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, operationResourcePath, "operation-body")
 }
 
 func TestGkeAuditLogParser_ClusterCreationFinishedLog(t *testing.T) {
 	userAccountName := "user@example.com"
 	operationId := "operation-1726191072114-d3db4945-ad7b-4fff-aff7-55a867e4bc54"
+	clusterResourcePath := resourcepath.Cluster("gke-basic-1")
+	operationResourcePath := resourcepath.Operation(clusterResourcePath, "CreateCluster", operationId)
 
 	cs, err := parser_test.ParseFromYamlLogFile(
 		"test/logs/gke_audit/cluster_creation_started.yaml",
@@ -79,34 +76,32 @@ func TestGkeAuditLogParser_ClusterCreationFinishedLog(t *testing.T) {
 		t.Errorf("got error %v, want nil", err)
 	}
 
-	gotRevisions := cs.GetRevisions(resourcepath.Cluster("gke-basic-1"))
-	wantRevision := []*history.StagingResourceRevision{{
+	wantClusterRevision := &history.StagingResourceRevision{
 		Verb:       enum.RevisionVerbCreate,
 		State:      enum.RevisionStateProvisioning,
 		Requestor:  userAccountName,
 		ChangeTime: testutil.MustParseTimeRFC3339("2024-01-01T01:05:00Z"),
-	}}
-	if diff := cmp.Diff(gotRevisions, wantRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
 	}
-	testutil.VerifyWithGolden(t, "cluster-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, clusterResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, clusterResourcePath, wantClusterRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, clusterResourcePath, "cluster-body")
 
-	gotRevisions = cs.GetRevisions(resourcepath.Operation(resourcepath.Cluster("gke-basic-1"), "CreateCluster", operationId))
-	wantRevision = []*history.StagingResourceRevision{{
+	wantOperationRevision := &history.StagingResourceRevision{
 		Verb:       enum.RevisionVerbOperationStart,
 		State:      enum.RevisionStateOperationStarted,
 		Requestor:  userAccountName,
 		ChangeTime: testutil.MustParseTimeRFC3339("2024-01-01T01:05:00Z"),
-	}}
-	if diff := cmp.Diff(gotRevisions, wantRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
 	}
-	testutil.VerifyWithGolden(t, "operation-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, operationResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, operationResourcePath, wantOperationRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, operationResourcePath, "operation-body")
 }
 
 func TestGkeAuditLogParser_ClusterDeletionStartLog(t *testing.T) {
 	userAccountName := "user@example.com"
 	operationId := "operation-1726199159930-7409b104-8654-4667-b477-4ce504d09bea"
+	clusterResourcePath := resourcepath.Cluster("gke-basic-1")
+	operationResourcePath := resourcepath.Operation(clusterResourcePath, "DeleteCluster", operationId)
 
 	cs, err := parser_test.ParseFromYamlLogFile(
 		"test/logs/gke_audit/cluster_deletion_started.yaml",
@@ -116,36 +111,33 @@ func TestGkeAuditLogParser_ClusterDeletionStartLog(t *testing.T) {
 		t.Errorf("got error %v, want nil", err)
 	}
 
-	gotRevisions := cs.GetRevisions(resourcepath.Cluster("gke-basic-1"))
-	wantRevisions := []*history.StagingResourceRevision{
-		{
-			State:      enum.RevisionStateDeleting,
-			Verb:       enum.RevisionVerbDelete,
-			Requestor:  userAccountName,
-			ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
-		}}
-	if diff := cmp.Diff(gotRevisions, wantRevisions, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
+	wantClusterRevision := &history.StagingResourceRevision{
+		State:      enum.RevisionStateDeleting,
+		Verb:       enum.RevisionVerbDelete,
+		Requestor:  userAccountName,
+		ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
 	}
-	testutil.VerifyWithGolden(t, "cluster-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, clusterResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, clusterResourcePath, wantClusterRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, clusterResourcePath, "cluster-body")
 
-	gotRevisions = cs.GetRevisions(resourcepath.Operation(resourcepath.Cluster("gke-basic-1"), "DeleteCluster", operationId))
-	wantRevisions = []*history.StagingResourceRevision{
-		{
-			Verb:       enum.RevisionVerbOperationStart,
-			State:      enum.RevisionStateOperationStarted,
-			Requestor:  userAccountName,
-			ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
-		}}
-	if diff := cmp.Diff(gotRevisions, wantRevisions, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
+	wantOperationRevision := &history.StagingResourceRevision{
+		Verb:       enum.RevisionVerbOperationStart,
+		State:      enum.RevisionStateOperationStarted,
+		Requestor:  userAccountName,
+		ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
 	}
-	testutil.VerifyWithGolden(t, "operation-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, operationResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, operationResourcePath, wantOperationRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, operationResourcePath, "operation-body")
 }
 
 func TestGkeAuditLogParser_ClusterDeletionFinishedLog(t *testing.T) {
 	operationId := "operation-1726199159930-7409b104-8654-4667-b477-4ce504d09bea"
 	userAccountName := "unknown"
+	clusterResourcePath := resourcepath.Cluster("gke-basic-1")
+	operationResourcePath := resourcepath.Operation(clusterResourcePath, "DeleteCluster", operationId)
+
 	cs, err := parser_test.ParseFromYamlLogFile(
 		"test/logs/gke_audit/cluster_deletion_finished.yaml",
 		&gkeAuditLogParser{},
@@ -154,36 +146,32 @@ func TestGkeAuditLogParser_ClusterDeletionFinishedLog(t *testing.T) {
 		t.Errorf("got error %v, want nil", err)
 	}
 
-	gotRevisions := cs.GetRevisions(resourcepath.Cluster("gke-basic-1"))
-	wantRevisions := []*history.StagingResourceRevision{
-		{
-			Verb:       enum.RevisionVerbDelete,
-			State:      enum.RevisionStateDeleted,
-			Requestor:  userAccountName,
-			ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
-		}}
-	if diff := cmp.Diff(gotRevisions, wantRevisions, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
+	wantClusterRevision := &history.StagingResourceRevision{
+		Verb:       enum.RevisionVerbDelete,
+		State:      enum.RevisionStateDeleted,
+		Requestor:  userAccountName,
+		ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
 	}
-	testutil.VerifyWithGolden(t, "cluster-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, clusterResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, clusterResourcePath, wantClusterRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, clusterResourcePath, "cluster-body")
 
-	gotRevisions = cs.GetRevisions(resourcepath.Operation(resourcepath.Cluster("gke-basic-1"), "DeleteCluster", operationId))
-	wantRevisions = []*history.StagingResourceRevision{
-		{
-			Verb:       enum.RevisionVerbOperationFinish,
-			State:      enum.RevisionStateOperationFinished,
-			Requestor:  userAccountName,
-			ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
-		}}
-	if diff := cmp.Diff(gotRevisions, wantRevisions, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
+	wantOperationRevision := &history.StagingResourceRevision{
+		Verb:       enum.RevisionVerbOperationFinish,
+		State:      enum.RevisionStateOperationFinished,
+		Requestor:  userAccountName,
+		ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
 	}
-	testutil.VerifyWithGolden(t, "operation-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, operationResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, operationResourcePath, wantOperationRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, operationResourcePath, "operation-body")
 }
 
 func TestGkeAuditLogParser_NodepoolCreationStartLog(t *testing.T) {
 	userAccountName := "user@example.com"
 	operationId := "operation-1726191716103-f4072772-f902-453d-8776-b69047cebae6"
+	nodepoolResourcePath := resourcepath.Nodepool("gke-basic-1", "default")
+	operationResourcePath := resourcepath.Operation(nodepoolResourcePath, "CreateNodePool", operationId)
 
 	cs, err := parser_test.ParseFromYamlLogFile(
 		"test/logs/gke_audit/nodepool_creation_started.yaml",
@@ -193,36 +181,32 @@ func TestGkeAuditLogParser_NodepoolCreationStartLog(t *testing.T) {
 		t.Errorf("got error %v, want nil", err)
 	}
 
-	gotRevisions := cs.GetRevisions(resourcepath.Nodepool("gke-basic-1", "default"))
-	wantRevisions := []*history.StagingResourceRevision{
-		{
-			Verb:       enum.RevisionVerbCreate,
-			State:      enum.RevisionStateProvisioning,
-			Requestor:  userAccountName,
-			ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
-		}}
-	if diff := cmp.Diff(gotRevisions, wantRevisions, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
+	wantNodepoolRevision := &history.StagingResourceRevision{
+		Verb:       enum.RevisionVerbCreate,
+		State:      enum.RevisionStateProvisioning,
+		Requestor:  userAccountName,
+		ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
 	}
-	testutil.VerifyWithGolden(t, "nodepool-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, nodepoolResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, nodepoolResourcePath, wantNodepoolRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, nodepoolResourcePath, "nodepool-body")
 
-	gotRevisions = cs.GetRevisions(resourcepath.Operation(resourcepath.Nodepool("gke-basic-1", "default"), "CreateNodePool", operationId))
-	wantRevisions = []*history.StagingResourceRevision{
-		{
-			Verb:       enum.RevisionVerbOperationStart,
-			State:      enum.RevisionStateOperationStarted,
-			Requestor:  userAccountName,
-			ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
-		}}
-	if diff := cmp.Diff(gotRevisions, wantRevisions, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
+	wantOperationRevision := &history.StagingResourceRevision{
+		Verb:       enum.RevisionVerbOperationStart,
+		State:      enum.RevisionStateOperationStarted,
+		Requestor:  userAccountName,
+		ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
 	}
-	testutil.VerifyWithGolden(t, "operation-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, operationResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, operationResourcePath, wantOperationRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, operationResourcePath, "operation-body")
 }
 
 func TestGkeAuditLogParser_NodepoolCreationFinishedLog(t *testing.T) {
 	userAccountName := "unknown"
 	operationId := "operation-1726191716103-f4072772-f902-453d-8776-b69047cebae6"
+	nodepoolResourcePath := resourcepath.Nodepool("gke-basic-1", "default")
+	operationResourcePath := resourcepath.Operation(nodepoolResourcePath, "CreateNodePool", operationId)
 
 	cs, err := parser_test.ParseFromYamlLogFile(
 		"test/logs/gke_audit/nodepool_creation_finished.yaml",
@@ -232,36 +216,32 @@ func TestGkeAuditLogParser_NodepoolCreationFinishedLog(t *testing.T) {
 		t.Errorf("got error %v, want nil", err)
 	}
 
-	gotRevisions := cs.GetRevisions(resourcepath.Nodepool("gke-basic-1", "default"))
-	wantRevisions := []*history.StagingResourceRevision{
-		{
-			Verb:       enum.RevisionVerbCreate,
-			State:      enum.RevisionStateExisting,
-			Requestor:  userAccountName,
-			ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
-		}}
-	if diff := cmp.Diff(gotRevisions, wantRevisions, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
+	wantNodepoolRevision := &history.StagingResourceRevision{
+		Verb:       enum.RevisionVerbCreate,
+		State:      enum.RevisionStateExisting,
+		Requestor:  userAccountName,
+		ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
 	}
-	testutil.VerifyWithGolden(t, "nodepool-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, nodepoolResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, nodepoolResourcePath, wantNodepoolRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, nodepoolResourcePath, "nodepool-body")
 
-	gotRevisions = cs.GetRevisions(resourcepath.Operation(resourcepath.Nodepool("gke-basic-1", "default"), "CreateNodePool", operationId))
-	wantRevisions = []*history.StagingResourceRevision{
-		{
-			Verb:       enum.RevisionVerbOperationFinish,
-			State:      enum.RevisionStateOperationFinished,
-			Requestor:  userAccountName,
-			ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
-		}}
-	if diff := cmp.Diff(gotRevisions, wantRevisions, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
+	wantOperationRevision := &history.StagingResourceRevision{
+		Verb:       enum.RevisionVerbOperationFinish,
+		State:      enum.RevisionStateOperationFinished,
+		Requestor:  userAccountName,
+		ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
 	}
-	testutil.VerifyWithGolden(t, "operation-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, operationResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, operationResourcePath, wantOperationRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, operationResourcePath, "operation-body")
 }
 
 func TestGkeAuditLogParser_NodepoolDeletionStartLog(t *testing.T) {
 	userAccountName := "user@example.com"
 	operationId := "operation-1726191433631-f35aa16e-345f-4a0f-8091-ec613f0635c2"
+	nodepoolResourcePath := resourcepath.Nodepool("gke-basic-1", "default-pool")
+	operationResourcePath := resourcepath.Operation(nodepoolResourcePath, "DeleteNodePool", operationId)
 
 	cs, err := parser_test.ParseFromYamlLogFile(
 		"test/logs/gke_audit/nodepool_deletion_started.yaml",
@@ -271,36 +251,32 @@ func TestGkeAuditLogParser_NodepoolDeletionStartLog(t *testing.T) {
 		t.Errorf("got error %v, want nil", err)
 	}
 
-	gotRevisions := cs.GetRevisions(resourcepath.Nodepool("gke-basic-1", "default-pool"))
-	wantRevisions := []*history.StagingResourceRevision{
-		{
-			Verb:       enum.RevisionVerbDelete,
-			State:      enum.RevisionStateDeleting,
-			Requestor:  userAccountName,
-			ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
-		}}
-	if diff := cmp.Diff(gotRevisions, wantRevisions, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
+	wantNodepoolRevision := &history.StagingResourceRevision{
+		Verb:       enum.RevisionVerbDelete,
+		State:      enum.RevisionStateDeleting,
+		Requestor:  userAccountName,
+		ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
 	}
-	testutil.VerifyWithGolden(t, "nodepool-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, nodepoolResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, nodepoolResourcePath, wantNodepoolRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, nodepoolResourcePath, "nodepool-body")
 
-	gotRevisions = cs.GetRevisions(resourcepath.Operation(resourcepath.Nodepool("gke-basic-1", "default-pool"), "DeleteNodePool", operationId))
-	wantRevisions = []*history.StagingResourceRevision{
-		{
-			Verb:       enum.RevisionVerbOperationStart,
-			State:      enum.RevisionStateOperationStarted,
-			Requestor:  userAccountName,
-			ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
-		}}
-	if diff := cmp.Diff(gotRevisions, wantRevisions, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
+	wantOperationRevision := &history.StagingResourceRevision{
+		Verb:       enum.RevisionVerbOperationStart,
+		State:      enum.RevisionStateOperationStarted,
+		Requestor:  userAccountName,
+		ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
 	}
-	testutil.VerifyWithGolden(t, "operation-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, operationResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, operationResourcePath, wantOperationRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, operationResourcePath, "operation-body")
 }
 
 func TestGkeAuditLogParser_NodepoolDeletionFinishedLog(t *testing.T) {
 	userAccountName := "unknown"
 	operationId := "operation-1726191433631-f35aa16e-345f-4a0f-8091-ec613f0635c2"
+	nodepoolResourcePath := resourcepath.Nodepool("gke-basic-1", "default-pool")
+	operationResourcePath := resourcepath.Operation(nodepoolResourcePath, "DeleteNodePool", operationId)
 
 	cs, err := parser_test.ParseFromYamlLogFile(
 		"test/logs/gke_audit/nodepool_deletion_finished.yaml",
@@ -310,35 +286,30 @@ func TestGkeAuditLogParser_NodepoolDeletionFinishedLog(t *testing.T) {
 		t.Errorf("got error %v, want nil", err)
 	}
 
-	gotRevisions := cs.GetRevisions(resourcepath.Nodepool("gke-basic-1", "default-pool"))
-	wantRevisions := []*history.StagingResourceRevision{
-		{
-			Verb:       enum.RevisionVerbDelete,
-			State:      enum.RevisionStateDeleted,
-			Requestor:  userAccountName,
-			ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
-		}}
-	if diff := cmp.Diff(gotRevisions, wantRevisions, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
+	wantNodepoolRevision := &history.StagingResourceRevision{
+		Verb:       enum.RevisionVerbDelete,
+		State:      enum.RevisionStateDeleted,
+		Requestor:  userAccountName,
+		ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
 	}
-	testutil.VerifyWithGolden(t, "nodepool-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, nodepoolResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, nodepoolResourcePath, wantNodepoolRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, nodepoolResourcePath, "nodepool-body")
 
-	gotRevisions = cs.GetRevisions(resourcepath.Operation(resourcepath.Nodepool("gke-basic-1", "default-pool"), "DeleteNodePool", operationId))
-	wantRevisions = []*history.StagingResourceRevision{
-		{
-			Verb:       enum.RevisionVerbOperationFinish,
-			State:      enum.RevisionStateOperationFinished,
-			Requestor:  userAccountName,
-			ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
-		}}
-	if diff := cmp.Diff(gotRevisions, wantRevisions, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body")); diff != "" {
-		t.Errorf("got revision mismatch (-want +got):\n%s", diff)
+	wantOperationRevision := &history.StagingResourceRevision{
+		Verb:       enum.RevisionVerbOperationFinish,
+		State:      enum.RevisionStateOperationFinished,
+		Requestor:  userAccountName,
+		ChangeTime: testutil.MustParseTimeRFC3339("2025-01-01T00:00:00Z"),
 	}
-	testutil.VerifyWithGolden(t, "operation-body", gotRevisions[0].Body)
+	history_test.AssertChangeSetHasCountOfRevisionsForResourcePath(t, cs, operationResourcePath, 1)
+	history_test.AssertChangeSetHasRevisionForResourcePath(t, cs, operationResourcePath, wantOperationRevision, cmpopts.IgnoreFields(history.StagingResourceRevision{}, "Body"))
+	history_test.AssertChangeSetHasRevisionMatchingBodyGoldensForResourcePath(t, cs, operationResourcePath, "operation-body")
 }
 
 func TestGkeAuditLogParser_ClusterCreationWithErrorLog(t *testing.T) {
 	clusterName := "p0-gke-basic-1"
+	clusterResourcePath := resourcepath.Cluster(clusterName)
 	cs, err := parser_test.ParseFromYamlLogFile(
 		"test/logs/gke_audit/cluster_creation_started_with_error.yaml",
 		&gkeAuditLogParser{},
@@ -347,12 +318,5 @@ func TestGkeAuditLogParser_ClusterCreationWithErrorLog(t *testing.T) {
 		t.Errorf("got error %v, want nil", err)
 	}
 
-	gotRevisions := cs.GetRevisions(resourcepath.Cluster(clusterName))
-	if gotRevisions != nil {
-		t.Errorf("got revision %v, want nil", gotRevisions)
-	}
-	gotEvents := cs.GetEvents(resourcepath.Cluster(clusterName))
-	if len(gotEvents) != 1 {
-		t.Errorf("got event count %d, want 1", len(gotEvents))
-	}
+	history_test.AssertChangeSetHasEventForResourcePath(t, cs, clusterResourcePath)
 }
