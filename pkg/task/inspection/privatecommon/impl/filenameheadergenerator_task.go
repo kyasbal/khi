@@ -35,4 +35,4 @@ var FilenameHeaderMetadataGeneratorTask = inspectiontaskbase.NewInspectionTask(p
 	return struct{}{}, nil
 },
 	inspectioncore_contract.InspectionTypeLabel(googlecloudinspectiontypegroup_contract.GCPK8sClusterInspectionTypes...),
-	inspectioncore_contract.NewRequiredTaskLabel())
+	coretask.NewRequiredTaskLabel())
