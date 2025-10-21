@@ -1,6 +1,9 @@
 package privatecommon_contract
 
-import "github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+import (
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+)
 
 const PrivateCommonTaskIDPrefix = "private.khi.google.com/"
 
@@ -9,3 +12,5 @@ var JustificationFormTaskID = taskid.NewDefaultImplementationID[string](PrivateC
 
 // FileNameHeaderMetadataGeneratorTask is a task for generating the default file name of downloaded file in the header metadata.
 var FileNameHeaderMetadataGeneratorTask = taskid.NewDefaultImplementationID[struct{}](PrivateCommonTaskIDPrefix + "private/header-metadata-filename")
+
+var APIClientCallOptionsInjectorTaskOverrideID = taskid.NewImplementationID(googlecloudcommon_contract.APIClientCallOptionsInjectorTaskID.Ref(), "private")
