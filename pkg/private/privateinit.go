@@ -3,16 +3,21 @@ package private
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/errorreport"
 	coreinit "github.com/GoogleCloudPlatform/khi/pkg/core/init"
 	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
 	"github.com/GoogleCloudPlatform/khi/pkg/lifecycle"
 	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
+	"github.com/GoogleCloudPlatform/khi/pkg/private/api/iamtoken"
 	privatelifecycle "github.com/GoogleCloudPlatform/khi/pkg/private/lifecycle"
 	privateparameters "github.com/GoogleCloudPlatform/khi/pkg/private/parameters"
+	privateserver "github.com/GoogleCloudPlatform/khi/pkg/private/server"
 	"github.com/GoogleCloudPlatform/khi/pkg/private/server/index"
 	"github.com/GoogleCloudPlatform/khi/pkg/server"
+	privatecommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecommon/contract"
 )
 
 func init() {
@@ -22,6 +27,7 @@ func init() {
 }
 
 type privateInitExtension struct {
+	iamTokenInjector *iamtoken.IAMTokenCallOptionInjectorOption
 }
 
 // BeforeAll implements coreinit.InitExtension.
@@ -51,17 +57,30 @@ func (p *privateInitExtension) AfterParsingParameters() error {
 			errorreport.DefaultErrorReporter.SetMetadataEntry(key, value)
 		}
 	}
+
+	if privateparameters.Private.InspectionMode != nil && *privateparameters.Private.InspectionMode {
+		iamToken := *privateparameters.Private.IAMToken
+		p.iamTokenInjector = iamtoken.New(iamToken)
+	}
 	return nil
 }
 
 // ConfigureInspectionTaskServer implements coreinit.InitExtension.
 func (p *privateInitExtension) ConfigureInspectionTaskServer(taskServer *coreinspection.InspectionTaskServer) error {
+	if privateparameters.Private.InspectionMode != nil && *privateparameters.Private.InspectionMode {
+		taskServer.AddRunContextOption(coreinspection.RunContextOptionArrayElementFromValue[googlecloud.CallOptionInjectorOption](privatecommon_contract.APICallOptionsInjectorContextKey, p.iamTokenInjector))
+	}
 	return nil
 }
 
 // ConfigureKHIWebServerFactory implements coreinit.InitExtension.
 func (p *privateInitExtension) ConfigureKHIWebServerFactory(serverFactory *server.ServerFactory) error {
 	index.RegisterAll()
+
+	if privateparameters.Private.InspectionMode != nil && *privateparameters.Private.InspectionMode {
+		basePath := strings.TrimSuffix(*parameters.Server.BasePath, "/")
+		serverFactory.AddOptions(privateserver.NewPrivateServerOption(basePath, p.iamTokenInjector))
+	}
 	return nil
 }
 

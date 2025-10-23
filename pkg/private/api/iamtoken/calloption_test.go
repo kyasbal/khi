@@ -1,43 +1,92 @@
 package iamtoken
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
 	"google.golang.org/grpc/metadata"
 )
 
 func TestIamTokenCallOptionInjectorOption_ApplyToCallContext(t *testing.T) {
-	const token = "test-token"
-	option := &iamTokenCallOptionInjectorOption{token: token}
-	ctx := context.Background()
-
-	newCtx := option.ApplyToCallContext(ctx, nil)
-
-	md, ok := metadata.FromOutgoingContext(newCtx)
-	if !ok {
-		t.Fatal("metadata not found in context")
+	const defaultToken = "test-default-iam-token"
+	testCases := []struct {
+		desc      string
+		prepare   func() *IAMTokenCallOptionInjectorOption
+		container googlecloud.ResourceContainer
+		wantToken string
+	}{
+		{
+			desc: "from default token",
+			prepare: func() *IAMTokenCallOptionInjectorOption {
+				return New(defaultToken)
+			},
+			container: googlecloud.Project("foo"),
+			wantToken: defaultToken,
+		},
+		{
+			desc: "from container specific token",
+			prepare: func() *IAMTokenCallOptionInjectorOption {
+				option := New(defaultToken)
+				option.SetTokenFor(googlecloud.Project("foo"), "foo-token")
+				return option
+			},
+			container: googlecloud.Project("foo"),
+			wantToken: "foo-token",
+		},
+		{
+			desc: "fallback to default token",
+			prepare: func() *IAMTokenCallOptionInjectorOption {
+				option := New(defaultToken)
+				option.SetTokenFor(googlecloud.Project("bar"), "bar-token")
+				return option
+			},
+			container: googlecloud.Project("foo"),
+			wantToken: defaultToken,
+		},
+		{
+			desc: "nil container",
+			prepare: func() *IAMTokenCallOptionInjectorOption {
+				return New(defaultToken)
+			},
+			container: nil, // Default project just for getting locations...etc not different by projects
+			wantToken: defaultToken,
+		},
 	}
+	for _, tc := range testCases {
+		option := tc.prepare()
+		t.Run("ApplyToCallContext", func(t *testing.T) {
+			t.Run(tc.desc, func(t *testing.T) {
+				ctx := t.Context()
+				ctx = option.ApplyToCallContext(ctx, tc.container)
 
-	tokens := md.Get(iamTokenKey)
-	if len(tokens) != 1 {
-		t.Fatalf("expected 1 token, got %d", len(tokens))
-	}
+				md, ok := metadata.FromOutgoingContext(ctx)
+				if !ok {
+					t.Fatal("metadata not found in context")
+				}
 
-	if tokens[0] != token {
-		t.Errorf("expected token %q, got %q", token, tokens[0])
-	}
-}
+				tokens := md.Get(iamTokenKey)
+				if len(tokens) != 1 {
+					t.Fatalf("expected 1 token, got %d", len(tokens))
+				}
 
-func TestIamTokenCallOptionInjectorOption_ApplyToRawHTTPHeader(t *testing.T) {
-	const token = "test-token"
-	option := &iamTokenCallOptionInjectorOption{token: token}
-	header := http.Header{}
+				if tokens[0] != tc.wantToken {
+					t.Errorf("expected tc.wantToken %q, got %q", tc.wantToken, tokens[0])
+				}
+			})
+		})
 
-	option.ApplyToRawHTTPHeader(header, nil)
+		t.Run("ApplyToRawHTTPHeader", func(t *testing.T) {
+			t.Run(tc.desc, func(t *testing.T) {
+				header := http.Header{}
 
-	if got := header.Get(iamTokenKey); got != token {
-		t.Errorf("expected token %q, got %q", token, got)
+				option.ApplyToRawHTTPHeader(header, tc.container)
+
+				if got := header.Get(iamTokenKey); got != tc.wantToken {
+					t.Errorf("expected token %q, got %q", tc.wantToken, got)
+				}
+			})
+		})
+
 	}
 }
