@@ -2,7 +2,6 @@ package iamtoken
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
@@ -41,31 +40,19 @@ func (o *IAMTokenCallOptionInjectorOption) ApplyToRawHTTPHeader(header http.Head
 
 // SetTokenFor sets the IAM token for the given container.
 func (o *IAMTokenCallOptionInjectorOption) SetTokenFor(container googlecloud.ResourceContainer, token string) {
-	typeddict.Set(o.containerSpecificTokens, containerIdentifier(container), token)
+	typeddict.Set(o.containerSpecificTokens, container.Identifier(), token)
 }
 
 func (o *IAMTokenCallOptionInjectorOption) getTokenFor(container googlecloud.ResourceContainer) string {
 	if container == nil {
 		return o.defaultToken
 	}
-	ci := containerIdentifier(container)
+	ci := container.Identifier()
 	token, found := typeddict.Get(o.containerSpecificTokens, ci)
 	if !found {
 		return o.defaultToken
 	}
 	return token
-}
-
-// containerIdentifier returns the string representing the container.
-// TODO: This must be defined in googlecloud.ResourceContainer interface directly. Replace this implementatation with the method after I implement it on OSS side.
-func containerIdentifier(container googlecloud.ResourceContainer) string {
-	switch container.GetType() {
-	case googlecloud.ResourceContainerProject:
-		projectContainer := container.(googlecloud.ProjectResourceContainer)
-		return fmt.Sprintf("projects/%s", projectContainer.ProjectID())
-	default:
-		return ""
-	}
 }
 
 var _ googlecloud.CallOptionInjectorOption = (*IAMTokenCallOptionInjectorOption)(nil)

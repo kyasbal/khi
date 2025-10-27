@@ -9,6 +9,5 @@ func Register(inspectionServer coreinspection.InspectionTaskRegistry) error {
 	return coretask.RegisterTasks(inspectionServer,
 		FilenameHeaderMetadataGeneratorTask,
 		JustificationFormTask,
-		APICallOptionsInjectorTask,
 	)
 }

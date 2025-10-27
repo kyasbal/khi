@@ -17,7 +17,7 @@ import (
 	privateserver "github.com/GoogleCloudPlatform/khi/pkg/private/server"
 	"github.com/GoogleCloudPlatform/khi/pkg/private/server/index"
 	"github.com/GoogleCloudPlatform/khi/pkg/server"
-	privatecommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecommon/contract"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 )
 
 func init() {
@@ -68,7 +68,7 @@ func (p *privateInitExtension) AfterParsingParameters() error {
 // ConfigureInspectionTaskServer implements coreinit.InitExtension.
 func (p *privateInitExtension) ConfigureInspectionTaskServer(taskServer *coreinspection.InspectionTaskServer) error {
 	if privateparameters.Private.InspectionMode != nil && *privateparameters.Private.InspectionMode {
-		taskServer.AddRunContextOption(coreinspection.RunContextOptionArrayElementFromValue[googlecloud.CallOptionInjectorOption](privatecommon_contract.APICallOptionsInjectorContextKey, p.iamTokenInjector))
+		taskServer.AddRunContextOption(coreinspection.RunContextOptionArrayElementFromValue[googlecloud.CallOptionInjectorOption](googlecloudcommon_contract.APICallOptionsInjectorContextKey, p.iamTokenInjector))
 	}
 	return nil
 }
