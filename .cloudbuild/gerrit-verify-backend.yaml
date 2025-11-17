@@ -35,9 +35,9 @@ steps:
       - |
         echo "#!/bin/bash\necho \"`cat ./.token`\"" > /usr/bin/gcloud
         chmod +x /usr/bin/gcloud
-        mkdir dist
+        mkdir -p pkg/server/dist/session
         # A placeholder frontend code read from backend test
-        echo "<!--INJECT GENERATED CODE HERE FROM BACKEND-->" > ./dist/index.html
+        echo '<!--INJECT GENERATED CODE HERE FROM BACKEND-->' > ./pkg/server/dist/index.html
         GCP_ACCESS_TOKEN=`cat ./.token` make coverage-go
         test_exit_code=$?
         rm ./.token
