@@ -17,7 +17,6 @@ main: cmd/kubernetes-history-inspector
 env_variables:
   HOST: 0.0.0.0
   KHI_VIEWER_MODE: "true"
-  KHI_FRONTEND_ASSET_FOLDER: ./dist
 handlers:
   - url: "/(.*)"
     script: auto
