@@ -18,9 +18,7 @@ import { inject } from '@angular/core';
 import { URLDataOpenerExtension } from '../extension-common/extension-types/url-data-opener';
 import { GoogleDriveDataLoaderService } from './google-drive';
 
-export class GoogleDriveURLDataOpenerExtension
-  implements URLDataOpenerExtension
-{
+export class GoogleDriveURLDataOpenerExtension implements URLDataOpenerExtension {
   tryOpen(): boolean {
     if (window.location.hash.length > 1) {
       const hash = window.location.hash.substring(1);

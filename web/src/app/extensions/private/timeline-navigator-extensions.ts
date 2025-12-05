@@ -26,9 +26,7 @@ import { TimelineFilterFacade } from 'src/app/store/timeline-filter';
 /**
  * PlaybookBindingWithComponentNameAnnotation is a TimelineNavigatorExtension showing playbook link with matching `metadata.annotations."components.gke.io/component-name"` annotation.
  */
-export class PlaybookBindingWithComponentNameAnnotation
-  implements TimelineNavigatorExtension
-{
+export class PlaybookBindingWithComponentNameAnnotation implements TimelineNavigatorExtension {
   constructor(
     private readonly componentName: string,
     private readonly linkText: string,
@@ -92,9 +90,7 @@ export class EveDashboardBindingForNode implements TimelineNavigatorExtension {
   }
 }
 
-export class EveDashboardBindingForComponent
-  implements TimelineNavigatorExtension
-{
+export class EveDashboardBindingForComponent implements TimelineNavigatorExtension {
   show(timeline: ResourceTimeline): boolean {
     return (
       timeline.layer === TimelineLayer.Name &&
