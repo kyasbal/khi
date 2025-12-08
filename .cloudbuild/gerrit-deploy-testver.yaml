@@ -24,14 +24,14 @@ steps:
     waitFor:
       - "-"
   - id: backend-generate
-    name: golang:1.24
+    name: golang:1.25
     entrypoint: /bin/bash
     args:
       - -c
       - |
         make generate-backend
   - id: generate frontend codes
-    name: golang:1.24
+    name: golang:1.25
     entrypoint: /bin/bash
     args:
       - -c
