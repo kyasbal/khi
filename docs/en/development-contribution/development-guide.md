@@ -34,32 +34,32 @@ Save the following code as `.vscode/launch.json`.
 
 ```json
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Start KHI Backend",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "program": "./cmd/kubernetes-history-inspector/",
-            "cwd": "${workspaceFolder}",
-            "args": [
-                "--host",
-                "127.0.0.1",
-                "--port",
-                "8080",
-                "--frontend-asset-folder",
-                "./pkg/server/dist",
-            ],
-            "dlvLoadConfig": {
-                "followPointers": true,
-                "maxVariableRecurse": 1,
-                "maxStringLen": 100000,
-                "maxArrayValues": 64,
-                "maxStructFields": -1
-            },
-        }
-    ],
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Start KHI Backend",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "./cmd/kubernetes-history-inspector/",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8080",
+        "--frontend-asset-folder",
+        "./pkg/server/dist"
+      ],
+      "dlvLoadConfig": {
+        "followPointers": true,
+        "maxVariableRecurse": 1,
+        "maxStringLen": 100000,
+        "maxArrayValues": 64,
+        "maxStructFields": -1
+      }
+    }
+  ]
 }
 ```
 
@@ -106,8 +106,8 @@ Storybook automatically builds and serves the new build when you change the fron
 
 Several frontend codes are automativally generated from backend codes.
 
-* `/web/src/app/generated.scss`
-* `/web/src/app/generated.ts`
+- `/web/src/app/generated.scss`
+- `/web/src/app/generated.ts`
 
 These files are generated with [`scripts/frontend-codegen/main.go` Golang codes](/scripts/frontend-codegen/main.go). It reads several Golang constant arrays and generate frontend codes with templates.
 
@@ -141,14 +141,14 @@ KHI automates the container image deployment process.
 After creating a dedicated tag by creating a release on GitHub, the container will be built automatically and pushed on the repository.
 These tag creations are restricted only for our repository admins.
 
-* Pre-release
-  * Name tag with `vx.y.z-beta` then it will be deployed at the following addresses:
-    * `gcr.io/kubernetes-history-inspector/release:beta`
-    * `gcr.io/kubernetes-history-inspector/release:vx.y.z-beta`
-* Release
-  * Name tag with `vx.y.z` then it will be deployed at the following address:
-    * `gcr.io/kubernetes-history-inspector/release:vx.y.z`
-    * `gcr.io/kubernetes-history-inspector/release:latest`
+- Pre-release
+  - Name tag with `vx.y.z-beta` then it will be deployed at the following addresses:
+    - `gcr.io/kubernetes-history-inspector/release:beta`
+    - `gcr.io/kubernetes-history-inspector/release:vx.y.z-beta`
+- Release
+  - Name tag with `vx.y.z` then it will be deployed at the following address:
+    - `gcr.io/kubernetes-history-inspector/release:vx.y.z`
+    - `gcr.io/kubernetes-history-inspector/release:latest`
 
 > [!NOTE]
 > The deployment process begins after the release entry being created. It may take an hour to push the image on the repository.
