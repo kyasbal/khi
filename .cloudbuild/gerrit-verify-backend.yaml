@@ -13,13 +13,6 @@
 # limitations under the License.
 
 steps:
-  - id: get gcloud token
-    name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
-    entrypoint: /bin/bash
-    args:
-      - -c
-      - |
-        gcloud auth print-access-token >> ./.token
   - id: backend-generate
     name: golang:1.25
     entrypoint: /bin/bash
@@ -33,18 +26,12 @@ steps:
     args:
       - -c
       - |
-        echo "#!/bin/bash\necho \"`cat ./.token`\"" > /usr/bin/gcloud
-        chmod +x /usr/bin/gcloud
-        mkdir -p pkg/server/dist/session
+        mkdir -p pkg/server/dist/browser/session
         # A placeholder frontend code read from backend test
-        echo '<!--INJECT GENERATED CODE HERE FROM BACKEND-->' > ./pkg/server/dist/index.html
-        GCP_ACCESS_TOKEN=`cat ./.token` make coverage-go
-        test_exit_code=$?
-        rm ./.token
-        exit "$test_exit_code"
+        echo '<!--INJECT GENERATED CODE HERE FROM BACKEND-->' > ./pkg/server/dist/browser/index.html
+        make coverage-go
     waitFor:
       - "backend-generate"
-      - "get gcloud token"
   - name: golang:1.25
     entrypoint: /bin/bash
     args:
