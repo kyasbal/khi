@@ -13,39 +13,59 @@
 # limitations under the License.
 
 steps:
-  - id: backend-generate
-    name: golang:1.25
+  - id: npm install
+    name: node:22-trixie
     entrypoint: /bin/bash
     args:
       - -c
       - |
+        cd ./web
+        npm ci
+    waitFor:
+      - "-"
+  - id: codegen
+    name: golang:1.25-trixie
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        apt-get update && apt-get install jq -y
+        make generate-frontend
         make generate-backend
-  - id: test go
-    name: golang:1.25
+    waitFor:
+      - "npm install"
+  - id: build-web
+    name: node:22-trixie
     entrypoint: /bin/bash
     args:
       - -c
       - |
-        mkdir -p pkg/server/dist/browser/session
-        # A placeholder frontend code read from backend test
-        echo '<!--INJECT GENERATED CODE HERE FROM BACKEND-->' > ./pkg/server/dist/browser/index.html
+        make build-web
+    waitFor:
+      - codegen
+  - id: test go
+    name: golang:1.25-trixie
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
         make coverage-go
     waitFor:
-      - "backend-generate"
-  - name: golang:1.25
+      - "build-web"
+  - name: golang:1.25-trixie
     entrypoint: /bin/bash
     args:
       - -c
       - |
         make check-format-go
     waitFor:
-      - "backend-generate"
+      - "build-web"
   - name: 'golangci/golangci-lint:v2.7.1'
     entrypoint: 'golangci-lint'
     args: ['run', '--config=.golangci.yaml']
     id: 'Run-golangci-lint'
     waitFor:
-      - 'backend-generate'
+      - 'build-web'
 
 artifacts:
   objects:

@@ -14,7 +14,7 @@
 
 steps:
   - id: npm install
-    name: node:20
+    name: node:22-trixie
     entrypoint: /bin/bash
     args:
       - -c
@@ -30,20 +30,30 @@ steps:
       - -c
       - |
         apt-get update && apt-get install jq -y
-        make prepare-frontend
+        make generate-frontend
+        make generate-backend
     waitFor:
       - npm install
+  - id: build-web
+    name: node:22-trixie
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        make build-web-internal
+    waitFor:
+      - generate frontend codes
   - id: angular test
-    name: node:20
+    name: node:22-trixie
     entrypoint: /bin/bash
     args:
       - -c
       - |
         wget -nv https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        apt-get -qq update > /dev/null && apt-get -qq install -y libappindicator1 fonts-liberation jq ./google-chrome-stable_current_amd64.deb > /dev/null
+        apt-get -qq update > /dev/null && apt-get -qq install -y fonts-liberation jq ./google-chrome-stable_current_amd64.deb > /dev/null
         make coverage-web
     waitFor:
-      - generate frontend codes
+      - build-web
   - id: upload coverage result
     name: "gcr.io/cloud-builders/gcloud-slim"
     args:
@@ -53,25 +63,25 @@ steps:
     - "./web/coverage/frontend"
     - "gs://kubernetes-history-inspector_cloudbuild/artifacts/$COMMIT_SHA/frontend"
   - id: lint web
-    name: node:20
+    name: node:22-trixie
     entrypoint: /bin/bash
     args:
       - -c
       - |
         make lint-web
     waitFor:
-      - generate frontend codes
+      - build-web
   - id: check format web
-    name: node:20
+    name: node:22-trixie
     entrypoint: /bin/bash
     args:
       - -c
       - |
         make check-format-web
     waitFor:
-      - generate frontend codes
+      - build-web
   - id: build web internal
-    name: node:20
+    name: node:22-trixie
     entrypoint: /bin/bash
     args:
       - -c

@@ -14,7 +14,7 @@
 
 steps:
   - id: npm install
-    name: node:20
+    name: node:22-trixie
     entrypoint: /bin/bash
     args:
       - -c
@@ -24,18 +24,18 @@ steps:
     waitFor:
       - "-"
   - id: generate frontend codes
-    name: golang:1.25
+    name: golang:1.25-trixie
     entrypoint: /bin/bash
     args:
       - -c
       - |
         apt-get update && apt-get install jq -y
-        make prepare-frontend
+        make generate-frontend
         make generate-backend
     waitFor:
       - npm install
   - id: build web beta
-    name: node:20
+    name: node:22-trixie
     entrypoint: /bin/bash
     args:
       - -c
@@ -55,7 +55,7 @@ steps:
     waitFor:
       - build web beta
   - id: build web viewer mode
-    name: node:20
+    name: node:22-trixie
     entrypoint: /bin/bash
     args:
       - -c
