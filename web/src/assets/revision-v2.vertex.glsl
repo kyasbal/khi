@@ -3,6 +3,7 @@ precision highp float;
 precision highp int;
 
 #define MAX_REVISION_INDEX_DIGITS 5
+#define MIN_LEFT_REVISION_LOCATION -300.0
 
 #include "v2.shared.glsl"
 #include "revision-v2.shared.glsl"
@@ -51,8 +52,10 @@ void main(){
 
   // Calculate the X position and width regarding the left edge time and the duration.
   // 1. Calculate relative time difference from the viewport left edge.
-  ivec2 leftEdgeRelativeTime = ivec2(time.xy - vs.leftEdgeTime);
-  ivec2 durationTime = ivec2(time.zw - time.xy);
+  uvec2 minLeftEdgeTime = vs.leftEdgeTime - uvec2(MIN_LEFT_REVISION_LOCATION / float(vs.pixelsPerMs) / 1000.0, 1e9);
+  uvec2 cappedTime = max(time.xy, minLeftEdgeTime);
+  ivec2 leftEdgeRelativeTime = ivec2(cappedTime.xy - vs.leftEdgeTime);
+  ivec2 durationTime = ivec2(time.zw - cappedTime.xy);
   
   // 2. Convert time to screen coordinates (pixels).
   float leftEdgeXScreen = (float(leftEdgeRelativeTime.x)* 1e+3 + float(leftEdgeRelativeTime.y) * 1e-6) * vs.pixelsPerMs;
