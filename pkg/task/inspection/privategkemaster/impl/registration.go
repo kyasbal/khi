@@ -19,6 +19,34 @@ import (
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 )
 
+// Register registers the private GKE master tasks.
 func Register(inspectionServer coreinspection.InspectionTaskRegistry) error {
-	return coretask.RegisterTasks(inspectionServer)
+	return coretask.RegisterTasks(inspectionServer,
+		InputGKEMasterLogSourceTask,
+		InputPrivateGKEMasterComponentNameFilterTask,
+		listLogEntriesTask,
+		logIngesterTask,
+		CommonFieldSetReaderTask,
+		schedulerLogFilterTask,
+		schedulerLogFieldSetReaderTask,
+		schedulerGrouperTask,
+		schedulerLogToTimelineMapperTask,
+		controllerManagerLogFilterTask,
+		controllerManagerLogFieldSetReaderTask,
+		controllerManagerGrouperTask,
+		controllerManagerLogToTimelineMapperTask,
+		otherLogFilterTask,
+		otherLogFieldSetReaderTask,
+		otherGrouperTask,
+		otherLogToTimelineMapperTask,
+		KubeletLogFilterTask,
+		KubeletLogGroupTask,
+		KubeletLogLogToTimelineMapperTask,
+		ContainerdLogFilterTask,
+		ContainerdLogGroupTask,
+		ContainerIDDiscoveryTask,
+		PodSandboxIDDiscoveryTask,
+		ContainerdLogLogToTimelineMapperTask,
+		TailTask,
+	)
 }
