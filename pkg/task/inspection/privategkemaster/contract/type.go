@@ -12,16 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package privatecommon_impl
+package privategkemaster_contract
 
-import (
-	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-)
-
-func Register(inspectionServer coreinspection.InspectionTaskRegistry) error {
-	return coretask.RegisterTasks(inspectionServer,
-		FilenameHeaderMetadataGeneratorTask,
-		JustificationFormTask,
-	)
+// LogSource represents the source of the GKE Master logs.
+type LogSource struct {
+	// TenantProjectID is the project ID of the GKE Master project.
+	TenantProjectID string
+	// LogViewResourceName is the resource name of the log view.
+	LogViewResourceName string
 }

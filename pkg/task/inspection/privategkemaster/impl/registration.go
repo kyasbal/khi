@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package privatecommon_impl
+package privategkemaster_impl
 
 import (
 	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
@@ -20,8 +20,5 @@ import (
 )
 
 func Register(inspectionServer coreinspection.InspectionTaskRegistry) error {
-	return coretask.RegisterTasks(inspectionServer,
-		FilenameHeaderMetadataGeneratorTask,
-		JustificationFormTask,
-	)
+	return coretask.RegisterTasks(inspectionServer)
 }
