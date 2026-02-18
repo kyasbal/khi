@@ -1,0 +1,168 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package privategkemaster_impl
+
+import (
+	"context"
+
+	"github.com/GoogleCloudPlatform/khi/pkg/common/patternfinder"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logutil"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	googlecloudlogk8scontrolplane_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
+	privategkemaster_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privategkemaster/contract"
+)
+
+func kindToKLogFieldPair(apiVersion string, kind string, klogField string, isNamespaced bool) *googlecloudlogk8scontrolplane_contract.KindToKLogFieldPairData {
+	return &googlecloudlogk8scontrolplane_contract.KindToKLogFieldPairData{
+		APIVersion:   apiVersion,
+		KindName:     kind,
+		KLogField:    klogField,
+		IsNamespaced: isNamespaced,
+	}
+}
+
+var controllerManagerLogFilterTask = inspectiontaskbase.NewLogFilterTask(
+	privategkemaster_contract.ControllerManagerLogFilterTaskID,
+	privategkemaster_contract.CommonFieldSetReaderTaskID.Ref(),
+	func(ctx context.Context, l *log.Log) bool {
+		componentFieldSet, err := log.GetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
+		if err != nil {
+			return false
+		}
+		return componentFieldSet.PrivateGKEMasterParserType() == privategkemaster_contract.PrivateGKEMasterParserTypeControllerManager
+	},
+)
+
+var controllerManagerLogFieldSetReaderTask = inspectiontaskbase.NewFieldSetReadTask(privategkemaster_contract.ControllerManagerLogFieldSetReaderTaskID,
+	privategkemaster_contract.ControllerManagerLogFilterTaskID.Ref(),
+	[]log.FieldSetReader{
+		&googlecloudlogk8scontrolplane_contract.K8sControllerManagerComponentFieldSetReader{
+			WellKnownSourceLocationToControllerMap: map[string]string{
+				"namespace_controller.go":      "namespace-controller",
+				"resource_quota_controller.go": "resourcequota-controller",
+				"requestheader_controller.go":  "requestheader-controller",
+				"pv_protection_controller.go":  "persistentvolume-protection-controller",
+			},
+			WellKnownKindToKLogFieldPairs: []*googlecloudlogk8scontrolplane_contract.KindToKLogFieldPairData{
+				kindToKLogFieldPair("apps/v1", "deployment", "deployment", true),
+				kindToKLogFieldPair("apps/v1", "replicaset", "replicaSet", true),
+				kindToKLogFieldPair("apps/v1", "statefulset", "statefulSet", true),
+				kindToKLogFieldPair("apps/v1", "daemonset", "daemonSet", true),
+				kindToKLogFieldPair("batch/v1", "cronjob", "cronjob", true),
+				kindToKLogFieldPair("batch/v1", "job", "job", true),
+				kindToKLogFieldPair("policy/v1", "poddisruptionbudget", "podDisruptionBudget", true),
+				kindToKLogFieldPair("certificates.k8s.io/v1", "certificatesigningrequest", "csr", false),
+				kindToKLogFieldPair("core/v1", "persistentvolumeclaim", "PVC", true),
+				kindToKLogFieldPair("core/v1", "persistentvolume", "volumeName", false),
+				kindToKLogFieldPair("core/v1", "service", "service", true),
+				kindToKLogFieldPair("core/v1", "node", "node", false),
+				kindToKLogFieldPair("core/v1", "pod", "pod", true),
+				kindToKLogFieldPair("core/v1", "namespace", "namespace", false),
+			},
+			KLogParser: logutil.NewKLogTextParser(false),
+		},
+	},
+)
+
+var controllerManagerGrouperTask = inspectiontaskbase.NewLogGrouperTask(
+	privategkemaster_contract.ControllerManagerGrouperTaskID,
+	privategkemaster_contract.ControllerManagerLogFieldSetReaderTaskID.Ref(),
+	func(ctx context.Context, log *log.Log) string {
+		return "" // No grouping needed
+	},
+)
+
+var controllerManagerLogToTimelineMapperTask = inspectiontaskbase.NewLogToTimelineMapperTask[struct{}](
+	privategkemaster_contract.ControllerManagerLogToTimelineMapperTaskID,
+	&controllerManagerLogToTimelineMapperTaskSetting{
+		uidPrefixTokenCandidates: []rune{
+			'"', ' ', '\'', '=',
+		},
+	},
+)
+
+type controllerManagerLogToTimelineMapperTaskSetting struct {
+	uidPrefixTokenCandidates []rune
+}
+
+// Dependencies implements inspectiontaskbase.LogToTimelineMapper.
+func (o *controllerManagerLogToTimelineMapperTaskSetting) Dependencies() []taskid.UntypedTaskReference {
+	return []taskid.UntypedTaskReference{
+		commonlogk8sauditv2_contract.ResourceUIDPatternFinderTaskID.Ref(),
+		googlecloudk8scommon_contract.ClusterIndentityTaskID.Ref(),
+	}
+}
+
+// GroupedLogTask implements inspectiontaskbase.LogToTimelineMapper.
+func (o *controllerManagerLogToTimelineMapperTaskSetting) GroupedLogTask() taskid.TaskReference[inspectiontaskbase.LogGroupMap] {
+	return privategkemaster_contract.ControllerManagerGrouperTaskID.Ref()
+}
+
+// LogIngesterTask implements inspectiontaskbase.LogToTimelineMapper.
+func (o *controllerManagerLogToTimelineMapperTaskSetting) LogIngesterTask() taskid.TaskReference[[]*log.Log] {
+	return privategkemaster_contract.LogIngesterTaskID.Ref()
+}
+
+// ProcessLogByGroup implements inspectiontaskbase.LogToTimelineMapper.
+func (o *controllerManagerLogToTimelineMapperTaskSetting) ProcessLogByGroup(ctx context.Context, l *log.Log, cs *history.ChangeSet, builder *history.Builder, prevGroupData struct{}) (struct{}, error) {
+	finder := coretask.GetTaskResult(ctx, commonlogk8sauditv2_contract.ResourceUIDPatternFinderTaskID.Ref())
+	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIndentityTaskID.Ref())
+	masterFieldSet, err := log.GetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
+	if err != nil {
+		return struct{}{}, err
+	}
+	commonMainMessage, err := log.GetFieldSet(l, &googlecloudlogk8scontrolplane_contract.K8sControlplaneCommonMessageFieldSet{})
+	if err != nil {
+		return struct{}{}, err
+	}
+	controllerManagerFieldSet, err := log.GetFieldSet(l, &googlecloudlogk8scontrolplane_contract.K8sControllerManagerComponentFieldSet{})
+	if err != nil {
+		return struct{}{}, err
+	}
+
+	resources := patternfinder.FindAllWithStarterRunes(commonMainMessage.Message, finder, false, o.uidPrefixTokenCandidates...)
+	writtenResourcePaths := map[string]struct{}{}
+	cs.SetLogSummary(commonMainMessage.Message)
+	for _, path := range masterFieldSet.ResourcePaths(clusterIdentity.ClusterName) {
+		cs.AddEvent(path)
+	}
+
+	for _, resourcePath := range controllerManagerFieldSet.AssociatedResources {
+		cs.AddEvent(resourcePath)
+		writtenResourcePaths[resourcePath.Path] = struct{}{}
+	}
+	for _, resource := range resources {
+		path := resource.Value.ResourcePathString()
+		if _, ok := writtenResourcePaths[path]; ok {
+			continue
+		}
+		cs.AddEvent(resourcepath.ResourcePath{
+			Path:               path,
+			ParentRelationship: enum.RelationshipChild,
+		})
+		writtenResourcePaths[path] = struct{}{}
+	}
+	return struct{}{}, nil
+}
+
+var _ inspectiontaskbase.LogToTimelineMapper[struct{}] = (*controllerManagerLogToTimelineMapperTaskSetting)(nil)
