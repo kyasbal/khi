@@ -1,3 +1,17 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package private
 
 import (
@@ -60,7 +74,12 @@ func (p *privateInitExtension) AfterParsingParameters() error {
 
 	if privateparameters.Private.InspectionMode != nil && *privateparameters.Private.InspectionMode {
 		iamToken := *privateparameters.Private.IAMToken
-		p.iamTokenInjector = iamtoken.New(iamToken)
+		fixedProjectID := *parameters.Auth.FixedProjectID
+		if fixedProjectID == "" {
+			panic("fixed project ID is not set. Default IAM token must be used with fixed project ID. b/485682103")
+		}
+		p.iamTokenInjector = iamtoken.NewInjector()
+		p.iamTokenInjector.SetTokenFor(googlecloud.Project(fixedProjectID), iamToken)
 	}
 	return nil
 }

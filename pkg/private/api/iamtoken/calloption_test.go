@@ -1,3 +1,17 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package iamtoken
 
 import (
@@ -9,7 +23,6 @@ import (
 )
 
 func TestIamTokenCallOptionInjectorOption_ApplyToCallContext(t *testing.T) {
-	const defaultToken = "test-default-iam-token"
 	testCases := []struct {
 		desc      string
 		prepare   func() *IAMTokenCallOptionInjectorOption
@@ -17,17 +30,9 @@ func TestIamTokenCallOptionInjectorOption_ApplyToCallContext(t *testing.T) {
 		wantToken string
 	}{
 		{
-			desc: "from default token",
-			prepare: func() *IAMTokenCallOptionInjectorOption {
-				return New(defaultToken)
-			},
-			container: googlecloud.Project("foo"),
-			wantToken: defaultToken,
-		},
-		{
 			desc: "from container specific token",
 			prepare: func() *IAMTokenCallOptionInjectorOption {
-				option := New(defaultToken)
+				option := NewInjector()
 				option.SetTokenFor(googlecloud.Project("foo"), "foo-token")
 				return option
 			},
@@ -35,22 +40,20 @@ func TestIamTokenCallOptionInjectorOption_ApplyToCallContext(t *testing.T) {
 			wantToken: "foo-token",
 		},
 		{
-			desc: "fallback to default token",
+			desc: "no token for container",
 			prepare: func() *IAMTokenCallOptionInjectorOption {
-				option := New(defaultToken)
+				option := NewInjector()
 				option.SetTokenFor(googlecloud.Project("bar"), "bar-token")
 				return option
 			},
 			container: googlecloud.Project("foo"),
-			wantToken: defaultToken,
+			wantToken: "",
 		},
 		{
-			desc: "nil container",
-			prepare: func() *IAMTokenCallOptionInjectorOption {
-				return New(defaultToken)
-			},
-			container: nil, // Default project just for getting locations...etc not different by projects
-			wantToken: defaultToken,
+			desc:      "nil container",
+			prepare:   NewInjector,
+			container: nil,
+			wantToken: "",
 		},
 	}
 	for _, tc := range testCases {
@@ -62,10 +65,20 @@ func TestIamTokenCallOptionInjectorOption_ApplyToCallContext(t *testing.T) {
 
 				md, ok := metadata.FromOutgoingContext(ctx)
 				if !ok {
+					if tc.wantToken == "" {
+						return
+					}
 					t.Fatal("metadata not found in context")
 				}
 
 				tokens := md.Get(iamTokenKey)
+				if tc.wantToken == "" {
+					if len(tokens) != 0 {
+						t.Errorf("expected no token, got %v", tokens)
+					}
+					return
+				}
+
 				if len(tokens) != 1 {
 					t.Fatalf("expected 1 token, got %d", len(tokens))
 				}
