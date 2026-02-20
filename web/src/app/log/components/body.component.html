@@ -15,21 +15,38 @@ limitations under the License.
 -->
 
 <div class="log-body-view-root">
-  @if (logEntryObservable | async; as log) {
-    <khi-log-header [logIndex]="log.logIndex"></khi-log-header>
+  @let l = log();
+  @if (l) {
+    <khi-log-header [log]="l"></khi-log-header>
     <div class="toolbar">
-      @for (annotator of logAnnotators | async; track annotator) {
-        <ng-container
-          *ngComponentOutlet="annotator.component; inputs: annotator.inputs"
-        ></ng-container>
+      <button
+        class="toolbar-button"
+        matIconButton
+        matTooltip="Copy the log to clipboard"
+        (click)="copyLog()"
+      >
+        <mat-icon>content_paste</mat-icon>
+      </button>
+      @if (showCopyQueryButton()) {
+        <button
+          class="toolbar-button"
+          matIconButton
+          matTooltip="Copy query to clipboard"
+          (click)="copyLogQuery()"
+        >
+          <mat-icon>markdown_paste</mat-icon>
+        </button>
       }
     </div>
     <div class="log-body-container-scrollable">
       <pre
         class="log-body-container"
-      ><code [highlight]="(log.body | resolveText | async) ??''" language="yaml" lineNumbers></code></pre>
+      ><code [highlight]="(l.body | resolveText | async) ??''" language="yaml" lineNumbers></code></pre>
     </div>
   } @else {
-    <p class="empty-message">No log selected</p>
+    <div class="empty-message">
+      <mat-icon>error</mat-icon>
+      <p>No log selected</p>
+    </div>
   }
 </div>

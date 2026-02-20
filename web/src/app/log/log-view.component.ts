@@ -41,7 +41,7 @@ import { ResourceTimeline } from '../store/timeline';
 import { IconToggleButtonComponent } from './icon-toggle-button.component';
 import { CommonModule } from '@angular/common';
 import { LogViewLogLineComponent } from './log-view-log-line.component';
-import { LogBodyComponent } from './body.component';
+import { LogBodyComponent } from './components/body.component';
 import { AngularSplitModule } from 'angular-split';
 
 class LogViewScrollingStrategy extends FixedSizeVirtualScrollStrategy {

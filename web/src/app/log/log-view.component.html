@@ -61,8 +61,7 @@
       </table>
     </as-split-area>
     <as-split-area size="50">
-      <khi-log-body [logIndex]="(selectedLog | async)?.logIndex ?? 0">
-      </khi-log-body>
+      <khi-log-body [log]="(selectedLog | async) ?? null"> </khi-log-body>
     </as-split-area>
   </as-split>
 </div>

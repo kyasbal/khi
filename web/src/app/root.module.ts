@@ -63,8 +63,6 @@ import {
 import { ViewStateService } from './services/view-state.service';
 import { LOG_ANNOTATOR_RESOLVER } from './annotator/log/resolver';
 import { getDefaultLogAnnotatorResolver } from './annotator/log/default';
-import { LOG_TOOL_ANNOTATOR_RESOLVER } from './annotator/log-tool/resolver';
-import { getDefaultLogToolAnnotatorResolver } from './annotator/log-tool/default';
 import { TIMELINE_ANNOTATOR_RESOLVER } from './annotator/timeline/resolver';
 import { getDefaultTimelineAnnotatorResolver } from './annotator/timeline/default';
 import { CHANGE_PAIR_ANNOTATOR_RESOLVER } from './annotator/change-pair/resolver';
@@ -110,10 +108,6 @@ import { KHIIconRegistrationModule } from './shared/module/icon-registration.mod
     {
       provide: LOG_ANNOTATOR_RESOLVER,
       useValue: getDefaultLogAnnotatorResolver(),
-    },
-    {
-      provide: LOG_TOOL_ANNOTATOR_RESOLVER,
-      useValue: getDefaultLogToolAnnotatorResolver(),
     },
     {
       provide: TIMELINE_ANNOTATOR_RESOLVER,
