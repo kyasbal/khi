@@ -27,7 +27,7 @@ export default {
       provide: SelectionManagerService,
       useValue: {
         selectedTimeline: of({
-          resourcePath: 'v1/ConfigMap/default/my-config',
+          resourcePath: 'v1#ConfigMap#default#my-config',
         }),
         onSelectTimeline: () => {},
         onHighlightTimeline: () => {},
@@ -41,8 +41,8 @@ type Story = StoryObj<ResourceReferenceListComponent>;
 export const Default: Story = {
   args: {
     refs: [
-      { label: 'my-config of default', path: 'v1/ConfigMap/default/my-config' },
-      { label: 'my-secret of default', path: 'v1/Secret/default/my-secret' },
+      { label: 'my-config of default', path: 'v1#ConfigMap#default#my-config' },
+      { label: 'my-secret of default', path: 'v1#Secret#default#my-secret' },
     ],
   },
 };

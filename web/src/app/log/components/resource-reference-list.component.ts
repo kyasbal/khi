@@ -15,9 +15,9 @@
  */
 
 import { CommonModule } from '@angular/common';
-import { Component, input, inject } from '@angular/core';
+import { Component, input, inject, computed } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { map, shareReplay } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { SelectionManagerService } from 'src/app/services/selection-manager.service';
 
 /**
@@ -49,11 +49,15 @@ export class ResourceReferenceListComponent {
   refs = input<ResourceRefAnnotationViewModel[]>([]);
 
   /**
-   * Observable tracking the currently selected timeline path to visually indicate selection state.
+   * Signal tracking the currently selected timeline path to visually indicate selection state.
    */
-  currentSelectedTimelinePath = this.selectionManager.selectedTimeline.pipe(
-    map((t) => t?.resourcePath ?? ''),
-    shareReplay(1),
+  currentSelectedTimelinePath = computed(() => {
+    return this.selectedTimeline()?.resourcePath ?? '';
+  });
+
+  private readonly selectedTimeline = toSignal(
+    this.selectionManager.selectedTimeline,
+    { initialValue: null },
   );
 
   /**

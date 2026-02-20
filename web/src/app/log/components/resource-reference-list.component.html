@@ -17,25 +17,25 @@ limitations under the License.
 @let resolvedRefs = refs();
 @if (resolvedRefs.length > 0) {
   <div class="container">
-    @if (currentSelectedTimelinePath | async; as currentTimelinePath) {
-      <p class="label">
-        <mat-icon>link</mat-icon>Related resources ({{ resolvedRefs.length }})
-      </p>
-      <div class="path-container">
-        @for (resource of resolvedRefs; track resource.path; let i = $index) {
-          <p
-            class="path"
-            [ngClass]="{ current: currentTimelinePath === resource.path }"
-            (mouseover)="highlightResource(resource.path)"
-            (click)="selectResource(resource.path)"
+    <p class="label">
+      <mat-icon>link</mat-icon>Related resources ({{ resolvedRefs.length }})
+    </p>
+    <div class="path-container">
+      @for (resource of resolvedRefs; track resource.path; let i = $index) {
+        <p
+          class="path"
+          [ngClass]="{
+            current: currentSelectedTimelinePath() === resource.path,
+          }"
+          (mouseover)="highlightResource(resource.path)"
+          (click)="selectResource(resource.path)"
+        >
+          <span
+            ><span class="index">{{ i }}</span
+            >{{ resource.label }}</span
           >
-            <span
-              ><span class="index">{{ i }}</span
-              >{{ resource.label }}</span
-            >
-          </p>
-        }
-      </div>
-    }
+        </p>
+      }
+    </div>
   </div>
 }

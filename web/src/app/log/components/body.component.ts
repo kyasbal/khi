@@ -85,20 +85,35 @@ export class LogBodyComponent {
     },
   });
 
+  private readonly parsedLogBody = computed(() => {
+    if (!this.logBody.hasValue()) {
+      return null;
+    }
+    try {
+      return jsyaml.load(this.logBody.value()) as { [key: string]: string };
+    } catch {
+      return null;
+    }
+  });
+
+  private readonly timestampString = computed(() => {
+    const parsed = this.parsedLogBody();
+    return parsed ? (parsed['timestamp'] ?? null) : null;
+  });
+
   /**
    * Determines if the "Copy Query" button should be visible.
    * True only if a valid timestamp can be extracted from the loaded log body.
    */
   protected readonly showCopyQueryButton = computed(() => {
-    return this.getTimestampStringFromBody() !== null;
+    return this.timestampString() !== null;
   });
 
   /**
    * Copies the loaded log body text to the clipboard and displays a notification.
    */
   copyLog() {
-    const hasValue = this.logBody.hasValue();
-    if (!hasValue) {
+    if (!this.logBody.hasValue()) {
       return;
     }
     this.showCopySnackbarMessage(this.clipboard.copy(this.logBody.value()));
@@ -110,40 +125,17 @@ export class LogBodyComponent {
    */
   copyLogQuery() {
     const log = this.log();
-    if (!log) {
-      return;
-    }
-    const timestampString = this.getTimestampStringFromBody();
-    if (!timestampString) {
+    const timestampString = this.timestampString();
+    if (!log || !timestampString) {
       return;
     }
     this.showCopySnackbarMessage(
       this.clipboard.copy(`(
 -- Log query for "${log.summary}"
-insertId="${log.insertId}" 
+insertId="${log.insertId}"
 timestamp="${timestampString}"
 )`),
     );
-  }
-
-  /**
-   * Extracts the timestamp string from the loaded YAML/JSON log body.
-   * @returns The extracted timestamp string, or null if it cannot be parsed or found.
-   */
-  private getTimestampStringFromBody(): string | null {
-    const hasValue = this.logBody.hasValue();
-    const log = this.log();
-    if (!hasValue || !log) {
-      return null;
-    }
-    try {
-      const parsedLog = jsyaml.load(this.logBody.value()) as {
-        [key: string]: string;
-      };
-      return parsedLog['timestamp'] ?? null;
-    } catch {
-      return null;
-    }
   }
 
   /**
