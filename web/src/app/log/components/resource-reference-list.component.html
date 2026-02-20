@@ -14,14 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-@if (refs | async; as resolvedRefs) {
+@let resolvedRefs = refs();
+@if (resolvedRefs.length > 0) {
   <div class="container">
     @if (currentSelectedTimelinePath | async; as currentTimelinePath) {
       <p class="label">
         <mat-icon>link</mat-icon>Related resources ({{ resolvedRefs.length }})
       </p>
       <div class="path-container">
-        @for (resource of resolvedRefs; track resource; let i = $index) {
+        @for (resource of resolvedRefs; track resource.path; let i = $index) {
           <p
             class="path"
             [ngClass]="{ current: currentTimelinePath === resource.path }"

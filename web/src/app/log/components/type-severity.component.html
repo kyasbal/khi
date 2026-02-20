@@ -14,19 +14,21 @@
  limitations under the License.
 -->
 
+@let resolvedLogType = logType();
+@let resolvedSeverity = severity();
 <div class="container">
   <p
     class="log-type"
-    [ngClass]="logType"
+    [ngClass]="resolvedLogType"
     matTooltip="Type of the log. Usually it represents its source."
   >
-    Type: <span class="value">{{ logType }}</span>
+    Type: <span class="value">{{ resolvedLogType }}</span>
   </p>
-  @if (severity === "UNKNOWN") {
+  @if (resolvedSeverity === "UNKNOWN") {
     <p class="log-severity-empty"></p>
   } @else {
-    <p class="log-severity" [ngClass]="severity | lowercase">
-      Severity: <span class="value">{{ severity }}</span>
+    <p class="log-severity" [ngClass]="resolvedSeverity | lowercase">
+      Severity: <span class="value">{{ resolvedSeverity }}</span>
     </p>
   }
 </div>

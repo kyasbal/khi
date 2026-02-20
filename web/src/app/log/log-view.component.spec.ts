@@ -22,9 +22,6 @@ import {
   WindowConnectorService,
 } from '../services/frame-connection/window-connector.service';
 import { InMemoryWindowConnectionProvider } from '../services/frame-connection/window-connection-provider.service';
-import { LOG_TOOL_ANNOTATOR_RESOLVER } from '../annotator/log-tool/resolver';
-import { getDefaultLogToolAnnotatorResolver } from '../annotator/log-tool/default';
-
 describe('LogViewComponent', () => {
   let component: LogViewComponent;
   let fixture: ComponentFixture<LogViewComponent>;
@@ -36,10 +33,6 @@ describe('LogViewComponent', () => {
         {
           provide: WINDOW_CONNECTION_PROVIDER,
           useValue: new InMemoryWindowConnectionProvider(),
-        },
-        {
-          provide: LOG_TOOL_ANNOTATOR_RESOLVER,
-          useValue: getDefaultLogToolAnnotatorResolver(),
         },
       ],
     }).compileComponents();

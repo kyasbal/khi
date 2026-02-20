@@ -14,39 +14,33 @@
  * limitations under the License.
  */
 
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { AnnotationDecider } from '../annotator';
-import { LogTypeMetadata } from 'src/app/zzz-generated';
-import { LogEntry } from 'src/app/store/log';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
+/**
+ * `TypeSeverityComponent` displays a visual badge representing the severity and type of a log entry.
+ * It uses predefined CSS rules to apply semantic colors based on the severity level
+ * (e.g., info, warning, error, fatal).
+ */
 @Component({
+  selector: 'khi-type-severity',
   standalone: true,
-  templateUrl: './type-severity-annotator.component.html',
-  styleUrls: ['./type-severity-annotator.component.scss'],
+  templateUrl: './type-severity.component.html',
+  styleUrls: ['./type-severity.component.scss'],
   imports: [CommonModule, MatIconModule, MatTooltipModule],
 })
-export class TypeSeverityAnnotatorComponent {
-  @Input()
-  logType = 'N/A';
+export class TypeSeverityComponent {
+  /**
+   * The type of the log entry (e.g., 'k8s_audit', 'k8s_container').
+   * Displayed distinctly alongside the severity.
+   */
+  logType = input('N/A');
 
-  @Input()
-  severity = 'N/A';
-
-  public static inputMapper: AnnotationDecider<LogEntry> = (
-    l?: LogEntry | null,
-  ) => {
-    let logType = 'N/A';
-    if (l !== null && l !== undefined) {
-      logType = LogTypeMetadata[l.logType].label;
-    }
-    return {
-      inputs: {
-        logType: logType,
-        severity: l?.logSeverityLabel ?? 'N/A',
-      },
-    };
-  };
+  /**
+   * The severity level of the log entry (e.g., 'INFO', 'WARNING', 'ERROR').
+   * Determines the semantic color of the displayed badge.
+   */
+  severity = input('N/A');
 }
