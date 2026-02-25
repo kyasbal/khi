@@ -16,29 +16,17 @@
 
 import { ClipboardModule, Clipboard } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
-import { Component, Input, inject } from '@angular/core';
+import { Component, input, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import * as jsyaml from 'js-yaml';
-import {
-  NEVER,
-  Observable,
-  filter,
-  map,
-  of,
-  switchMap,
-  withLatestFrom,
-} from 'rxjs';
-import { LongTimestampFormatPipe } from 'src/app/common/timestamp-format.pipe';
-import { InspectionDataStoreService } from 'src/app/services/inspection-data-store.service';
-import { ViewStateService } from 'src/app/services/view-state.service';
+import { NEVER, Observable, of } from 'rxjs';
 import { AnnotationDecider, DECISION_HIDDEN } from './annotator';
-import { LogEntry } from '../store/log';
 import { ResourceRevision } from '../store/revision';
 import { ResourceTimeline } from '../store/timeline';
 
 @Component({
+  selector: 'khi-common-field-annotator',
   standalone: true,
   imports: [CommonModule, MatIconModule, MatTooltipModule, ClipboardModule],
   templateUrl: './common-field-annotator.component.html',
@@ -47,14 +35,11 @@ import { ResourceTimeline } from '../store/timeline';
 export class CommonFieldAnnotatorComponent {
   private readonly clipboard = inject(Clipboard);
   private readonly snackBar = inject(MatSnackBar);
-  @Input()
-  icon = '';
+  icon = input('');
 
-  @Input()
-  label = '';
+  label = input('');
 
-  @Input()
-  value: Observable<string> = NEVER;
+  value = input<Observable<string>>(NEVER);
 
   onValueClick(value: string) {
     let snackbarMessage: string;
@@ -64,78 +49,6 @@ export class CommonFieldAnnotatorComponent {
       snackbarMessage = 'Copy failed.';
     }
     this.snackBar.open(snackbarMessage, undefined, { duration: 1000 });
-  }
-
-  /**
-   * Functions used for CommonFieldAnnotator with LogEntry
-   */
-  /**
-   * Get mapper function from actual log body object
-   * @param icon
-   * @param label
-   * @param fieldMapper receives decoded strucure log data and maps to a string
-   * @returns
-   */
-  public static annotationDeciderForLogBodyField(
-    icon: string,
-    label: string,
-    //  eslint-disable-next-line @typescript-eslint/no-explicit-any
-    fieldMapper: (logRoot: any) => string,
-  ): AnnotationDecider<LogEntry> {
-    return (l?: LogEntry | null) => {
-      if (!l) return DECISION_HIDDEN;
-      const dataStore = inject(InspectionDataStoreService);
-      return {
-        inputs: {
-          icon,
-          label,
-          value: of(l.body).pipe(
-            withLatestFrom(
-              dataStore.referenceResolver.pipe(filter((tb) => !!tb)),
-            ),
-            switchMap(([tr, loader]) => loader!.getText(tr)),
-            map((yamlStr) => fieldMapper(jsyaml.load(yamlStr))),
-          ),
-        },
-      };
-    };
-  }
-
-  public static inputMapperForTimestamp(
-    icon: string,
-    label: string,
-  ): AnnotationDecider<LogEntry> {
-    return (l?: LogEntry | null) => {
-      if (!l) return DECISION_HIDDEN;
-      const viewState = inject(ViewStateService);
-      return {
-        inputs: {
-          icon,
-          label,
-          value: viewState.timezoneShift.pipe(
-            map((t) =>
-              LongTimestampFormatPipe.toLongDisplayTimestamp(l.time, t),
-            ),
-          ),
-        },
-      };
-    };
-  }
-
-  public static inputMapperForSummary(
-    icon: string,
-    label: string,
-  ): AnnotationDecider<LogEntry> {
-    return (l?: LogEntry | null) => {
-      if (!l) return DECISION_HIDDEN;
-      return {
-        inputs: {
-          icon,
-          label,
-          value: of([l.summary]),
-        },
-      };
-    };
   }
 
   /**

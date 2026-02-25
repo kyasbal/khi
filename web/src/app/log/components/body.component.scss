@@ -15,8 +15,7 @@
  */
 
 @use "@angular/material" as mat;
-
-$TOOLBAR_BACKGROUND: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 100);
+@use "../../common.scss" as common;
 
 .log-body-view-root {
   width: 100%;
@@ -33,11 +32,23 @@ $TOOLBAR_BACKGROUND: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 100);
     grid: "toolbar";
     display: flex;
     justify-content: flex-end;
-    column-gap: 1px;
-    border-top: 1px solid rgba(0, 0, 0, 0.3);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.3);
-    box-sizing: border-box;
-    background-color: $TOOLBAR_BACKGROUND;
+    .toolbar-button {
+      $button-size: 20px;
+      @include mat.icon-button-overrides(
+        (
+          state-layer-size: $button-size,
+          touch-target-size: $button-size,
+          icon-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 500),
+        )
+      );
+      mat-icon {
+        @include common.adjust-mat-icon-size(14px);
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+    }
   }
 
   .log-body-container-wrap {
@@ -67,5 +78,9 @@ $TOOLBAR_BACKGROUND: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 100);
   font-weight: 600;
   color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 700);
   text-align: center;
-  margin: 20px;
+  gap: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
