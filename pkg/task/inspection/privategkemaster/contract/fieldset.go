@@ -89,6 +89,33 @@ var _ log.FieldSet = (*GKEMasterLogFieldSet)(nil)
 
 // GKEMasterLogFieldSetReader reads the GKE Master log field set.
 type GKEMasterLogFieldSetReader struct {
+	parsersMap    map[string]logutil.StructuredLogParser
+	defaultParser logutil.StructuredLogParser
+}
+
+// NewGKEMasterLogFieldSetReader creates a new GKEMasterLogFieldSetReader.
+func NewGKEMasterLogFieldSetReader() *GKEMasterLogFieldSetReader {
+	return &GKEMasterLogFieldSetReader{
+		parsersMap: map[string]logutil.StructuredLogParser{
+			"kubelet": logutil.NewMultiTextLogParser(
+				logutil.NewKLogTextParser(true),
+				&logutil.FallbackRawTextLogParser{},
+			),
+			"kube-controller-manager": logutil.NewMultiTextLogParser(
+				logutil.NewKLogTextParser(false),
+				&logutil.FallbackRawTextLogParser{},
+			),
+			"containerd": logutil.NewMultiTextLogParser(
+				logutil.NewLogfmtTextParser(),
+				&logutil.FallbackRawTextLogParser{},
+			),
+		},
+		defaultParser: logutil.NewMultiTextLogParser(
+			logutil.NewJsonlTextParser(),
+			logutil.NewKLogTextParser(false),
+			&logutil.FallbackRawTextLogParser{},
+		),
+	}
 }
 
 // FieldSetKind implements [log.FieldSetReader].
@@ -130,35 +157,13 @@ func (g *GKEMasterLogFieldSetReader) Read(reader *structured.NodeReader) (log.Fi
 	if messageSource == "" {
 		messageSource = reader.ReadStringOrDefault("jsonPayload.MESSAGE", "")
 	}
-	parser := getStructuredLogParserForComponent(result.ComponentName)
+	parser, ok := g.parsersMap[result.ComponentName]
+	if !ok {
+		parser = g.defaultParser
+	}
 	result.StructuredBody = parser.TryParse(messageSource)
 
 	return result, nil
-}
-
-func getStructuredLogParserForComponent(componentName string) logutil.StructuredLogParser {
-	switch componentName {
-	case "kubelet":
-		return logutil.NewMultiTextLogParser(
-			logutil.NewKLogTextParser(true),
-			&logutil.FallbackRawTextLogParser{},
-		)
-	case "kube-controller-manager":
-		return logutil.NewMultiTextLogParser(
-			logutil.NewKLogTextParser(false),
-			&logutil.FallbackRawTextLogParser{},
-		)
-	case "containerd":
-		return logutil.NewMultiTextLogParser(
-			logutil.NewLogfmtTextParser(),
-			&logutil.FallbackRawTextLogParser{},
-		)
-	default:
-		return logutil.NewMultiTextLogParser(
-			logutil.NewKLogTextParser(false),
-			&logutil.FallbackRawTextLogParser{},
-		)
-	}
 }
 
 var _ log.FieldSetReader = (*GKEMasterLogFieldSetReader)(nil)

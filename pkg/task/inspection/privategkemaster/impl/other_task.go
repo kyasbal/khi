@@ -85,7 +85,15 @@ func (p *otherLogToTimelineMapperTaskSetting) ProcessLogByGroup(ctx context.Cont
 		cs.AddEvent(path)
 	}
 
-	cs.SetLogSummary(commonLogField.Message)
+	summary := commonLogField.Message
+	if masterLogField.StructuredBody != nil {
+		msg, err := masterLogField.StructuredBody.MainMessage()
+		if err == nil {
+			summary = msg
+		}
+	}
+
+	cs.SetLogSummary(summary)
 
 	finder := coretask.GetTaskResult(ctx, commonlogk8sauditv2_contract.ResourceUIDPatternFinderTaskID.Ref())
 	resources := patternfinder.FindAllWithStarterRunes(commonLogField.Message, finder, false, p.uidPrefixTokenCandidates...)

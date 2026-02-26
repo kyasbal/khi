@@ -30,7 +30,7 @@ import (
 var CommonFieldSetReaderTask = inspectiontaskbase.NewFieldSetReadTask(privategkemaster_contract.CommonFieldSetReaderTaskID,
 	privategkemaster_contract.ListLogEntriesTaskID.Ref(),
 	[]log.FieldSetReader{
-		&privategkemaster_contract.GKEMasterLogFieldSetReader{},
+		privategkemaster_contract.NewGKEMasterLogFieldSetReader(),
 		&privategkemaster_contract.GKEMasterCommonFieldSetReader{},
 	},
 )
