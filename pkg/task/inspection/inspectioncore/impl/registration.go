@@ -14,8 +14,34 @@
 
 package inspectioncore_impl
 
-import coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+import (
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	khifilev4 "github.com/GoogleCloudPlatform/khi/pkg/generated/proto/khifile/v4"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+)
 
-func Register(registry coretask.TaskRegistry) error {
+type registryWithStyleData interface {
+	coretask.TaskRegistry
+	AddSeverity(severity *khifilev4.Severity) error
+	AddVerb(verb *khifilev4.Verb) error
+	AddLogType(logType *khifilev4.LogType) error
+}
+
+func Register(registry registryWithStyleData) error {
+	for _, severity := range inspectioncore_contract.Severities {
+		if err := registry.AddSeverity(severity); err != nil {
+			return err
+		}
+	}
+	for _, verb := range inspectioncore_contract.Verbs {
+		if err := registry.AddVerb(verb); err != nil {
+			return err
+		}
+	}
+	for _, logType := range inspectioncore_contract.LogTypes {
+		if err := registry.AddLogType(logType); err != nil {
+			return err
+		}
+	}
 	return coretask.RegisterTasks(registry, InspectionTimeProducer, TimeZoneShiftInputTask, SerializeTask)
 }
