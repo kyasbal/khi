@@ -25,6 +25,7 @@ type registryWithStyleData interface {
 	AddSeverity(severity *khifilev4.Severity) error
 	AddVerb(verb *khifilev4.Verb) error
 	AddLogType(logType *khifilev4.LogType) error
+	AddRevisionState(revisionState *khifilev4.RevisionState) error
 }
 
 func Register(registry registryWithStyleData) error {
@@ -40,6 +41,11 @@ func Register(registry registryWithStyleData) error {
 	}
 	for _, logType := range inspectioncore_contract.LogTypes {
 		if err := registry.AddLogType(logType); err != nil {
+			return err
+		}
+	}
+	for _, revisionState := range inspectioncore_contract.RevisionStates {
+		if err := registry.AddRevisionState(revisionState); err != nil {
 			return err
 		}
 	}

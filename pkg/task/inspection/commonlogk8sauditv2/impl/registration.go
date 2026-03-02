@@ -27,6 +27,11 @@ func Register(registry coreinspection.InspectionTaskRegistry) error {
 			return err
 		}
 	}
+	for _, revisionState := range commonlogk8sauditv2_contract.RevisionStates {
+		if err := registry.AddRevisionState(revisionState); err != nil {
+			return err
+		}
+	}
 	return coretask.RegisterTasks(registry,
 		LogIngesterTask,
 		LogSummaryGrouperTask,

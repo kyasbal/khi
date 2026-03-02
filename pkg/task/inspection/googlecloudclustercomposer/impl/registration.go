@@ -31,6 +31,11 @@ func Register(registry coreinspection.InspectionTaskRegistry) error {
 	if err != nil {
 		return err
 	}
+	for _, revisionState := range googlecloudclustercomposer_contract.RevisionStates {
+		if err := registry.AddRevisionState(revisionState); err != nil {
+			return err
+		}
+	}
 	return coretask.RegisterTasks(registry,
 		ComposerEnvironmentListFetcherTask,
 		ComposerEnvironmentClusterFinderTask,
