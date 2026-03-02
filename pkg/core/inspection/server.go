@@ -126,13 +126,13 @@ func (s *InspectionTaskServer) AddInspectionType(newInspectionType InspectionTyp
 
 // AddSeverity registers a Severity. The ID will be automatically assigned.
 func (s *InspectionTaskServer) AddSeverity(severity *khifilev4.Severity) error {
-	if severity.Id != 0 {
-		return fmt.Errorf("id must not be set when registering StyleData")
-	}
 	for _, existing := range s.severities {
 		if existing == severity {
 			return nil // Already registered
 		}
+	}
+	if severity.Id != 0 {
+		return fmt.Errorf("id must not be set when registering StyleData")
 	}
 	severity.Id = uint32(len(s.severities) + 1)
 	s.severities = append(s.severities, severity)
@@ -141,13 +141,13 @@ func (s *InspectionTaskServer) AddSeverity(severity *khifilev4.Severity) error {
 
 // AddVerb registers a Verb. The ID will be automatically assigned.
 func (s *InspectionTaskServer) AddVerb(verb *khifilev4.Verb) error {
-	if verb.Id != 0 {
-		return fmt.Errorf("id must not be set when registering StyleData")
-	}
 	for _, existing := range s.verbs {
 		if existing == verb {
 			return nil // Already registered
 		}
+	}
+	if verb.Id != 0 {
+		return fmt.Errorf("id must not be set when registering StyleData")
 	}
 	verb.Id = uint32(len(s.verbs) + 1)
 	s.verbs = append(s.verbs, verb)
@@ -156,13 +156,13 @@ func (s *InspectionTaskServer) AddVerb(verb *khifilev4.Verb) error {
 
 // AddLogType registers a LogType. The ID will be automatically assigned.
 func (s *InspectionTaskServer) AddLogType(logType *khifilev4.LogType) error {
-	if logType.Id != 0 {
-		return fmt.Errorf("id must not be set when registering StyleData")
-	}
 	for _, existing := range s.logTypes {
 		if existing == logType {
 			return nil // Already registered
 		}
+	}
+	if logType.Id != 0 {
+		return fmt.Errorf("id must not be set when registering StyleData")
 	}
 	logType.Id = uint32(len(s.logTypes) + 1)
 	s.logTypes = append(s.logTypes, logType)
@@ -171,13 +171,13 @@ func (s *InspectionTaskServer) AddLogType(logType *khifilev4.LogType) error {
 
 // AddRevisionState registers a RevisionState. The ID will be automatically assigned.
 func (s *InspectionTaskServer) AddRevisionState(revisionState *khifilev4.RevisionState) error {
-	if revisionState.Id != 0 {
-		return fmt.Errorf("id must not be set when registering StyleData")
-	}
 	for _, existing := range s.revisionStates {
 		if existing == revisionState {
 			return nil // Already registered
 		}
+	}
+	if revisionState.Id != 0 {
+		return fmt.Errorf("id must not be set when registering StyleData")
 	}
 	revisionState.Id = uint32(len(s.revisionStates) + 1)
 	s.revisionStates = append(s.revisionStates, revisionState)
@@ -186,13 +186,13 @@ func (s *InspectionTaskServer) AddRevisionState(revisionState *khifilev4.Revisio
 
 // AddTimelineType registers a TimelineType. The ID will be automatically assigned.
 func (s *InspectionTaskServer) AddTimelineType(timelineType *khifilev4.TimelineType) error {
-	if timelineType.Id != 0 {
-		return fmt.Errorf("id must not be set when registering StyleData")
-	}
 	for _, existing := range s.timelineTypes {
 		if existing == timelineType {
 			return nil // Already registered
 		}
+	}
+	if timelineType.Id != 0 {
+		return fmt.Errorf("id must not be set when registering StyleData")
 	}
 	timelineType.Id = uint32(len(s.timelineTypes) + 1)
 	s.timelineTypes = append(s.timelineTypes, timelineType)
@@ -267,6 +267,26 @@ func (s *InspectionTaskServer) GetAllRegisteredTasks() []coretask.UntypedTask {
 // AddRunContextOption adds a RunContextOption that will be applied to all new inspection runners.
 func (s *InspectionTaskServer) AddRunContextOption(option RunContextOption) {
 	s.runContextOptions = append(s.runContextOptions, option)
+}
+
+// Dispose resets the IDs of all registered items for another server to register them again.
+// This is needed for testing purpose.
+func (s *InspectionTaskServer) Dispose() {
+	for _, severity := range s.severities {
+		severity.Id = 0
+	}
+	for _, verb := range s.verbs {
+		verb.Id = 0
+	}
+	for _, logType := range s.logTypes {
+		logType.Id = 0
+	}
+	for _, revisionState := range s.revisionStates {
+		revisionState.Id = 0
+	}
+	for _, timelineType := range s.timelineTypes {
+		timelineType.Id = 0
+	}
 }
 
 var _ InspectionTaskRegistry = (*InspectionTaskServer)(nil)

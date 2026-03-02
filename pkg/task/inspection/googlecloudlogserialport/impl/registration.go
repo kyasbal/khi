@@ -43,6 +43,11 @@ func Register(registry coreinspection.InspectionTaskRegistry) error {
 			return err
 		}
 	}
+	for _, timelineType := range googlecloudlogserialport_contract.TimelineTypes {
+		if err := registry.AddTimelineType(timelineType); err != nil {
+			return err
+		}
+	}
 	return coretask.RegisterTasks(registry,
 		LogQueryTask,
 		FieldSetReadTask,

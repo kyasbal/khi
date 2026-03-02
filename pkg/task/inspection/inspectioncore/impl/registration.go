@@ -26,6 +26,7 @@ type registryWithStyleData interface {
 	AddVerb(verb *khifilev4.Verb) error
 	AddLogType(logType *khifilev4.LogType) error
 	AddRevisionState(revisionState *khifilev4.RevisionState) error
+	AddTimelineType(timelineType *khifilev4.TimelineType) error
 }
 
 func Register(registry registryWithStyleData) error {
@@ -46,6 +47,11 @@ func Register(registry registryWithStyleData) error {
 	}
 	for _, revisionState := range inspectioncore_contract.RevisionStates {
 		if err := registry.AddRevisionState(revisionState); err != nil {
+			return err
+		}
+	}
+	for _, timelineType := range inspectioncore_contract.TimelineTypes {
+		if err := registry.AddTimelineType(timelineType); err != nil {
 			return err
 		}
 	}
