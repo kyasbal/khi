@@ -1,4 +1,4 @@
-// Copyright 2025 Google LLC
+// Copyright 2026 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package googlecloudlogk8saudit_impl
+package commonlogk8sauditv2_contract
 
-import (
-	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-)
+import khifilev4 "github.com/GoogleCloudPlatform/khi/pkg/generated/proto/khifile/v4"
 
-// Register registers all inspection tasks in googlecloudlogk8saudit to the registry.
-func Register(registry coreinspection.InspectionTaskRegistry) error {
-	return coretask.RegisterTasks(registry,
-		GCPK8sAuditLogListLogEntriesTask,
-		GCPK8sAuditLogCommonFieldSetReaderTask,
-		GCPK8sAuditLogParserTailTask,
-	)
+var LogTypeEvent = &khifilev4.LogType{
+	Label:           "k8s_event",
+	BackgroundColor: khifilev4.MustHDRColor4FromHex("#3fb549FF"),
+}
+
+var LogTypeAudit = &khifilev4.LogType{
+	Label:           "k8s_audit",
+	BackgroundColor: khifilev4.MustHDRColor4FromHex("#000000FF"),
+}
+
+var LogTypes = []*khifilev4.LogType{
+	LogTypeEvent,
+	LogTypeAudit,
 }

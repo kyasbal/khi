@@ -22,6 +22,11 @@ import (
 
 // Register registers all googlecloudclustercomposer inspection tasks to the registry.
 func Register(registry coreinspection.InspectionTaskRegistry) error {
+	for _, logType := range googlecloudclustercomposer_contract.LogTypes {
+		if err := registry.AddLogType(logType); err != nil {
+			return err
+		}
+	}
 	err := registry.AddInspectionType(googlecloudclustercomposer_contract.ComposerInspectionType)
 	if err != nil {
 		return err

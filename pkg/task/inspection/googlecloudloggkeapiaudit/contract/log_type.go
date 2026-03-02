@@ -12,18 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package googlecloudlogk8saudit_impl
+package googlecloudloggkeapiaudit_contract
 
-import (
-	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+import khifilev4 "github.com/GoogleCloudPlatform/khi/pkg/generated/proto/khifile/v4"
+
+var (
+	LogTypeGkeAudit = &khifilev4.LogType{
+		Label:           "gke_audit",
+		BackgroundColor: khifilev4.MustHDRColor4FromHex("#AA00FFFF"),
+	}
+
+	LogTypes = []*khifilev4.LogType{
+		LogTypeGkeAudit,
+	}
 )
-
-// Register registers all inspection tasks in googlecloudlogk8saudit to the registry.
-func Register(registry coreinspection.InspectionTaskRegistry) error {
-	return coretask.RegisterTasks(registry,
-		GCPK8sAuditLogListLogEntriesTask,
-		GCPK8sAuditLogCommonFieldSetReaderTask,
-		GCPK8sAuditLogParserTailTask,
-	)
-}
