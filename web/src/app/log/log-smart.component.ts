@@ -187,8 +187,8 @@ export class LogSmartComponent {
       let parsedLogBody: unknown = null;
       try {
         parsedLogBody = jsyaml.load(logBodyText);
-      } catch {
-        // Leave as null
+      } catch (e) {
+        console.warn('Failed to parse log body as YAML', e);
       }
 
       const textRefs = log.annotations
