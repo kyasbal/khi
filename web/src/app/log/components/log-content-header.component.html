@@ -13,16 +13,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
+@let vm = viewModel();
 <div class="container">
-  <div class="label">
-    <mat-icon class="icon">{{ icon() }}</mat-icon>
-    <p class="label-text">{{ label() }}</p>
-  </div>
-  @let valueResolved = value();
-  <p class="value" (click)="onValueClick(valueResolved)">
-    <span class="copy-icon-container"
-      ><mat-icon class="icon">content_paste</mat-icon></span
-    ><span [matTooltip]="valueResolved">{{ valueResolved }}</span>
-  </p>
+  <khi-type-severity
+    [logType]="vm.logType"
+    [severity]="vm.severity"
+  ></khi-type-severity>
+
+  <khi-common-field-annotator
+    icon="schedule"
+    label="Timestamp"
+    [value]="vm.timestamp"
+  ></khi-common-field-annotator>
+
+  <khi-resource-reference-list
+    [refs]="vm.resourceRefs"
+    [selectedTimeline]="selectedTimeline()"
+    (resourceSelected)="resourceSelected.emit($event)"
+    (resourceHighlighted)="resourceHighlighted.emit($event)"
+  ></khi-resource-reference-list>
 </div>

@@ -1,0 +1,86 @@
+/**
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@use "@angular/material" as mat;
+@use "../../common.scss" as common;
+
+.log-body-view-root {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-areas: "header" "toolbar" "logbody";
+  grid-template-rows: auto auto minmax(0, 1fr);
+
+  khi-log-header {
+    grid: "header";
+  }
+
+  .toolbar {
+    grid: "toolbar";
+    display: flex;
+    justify-content: flex-end;
+    .toolbar-button {
+      $button-size: 20px;
+      @include mat.icon-button-overrides(
+        (
+          state-layer-size: $button-size,
+          touch-target-size: $button-size,
+          icon-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 500),
+        )
+      );
+      mat-icon {
+        @include common.adjust-mat-icon-size(14px);
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+    }
+  }
+
+  .log-body-container-wrap {
+    grid: "logbody";
+  }
+}
+
+.log-body-container-scrollable {
+  overflow: auto;
+
+  code.hljs {
+    padding: 0;
+    white-space: pre;
+  }
+
+  code {
+    font-family: "Google Sans Code", monospace;
+    font-size: 10px;
+  }
+
+  .log-body-container {
+    margin: 0 10px;
+  }
+}
+
+.empty-message {
+  font-weight: 600;
+  color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 700);
+  text-align: center;
+  gap: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
