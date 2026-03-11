@@ -281,7 +281,7 @@ func (c *containerdNodeLogLogToTimelineMapperSetting) Dependencies() []taskid.Un
 	return []taskid.UntypedTaskReference{
 		privategkemaster_contract.PodSandboxIDDiscoveryTaskID.Ref(),
 		commonlogk8sauditv2_contract.ContainerIDPatternFinderTaskID.Ref(),
-		googlecloudk8scommon_contract.ClusterIndentityTaskID.Ref(),
+		googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(),
 	}
 }
 
@@ -299,7 +299,7 @@ func (c *containerdNodeLogLogToTimelineMapperSetting) LogIngesterTask() taskid.T
 func (c *containerdNodeLogLogToTimelineMapperSetting) ProcessLogByGroup(ctx context.Context, l *log.Log, cs *history.ChangeSet, builder *history.Builder, prevGroupData struct{}) (struct{}, error) {
 	podSandboxIDFinder := coretask.GetTaskResult(ctx, privategkemaster_contract.PodSandboxIDDiscoveryTaskID.Ref())
 	containerIDPatternFinder := coretask.GetTaskResult(ctx, commonlogk8sauditv2_contract.ContainerIDPatternFinderTaskID.Ref())
-	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIndentityTaskID.Ref())
+	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
 	masterFieldSet := log.MustGetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
 
 	for _, path := range masterFieldSet.ResourcePaths(clusterIdentity.ClusterName) {

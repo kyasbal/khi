@@ -68,7 +68,7 @@ type schedulerLogToTimelineMapperTaskSetting struct {
 // Dependencies implements inspectiontaskbase.LogToTimelineMapper.
 func (o *schedulerLogToTimelineMapperTaskSetting) Dependencies() []taskid.UntypedTaskReference {
 	return []taskid.UntypedTaskReference{
-		googlecloudk8scommon_contract.ClusterIndentityTaskID.Ref(),
+		googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(),
 	}
 }
 
@@ -84,7 +84,7 @@ func (o *schedulerLogToTimelineMapperTaskSetting) LogIngesterTask() taskid.TaskR
 
 // ProcessLogByGroup implements inspectiontaskbase.LogToTimelineMapper.
 func (o *schedulerLogToTimelineMapperTaskSetting) ProcessLogByGroup(ctx context.Context, l *log.Log, cs *history.ChangeSet, builder *history.Builder, prevGroupData struct{}) (struct{}, error) {
-	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIndentityTaskID.Ref())
+	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
 	masterFieldSet, err := log.GetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
 	if err != nil {
 		return struct{}{}, err

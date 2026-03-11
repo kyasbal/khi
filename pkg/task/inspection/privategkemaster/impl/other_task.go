@@ -72,12 +72,12 @@ func (p *otherLogToTimelineMapperTaskSetting) LogIngesterTask() taskid.TaskRefer
 func (p *otherLogToTimelineMapperTaskSetting) Dependencies() []taskid.UntypedTaskReference {
 	return []taskid.UntypedTaskReference{
 		commonlogk8sauditv2_contract.ResourceUIDPatternFinderTaskID.Ref(),
-		googlecloudk8scommon_contract.ClusterIndentityTaskID.Ref(),
+		googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(),
 	}
 }
 
 func (p *otherLogToTimelineMapperTaskSetting) ProcessLogByGroup(ctx context.Context, l *log.Log, cs *history.ChangeSet, builder *history.Builder, prevGroupData struct{}) (struct{}, error) {
-	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIndentityTaskID.Ref())
+	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
 	masterLogField := log.MustGetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
 	commonLogField := log.MustGetFieldSet(l, &googlecloudlogk8scontrolplane_contract.K8sControlplaneCommonMessageFieldSet{})
 

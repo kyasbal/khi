@@ -109,7 +109,7 @@ type controllerManagerLogToTimelineMapperTaskSetting struct {
 func (o *controllerManagerLogToTimelineMapperTaskSetting) Dependencies() []taskid.UntypedTaskReference {
 	return []taskid.UntypedTaskReference{
 		commonlogk8sauditv2_contract.ResourceUIDPatternFinderTaskID.Ref(),
-		googlecloudk8scommon_contract.ClusterIndentityTaskID.Ref(),
+		googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(),
 	}
 }
 
@@ -126,7 +126,7 @@ func (o *controllerManagerLogToTimelineMapperTaskSetting) LogIngesterTask() task
 // ProcessLogByGroup implements inspectiontaskbase.LogToTimelineMapper.
 func (o *controllerManagerLogToTimelineMapperTaskSetting) ProcessLogByGroup(ctx context.Context, l *log.Log, cs *history.ChangeSet, builder *history.Builder, prevGroupData struct{}) (struct{}, error) {
 	finder := coretask.GetTaskResult(ctx, commonlogk8sauditv2_contract.ResourceUIDPatternFinderTaskID.Ref())
-	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIndentityTaskID.Ref())
+	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
 	masterFieldSet, err := log.GetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
 	if err != nil {
 		return struct{}{}, err

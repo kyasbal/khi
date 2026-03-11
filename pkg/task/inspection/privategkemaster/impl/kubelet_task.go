@@ -69,7 +69,7 @@ func (k *kubeletNodeLogLogToTimelineMapperSetting) Dependencies() []taskid.Untyp
 		privategkemaster_contract.PodSandboxIDDiscoveryTaskID.Ref(),
 		commonlogk8sauditv2_contract.ContainerIDPatternFinderTaskID.Ref(),
 		commonlogk8sauditv2_contract.ResourceUIDPatternFinderTaskID.Ref(),
-		googlecloudk8scommon_contract.ClusterIndentityTaskID.Ref(),
+		googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(),
 	}
 }
 
@@ -89,7 +89,7 @@ func (k *kubeletNodeLogLogToTimelineMapperSetting) ProcessLogByGroup(ctx context
 	containerIDPatternFinder := coretask.GetTaskResult(ctx, commonlogk8sauditv2_contract.ContainerIDPatternFinderTaskID.Ref())
 	podIDFinder := coretask.GetTaskResult(ctx, privategkemaster_contract.PodSandboxIDDiscoveryTaskID.Ref())
 	resourceUIDPatternFinder := coretask.GetTaskResult(ctx, commonlogk8sauditv2_contract.ResourceUIDPatternFinderTaskID.Ref())
-	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIndentityTaskID.Ref())
+	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
 
 	for _, path := range masterFieldSet.ResourcePaths(clusterIdentity.ClusterName) {
 		cs.AddEvent(path)

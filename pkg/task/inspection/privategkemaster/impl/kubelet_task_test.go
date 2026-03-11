@@ -113,7 +113,7 @@ func TestKubeletLogLogToTimelineMapper(t *testing.T) {
 			ctx := inspectiontest.WithDefaultTestInspectionTaskContext(t.Context())
 			ctx = tasktest.WithTaskResult(ctx, privategkemaster_contract.PodSandboxIDDiscoveryTaskID.Ref(), podIDFinder)
 			ctx = tasktest.WithTaskResult(ctx, commonlogk8sauditv2_contract.ContainerIDPatternFinderTaskID.Ref(), containerIDFinder)
-			ctx = tasktest.WithTaskResult(ctx, googlecloudk8scommon_contract.ClusterIndentityTaskID.Ref(), googlecloudk8scommon_contract.GoogleCloudClusterIdentity{
+			ctx = tasktest.WithTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(), googlecloudk8scommon_contract.GoogleCloudClusterIdentity{
 				ClusterName: "cluster",
 				ProjectID:   "project",
 				Location:    "location",
