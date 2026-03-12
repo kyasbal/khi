@@ -15,12 +15,14 @@
 package private
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"strings"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/errorreport"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	coreinit "github.com/GoogleCloudPlatform/khi/pkg/core/init"
 	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
 	"github.com/GoogleCloudPlatform/khi/pkg/lifecycle"
@@ -32,6 +34,8 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/private/server/index"
 	"github.com/GoogleCloudPlatform/khi/pkg/server"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	privatecommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecommon/contract"
 )
 
 func init() {
@@ -88,6 +92,9 @@ func (p *privateInitExtension) AfterParsingParameters() error {
 func (p *privateInitExtension) ConfigureInspectionTaskServer(taskServer *coreinspection.InspectionTaskServer) error {
 	if privateparameters.Private.InspectionMode != nil && *privateparameters.Private.InspectionMode {
 		taskServer.AddRunContextOption(coreinspection.RunContextOptionArrayElementFromValue[googlecloud.CallOptionInjectorOption](googlecloudcommon_contract.APICallOptionsInjectorContextKey, p.iamTokenInjector))
+		taskServer.AddRunContextOption(func(ctx context.Context, mode inspectioncore_contract.InspectionTaskModeType) (context.Context, error) {
+			return khictx.WithValue(ctx, privatecommon_contract.APIClientIAMTokenInjectorOptionContextKey, p.iamTokenInjector), nil
+		})
 	}
 	return nil
 }

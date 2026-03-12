@@ -61,6 +61,16 @@ func (o *IAMTokenCallOptionInjectorOption) SetTokenFor(container googlecloud.Res
 	typeddict.Set(o.containerSpecificTokens, container.Identifier(), token)
 }
 
+// HasTokenFor checks if the given container has an IAM token.
+func (o *IAMTokenCallOptionInjectorOption) HasTokenFor(container googlecloud.ResourceContainer) bool {
+	if container == nil {
+		return false
+	}
+	ci := container.Identifier()
+	_, found := typeddict.Get(o.containerSpecificTokens, ci)
+	return found
+}
+
 func (o *IAMTokenCallOptionInjectorOption) getTokenFor(container googlecloud.ResourceContainer) string {
 	if container == nil {
 		return ""

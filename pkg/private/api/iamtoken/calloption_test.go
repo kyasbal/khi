@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -101,5 +102,139 @@ func TestIamTokenCallOptionInjectorOption_ApplyToCallContext(t *testing.T) {
 			})
 		})
 
+	}
+}
+
+func TestIamTokenCallOptionInjectorOption_HasTokenFor(t *testing.T) {
+	testCases := []struct {
+		name      string
+		prepare   func() *IAMTokenCallOptionInjectorOption
+		container googlecloud.ResourceContainer
+		want      bool
+	}{
+		{
+			name: "has token for specific container",
+			prepare: func() *IAMTokenCallOptionInjectorOption {
+				option := NewInjector()
+				option.SetTokenFor(googlecloud.Project("foo"), "foo-token")
+				return option
+			},
+			container: googlecloud.Project("foo"),
+			want:      true,
+		},
+		{
+			name: "does not have token for container",
+			prepare: func() *IAMTokenCallOptionInjectorOption {
+				option := NewInjector()
+				option.SetTokenFor(googlecloud.Project("bar"), "bar-token")
+				return option
+			},
+			container: googlecloud.Project("foo"),
+			want:      false,
+		},
+		{
+			name:      "nil container",
+			prepare:   NewInjector,
+			container: nil,
+			want:      false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			option := tc.prepare()
+			got := option.HasTokenFor(tc.container)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Errorf("HasTokenFor() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestIamTokenCallOptionInjectorOption_SetTokenFor(t *testing.T) {
+	testCases := []struct {
+		name      string
+		prepare   func() *IAMTokenCallOptionInjectorOption
+		container googlecloud.ResourceContainer
+		token     string
+		check     func(t *testing.T, option *IAMTokenCallOptionInjectorOption)
+	}{
+		{
+			name:      "set token for new container",
+			prepare:   NewInjector,
+			container: googlecloud.Project("foo"),
+			token:     "my-token",
+			check: func(t *testing.T, option *IAMTokenCallOptionInjectorOption) {
+				if got := option.getTokenFor(googlecloud.Project("foo")); got != "my-token" {
+					t.Errorf("expected token %q, got %q", "my-token", got)
+				}
+			},
+		},
+		{
+			name: "overwrite existing token",
+			prepare: func() *IAMTokenCallOptionInjectorOption {
+				option := NewInjector()
+				option.SetTokenFor(googlecloud.Project("foo"), "old-token")
+				return option
+			},
+			container: googlecloud.Project("foo"),
+			token:     "new-token",
+			check: func(t *testing.T, option *IAMTokenCallOptionInjectorOption) {
+				if got := option.getTokenFor(googlecloud.Project("foo")); got != "new-token" {
+					t.Errorf("expected token %q, got %q", "new-token", got)
+				}
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			option := tc.prepare()
+			option.SetTokenFor(tc.container, tc.token)
+			tc.check(t, option)
+		})
+	}
+}
+
+func TestIamTokenCallOptionInjectorOption_getTokenFor(t *testing.T) {
+	testCases := []struct {
+		name      string
+		prepare   func() *IAMTokenCallOptionInjectorOption
+		container googlecloud.ResourceContainer
+		want      string
+	}{
+		{
+			name: "has token for specific container",
+			prepare: func() *IAMTokenCallOptionInjectorOption {
+				option := NewInjector()
+				option.SetTokenFor(googlecloud.Project("foo"), "foo-token")
+				return option
+			},
+			container: googlecloud.Project("foo"),
+			want:      "foo-token",
+		},
+		{
+			name: "does not have token for container",
+			prepare: func() *IAMTokenCallOptionInjectorOption {
+				option := NewInjector()
+				option.SetTokenFor(googlecloud.Project("bar"), "bar-token")
+				return option
+			},
+			container: googlecloud.Project("foo"),
+			want:      "",
+		},
+		{
+			name:      "nil container",
+			prepare:   NewInjector,
+			container: nil,
+			want:      "",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			option := tc.prepare()
+			got := option.getTokenFor(tc.container)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Errorf("getTokenFor() mismatch (-want +got):\n%s", diff)
+			}
+		})
 	}
 }
