@@ -18,6 +18,10 @@ import (
 	"context"
 	"testing"
 
+	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
+	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
+	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	privatecommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecommon/contract"
 	privategkemaster_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privategkemaster/contract"
 	"github.com/google/go-cmp/cmp"
 )
@@ -72,7 +76,9 @@ func TestInputGKEMasterLogSourceTask_ValidatorAndConverter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
+			ctx := inspectiontest.WithDefaultTestInspectionTaskContext(context.Background())
+			ctx = tasktest.WithTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(), googlecloudk8scommon_contract.GoogleCloudClusterIdentity{ProjectID: "test-project"})
+			ctx = tasktest.WithTaskResult(ctx, privatecommon_contract.JustificationFormTaskID.Ref(), "b/123456")
 
 			// Test Validator
 			msg, err := validateMasterLogLink(ctx, tt.input)

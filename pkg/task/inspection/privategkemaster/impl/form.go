@@ -16,14 +16,21 @@ package privategkemaster_impl
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/formtask"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/private/api"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	privatecommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecommon/contract"
 	privategkemaster_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privategkemaster/contract"
 )
 
@@ -37,6 +44,10 @@ var logNameProjectIDValidator = regexp.MustCompile(`logName="projects/([^/]+)/lo
 // InputGKEMasterLogSourceTask is the form task to input the master log source from the link for master cloud logging.
 var InputGKEMasterLogSourceTask = formtask.NewTextFormTaskBuilder(privategkemaster_contract.InputGKEMasterLogSourceTaskID, priorityForPrivateGKEMasterGroup+2000, "Master Logs Link").
 	WithDescription("The panthenon link to the master logs. Please check go/khi-master-log to know how to get this link.").
+	WithDependencies([]taskid.UntypedTaskReference{
+		googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(),
+		privatecommon_contract.JustificationFormTaskID.Ref(),
+	}).
 	WithValidator(validateMasterLogLink).
 	WithDefaultValueFunc(defaultMasterLogLink).
 	WithConverter(convertMasterLogLink).
@@ -50,21 +61,27 @@ func defaultMasterLogLink(ctx context.Context, previousValues []string) (string,
 }
 
 func validateMasterLogLink(ctx context.Context, value string) (string, error) {
+	justification := coretask.GetTaskResult(ctx, privatecommon_contract.JustificationFormTaskID.Ref())
+	identity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
+	link, err := api.ToGKEAdminLink(googlecloud.Project(identity.ProjectID), justification)
+	if err != nil {
+		return fmt.Sprintf("Failed to generate GKE Admin link. Please check go/khi-master-log to know how to get this link. \n %s", err.Error()), nil
+	}
 	if value == "" {
-		return "Master Logs Link is required. Check go/khi-master-log to know how to get this link.", nil
+		return fmt.Sprintf("Master Logs Link is required. Open %s and refer to go/khi-master-log", link), nil
 	}
 	unescapedValue, err := url.PathUnescape(value)
 	if err != nil {
-		return "Invalid URL format. Check go/khi-master-log to know how to get this link.", nil
+		return fmt.Sprintf("Invalid URL format. Open %s and refer to go/khi-master-log", link), nil
 	}
 	if !storageScopeValidator.MatchString(unescapedValue) {
-		return "Master Logs Link must contain `storageScope` parameter. Check go/khi-master-log to know how to get this link.", nil
+		return fmt.Sprintf("Master Logs Link must contain `storageScope` parameter. Open %s and refer to go/khi-master-log", link), nil
 	}
 	if !strings.Contains(unescapedValue, "project=") {
-		return "Master Logs Link must contain `project` parameter. Check go/khi-master-log to know how to get this link.", nil
+		return fmt.Sprintf("Master Logs Link must contain `project` parameter. Open %s and refer to go/khi-master-log", link), nil
 	}
 	if !tenantProjectIDValidator.MatchString(unescapedValue) && !logNameProjectIDValidator.MatchString(unescapedValue) {
-		return "Master Logs Link must contain `resource.labels.project_id` or `logName` with project ID in query. Check go/khi-master-log to know how to get this link.", nil
+		return fmt.Sprintf("Master Logs Link must contain `resource.labels.project_id` or `logName` with project ID in query. Open %s and refer to go/khi-master-log", link), nil
 	}
 	return "", nil
 }
