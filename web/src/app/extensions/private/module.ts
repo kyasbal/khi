@@ -16,12 +16,6 @@
 
 import { NgModule } from '@angular/core';
 import { KHIExtensionBundle } from '../extension-common/extension';
-import { PLAYBOOK_DATA } from './playbooks';
-import {
-  EveDashboardBindingForComponent,
-  EveDashboardBindingForNode,
-  PlaybookBindingWithComponentNameAnnotation,
-} from './timeline-navigator-extensions';
 import { FRONTEND_ANALYTICS } from './analytics/types';
 import { FrontendAnalyticsWithGA } from './analytics/ga';
 import { AnalyticsLifecycleExtension } from './analytics/analytics-lifecycle-extension';
@@ -36,18 +30,5 @@ import { AnalyticsLifecycleExtension } from './analytics/analytics-lifecycle-ext
 export class PrivateKHIExtension {}
 
 function initExtension(extension: KHIExtensionBundle) {
-  PLAYBOOK_DATA.forEach((pb) => {
-    extension.addTimelineNavigatorExtension(
-      new PlaybookBindingWithComponentNameAnnotation(
-        pb.componentName,
-        pb.linkText,
-        pb.linkUrl,
-      ),
-    );
-  });
-  extension.addTimelineNavigatorExtension(new EveDashboardBindingForNode());
-  extension.addTimelineNavigatorExtension(
-    new EveDashboardBindingForComponent(),
-  );
   extension.addLifecycleHookExtension(AnalyticsLifecycleExtension);
 }

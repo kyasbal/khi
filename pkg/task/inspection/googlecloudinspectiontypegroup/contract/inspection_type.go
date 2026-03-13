@@ -21,17 +21,16 @@ import (
 	googlecloudclustergke_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergke/contract"
 	googlecloudclustergkeonaws_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergkeonaws/contract"
 	googlecloudclustergkeonazure_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergkeonazure/contract"
-	privatecomposerv3_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposerv3/contract"
 )
 
 // GCPK8sClusterInspectionTypes is the list of inspection types of k8s clusters from Google Cloud.
 var GCPK8sClusterInspectionTypes = []string{
-	googlecloudclustergke_contract.InspectionTypeId, googlecloudclustercomposer_contract.InspectionTypeId, googlecloudclustergdcvmware_contract.InspectionTypeId, googlecloudclustergdcbaremetal_contract.InspectionTypeId, googlecloudclustergkeonaws_contract.InspectionTypeId, googlecloudclustergkeonazure_contract.InspectionTypeId, privatecomposerv3_contract.InspectionTypeId,
+	googlecloudclustergke_contract.InspectionTypeId, googlecloudclustercomposer_contract.InspectionTypeId, googlecloudclustergdcvmware_contract.InspectionTypeId, googlecloudclustergdcbaremetal_contract.InspectionTypeId, googlecloudclustergkeonaws_contract.InspectionTypeId, googlecloudclustergkeonazure_contract.InspectionTypeId,
 }
 
 // GKEBasedClusterInspectionTypes is the list of inspection types of GKE.
 var GKEBasedClusterInspectionTypes = []string{
-	googlecloudclustergke_contract.InspectionTypeId, googlecloudclustercomposer_contract.InspectionTypeId, privatecomposerv3_contract.InspectionTypeId,
+	googlecloudclustergke_contract.InspectionTypeId, googlecloudclustercomposer_contract.InspectionTypeId,
 }
 
 // GKEMultiCloudClusterInspectionTypes is the list of inspection types of GKE multicloud.
@@ -47,5 +46,4 @@ var GDCClusterInspectionTypes = []string{
 // CloudComposerInspectionTypes is the list of inspection types of Cloud Composer.
 var CloudComposerInspectionTypes = []string{
 	googlecloudclustercomposer_contract.InspectionTypeId,
-	privatecomposerv3_contract.InspectionTypeId,
 }

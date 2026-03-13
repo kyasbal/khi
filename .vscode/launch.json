@@ -14,7 +14,10 @@
         "--port",
         "8080",
         "--frontend-asset-folder",
-        "./pkg/server/dist/browser"
+        "./pkg/server/dist/browser",
+        "--inspection-mode",
+        "--fixed-project-id",
+        "tse-kakeru"
       ],
       "dlvLoadConfig": {
         "followPointers": true,
