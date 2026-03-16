@@ -254,7 +254,7 @@ var RevisionStates = map[RevisionState]RevisionStateFrontendMetadata{
 		EnumKeyName:     "RevisionStateComposerTiRestarting",
 		BackgroundColor: mustHexToHDRColor4("#ee82ef"),
 		CSSSelector:     "composer_ti_restarting",
-		Label:           "Task instance is being restarted",
+		Label:           "Task instance is restarting",
 		Icon:            "restart_alt",
 	},
 	RevisionStateComposerTiRemoved: {
