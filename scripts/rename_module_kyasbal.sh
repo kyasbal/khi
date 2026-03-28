@@ -23,7 +23,8 @@ find . -type f \( \
   -name 'go.mod' -o \
   -name 'go.sum' -o \
   -name '*.md' -o \
-  -name '*.mk' \
+  -name '*.mk' -o \
+  -name '*.tpl' \
 \) -print0 | xargs -0 sed -i '' 's|github.com/GoogleCloudPlatform/khi|github.com/kyasbal/khi|g'
 
 echo "Done! You can now commit and push to kyasbal/khi."

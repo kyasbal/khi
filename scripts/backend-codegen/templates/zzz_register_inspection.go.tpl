@@ -19,7 +19,7 @@ package generated
 import (
 	"fmt"
 
-	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
 {{- range .}}
 	{{.ImplPackageName}} "{{.ImplPackageImportPath}}"
 {{- end}}
