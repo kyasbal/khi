@@ -15,9 +15,9 @@
 package googlecloudlogk8scontrolplane_impl
 
 import (
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
-	googlecloudlogk8scontrolplane_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	googlecloudlogk8scontrolplane_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
 )
 
 var ClusterIdentityAliasTask = coretask.NewAliasTask(

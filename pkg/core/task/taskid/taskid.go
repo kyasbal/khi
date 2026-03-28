@@ -142,7 +142,7 @@ func (t taskImplementationIDImpl[TaskResult]) GetUntypedReference() UntypedTaskR
 // Typically used to define the interface of a task that other tasks can depend on.
 func NewTaskReference[TaskResult any](id string) TaskReference[TaskResult] {
 	if strings.Contains(id, "#") {
-		panic(fmt.Sprintf("reference id %s is invalid. It cannot contain '#' in reference ID\nThis is likely a bug in the KHI task implementation or an incorrect ID was provided in the taskid definition.\nPlease report a bug at https://github.com/GoogleCloudPlatform/khi/issues", id))
+		panic(fmt.Sprintf("reference id %s is invalid. It cannot contain '#' in reference ID\nThis is likely a bug in the KHI task implementation or an incorrect ID was provided in the taskid definition.\nPlease report a bug at https://github.com/kyasbal/khi/issues", id))
 	}
 	return taskReferenceImpl[TaskResult]{id: id}
 }
@@ -153,7 +153,7 @@ func NewTaskReference[TaskResult any](id string) TaskReference[TaskResult] {
 // Typically used when there is only one common implementation of a task reference.
 func NewDefaultImplementationID[TaskResult any](id string) TaskImplementationID[TaskResult] {
 	if strings.Contains(id, "#") {
-		panic(fmt.Sprintf("task id %s is invalid. It cannot contain '#' in NewDefaultImplementationID. Use NewImplementationID instead to use a custom implementation hash.\nThis is likely a bug in the KHI task implementation or an incorrect ID was provided in the taskid definition.\nPlease report a bug at https://github.com/GoogleCloudPlatform/khi/issues", id))
+		panic(fmt.Sprintf("task id %s is invalid. It cannot contain '#' in NewDefaultImplementationID. Use NewImplementationID instead to use a custom implementation hash.\nThis is likely a bug in the KHI task implementation or an incorrect ID was provided in the taskid definition.\nPlease report a bug at https://github.com/kyasbal/khi/issues", id))
 	}
 	return taskImplementationIDImpl[TaskResult]{referenceId: id, implementationHash: "default"}
 }
@@ -165,7 +165,7 @@ func NewDefaultImplementationID[TaskResult any](id string) TaskImplementationID[
 // but all implementations would share the same TaskReference.
 func NewImplementationID[TaskResult any](baseReference TaskReference[TaskResult], implementationHash string) TaskImplementationID[TaskResult] {
 	if strings.Contains(implementationHash, "#") {
-		panic(fmt.Sprintf("implementation hash %s is invalid. It cannot contain '#' in NewImplementationID.\nThis is likely a bug in the KHI task implementation or an incorrect ID was provided in the taskid definition.\nPlease report a bug at https://github.com/GoogleCloudPlatform/khi/issues", implementationHash))
+		panic(fmt.Sprintf("implementation hash %s is invalid. It cannot contain '#' in NewImplementationID.\nThis is likely a bug in the KHI task implementation or an incorrect ID was provided in the taskid definition.\nPlease report a bug at https://github.com/kyasbal/khi/issues", implementationHash))
 	}
 	return taskImplementationIDImpl[TaskResult]{referenceId: baseReference.String(), implementationHash: implementationHash}
 }

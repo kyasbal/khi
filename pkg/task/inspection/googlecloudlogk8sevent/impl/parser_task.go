@@ -18,14 +18,14 @@ import (
 	"context"
 	"fmt"
 
-	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	googlecloudinspectiontypegroup_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudinspectiontypegroup/contract"
-	googlecloudlogk8sevent_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8sevent/contract"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/model/history"
+	"github.com/kyasbal/khi/pkg/model/log"
+	googlecloudinspectiontypegroup_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudinspectiontypegroup/contract"
+	googlecloudlogk8sevent_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogk8sevent/contract"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 var FieldSetReaderTask = inspectiontaskbase.NewFieldSetReadTask(googlecloudlogk8sevent_contract.FieldSetReaderTaskID, googlecloudlogk8sevent_contract.ListLogEntriesTaskID.Ref(), []log.FieldSetReader{

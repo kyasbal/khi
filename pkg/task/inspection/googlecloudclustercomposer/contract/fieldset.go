@@ -19,8 +19,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	"github.com/kyasbal/khi/pkg/common/structured"
+	"github.com/kyasbal/khi/pkg/model/log"
 )
 
 type ComposerTaskInstanceFieldSet struct {

@@ -18,8 +18,8 @@ import (
 	"errors"
 	"testing"
 
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	"github.com/GoogleCloudPlatform/khi/pkg/server/upload"
+	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	"github.com/kyasbal/khi/pkg/server/upload"
 )
 
 // mockUploadToken is a simple implementation of the UploadToken interface for testing

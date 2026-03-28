@@ -17,7 +17,7 @@ package log
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	"github.com/kyasbal/khi/pkg/common/structured"
 )
 
 type TestFieldSet struct {

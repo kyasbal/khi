@@ -15,9 +15,9 @@
 package googlecloudk8scommon_contract
 
 import (
-	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	commonlogk8sauditv2_contract "github.com/kyasbal/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
 )
 
 type NEGNameToResourceIdentityMap = map[string]commonlogk8sauditv2_contract.ResourceIdentity

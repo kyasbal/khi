@@ -17,10 +17,10 @@ package googlecloudclustergdcbaremetal_impl
 import (
 	"context"
 
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	googlecloudclustergdcbaremetal_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergdcbaremetal/contract"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	googlecloudclustergdcbaremetal_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustergdcbaremetal/contract"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // GDCVForBaremetalClusterNamePrefixTask is a task that returns an empty string as the cluster name prefix for GDCV for Baremetal.

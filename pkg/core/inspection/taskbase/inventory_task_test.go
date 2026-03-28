@@ -18,12 +18,12 @@ import (
 	"context"
 	"testing"
 
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	"github.com/google/go-cmp/cmp"
+	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	inspectiontest "github.com/kyasbal/khi/pkg/core/inspection/test"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 type testSimpleStringMergerStrategy struct {

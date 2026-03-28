@@ -19,9 +19,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/kyasbal/khi/pkg/model/enum"
 )
 
 type TestResourceChunkSortStrategy struct {

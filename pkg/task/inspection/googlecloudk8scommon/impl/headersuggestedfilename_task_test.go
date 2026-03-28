@@ -18,14 +18,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
-	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
-	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
-	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/kyasbal/khi/pkg/common/khictx"
+	"github.com/kyasbal/khi/pkg/common/typedmap"
+	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	inspectiontest "github.com/kyasbal/khi/pkg/core/inspection/test"
+	tasktest "github.com/kyasbal/khi/pkg/core/task/test"
+	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
+	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 func TestHeaderSuggestedFileNameTask(t *testing.T) {

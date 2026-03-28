@@ -17,10 +17,10 @@ package googlecloudclustergkeonaws_impl
 import (
 	"context"
 
-	common_task "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	googlecloudclustergkeonaws_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergkeonaws/contract"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	common_task "github.com/kyasbal/khi/pkg/core/task"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	googlecloudclustergkeonaws_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustergkeonaws/contract"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // AnthosOnAWSClusterNamePrefixTask is a task that provides the cluster name prefix for GKE on AWS.

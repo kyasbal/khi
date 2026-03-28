@@ -18,13 +18,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
-	googlecloudloggkeapiaudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudloggkeapiaudit/contract"
-	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testchangeset"
+	"github.com/kyasbal/khi/pkg/common/structured"
+	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/model/history"
+	"github.com/kyasbal/khi/pkg/model/log"
+	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
+	googlecloudloggkeapiaudit_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudloggkeapiaudit/contract"
+	"github.com/kyasbal/khi/pkg/testutil/testchangeset"
 )
 
 func testReaderFromYAML(t *testing.T, yaml string) *structured.NodeReader {

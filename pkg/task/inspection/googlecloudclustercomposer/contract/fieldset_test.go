@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
 	"github.com/google/go-cmp/cmp"
+	"github.com/kyasbal/khi/pkg/common/structured"
 )
 
 func TestComposerTaskInstanceFieldSetReader_Read(t *testing.T) {

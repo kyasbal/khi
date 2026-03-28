@@ -19,13 +19,13 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/filter"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/kyasbal/khi/pkg/common/filter"
+	"github.com/kyasbal/khi/pkg/common/khictx"
+	"github.com/kyasbal/khi/pkg/common/typedmap"
+	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 var SerializeTask = inspectiontaskbase.NewProgressReportableInspectionTask(inspectioncore_contract.SerializerTaskID, []taskid.UntypedTaskReference{}, func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (*inspectioncore_contract.FileSystemStore, error) {

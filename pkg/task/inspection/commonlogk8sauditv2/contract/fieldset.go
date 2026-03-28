@@ -15,10 +15,10 @@
 package commonlogk8sauditv2_contract
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
-	"github.com/GoogleCloudPlatform/khi/pkg/model"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	"github.com/kyasbal/khi/pkg/common/structured"
+	"github.com/kyasbal/khi/pkg/model"
+	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/model/log"
 )
 
 // K8sAuditLogFieldSet is the field set for k8s audit log.

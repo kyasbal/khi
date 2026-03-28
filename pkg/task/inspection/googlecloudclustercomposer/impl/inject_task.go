@@ -17,10 +17,10 @@ package googlecloudclustercomposer_impl
 import (
 	"context"
 
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	googlecloudclustercomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
-	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	googlecloudclustercomposer_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
+	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
 )
 
 // ComposerEnvironmentListFetcherTask injects ComposerEnvironmentListFetcher implementation.

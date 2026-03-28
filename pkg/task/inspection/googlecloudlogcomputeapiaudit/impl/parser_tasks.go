@@ -20,16 +20,16 @@ import (
 	"fmt"
 	"strings"
 
-	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
-	googlecloudinspectiontypegroup_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudinspectiontypegroup/contract"
-	googlecloudlogcomputeapiaudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogcomputeapiaudit/contract"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/model/history"
+	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
+	"github.com/kyasbal/khi/pkg/model/log"
+	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
+	googlecloudinspectiontypegroup_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudinspectiontypegroup/contract"
+	googlecloudlogcomputeapiaudit_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogcomputeapiaudit/contract"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 var FieldSetReaderTask = inspectiontaskbase.NewFieldSetReadTask(googlecloudlogcomputeapiaudit_contract.FieldSetReaderTaskID, googlecloudlogcomputeapiaudit_contract.ListLogEntriesTaskID.Ref(), []log.FieldSetReader{

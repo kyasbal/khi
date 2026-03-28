@@ -18,11 +18,11 @@ import (
 	"context"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/formtask"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
-	googlecloudlogk8scontrolplane_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
+	"github.com/kyasbal/khi/pkg/core/inspection/formtask"
+	"github.com/kyasbal/khi/pkg/core/inspection/gcpqueryutil"
+	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
+	googlecloudlogk8scontrolplane_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
 )
 
 const priorityForControlPlaneGroup = googlecloudcommon_contract.FormBasePriority + 30000

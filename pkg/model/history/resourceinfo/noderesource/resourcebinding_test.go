@@ -17,8 +17,8 @@ package noderesource
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
 	"github.com/google/go-cmp/cmp"
+	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
 )
 
 func TestPodResourceBinding_GetResourcePath(t *testing.T) {

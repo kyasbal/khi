@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/logging/apiv2/loggingpb"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	"github.com/kyasbal/khi/pkg/common/structured"
 	ltype "google.golang.org/genproto/googleapis/logging/type"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"

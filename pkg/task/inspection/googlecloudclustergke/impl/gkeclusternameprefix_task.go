@@ -17,10 +17,10 @@ package googlecloudclustergke_impl
 import (
 	"context"
 
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	googlecloudclustergke_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergke/contract"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	googlecloudclustergke_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustergke/contract"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // GKEClusterNamePrefixTask is a task that returns an empty string as the cluster name prefix for GKE.

@@ -18,8 +18,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/model/binarychunk"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/model/binarychunk"
+	"github.com/kyasbal/khi/pkg/model/enum"
 )
 
 // The entire inspection data.

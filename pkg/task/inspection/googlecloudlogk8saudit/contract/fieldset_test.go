@@ -17,9 +17,9 @@ package googlecloudlogk8saudit_contract
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/model"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/google/go-cmp/cmp"
+	"github.com/kyasbal/khi/pkg/model"
+	"github.com/kyasbal/khi/pkg/model/enum"
 )
 
 func TestParseKubernetesOperation(t *testing.T) {

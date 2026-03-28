@@ -20,12 +20,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/khierrors"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/formtask"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
-	googlecloudlogcsm_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogcsm/contract"
+	"github.com/kyasbal/khi/pkg/common/khierrors"
+	"github.com/kyasbal/khi/pkg/core/inspection/formtask"
+	"github.com/kyasbal/khi/pkg/core/inspection/gcpqueryutil"
+	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
+	googlecloudlogcsm_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogcsm/contract"
 )
 
 const priorityForCSMGroup = googlecloudcommon_contract.FormBasePriority + 10000

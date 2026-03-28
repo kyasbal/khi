@@ -21,7 +21,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	"github.com/kyasbal/khi/pkg/common/structured"
 )
 
 func TestFromResourceTypeReflection(t *testing.T) {

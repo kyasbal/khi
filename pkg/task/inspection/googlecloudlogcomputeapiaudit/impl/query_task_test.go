@@ -17,9 +17,9 @@ package googlecloudlogcomputeapiaudit_impl
 import (
 	"testing"
 
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
-	gcp_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/gcp"
 	"github.com/google/go-cmp/cmp"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	gcp_test "github.com/kyasbal/khi/pkg/testutil/gcp"
 )
 
 func TestGenerateComputeAPIQuery(t *testing.T) {

@@ -26,13 +26,13 @@ watch-karma: $(GENERATE_FRONTEND_DUMMY) ## Run karma test server
 	cd web && npm run test
 
 khi: $(GENERATE_BACKEND_DUMMY) $(FRONTEND_ARTIFACT_FILES_DUMMY) $(BACKEND_SRCS)
-	CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w -X github.com/GoogleCloudPlatform/khi/pkg/common/constants.VERSION=$(shell cat ./VERSION)" -o ./khi ./cmd/kubernetes-history-inspector/...
+	CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w -X github.com/kyasbal/khi/pkg/common/constants.VERSION=$(shell cat ./VERSION)" -o ./khi .
 
 .PHONY: build-go
 build-go: khi ## Build backend for production
 
 khi-debug: $(GENERATE_BACKEND_DUMMY) $(FRONTEND_ARTIFACT_FILES_DUMMY) $(BACKEND_SRCS)
-	CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags="-X github.com/GoogleCloudPlatform/khi/pkg/common/constants.VERSION=$(shell cat ./VERSION)" -o ./khi-debug ./cmd/kubernetes-history-inspector/...	
+	CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags="-X github.com/kyasbal/khi/pkg/common/constants.VERSION=$(shell cat ./VERSION)" -o ./khi-debug .	
 
 .PHONY: build-go-debug
 build-go-debug: khi-debug ## Build backend for debugging
@@ -41,7 +41,7 @@ build-go-debug: khi-debug ## Build backend for debugging
 build: build-go
 
 define build_binary
-	CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -ldflags="-s -w -X github.com/GoogleCloudPlatform/khi/pkg/common/constants.VERSION=$(shell cat ./VERSION)" -o ./bin/khi-$(1)-$(2)$(3) ./cmd/kubernetes-history-inspector/...
+	CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build -ldflags="-s -w -X github.com/kyasbal/khi/pkg/common/constants.VERSION=$(shell cat ./VERSION)" -o ./bin/khi-$(1)-$(2)$(3) .
 endef
 
 .PHONY: build-go-binaries

@@ -17,10 +17,10 @@ package googlecloudcommon_impl
 import (
 	"testing"
 
-	form_task_test "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/formtask/test"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
-	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	form_task_test "github.com/kyasbal/khi/pkg/core/inspection/formtask/test"
+	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	"github.com/kyasbal/khi/pkg/parameters"
+	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
 )
 
 func TestProjectIdInput(t *testing.T) {

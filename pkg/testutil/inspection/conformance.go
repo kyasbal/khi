@@ -19,9 +19,9 @@ import (
 	"strings"
 	"testing"
 
-	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
-	"github.com/GoogleCloudPlatform/khi/pkg/generated"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
+	"github.com/kyasbal/khi/pkg/generated"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 func ConformanceTestForInspectionTypes(t *testing.T) {

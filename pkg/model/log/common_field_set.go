@@ -17,7 +17,7 @@ package log
 import (
 	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/model/enum"
 )
 
 // CommonFieldSet is an abstract FieldSet struct type to get fields commonly defined in logs.

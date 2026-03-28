@@ -19,7 +19,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	"github.com/kyasbal/khi/pkg/common/typedmap"
 )
 
 type QueryItem struct {

@@ -21,9 +21,9 @@ import (
 	"sync"
 	"testing"
 
-	_ "github.com/GoogleCloudPlatform/khi/internal/testflags"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	_ "github.com/kyasbal/khi/internal/testflags"
 )
 
 func TestTypedDict_Keys(t *testing.T) {

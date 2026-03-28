@@ -15,10 +15,10 @@
 package commonlogk8sauditv2_contract
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/common/patternfinder"
-	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	"github.com/kyasbal/khi/pkg/common/patternfinder"
+	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	"github.com/kyasbal/khi/pkg/model/log"
 )
 
 // TaskIDPrefix is the prefix for all task IDs in this package.

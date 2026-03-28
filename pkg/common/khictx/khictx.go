@@ -20,8 +20,8 @@ import (
 	"log/slog"
 	"reflect"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/khierrors"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	"github.com/kyasbal/khi/pkg/common/khierrors"
+	"github.com/kyasbal/khi/pkg/common/typedmap"
 )
 
 // GetValue retrieves a typed value from the context.

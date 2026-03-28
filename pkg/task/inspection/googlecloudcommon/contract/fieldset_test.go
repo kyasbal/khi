@@ -18,10 +18,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/khierrors"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	"github.com/google/go-cmp/cmp"
+	"github.com/kyasbal/khi/pkg/common/khierrors"
+	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
+	"github.com/kyasbal/khi/pkg/model/log"
 )
 
 func TestGCPAuditLogFieldSetReader(t *testing.T) {

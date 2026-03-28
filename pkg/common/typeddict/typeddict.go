@@ -65,7 +65,7 @@ func Get[T any](dict *TypedDict[T], key string) (T, bool) {
 	if ok {
 		typed, ok := value.(T)
 		if !ok {
-			panic(fmt.Sprintf("expected dict value at %s is convertible to %T, but got %T.\nThis error rarely happens unless users forcibly casting the key types or a bug in KHI.\n Please report a bug. https://github.com/GoogleCloudPlatform/khi/issues", key, *new(T), value))
+			panic(fmt.Sprintf("expected dict value at %s is convertible to %T, but got %T.\nThis error rarely happens unless users forcibly casting the key types or a bug in KHI.\n Please report a bug. https://github.com/kyasbal/khi/issues", key, *new(T), value))
 		}
 		return typed, true
 	}

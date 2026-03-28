@@ -17,11 +17,11 @@ package commonlogk8sauditv2_impl
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/model"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
-	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testchangeset"
+	"github.com/kyasbal/khi/pkg/model"
+	"github.com/kyasbal/khi/pkg/model/history"
+	"github.com/kyasbal/khi/pkg/model/log"
+	commonlogk8sauditv2_contract "github.com/kyasbal/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	"github.com/kyasbal/khi/pkg/testutil/testchangeset"
 )
 
 func TestNonSuccessLogLogToTimelineMapperTaskSetting_AddEventForLog(t *testing.T) {

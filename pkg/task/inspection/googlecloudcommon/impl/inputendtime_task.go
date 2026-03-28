@@ -19,14 +19,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/formtask"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/kyasbal/khi/pkg/common"
+	"github.com/kyasbal/khi/pkg/common/khictx"
+	"github.com/kyasbal/khi/pkg/core/inspection/formtask"
+	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // InputEndTimeTask defines a form task to input the end time for log queries.

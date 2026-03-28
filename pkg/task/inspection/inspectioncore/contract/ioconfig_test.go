@@ -19,8 +19,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
-	"github.com/GoogleCloudPlatform/khi/pkg/testutil"
+	"github.com/kyasbal/khi/pkg/parameters"
+	"github.com/kyasbal/khi/pkg/testutil"
 )
 
 func TestTestIOConfigCanFindTheRoot(t *testing.T) {

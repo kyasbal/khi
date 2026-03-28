@@ -17,13 +17,13 @@ package inspectiontaskbasetest
 import (
 	"testing"
 
-	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
-	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
+	inspectiontest "github.com/kyasbal/khi/pkg/core/inspection/test"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	tasktest "github.com/kyasbal/khi/pkg/core/task/test"
+	"github.com/kyasbal/khi/pkg/model/log"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // GrouperTaskTestCase is a test case for log grouper task.

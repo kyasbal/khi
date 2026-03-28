@@ -15,10 +15,10 @@
 package googlecloudclustercomposer_impl
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
-	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	googlecloudclustercomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
+	"github.com/kyasbal/khi/pkg/core/inspection/gcpqueryutil"
+	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
+	"github.com/kyasbal/khi/pkg/model/log"
+	googlecloudclustercomposer_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
 )
 
 // ComposerLogsFieldSetReadTask reads the main message and Composer component fieldsets.

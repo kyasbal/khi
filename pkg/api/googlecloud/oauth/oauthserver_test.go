@@ -25,10 +25,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/server/popup"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/kyasbal/khi/pkg/server/popup"
 	"golang.org/x/oauth2"
 )
 

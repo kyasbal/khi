@@ -18,10 +18,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
-	"github.com/GoogleCloudPlatform/khi/pkg/testutil"
+	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/model/history"
+	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
+	"github.com/kyasbal/khi/pkg/testutil"
 )
 
 // Testing assertion utils with failure pattern seems to be complex in Golang.

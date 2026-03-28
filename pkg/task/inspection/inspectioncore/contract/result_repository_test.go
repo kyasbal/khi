@@ -17,8 +17,8 @@ package inspectioncore_contract
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/testutil"
 	"github.com/google/go-cmp/cmp"
+	"github.com/kyasbal/khi/pkg/testutil"
 )
 
 func TestFileSystemResultRepository(t *testing.T) {

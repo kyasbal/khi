@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/formtask"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
-	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	"github.com/kyasbal/khi/pkg/core/inspection/formtask"
+	"github.com/kyasbal/khi/pkg/core/inspection/gcpqueryutil"
+	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
+	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 )
 
 const maxNamespaceFilterOptions = 500

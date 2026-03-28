@@ -18,13 +18,13 @@ import (
 	"testing"
 	"time"
 
-	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
-	googlecloudloggkeautoscaler_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudloggkeautoscaler/contract"
-	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testchangeset"
+	tasktest "github.com/kyasbal/khi/pkg/core/task/test"
+	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/model/history"
+	"github.com/kyasbal/khi/pkg/model/log"
+	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	googlecloudloggkeautoscaler_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudloggkeautoscaler/contract"
+	"github.com/kyasbal/khi/pkg/testutil/testchangeset"
 )
 
 func TestLogToTimelineMapperTask(t *testing.T) {

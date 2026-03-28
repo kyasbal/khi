@@ -17,7 +17,7 @@ package googlecloudlognetworkapiaudit_impl
 import (
 	"testing"
 
-	gcp_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/gcp"
+	gcp_test "github.com/kyasbal/khi/pkg/testutil/gcp"
 )
 
 func TestGenerateGenerateGCPNetworkAPIQueryIsValid(t *testing.T) {

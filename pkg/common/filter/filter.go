@@ -15,7 +15,7 @@
 package filter
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	"github.com/kyasbal/khi/pkg/common/typedmap"
 )
 
 // TypedMapFilter is an interface for filtering objects that have a TypedMap

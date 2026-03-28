@@ -17,7 +17,7 @@ package googlecloudclustercomposer_contract
 import (
 	"math"
 
-	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
 )
 
 // InspectionTypeId is the inspection type id for google cloud composer.

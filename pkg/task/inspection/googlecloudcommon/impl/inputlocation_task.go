@@ -18,11 +18,11 @@ import (
 	"context"
 	"slices"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/formtask"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	"github.com/kyasbal/khi/pkg/common"
+	"github.com/kyasbal/khi/pkg/core/inspection/formtask"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
 )
 
 // InputLocationsTask defines a form task for inputting the resource location.

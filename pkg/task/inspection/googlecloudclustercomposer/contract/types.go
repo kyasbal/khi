@@ -15,8 +15,8 @@
 package googlecloudclustercomposer_contract
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
 	"gopkg.in/yaml.v3"
 )
 

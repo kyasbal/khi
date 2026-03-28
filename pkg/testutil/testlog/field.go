@@ -17,7 +17,7 @@ package testlog
 import (
 	"strings"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	"github.com/kyasbal/khi/pkg/common/structured"
 )
 
 // StringField returns a TestLogOpt modifying the field at the specified fieldPath to the value.

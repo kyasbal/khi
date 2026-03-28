@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/logging/apiv2/loggingpb"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
 	"github.com/google/go-cmp/cmp"
+	"github.com/kyasbal/khi/pkg/common/structured"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
 	"google.golang.org/genproto/googleapis/cloud/audit"
 	ltype "google.golang.org/genproto/googleapis/logging/type"

@@ -219,7 +219,7 @@ Role of Each Component
     It imports the contract package to safely reference the TaskID.
 - `registration.go` (package foo)
 
-    It typically contains a function registering the task instance (from the fooimpl package) with a central task registry. This function is called from an upper layer package or initialization step of a file in `cmd/kubernetes-history-inspector/`.
+    It typically contains a function registering the task instance (from the fooimpl package) with a central task registry. This function is called from an upper layer package or initialization step of `main.go`.
 
 ### Testing tasks
 

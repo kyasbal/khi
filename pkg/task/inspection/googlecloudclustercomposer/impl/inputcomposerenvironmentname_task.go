@@ -17,12 +17,12 @@ package googlecloudclustercomposer_impl
 import (
 	"context"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/formtask"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	googlecloudclustercomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
-	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	"github.com/kyasbal/khi/pkg/common"
+	"github.com/kyasbal/khi/pkg/core/inspection/formtask"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	googlecloudclustercomposer_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
+	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
 )
 
 // InputComposerEnvironmentNameTask is the task that inputs composer environment name.

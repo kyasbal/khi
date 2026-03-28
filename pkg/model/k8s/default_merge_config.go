@@ -18,7 +18,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	"github.com/kyasbal/khi/pkg/common/structured"
 	admissionv1 "k8s.io/api/admission/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"

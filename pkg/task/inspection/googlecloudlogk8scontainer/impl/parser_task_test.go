@@ -17,10 +17,10 @@ package googlecloudlogk8scontainer_impl
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	googlecloudlogk8scontainer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8scontainer/contract"
-	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testchangeset"
+	"github.com/kyasbal/khi/pkg/model/history"
+	"github.com/kyasbal/khi/pkg/model/log"
+	googlecloudlogk8scontainer_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogk8scontainer/contract"
+	"github.com/kyasbal/khi/pkg/testutil/testchangeset"
 )
 
 func TestLogToTimelineMapperTask(t *testing.T) {

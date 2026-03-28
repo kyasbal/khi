@@ -21,10 +21,10 @@ import (
 	"os"
 	"sync"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	core_contract "github.com/GoogleCloudPlatform/khi/pkg/task/core/contract"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/kyasbal/khi/pkg/common/khictx"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	core_contract "github.com/kyasbal/khi/pkg/task/core/contract"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 var globalLogHandler *globalLoggerHandler

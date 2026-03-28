@@ -17,9 +17,9 @@ package inspectioncore_contract
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/common/typedmap"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	"github.com/kyasbal/khi/pkg/model/enum"
 )
 
 func TestQueryTaskLabelOpt(t *testing.T) {
