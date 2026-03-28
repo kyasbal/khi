@@ -17,12 +17,12 @@ package inspectiontaskbasetest
 import (
 	"testing"
 
-	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	inspectiontest "github.com/kyasbal/khi/pkg/core/inspection/test"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	tasktest "github.com/kyasbal/khi/pkg/core/task/test"
+	"github.com/kyasbal/khi/pkg/model/log"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // FilterTaskTestCase is a test case for testing a filter task.

@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/idgenerator"
+	"github.com/kyasbal/khi/pkg/common/idgenerator"
 )
 
 var popupIDGenerator = idgenerator.NewPrefixIDGenerator("popup-")

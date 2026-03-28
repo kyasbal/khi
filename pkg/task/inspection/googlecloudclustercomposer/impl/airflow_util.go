@@ -15,8 +15,8 @@
 package googlecloudclustercomposer_impl
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
-	googlecloudclustercomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
+	"github.com/kyasbal/khi/pkg/model/enum"
+	googlecloudclustercomposer_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
 )
 
 // tiStatusToVerb converts Taskinstance status to (enum.RevisionVerb, enum.RevisionState)

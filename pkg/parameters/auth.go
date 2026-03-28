@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/flag"
+	"github.com/kyasbal/khi/pkg/common/flag"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )

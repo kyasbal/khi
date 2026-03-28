@@ -14,7 +14,7 @@
 
 package inspectionmetadata
 
-import "github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+import "github.com/kyasbal/khi/pkg/common/typedmap"
 
 type MetadataLabelOpt interface {
 	Write(labels *typedmap.TypedMap)

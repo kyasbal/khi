@@ -19,10 +19,10 @@ import (
 	"testing"
 	"time"
 
-	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
-	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
-	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	inspectiontest "github.com/kyasbal/khi/pkg/core/inspection/test"
+	tasktest "github.com/kyasbal/khi/pkg/core/task/test"
+	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 func TestInputStartTime(t *testing.T) {

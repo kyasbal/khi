@@ -17,9 +17,9 @@ package googlecloudlogonpremapiaudit_impl
 import (
 	"testing"
 
-	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
-	gcp_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/gcp"
 	"github.com/google/go-cmp/cmp"
+	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	gcp_test "github.com/kyasbal/khi/pkg/testutil/gcp"
 )
 
 func TestGenerateOnPremAPIQuery(t *testing.T) {

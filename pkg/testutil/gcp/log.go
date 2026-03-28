@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"cloud.google.com/go/logging/apiv2/loggingpb"
-	"github.com/GoogleCloudPlatform/khi/internal/testflags"
-	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
 	"github.com/googleapis/gax-go/v2"
+	"github.com/kyasbal/khi/internal/testflags"
+	"github.com/kyasbal/khi/pkg/api/googlecloud"
 	"google.golang.org/api/iterator"
 )
 

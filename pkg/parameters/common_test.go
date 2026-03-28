@@ -19,8 +19,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/testutil"
 	"github.com/google/go-cmp/cmp"
+	"github.com/kyasbal/khi/pkg/testutil"
 )
 
 func TestCommonParameters(t *testing.T) {

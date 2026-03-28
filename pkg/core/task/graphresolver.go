@@ -20,8 +20,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/kyasbal/khi/pkg/common/typedmap"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
 )
 
 // DefaultTaskGraphResolver is the default configuration of graph resolver used for constructing complete task graph.

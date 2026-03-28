@@ -18,15 +18,15 @@ import (
 	"context"
 	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
-	core_contract "github.com/GoogleCloudPlatform/khi/pkg/task/core/contract"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/kyasbal/khi/pkg/common/khictx"
+	"github.com/kyasbal/khi/pkg/common/typedmap"
+	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	tasktest "github.com/kyasbal/khi/pkg/core/task/test"
+	"github.com/kyasbal/khi/pkg/model/history"
+	core_contract "github.com/kyasbal/khi/pkg/task/core/contract"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // TestInspectionCreationTime is a fixed time used across tests to ensure deterministic behavior.

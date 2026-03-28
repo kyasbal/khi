@@ -14,7 +14,7 @@
 
 package logger
 
-import "github.com/GoogleCloudPlatform/khi/pkg/common"
+import "github.com/kyasbal/khi/pkg/common"
 
 type logThrottleStatus = int
 

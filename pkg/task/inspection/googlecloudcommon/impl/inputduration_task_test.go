@@ -18,11 +18,11 @@ import (
 	"testing"
 	"time"
 
-	form_task_test "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/formtask/test"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
-	inspectioncore_impl "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/impl"
+	form_task_test "github.com/kyasbal/khi/pkg/core/inspection/formtask/test"
+	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	tasktest "github.com/kyasbal/khi/pkg/core/task/test"
+	inspectioncore_impl "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/impl"
 )
 
 func TestDurationInput(t *testing.T) {

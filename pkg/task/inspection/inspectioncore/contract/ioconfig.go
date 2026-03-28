@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
+	"github.com/kyasbal/khi/pkg/parameters"
 )
 
 // IOConfig holds configuration for file input/output operations.

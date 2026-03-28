@@ -15,9 +15,9 @@
 package googlecloudclustergke_contract
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
-	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
+	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 )
 
 // ClusterGKETaskCommonPrefix is the task id prefix originally defined in googlecloudclustergke.

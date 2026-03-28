@@ -17,8 +17,8 @@ package formtask
 import (
 	"testing"
 
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
 )
 
 func TestNewFormTaskBuilderBase(t *testing.T) {

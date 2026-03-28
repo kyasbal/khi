@@ -22,7 +22,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . ${ROOT}
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w -X github.com/GoogleCloudPlatform/khi/pkg/common/constants.VERSION=$(cat ./VERSION)" -o /built/khi cmd/kubernetes-history-inspector/*.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w -X github.com/GoogleCloudPlatform/khi/pkg/common/constants.VERSION=$(cat ./VERSION)" -o /built/khi .
 RUN mkdir /built/data
 RUN mkdir -m 1777 /app.tmp
 

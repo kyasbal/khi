@@ -15,7 +15,7 @@
 package inspectionmetadata
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	"github.com/kyasbal/khi/pkg/common/typedmap"
 )
 
 type InspectionPlanMetadata struct {

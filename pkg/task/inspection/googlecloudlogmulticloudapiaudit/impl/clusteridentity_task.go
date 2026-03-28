@@ -15,9 +15,9 @@
 package googlecloudlogmulticloudapiaudit_impl
 
 import (
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
-	googlecloudlogmulticloudapiaudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogmulticloudapiaudit/contract"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	googlecloudlogmulticloudapiaudit_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogmulticloudapiaudit/contract"
 )
 
 var ClusterIdentityAliasTask = coretask.NewAliasTask(

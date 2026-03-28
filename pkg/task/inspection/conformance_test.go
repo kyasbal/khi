@@ -17,7 +17,7 @@ package inspection_test
 import (
 	"testing"
 
-	inspection_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/inspection"
+	inspection_test "github.com/kyasbal/khi/pkg/testutil/inspection"
 )
 
 func TestConformanceTestForInspectionTypes(t *testing.T) {

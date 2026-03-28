@@ -1,10 +1,10 @@
-# Copyright 2025 Google LLC
+# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,18 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Release Draft
+name: Deploy Prebuilt Branch
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version tag (e.g. v1.0.0 or v1.0.0-beta-1)'
-        required: true
-        type: string
+  push:
+    branches:
+      - 'main'
+      - 'feat/go-get'
 
 jobs:
-  release-draft:
+  deploy-prebuilt-branch:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -42,32 +40,20 @@ jobs:
           node-version-file: './.node-version'
 
       - name: Install Frontend Dependencies
-        run: |
-          cd web
-          npm ci
+        working-directory: ./web
+        run: npm ci
 
-      - name: Update VERSION file
-        run: echo "${{ inputs.version }}" | sed 's/^v//' > VERSION
+      - name: Generate frontend codes
+        run: make generate-frontend
 
       - name: Build Web
         run: make build-web
 
-      - name: Tag and Push Release Commit
+      - name: Deploy to main-prebuilt
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
           git add -f pkg/server/dist/browser
-          git commit -m "chore: release ${{ inputs.version }}"
-          git tag ${{ inputs.version }}
-          git push origin ${{ inputs.version }}
-
-      - name: Build Binaries
-        run: make build-go-binaries
-
-      - name: Create Release
-        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b
-        with:
-          tag_name: ${{ inputs.version }}
-          draft: true
-          files: bin/*
+          git commit -m "chore: deploy prebuilt frontend assets from ${GITHUB_SHA}" || echo "No changes to commit"
+          git push origin HEAD:main-prebuilt --force

@@ -19,13 +19,13 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
-	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud/options"
-	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
-	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
-	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	"github.com/google/go-cmp/cmp"
+	"github.com/kyasbal/khi/pkg/api/googlecloud"
+	"github.com/kyasbal/khi/pkg/api/googlecloud/options"
+	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
+	inspectiontest "github.com/kyasbal/khi/pkg/core/inspection/test"
+	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 type mockCallerOptionsInjectorOpton struct {

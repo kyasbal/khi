@@ -20,8 +20,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/kyasbal/khi/pkg/common/typedmap"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
 )
 
 // mockUntypedTask is a mock implementation of the UntypedTask interface for testing.

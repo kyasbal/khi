@@ -17,8 +17,8 @@ package coreinit
 import (
 	"slices"
 
-	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
-	"github.com/GoogleCloudPlatform/khi/pkg/server"
+	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
+	"github.com/kyasbal/khi/pkg/server"
 )
 
 // Registered init extensions.

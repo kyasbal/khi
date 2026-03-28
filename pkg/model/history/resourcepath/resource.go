@@ -15,7 +15,7 @@
 package resourcepath
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/model/enum"
 )
 
 const nonSpecifiedPlaceholder = "unknown"

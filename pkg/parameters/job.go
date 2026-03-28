@@ -17,7 +17,7 @@ package parameters
 import (
 	"errors"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/flag"
+	"github.com/kyasbal/khi/pkg/common/flag"
 )
 
 var Job *JobParameters = &JobParameters{}

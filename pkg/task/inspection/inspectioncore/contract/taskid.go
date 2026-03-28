@@ -17,7 +17,7 @@ package inspectioncore_contract
 import (
 	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
 )
 
 var InspectionTimeTaskID = taskid.NewDefaultImplementationID[time.Time](InspectionTaskPrefix + "task/time")

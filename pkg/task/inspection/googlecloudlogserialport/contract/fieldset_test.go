@@ -17,10 +17,10 @@ package googlecloudlogserialport_contract
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logutil"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testlog"
 	"github.com/google/go-cmp/cmp"
+	"github.com/kyasbal/khi/pkg/core/inspection/logutil"
+	"github.com/kyasbal/khi/pkg/model/log"
+	"github.com/kyasbal/khi/pkg/testutil/testlog"
 )
 
 func TestFieldSet(t *testing.T) {

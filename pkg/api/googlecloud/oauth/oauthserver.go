@@ -22,8 +22,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/server/popup"
 	"github.com/gin-gonic/gin"
+	"github.com/kyasbal/khi/pkg/server/popup"
 	"golang.org/x/oauth2"
 )
 

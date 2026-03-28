@@ -19,9 +19,9 @@ import (
 	"strconv"
 	"sync/atomic"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/common/structured"
+	"github.com/kyasbal/khi/pkg/common/typedmap"
+	"github.com/kyasbal/khi/pkg/model/enum"
 )
 
 var logInstanceID = atomic.Int32{}

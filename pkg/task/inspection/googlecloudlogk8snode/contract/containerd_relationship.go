@@ -15,7 +15,7 @@
 package googlecloudlogk8snode_contract
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
 )
 
 type PodSandboxIDInfo struct {

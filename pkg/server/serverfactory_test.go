@@ -18,8 +18,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/server/option"
 	"github.com/gin-gonic/gin"
+	"github.com/kyasbal/khi/pkg/server/option"
 )
 
 // mockOption is a helper for testing.

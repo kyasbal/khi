@@ -15,8 +15,8 @@
 package testlog
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	"github.com/kyasbal/khi/pkg/common/structured"
+	"github.com/kyasbal/khi/pkg/model/log"
 )
 
 type TestLogOpt = func(original structured.Node) (structured.Node, error)

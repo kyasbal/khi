@@ -1,4 +1,4 @@
-module github.com/GoogleCloudPlatform/khi/scripts/depguard-generator
+module github.com/kyasbal/khi/scripts/depguard-generator
 
 go 1.25.5
 

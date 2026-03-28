@@ -15,9 +15,9 @@
 package googlecloudloggkeapiaudit_contract
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	"github.com/kyasbal/khi/pkg/common/structured"
+	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
+	"github.com/kyasbal/khi/pkg/model/log"
 )
 
 // GKEAuditLogResourceFieldSet represents the resource-related fields extracted from a GKE audit log entry.

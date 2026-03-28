@@ -14,7 +14,7 @@
 
 package inspectioncore_contract
 
-import coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+import coretask "github.com/kyasbal/khi/pkg/core/task"
 
 // InspectionTaskRegistry
 type InspectionTaskRegistry interface {

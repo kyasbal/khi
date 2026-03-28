@@ -17,9 +17,9 @@ package googlecloudcommon_contract
 import (
 	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/kyasbal/khi/pkg/api/googlecloud"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // GoogleCloudCommonTaskIDPrefix is the prefix for Google Cloud common task IDs.

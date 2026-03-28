@@ -18,10 +18,10 @@ import (
 	"context"
 	"testing"
 
-	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	"github.com/google/go-cmp/cmp"
+	inspectiontest "github.com/kyasbal/khi/pkg/core/inspection/test"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 func TestCachedTask(t *testing.T) {

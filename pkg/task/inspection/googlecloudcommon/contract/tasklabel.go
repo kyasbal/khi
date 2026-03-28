@@ -14,7 +14,7 @@
 
 package googlecloudcommon_contract
 
-import "github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+import "github.com/kyasbal/khi/pkg/common/typedmap"
 
 // RequestOptionalInputResourceNameTaskLabel is a label assigned to a task that requests the Cloud Logging resource name optionally.
 // The value is the query ID.

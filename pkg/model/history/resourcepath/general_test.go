@@ -17,7 +17,7 @@ package resourcepath
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/model/enum"
 )
 
 func TestAPIVersionLayerGeneralItem(t *testing.T) {

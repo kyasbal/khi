@@ -19,7 +19,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/model/enum"
 )
 
 var irregularPluralToSingularSuffixMap = map[string]string{

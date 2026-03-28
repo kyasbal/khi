@@ -28,7 +28,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
 )
 
 type testCompressorWaitForSecond struct {

@@ -17,7 +17,7 @@ package googlecloudclustergke_contract
 import (
 	"math"
 
-	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
 )
 
 // InspectionTypeId is the unique identifier for the GKE inspection type.

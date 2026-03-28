@@ -19,7 +19,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/server/option"
+	"github.com/kyasbal/khi/pkg/server/option"
 )
 
 // DefaultServerFactory is the default instance of ServerFactory.

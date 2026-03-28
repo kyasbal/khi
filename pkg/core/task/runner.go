@@ -21,11 +21,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/errorreport"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	core_contract "github.com/GoogleCloudPlatform/khi/pkg/task/core/contract"
+	"github.com/kyasbal/khi/pkg/common/errorreport"
+	"github.com/kyasbal/khi/pkg/common/khictx"
+	"github.com/kyasbal/khi/pkg/common/typedmap"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	core_contract "github.com/kyasbal/khi/pkg/task/core/contract"
 	"golang.org/x/sync/errgroup"
 )
 

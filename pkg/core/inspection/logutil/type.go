@@ -15,8 +15,8 @@
 package logutil
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/common/khierrors"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/common/khierrors"
+	"github.com/kyasbal/khi/pkg/model/enum"
 )
 
 const OriginalMessageFieldKey = "@original"

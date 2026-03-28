@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/idgenerator"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
-	inspectioncore_impl "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/impl"
+	"github.com/kyasbal/khi/pkg/common/idgenerator"
+	coretask "github.com/kyasbal/khi/pkg/core/task"
+	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	inspectioncore_impl "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/impl"
 	"golang.org/x/exp/slices"
 )
 

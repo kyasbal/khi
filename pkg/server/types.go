@@ -14,7 +14,7 @@
 
 package server
 
-import coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+import coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
 
 type SerializedMetadata = map[string]any
 

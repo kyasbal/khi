@@ -36,5 +36,5 @@ assignees: ''
 
 ## Environments
 
-* [Image version](https://github.com/GoogleCloudPlatform/khi/pkgs/container/khi) used : <FILL_HERE>
+* [Image version](https://github.com/kyasbal/khi/pkgs/container/khi) used : <FILL_HERE>
 * [ ] I use the latest Chrome when I observed this issue

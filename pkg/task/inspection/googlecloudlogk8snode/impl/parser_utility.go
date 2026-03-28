@@ -18,12 +18,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/khierrors"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logutil"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	googlecloudlogk8snode_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8snode/contract"
+	"github.com/kyasbal/khi/pkg/common/khierrors"
+	"github.com/kyasbal/khi/pkg/core/inspection/logutil"
+	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/kyasbal/khi/pkg/model/history"
+	"github.com/kyasbal/khi/pkg/model/log"
+	googlecloudlogk8snode_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogk8snode/contract"
 )
 
 // readGoStructFromString finds the struct part of a specific structName in the given string and returns its fields as a map.

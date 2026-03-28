@@ -14,7 +14,7 @@
 
 package parameters
 
-import "github.com/GoogleCloudPlatform/khi/pkg/common/flag"
+import "github.com/kyasbal/khi/pkg/common/flag"
 
 var Server *ServerParameters = &ServerParameters{}
 

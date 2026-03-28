@@ -15,8 +15,8 @@
 package googlecloudclustergkeonaws_contract
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 )
 
 // ClusterGKEOnAWSTaskCommonPrefix is the task id prefix defined in googlecloudclustergkeonaws.

@@ -17,10 +17,10 @@ package googlecloudlogk8snode_contract
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logutil"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	"github.com/google/go-cmp/cmp"
+	"github.com/kyasbal/khi/pkg/core/inspection/logutil"
+	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
+	"github.com/kyasbal/khi/pkg/model/log"
 )
 
 func TestK8sNodeLogCommonFieldSetReader(t *testing.T) {

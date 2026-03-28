@@ -17,7 +17,7 @@ package inspectionmetadata
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/kyasbal/khi/pkg/core/task/taskid"
 )
 
 func TestLogMetadata(t *testing.T) {

@@ -19,8 +19,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/constants"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/flag"
+	"github.com/kyasbal/khi/pkg/common/constants"
+	"github.com/kyasbal/khi/pkg/common/flag"
 )
 
 var Common *CommonParameters = &CommonParameters{}
