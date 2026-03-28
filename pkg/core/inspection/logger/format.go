@@ -20,8 +20,8 @@ import (
 	"io"
 	"log/slog"
 
-	"github.com/kyasbal/khi/pkg/common/khictx"
-	core_contract "github.com/kyasbal/khi/pkg/task/core/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
+	core_contract "github.com/GoogleCloudPlatform/khi/pkg/task/core/contract"
 )
 
 var reset = "\033[0m"

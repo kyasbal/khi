@@ -17,10 +17,10 @@ package history
 import (
 	"fmt"
 
-	"github.com/kyasbal/khi/pkg/common"
-	"github.com/kyasbal/khi/pkg/model/enum"
-	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
-	"github.com/kyasbal/khi/pkg/model/log"
+	"github.com/GoogleCloudPlatform/khi/pkg/common"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 )
 
 // history.ChangeSet is set of changes applicable to history.

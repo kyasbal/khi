@@ -17,7 +17,7 @@ package testlog
 import (
 	"fmt"
 
-	"github.com/kyasbal/khi/pkg/common/structured"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
 )
 
 // YAML function returns a TestLogOpt generating the structure node with given YAML string.

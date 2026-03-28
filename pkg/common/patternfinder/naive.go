@@ -18,7 +18,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kyasbal/khi/pkg/common/typeddict"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typeddict"
 )
 
 // naivePatternFinder is a simple implementation of PatternFinder.

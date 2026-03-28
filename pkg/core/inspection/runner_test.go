@@ -18,12 +18,12 @@ import (
 	"context"
 	"testing"
 
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logger"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	"github.com/google/go-cmp/cmp"
-	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
-	"github.com/kyasbal/khi/pkg/core/inspection/logger"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 func TestInspectionTaskRunner_Interceptor(t *testing.T) {

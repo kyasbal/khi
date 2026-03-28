@@ -24,7 +24,7 @@ import (
 	"sync"
 
 	"cloud.google.com/go/errorreporting"
-	"github.com/kyasbal/khi/pkg/common/constants"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/constants"
 	"google.golang.org/api/option"
 )
 

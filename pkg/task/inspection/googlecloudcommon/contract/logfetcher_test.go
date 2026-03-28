@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/logging/apiv2/loggingpb"
-	"github.com/kyasbal/khi/internal/testflags"
-	"github.com/kyasbal/khi/pkg/api/googlecloud"
+	"github.com/GoogleCloudPlatform/khi/internal/testflags"
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
 )
 
 func TestLogFetcherImpl_FetchLogs(t *testing.T) {

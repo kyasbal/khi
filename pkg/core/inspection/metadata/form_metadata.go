@@ -20,8 +20,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kyasbal/khi/pkg/common/typedmap"
-	"github.com/kyasbal/khi/pkg/server/upload"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	"github.com/GoogleCloudPlatform/khi/pkg/server/upload"
 )
 
 // ParameterInputType represents the type of parameter form field.

@@ -17,10 +17,10 @@ package googlecloudlogserialport_impl
 import (
 	"testing"
 
-	"github.com/kyasbal/khi/pkg/model/history"
-	"github.com/kyasbal/khi/pkg/model/log"
-	googlecloudlogserialport_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogserialport/contract"
-	"github.com/kyasbal/khi/pkg/testutil/testchangeset"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	googlecloudlogserialport_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogserialport/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testchangeset"
 )
 
 func TestLogToTimelineMapperTask(t *testing.T) {

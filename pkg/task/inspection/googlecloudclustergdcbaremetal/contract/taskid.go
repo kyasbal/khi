@@ -15,8 +15,8 @@
 package googlecloudclustergdcbaremetal_contract
 
 import (
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 )
 
 // ClusterGDCBaremetalCommonTaskPrefix is the common task id prefix for GDC Baremetal clusters.

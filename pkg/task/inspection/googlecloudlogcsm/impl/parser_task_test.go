@@ -17,11 +17,11 @@ package googlecloudlogcsm_impl
 import (
 	"testing"
 
-	"github.com/kyasbal/khi/pkg/model/history"
-	"github.com/kyasbal/khi/pkg/model/log"
-	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
-	googlecloudlogcsm_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogcsm/contract"
-	"github.com/kyasbal/khi/pkg/testutil/testchangeset"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	googlecloudlogcsm_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogcsm/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testchangeset"
 )
 
 func TestLogToTimelineMapper(t *testing.T) {

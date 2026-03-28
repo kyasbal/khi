@@ -17,8 +17,8 @@ package googlecloudlogcsm_impl
 import (
 	"testing"
 
-	"github.com/kyasbal/khi/pkg/core/inspection/gcpqueryutil"
-	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
+	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 )
 
 func TestCsmAccessLogsFilter(t *testing.T) {

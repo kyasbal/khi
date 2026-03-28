@@ -15,8 +15,8 @@
 package googlecloudcommon_contract
 
 import (
-	"github.com/kyasbal/khi/pkg/api/googlecloud"
-	"github.com/kyasbal/khi/pkg/common/typedmap"
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 )
 
 // APIClientFactoryOptionsContextKey is the key to retrieve googlecloud.ClientFactoryOption from task context.

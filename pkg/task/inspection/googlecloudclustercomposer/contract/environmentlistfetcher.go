@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyasbal/khi/pkg/api/googlecloud"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 	"google.golang.org/api/composer/v1"
 )
 

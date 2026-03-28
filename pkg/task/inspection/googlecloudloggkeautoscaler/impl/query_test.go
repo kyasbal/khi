@@ -17,8 +17,8 @@ package googlecloudloggkeautoscaler_impl
 import (
 	"testing"
 
-	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
-	gcp_test "github.com/kyasbal/khi/pkg/testutil/gcp"
+	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	gcp_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/gcp"
 )
 
 func TestGenerateAutoscalerQuery(t *testing.T) {

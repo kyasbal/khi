@@ -20,13 +20,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyasbal/khi/pkg/api/googlecloud"
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
-	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // AutocompleteMetricsK8sContainerTask is the task to provide the default metrics type to collect the cluster names.

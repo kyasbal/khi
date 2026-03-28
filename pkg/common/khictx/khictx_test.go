@@ -19,9 +19,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kyasbal/khi/pkg/common/khictx"
-	"github.com/kyasbal/khi/pkg/common/khierrors"
-	"github.com/kyasbal/khi/pkg/common/typedmap"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khierrors"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 )
 
 func TestGetValue(t *testing.T) {

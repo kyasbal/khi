@@ -18,12 +18,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/model"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/kyasbal/khi/pkg/model"
-	"github.com/kyasbal/khi/pkg/model/enum"
-	"github.com/kyasbal/khi/pkg/model/log"
-	commonlogk8sauditv2_contract "github.com/kyasbal/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
 )
 
 func TestOSSK8sAuditLogFieldSetReader(t *testing.T) {

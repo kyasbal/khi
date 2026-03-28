@@ -17,7 +17,7 @@ package coretask
 import (
 	"context"
 
-	"github.com/kyasbal/khi/pkg/common/typedmap"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 )
 
 // TaskRunner receives the runnable TaskSet and run tasks with topological sorted order.

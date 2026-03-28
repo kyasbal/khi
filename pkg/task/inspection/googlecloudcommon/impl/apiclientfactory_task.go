@@ -17,11 +17,11 @@ package googlecloudcommon_impl
 import (
 	"context"
 
-	"github.com/kyasbal/khi/pkg/api/googlecloud"
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 )
 
 // APIClientFactoryTask is a task to inject googlecloud.ClientFactory to the later tasks. The instance is singleton in an inspection and the instance is cached on inspection cache after the first generation.

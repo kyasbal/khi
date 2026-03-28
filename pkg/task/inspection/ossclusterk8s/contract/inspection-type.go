@@ -17,7 +17,7 @@ package ossclusterk8s_contract
 import (
 	"math"
 
-	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
 )
 
 const InspectionTypeID = "oss-kubernetes-from-files"

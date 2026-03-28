@@ -19,11 +19,11 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	"github.com/google/go-cmp/cmp"
-	"github.com/kyasbal/khi/pkg/common/khictx"
-	"github.com/kyasbal/khi/pkg/common/typedmap"
-	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 func TestRunContextOptionFromValue(t *testing.T) {

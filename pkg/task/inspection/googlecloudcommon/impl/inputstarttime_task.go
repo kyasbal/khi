@@ -19,14 +19,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyasbal/khi/pkg/common/khictx"
-	"github.com/kyasbal/khi/pkg/common/typedmap"
-	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // InputStartTimeTask defines an inspection task that calculates the start time of a query

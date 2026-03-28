@@ -17,7 +17,7 @@ package resourcepath
 import (
 	"strings"
 
-	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 )
 
 // ResourcePath contains the path representing location of a timeline in the history.

@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyasbal/khi/pkg/common/typedmap"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 )
 
 const (

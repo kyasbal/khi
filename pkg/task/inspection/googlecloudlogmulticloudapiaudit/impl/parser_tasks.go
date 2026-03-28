@@ -19,16 +19,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyasbal/khi/pkg/common/structured"
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	"github.com/kyasbal/khi/pkg/model/enum"
-	"github.com/kyasbal/khi/pkg/model/history"
-	"github.com/kyasbal/khi/pkg/model/log"
-	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
-	googlecloudinspectiontypegroup_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudinspectiontypegroup/contract"
-	googlecloudlogmulticloudapiaudit_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogmulticloudapiaudit/contract"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	googlecloudinspectiontypegroup_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudinspectiontypegroup/contract"
+	googlecloudlogmulticloudapiaudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogmulticloudapiaudit/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // FieldSetReaderTask is a task that reads and parses field sets from MulticloudAPI audit logs.

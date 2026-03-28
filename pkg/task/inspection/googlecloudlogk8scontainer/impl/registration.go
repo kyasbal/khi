@@ -15,8 +15,8 @@
 package googlecloudlogk8scontainer_impl
 
 import (
-	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 )
 
 // Register registers all googlecloudlogk8scontainer inspection tasks to the registry.

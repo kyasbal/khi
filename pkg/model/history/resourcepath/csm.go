@@ -17,7 +17,7 @@ package resourcepath
 import (
 	"fmt"
 
-	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 )
 
 func csmAccessPath(base ResourcePath, direction string, containerName string) ResourcePath {

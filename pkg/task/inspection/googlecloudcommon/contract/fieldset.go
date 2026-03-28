@@ -19,10 +19,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kyasbal/khi/pkg/common/khierrors"
-	"github.com/kyasbal/khi/pkg/common/structured"
-	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
-	"github.com/kyasbal/khi/pkg/model/log"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khierrors"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 )
 
 type GCPAuditLogFieldSet struct {

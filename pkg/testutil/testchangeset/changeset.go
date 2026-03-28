@@ -19,9 +19,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
 	"github.com/google/go-cmp/cmp"
-	"github.com/kyasbal/khi/pkg/model/history"
-	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
 )
 
 // ChangeSetAsserter is an interface to assert if the given changeset with rules of implementations.

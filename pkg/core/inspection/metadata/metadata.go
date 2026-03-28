@@ -17,8 +17,8 @@ package inspectionmetadata
 import (
 	"fmt"
 
-	"github.com/kyasbal/khi/pkg/common/filter"
-	"github.com/kyasbal/khi/pkg/common/typedmap"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/filter"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 )
 
 // MetadataLabelsKey is a type-safe key for metadata label values.

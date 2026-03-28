@@ -17,7 +17,7 @@ package inspectionmetadata
 import (
 	"time"
 
-	"github.com/kyasbal/khi/pkg/common/typedmap"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 )
 
 // HeaderMetadata is a metadata type shown for users in the inspection list page.

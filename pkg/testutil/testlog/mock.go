@@ -15,8 +15,8 @@
 package testlog
 
 import (
-	"github.com/kyasbal/khi/pkg/common/structured"
-	"github.com/kyasbal/khi/pkg/model/log"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 )
 
 // MustLogFromYAML returns a log.Log instance from given YAML string.

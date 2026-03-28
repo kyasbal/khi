@@ -17,12 +17,12 @@ package googlecloudclustercomposer_impl
 import (
 	"context"
 
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	"github.com/kyasbal/khi/pkg/model/enum"
-	googlecloudclustercomposer_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
-	googlecloudinspectiontypegroup_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudinspectiontypegroup/contract"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	googlecloudclustercomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
+	googlecloudinspectiontypegroup_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudinspectiontypegroup/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 var ComposerLogsTailTask = coretask.NewTask(

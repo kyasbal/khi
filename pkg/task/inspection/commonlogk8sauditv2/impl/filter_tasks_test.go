@@ -17,9 +17,9 @@ package commonlogk8sauditv2_impl
 import (
 	"testing"
 
-	inspectiontaskbasetest "github.com/kyasbal/khi/pkg/core/inspection/taskbasetest"
-	"github.com/kyasbal/khi/pkg/model/log"
-	commonlogk8sauditv2_contract "github.com/kyasbal/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	inspectiontaskbasetest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbasetest"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
 )
 
 func TestSuccessLogFilterTask(t *testing.T) {

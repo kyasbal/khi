@@ -19,9 +19,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyasbal/khi/pkg/core/inspection/gcpqueryutil"
-	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
-	gcp_test "github.com/kyasbal/khi/pkg/testutil/gcp"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
+	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	gcp_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/gcp"
 )
 
 func TestGenerateK8sEventQuery(t *testing.T) {

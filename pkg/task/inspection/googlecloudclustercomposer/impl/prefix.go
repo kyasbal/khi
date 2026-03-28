@@ -17,10 +17,10 @@ package googlecloudclustercomposer_impl
 import (
 	"context"
 
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	googlecloudclustercomposer_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	googlecloudclustercomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // ComposerClusterNamePrefixTask is the task that returns the composer cluster name prefix.

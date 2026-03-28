@@ -18,11 +18,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyasbal/khi/pkg/common/khictx"
-	"github.com/kyasbal/khi/pkg/common/typedmap"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // CacheableTaskResult is the combination of the cached value and a digest of its dependency.

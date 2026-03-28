@@ -15,9 +15,9 @@
 package ossclusterk8s_impl
 
 import (
-	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	ossclusterk8s_contract "github.com/kyasbal/khi/pkg/task/inspection/ossclusterk8s/contract"
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	ossclusterk8s_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/ossclusterk8s/contract"
 )
 
 // Register registers all googlecloudlogserialport inspection tasks to the registry.

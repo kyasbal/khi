@@ -15,9 +15,9 @@
 package googlecloudclustergkeonazure_impl
 
 import (
-	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	googlecloudclustergkeonazure_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustergkeonazure/contract"
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	googlecloudclustergkeonazure_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergkeonazure/contract"
 )
 
 // Register registers all googlecloudclustergkeonazure inspection tasks to the registry.

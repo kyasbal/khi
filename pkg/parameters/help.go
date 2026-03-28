@@ -17,7 +17,7 @@ package parameters
 import (
 	"os"
 
-	"github.com/kyasbal/khi/pkg/common/flag"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/flag"
 )
 
 var Help = &HelpParameters{}

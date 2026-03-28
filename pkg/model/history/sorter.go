@@ -18,7 +18,7 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 )
 
 var ErrorSortSkipped = errors.New("skipping this sorter for the given resource chunk")

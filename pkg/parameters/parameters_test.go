@@ -17,7 +17,7 @@ package parameters
 import (
 	"testing"
 
-	khiflag "github.com/kyasbal/khi/pkg/common/flag"
+	khiflag "github.com/GoogleCloudPlatform/khi/pkg/common/flag"
 )
 
 func prepareFlagParsingTest(t *testing.T) {

@@ -18,14 +18,14 @@ import (
 	"context"
 	"errors"
 
-	"github.com/kyasbal/khi/pkg/api/googlecloud"
-	"github.com/kyasbal/khi/pkg/common/khictx"
-	"github.com/kyasbal/khi/pkg/common/khierrors"
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khierrors"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // APIClientFactoryOptionsTask is the default implementation to provide the list of googlecloud.ClientFactoryOption.

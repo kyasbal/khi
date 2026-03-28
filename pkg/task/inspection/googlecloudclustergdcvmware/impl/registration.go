@@ -15,9 +15,9 @@
 package googlecloudclustergdcvmware_impl
 
 import (
-	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	googlecloudclustergdcvmware_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustergdcvmware/contract"
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	googlecloudclustergdcvmware_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergdcvmware/contract"
 )
 
 // Register registers all googlecloudclustergdcvmware inspection tasks to the registry.

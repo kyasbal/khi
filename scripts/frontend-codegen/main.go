@@ -24,7 +24,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 )
 
 const SCSS_FILE_LOCATION = "./web/src/app/zzz-generated.scss"

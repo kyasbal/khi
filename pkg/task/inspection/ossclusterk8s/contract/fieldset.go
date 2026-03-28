@@ -17,11 +17,11 @@ package ossclusterk8s_contract
 import (
 	"fmt"
 
-	"github.com/kyasbal/khi/pkg/common/structured"
-	"github.com/kyasbal/khi/pkg/model"
-	"github.com/kyasbal/khi/pkg/model/enum"
-	"github.com/kyasbal/khi/pkg/model/log"
-	commonlogk8sauditv2_contract "github.com/kyasbal/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	"github.com/GoogleCloudPlatform/khi/pkg/model"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
 )
 
 type OSSK8sAuditLogFieldSetReader struct{}

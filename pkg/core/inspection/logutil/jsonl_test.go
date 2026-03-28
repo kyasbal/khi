@@ -17,8 +17,8 @@ package logutil
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/google/go-cmp/cmp"
-	"github.com/kyasbal/khi/pkg/model/enum"
 	"golang.org/x/sync/errgroup"
 )
 

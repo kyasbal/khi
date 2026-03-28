@@ -17,8 +17,8 @@ package googlecloudlogcsm_contract
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	"github.com/google/go-cmp/cmp"
-	"github.com/kyasbal/khi/pkg/model/log"
 )
 
 func TestIstioAccessLogFieldSetReader(t *testing.T) {

@@ -17,12 +17,12 @@ package commonlogk8sauditv2_impl
 import (
 	"context"
 
-	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	commonlogk8sauditv2_contract "github.com/kyasbal/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // NodeNameInventoryTask provides list of node name found in this inspection for later task usage.

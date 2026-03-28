@@ -17,9 +17,9 @@ package commonlogk8sauditv2_impl
 import (
 	"context"
 
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	"github.com/kyasbal/khi/pkg/model/log"
-	commonlogk8sauditv2_contract "github.com/kyasbal/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
 )
 
 // SuccessLogFilterTask filters out non-success logs.

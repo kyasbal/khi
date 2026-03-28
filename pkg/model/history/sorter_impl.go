@@ -21,7 +21,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 )
 
 type NameSortStrategy struct {

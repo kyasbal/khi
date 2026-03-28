@@ -19,16 +19,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyasbal/khi/pkg/common/patternfinder"
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	"github.com/kyasbal/khi/pkg/model/enum"
-	"github.com/kyasbal/khi/pkg/model/history"
-	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
-	"github.com/kyasbal/khi/pkg/model/log"
-	commonlogk8sauditv2_contract "github.com/kyasbal/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
-	googlecloudlogk8snode_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogk8snode/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/patternfinder"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	googlecloudlogk8snode_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8snode/contract"
 )
 
 var KubeletLogFilterTask = newParserTypeFilterTask(googlecloudlogk8snode_contract.KubeletLogFilterTaskID, googlecloudlogk8snode_contract.CommonFieldsetReaderTaskID.Ref(), googlecloudlogk8snode_contract.Kubelet)

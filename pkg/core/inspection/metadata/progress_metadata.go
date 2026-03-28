@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kyasbal/khi/pkg/common/typedmap"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 )
 
 // TaskProgressPhase represents the lifecycle phase of a task's progress.

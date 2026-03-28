@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/kyasbal/khi/pkg/core/inspection/formtask"
-	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
-	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/formtask"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 )
 
 const maxNodeNameFilterOptions = 500

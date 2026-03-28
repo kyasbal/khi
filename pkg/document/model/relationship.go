@@ -15,7 +15,7 @@
 package model
 
 import (
-	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 )
 
 // RelationshipDocumentModel is a model type for generating document docs/en/reference/relationships.md.

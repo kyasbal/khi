@@ -17,15 +17,15 @@ package googlecloudlogk8scontrolplane_impl
 import (
 	"testing"
 
-	"github.com/kyasbal/khi/pkg/common/patternfinder"
-	inspectiontest "github.com/kyasbal/khi/pkg/core/inspection/test"
-	tasktest "github.com/kyasbal/khi/pkg/core/task/test"
-	"github.com/kyasbal/khi/pkg/model/history"
-	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
-	"github.com/kyasbal/khi/pkg/model/log"
-	commonlogk8sauditv2_contract "github.com/kyasbal/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
-	googlecloudlogk8scontrolplane_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
-	"github.com/kyasbal/khi/pkg/testutil/testchangeset"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/patternfinder"
+	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
+	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	googlecloudlogk8scontrolplane_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testchangeset"
 )
 
 func TestControllerManagerLogToTimelineMapperTask(t *testing.T) {

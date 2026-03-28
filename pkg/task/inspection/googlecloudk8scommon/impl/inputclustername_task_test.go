@@ -17,13 +17,13 @@ package googlecloudk8scommon_impl
 import (
 	"testing"
 
-	"github.com/kyasbal/khi/pkg/common"
-	form_task_test "github.com/kyasbal/khi/pkg/core/inspection/formtask/test"
-	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	tasktest "github.com/kyasbal/khi/pkg/core/task/test"
-	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/common"
+	form_task_test "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/formtask/test"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
+	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 func TestClusterNameInput(t *testing.T) {

@@ -20,7 +20,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/kyasbal/khi/pkg/common/structured"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
 )
 
 const MAXIMUM_STRUCTURE_DEPTH = 100

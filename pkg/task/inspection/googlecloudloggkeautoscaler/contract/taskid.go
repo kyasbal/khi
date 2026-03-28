@@ -16,9 +16,9 @@
 package googlecloudloggkeautoscaler_contract
 
 import (
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	"github.com/kyasbal/khi/pkg/model/log"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 )
 
 const gkeAutoscalerTaskIDPrefix = "cloud.google.com/gke/log/autoscaler/"

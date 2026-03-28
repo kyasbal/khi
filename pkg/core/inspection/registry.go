@@ -14,7 +14,7 @@
 
 package coreinspection
 
-import coretask "github.com/kyasbal/khi/pkg/core/task"
+import coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 
 // InspectionTaskRegistry is interface for task packages to register its tasks and inspection types.
 type InspectionTaskRegistry interface {

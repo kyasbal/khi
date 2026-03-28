@@ -63,7 +63,7 @@ type InspectionTaskPackageFinder struct {
 	PackageRootFilePath string
 	// InspectionTaskPackageRootFilePath is the specific directory where inspection task packages reside.
 	InspectionTaskPackageRootFilePath string
-	// RepositoryPackageName is the Go module name for the repository (e.g., "github.com/kyasbal/khi").
+	// RepositoryPackageName is the Go module name for the repository (e.g., "github.com/GoogleCloudPlatform/khi").
 	RepositoryPackageName string
 }
 

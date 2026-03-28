@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyasbal/khi/pkg/common"
+	"github.com/GoogleCloudPlatform/khi/pkg/common"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 )

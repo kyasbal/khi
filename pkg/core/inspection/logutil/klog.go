@@ -20,8 +20,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kyasbal/khi/pkg/common/khierrors"
-	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khierrors"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 )
 
 // KLogTextParser parses given klog formatted string.

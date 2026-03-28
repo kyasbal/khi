@@ -15,12 +15,12 @@
 package googlecloudinspectiontypegroup_contract
 
 import (
-	googlecloudclustercomposer_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
-	googlecloudclustergdcbaremetal_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustergdcbaremetal/contract"
-	googlecloudclustergdcvmware_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustergdcvmware/contract"
-	googlecloudclustergke_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustergke/contract"
-	googlecloudclustergkeonaws_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustergkeonaws/contract"
-	googlecloudclustergkeonazure_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustergkeonazure/contract"
+	googlecloudclustercomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
+	googlecloudclustergdcbaremetal_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergdcbaremetal/contract"
+	googlecloudclustergdcvmware_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergdcvmware/contract"
+	googlecloudclustergke_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergke/contract"
+	googlecloudclustergkeonaws_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergkeonaws/contract"
+	googlecloudclustergkeonazure_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergkeonazure/contract"
 )
 
 // GCPK8sClusterInspectionTypes is the list of inspection types of k8s clusters from Google Cloud.

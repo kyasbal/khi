@@ -19,7 +19,7 @@ import (
 
 	compute "cloud.google.com/go/compute/apiv1"
 	"cloud.google.com/go/compute/apiv1/computepb"
-	"github.com/kyasbal/khi/pkg/api/googlecloud"
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
 	"google.golang.org/api/iterator"
 )
 

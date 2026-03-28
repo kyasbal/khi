@@ -17,12 +17,12 @@ package googlecloudlogk8scontrolplane_impl
 import (
 	"context"
 
-	"github.com/kyasbal/khi/pkg/core/inspection/logutil"
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	"github.com/kyasbal/khi/pkg/model/history"
-	"github.com/kyasbal/khi/pkg/model/log"
-	googlecloudlogk8scontrolplane_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logutil"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	googlecloudlogk8scontrolplane_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
 )
 
 var SchedulerLogFilterTask = inspectiontaskbase.NewLogFilterTask(

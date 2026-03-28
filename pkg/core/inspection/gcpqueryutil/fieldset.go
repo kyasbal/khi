@@ -19,9 +19,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyasbal/khi/pkg/common/structured"
-	"github.com/kyasbal/khi/pkg/model/enum"
-	"github.com/kyasbal/khi/pkg/model/log"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 )
 
 var jsonPayloadMessageFieldNames = []string{

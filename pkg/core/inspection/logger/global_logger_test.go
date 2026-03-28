@@ -20,11 +20,11 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/kyasbal/khi/pkg/common/khictx"
-	inspectiontest "github.com/kyasbal/khi/pkg/core/inspection/test"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	core_contract "github.com/kyasbal/khi/pkg/task/core/contract"
-	"github.com/kyasbal/khi/pkg/testutil"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
+	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	core_contract "github.com/GoogleCloudPlatform/khi/pkg/task/core/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/testutil"
 )
 
 func TestGlobalLoggerHandlerWithChildLogger(t *testing.T) {

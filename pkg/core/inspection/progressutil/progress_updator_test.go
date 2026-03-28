@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 )
 
 func TestNewProgressUpdator(t *testing.T) {

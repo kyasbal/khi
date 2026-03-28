@@ -15,8 +15,8 @@
 package googlecloudloggkeapiaudit_impl
 
 import (
-	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 )
 
 // Register registers all googlecloudloggkeapiaudit inspection tasks to the registry.

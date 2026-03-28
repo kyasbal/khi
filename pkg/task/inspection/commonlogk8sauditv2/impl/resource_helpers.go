@@ -18,7 +18,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/kyasbal/khi/pkg/common/structured"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
 )
 
 // GetDeletionGracePeriodSeconds returns the value of metadata.deletionGracePeriodSeconds.

@@ -20,9 +20,9 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
-	"github.com/kyasbal/khi/pkg/api/googlecloud"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 )
 
 var ErrEnvironmentClusterNotFound = errors.New("not found")

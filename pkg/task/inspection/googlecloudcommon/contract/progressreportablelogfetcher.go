@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/logging/apiv2/loggingpb"
-	"github.com/kyasbal/khi/pkg/api/googlecloud"
-	"github.com/kyasbal/khi/pkg/core/inspection/gcpqueryutil"
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
 	"golang.org/x/sync/errgroup"
 )
 

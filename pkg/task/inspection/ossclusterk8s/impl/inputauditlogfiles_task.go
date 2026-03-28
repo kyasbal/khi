@@ -15,9 +15,9 @@
 package ossclusterk8s_impl
 
 import (
-	"github.com/kyasbal/khi/pkg/core/inspection/formtask"
-	"github.com/kyasbal/khi/pkg/server/upload"
-	ossclusterk8s_contract "github.com/kyasbal/khi/pkg/task/inspection/ossclusterk8s/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/formtask"
+	"github.com/GoogleCloudPlatform/khi/pkg/server/upload"
+	ossclusterk8s_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/ossclusterk8s/contract"
 )
 
 var InputAuditLogFilesTask = formtask.NewFileFormTaskBuilder(ossclusterk8s_contract.InputAuditLogFilesFormTaskID, 1000, "Audit Log Files", &upload.JSONLineUploadFileVerifier{

@@ -18,10 +18,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/kyasbal/khi/pkg/common/structured"
-	"github.com/kyasbal/khi/pkg/core/inspection/logutil"
-	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
-	"github.com/kyasbal/khi/pkg/model/log"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logutil"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 )
 
 type ControlplaneComponentParserType string

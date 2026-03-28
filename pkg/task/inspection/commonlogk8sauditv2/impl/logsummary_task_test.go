@@ -17,9 +17,9 @@ package commonlogk8sauditv2_impl
 import (
 	"testing"
 
-	"github.com/kyasbal/khi/pkg/model"
-	"github.com/kyasbal/khi/pkg/model/enum"
-	commonlogk8sauditv2_contract "github.com/kyasbal/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/model"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
 )
 
 func TestLogSummaryLogToTimelineMapperSetting_getLogSummary(t *testing.T) {

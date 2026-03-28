@@ -15,8 +15,8 @@
 package formtask
 
 import (
-	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 )
 
 // FormTaskBuilderBase provides common functionality for form task builders

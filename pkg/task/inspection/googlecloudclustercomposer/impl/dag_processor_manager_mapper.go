@@ -19,14 +19,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyasbal/khi/pkg/core/inspection/logutil"
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	"github.com/kyasbal/khi/pkg/model/enum"
-	"github.com/kyasbal/khi/pkg/model/history"
-	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
-	"github.com/kyasbal/khi/pkg/model/log"
-	googlecloudclustercomposer_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logutil"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	googlecloudclustercomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
 )
 
 var AirflowDagProcessorManagerLogSorterTask = inspectiontaskbase.NewLogSorterByTimeTask(

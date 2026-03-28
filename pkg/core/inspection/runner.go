@@ -25,17 +25,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kyasbal/khi/pkg/common/filter"
-	"github.com/kyasbal/khi/pkg/common/idgenerator"
-	"github.com/kyasbal/khi/pkg/common/khictx"
-	"github.com/kyasbal/khi/pkg/common/typedmap"
-	"github.com/kyasbal/khi/pkg/core/inspection/logger"
-	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/lifecycle"
-	"github.com/kyasbal/khi/pkg/model/history"
-	"github.com/kyasbal/khi/pkg/parameters"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/filter"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/idgenerator"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logger"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/lifecycle"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // InspectionInterceptor is a function that can intercept the execution of an inspection task.

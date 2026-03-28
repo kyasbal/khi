@@ -118,7 +118,7 @@ For more details, try [Getting started](/docs/en/tutorial/getting-started.md).
 You can easily install KHI out-of-the-box using `go install`. To install the bleeding-edge version containing the latest prebuilt frontend:
 
 ```bash
-go install github.com/kyasbal/khi@main-prebuilt
+go install github.com/GoogleCloudPlatform/khi@main-prebuilt
 ```
 
 *Note: Use `@latest` instead of `@main-prebuilt` if you prefer the latest stable release.*
@@ -138,7 +138,7 @@ go install github.com/kyasbal/khi@main-prebuilt
 #### Initialization (one-time setup)
 
 1. Download or clone this repository
-  e.g. `git clone https://github.com/kyasbal/khi.git`
+  e.g. `git clone https://github.com/GoogleCloudPlatform/khi.git`
 1. Move to the project root
   e.g. `cd khi`
 1. Run `make setup` from the project root
@@ -210,4 +210,4 @@ If you'd like to contribute to the project KHI, read [Contribution Guide](/docs/
 
 ## Disclaimer
 
-Please note that this tool is not an officially supported Google Cloud product. If you find any issues and have a feature request, [file a Github issue on this repository](https://github.com/kyasbal/khi/issues/new?template=Blank+issue) and we are happy to check them on best-effort basis.
+Please note that this tool is not an officially supported Google Cloud product. If you find any issues and have a feature request, [file a Github issue on this repository](https://github.com/GoogleCloudPlatform/khi/issues/new?template=Blank+issue) and we are happy to check them on best-effort basis.

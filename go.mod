@@ -1,4 +1,4 @@
-module github.com/kyasbal/khi
+module github.com/GoogleCloudPlatform/khi
 
 go 1.25.5
 

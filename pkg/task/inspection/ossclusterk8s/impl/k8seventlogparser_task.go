@@ -19,14 +19,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyasbal/khi/pkg/core/inspection/legacyparser"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	"github.com/kyasbal/khi/pkg/model/enum"
-	"github.com/kyasbal/khi/pkg/model/history"
-	"github.com/kyasbal/khi/pkg/model/history/grouper"
-	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
-	"github.com/kyasbal/khi/pkg/model/log"
-	ossclusterk8s_contract "github.com/kyasbal/khi/pkg/task/inspection/ossclusterk8s/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/legacyparser"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/grouper"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	ossclusterk8s_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/ossclusterk8s/contract"
 )
 
 type OSSK8sEventFromK8sAudit struct {

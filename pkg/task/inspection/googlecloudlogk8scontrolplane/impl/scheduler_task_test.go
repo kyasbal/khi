@@ -17,10 +17,10 @@ package googlecloudlogk8scontrolplane_impl
 import (
 	"testing"
 
-	"github.com/kyasbal/khi/pkg/model/history"
-	"github.com/kyasbal/khi/pkg/model/log"
-	googlecloudlogk8scontrolplane_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
-	"github.com/kyasbal/khi/pkg/testutil/testchangeset"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	googlecloudlogk8scontrolplane_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testchangeset"
 )
 
 func TestSchedulerLogToTimelineMapperTask(t *testing.T) {

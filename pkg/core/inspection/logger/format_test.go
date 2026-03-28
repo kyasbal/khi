@@ -22,9 +22,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyasbal/khi/pkg/common/khictx"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	core_contract "github.com/kyasbal/khi/pkg/task/core/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	core_contract "github.com/GoogleCloudPlatform/khi/pkg/task/core/contract"
 )
 
 func TestKHILogFormatHandler_Handle(t *testing.T) {

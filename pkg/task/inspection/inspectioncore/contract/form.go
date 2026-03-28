@@ -15,8 +15,8 @@
 package inspectioncore_contract
 
 import (
-	"github.com/kyasbal/khi/pkg/common/typedmap"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 )
 
 var (

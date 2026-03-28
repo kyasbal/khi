@@ -17,11 +17,11 @@ package parser_test
 import (
 	"context"
 
-	"github.com/kyasbal/khi/pkg/core/inspection/legacyparser"
-	"github.com/kyasbal/khi/pkg/model/history"
-	"github.com/kyasbal/khi/pkg/model/log"
-	"github.com/kyasbal/khi/pkg/testutil"
-	"github.com/kyasbal/khi/pkg/testutil/testlog"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/legacyparser"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	"github.com/GoogleCloudPlatform/khi/pkg/testutil"
+	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testlog"
 )
 
 // ParseFromYamlLogFile returns the parsed ChangeSet from the yaml log file at the given path with specified parser.

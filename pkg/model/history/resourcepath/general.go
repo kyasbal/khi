@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyasbal/khi/pkg/model"
-	"github.com/kyasbal/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 )
 
 var PlaceholderForEmptyField = "unknown"

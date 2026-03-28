@@ -25,18 +25,18 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/common/errorreport"
+	coreinit "github.com/GoogleCloudPlatform/khi/pkg/core/init"
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	"github.com/GoogleCloudPlatform/khi/pkg/lifecycle"
+	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
+	"github.com/GoogleCloudPlatform/khi/pkg/server"
+	"github.com/GoogleCloudPlatform/khi/pkg/server/upload"
 	"github.com/gin-gonic/gin"
-	"github.com/kyasbal/khi/pkg/common/errorreport"
-	coreinit "github.com/kyasbal/khi/pkg/core/init"
-	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
-	"github.com/kyasbal/khi/pkg/lifecycle"
-	"github.com/kyasbal/khi/pkg/parameters"
-	"github.com/kyasbal/khi/pkg/server"
-	"github.com/kyasbal/khi/pkg/server/upload"
 
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 
-	_ "github.com/kyasbal/khi/pkg/core/init/default"
+	_ "github.com/GoogleCloudPlatform/khi/pkg/core/init/default"
 )
 
 func displayStartMessage(host string, port int) {

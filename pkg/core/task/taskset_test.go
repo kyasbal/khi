@@ -19,9 +19,9 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	"github.com/google/go-cmp/cmp"
-	"github.com/kyasbal/khi/pkg/common/typedmap"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
 )
 
 type testTask struct {

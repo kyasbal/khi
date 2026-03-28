@@ -17,7 +17,7 @@ package googlecloudloggkeautoscaler_contract
 import (
 	"fmt"
 
-	"github.com/kyasbal/khi/pkg/common/structured"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
 )
 
 type DecisionLog struct {

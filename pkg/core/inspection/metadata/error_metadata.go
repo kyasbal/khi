@@ -15,7 +15,7 @@
 package inspectionmetadata
 
 import (
-	"github.com/kyasbal/khi/pkg/common/typedmap"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 )
 
 type ErrorMessage struct {

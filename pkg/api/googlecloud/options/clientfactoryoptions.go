@@ -15,8 +15,8 @@
 package options
 
 import (
-	"github.com/kyasbal/khi/pkg/api/googlecloud"
-	"github.com/kyasbal/khi/pkg/api/googlecloud/oauth"
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud/oauth"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 )

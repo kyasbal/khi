@@ -14,7 +14,7 @@
 
 package config
 
-import "github.com/kyasbal/khi/pkg/parameters"
+import "github.com/GoogleCloudPlatform/khi/pkg/parameters"
 
 // GetConfigResponse is the response type of /api/v3/config
 type GetConfigResponse struct {

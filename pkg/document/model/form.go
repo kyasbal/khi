@@ -15,11 +15,11 @@
 package model
 
 import (
-	"github.com/kyasbal/khi/pkg/common/filter"
-	"github.com/kyasbal/khi/pkg/common/typedmap"
-	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/filter"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // FormDocumentModel represents the model for generating document docs/en/reference/form.md.

@@ -17,12 +17,12 @@ package model
 import (
 	"slices"
 
-	"github.com/kyasbal/khi/pkg/common/filter"
-	"github.com/kyasbal/khi/pkg/common/typedmap"
-	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/model/enum"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/filter"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // FeatureDocumentModel is a model type for generating document docs/en/reference/features.md

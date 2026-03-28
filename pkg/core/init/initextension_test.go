@@ -18,9 +18,9 @@ import (
 	"errors"
 	"testing"
 
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	"github.com/GoogleCloudPlatform/khi/pkg/server"
 	"github.com/google/go-cmp/cmp"
-	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
-	"github.com/kyasbal/khi/pkg/server"
 )
 
 // mockInitExtension is a mock implementation of InitExtension for testing.

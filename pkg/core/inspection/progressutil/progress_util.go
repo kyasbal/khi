@@ -17,7 +17,7 @@ package progressutil
 import (
 	"fmt"
 
-	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 )
 
 // ReportProgressFromArraySync reports progress of processing an array synchronously.

@@ -26,9 +26,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kyasbal/khi/pkg/common"
-	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
-	"github.com/kyasbal/khi/pkg/core/inspection/progressutil"
+	"github.com/GoogleCloudPlatform/khi/pkg/common"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progressutil"
 	"golang.org/x/sync/errgroup"
 )
 

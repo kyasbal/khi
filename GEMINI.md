@@ -28,7 +28,7 @@ It visualizes large volumes of logs in interactive timeline views, providing pow
 2. **Clone Repository and Initial Setup:**
 
     ```bash
-    git clone https://github.com/kyasbal/khi.git
+    git clone https://github.com/GoogleCloudPlatform/khi.git
     cd khi
     cd ./web && npm install
     ```

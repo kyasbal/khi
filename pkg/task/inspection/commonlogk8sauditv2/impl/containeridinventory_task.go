@@ -18,14 +18,14 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyasbal/khi/pkg/common/patternfinder"
-	"github.com/kyasbal/khi/pkg/common/structured"
-	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	commonlogk8sauditv2_contract "github.com/kyasbal/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/patternfinder"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 var ContainerIDInventoryTask = commonlogk8sauditv2_contract.ContainerIDInventoryBuilder.InventoryTask(&containerIDMergeStrategy{})

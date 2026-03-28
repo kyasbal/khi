@@ -26,14 +26,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kyasbal/khi/pkg/common"
-	"github.com/kyasbal/khi/pkg/common/idgenerator"
-	"github.com/kyasbal/khi/pkg/common/structured"
-	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
-	"github.com/kyasbal/khi/pkg/model/binarychunk"
-	"github.com/kyasbal/khi/pkg/model/enum"
-	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
-	"github.com/kyasbal/khi/pkg/model/log"
+	"github.com/GoogleCloudPlatform/khi/pkg/common"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/idgenerator"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/binarychunk"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	"golang.org/x/sync/errgroup"
 )
 

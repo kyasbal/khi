@@ -18,7 +18,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kyasbal/khi/pkg/common/khierrors"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/khierrors"
 )
 
 // severityLogfmtFieldNames holds the keys checked for severity levels in logfmt.

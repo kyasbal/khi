@@ -17,17 +17,17 @@ package googlecloudlogk8scontrolplane_impl
 import (
 	"context"
 
-	"github.com/kyasbal/khi/pkg/common/patternfinder"
-	"github.com/kyasbal/khi/pkg/core/inspection/logutil"
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	"github.com/kyasbal/khi/pkg/model/enum"
-	"github.com/kyasbal/khi/pkg/model/history"
-	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
-	"github.com/kyasbal/khi/pkg/model/log"
-	commonlogk8sauditv2_contract "github.com/kyasbal/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
-	googlecloudlogk8scontrolplane_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/patternfinder"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logutil"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	googlecloudlogk8scontrolplane_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
 )
 
 func kindToKLogFieldPair(apiVersion string, kind string, klogField string, isNamespaced bool) *googlecloudlogk8scontrolplane_contract.KindToKLogFieldPairData {

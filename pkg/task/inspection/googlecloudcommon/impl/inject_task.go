@@ -17,10 +17,10 @@ package googlecloudcommon_impl
 import (
 	"context"
 
-	"github.com/kyasbal/khi/pkg/api/googlecloud"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 )
 
 // LocationFetcherTask is the task to inject the reference to LocationFetcher.

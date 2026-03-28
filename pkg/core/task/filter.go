@@ -15,8 +15,8 @@
 package coretask
 
 import (
-	"github.com/kyasbal/khi/pkg/common/filter"
-	"github.com/kyasbal/khi/pkg/common/typedmap"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/filter"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 )
 
 // Subset returns a new TaskSet filtered using the provided type-safe filter

@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
 )
 
 type ResourceBinding interface {

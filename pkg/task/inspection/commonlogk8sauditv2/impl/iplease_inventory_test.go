@@ -18,13 +18,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
+	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	"github.com/google/go-cmp/cmp"
-	"github.com/kyasbal/khi/pkg/common/structured"
-	inspectiontest "github.com/kyasbal/khi/pkg/core/inspection/test"
-	tasktest "github.com/kyasbal/khi/pkg/core/task/test"
-	"github.com/kyasbal/khi/pkg/model/log"
-	commonlogk8sauditv2_contract "github.com/kyasbal/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 func TestIPLeaseHistoryDiscoveryTassk(t *testing.T) {

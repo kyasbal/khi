@@ -18,12 +18,12 @@ import (
 	"context"
 	"testing"
 
-	form_task_test "github.com/kyasbal/khi/pkg/core/inspection/formtask/test"
-	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	googlecloudcommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudcommon/contract"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	form_task_test "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/formtask/test"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 func TestLocationInput(t *testing.T) {

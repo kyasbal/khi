@@ -17,7 +17,7 @@ package coretask
 import (
 	"context"
 
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 )
 
 // NewAliasTask generates a new task implementation that proxies the result of another task.

@@ -15,8 +15,8 @@
 package commonlogk8sauditv2_impl
 
 import (
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	commonlogk8sauditv2_contract "github.com/kyasbal/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
 )
 
 // LogSorterTask is the task to sort logs by time.

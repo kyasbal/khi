@@ -18,7 +18,7 @@ import (
 	"errors"
 	"testing"
 
-	inspectionmetadata "github.com/kyasbal/khi/pkg/core/inspection/metadata"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 )
 
 // updateRecord records a single progress update

@@ -15,11 +15,11 @@
 package googlecloudlogk8scontainer_contract
 
 import (
-	"github.com/kyasbal/khi/pkg/core/inspection/gcpqueryutil"
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	"github.com/kyasbal/khi/pkg/model/log"
-	googlecloudk8scommon_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 )
 
 const TaskIDPrefix = "cloud.google.com/log/k8s-container/"

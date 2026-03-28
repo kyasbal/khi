@@ -22,11 +22,11 @@ import (
 	"log/slog"
 	"os"
 
-	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
-	"github.com/kyasbal/khi/pkg/document/generator"
-	"github.com/kyasbal/khi/pkg/document/model"
-	"github.com/kyasbal/khi/pkg/generated"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	"github.com/GoogleCloudPlatform/khi/pkg/document/generator"
+	"github.com/GoogleCloudPlatform/khi/pkg/document/model"
+	"github.com/GoogleCloudPlatform/khi/pkg/generated"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // fatal logs the error and exits if err is not nil.

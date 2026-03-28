@@ -15,9 +15,9 @@
 package googlecloudlogk8scontrolplane_impl
 
 import (
-	inspectiontaskbase "github.com/kyasbal/khi/pkg/core/inspection/taskbase"
-	"github.com/kyasbal/khi/pkg/model/log"
-	googlecloudlogk8scontrolplane_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
+	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	googlecloudlogk8scontrolplane_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
 )
 
 // CommonFieldSetReaderTask reads the component name at first to filter logs for specific components in the later tasks.

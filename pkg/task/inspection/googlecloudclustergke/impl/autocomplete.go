@@ -17,11 +17,11 @@ package googlecloudclustergke_impl
 import (
 	"context"
 
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	"github.com/kyasbal/khi/pkg/core/task/taskid"
-	googlecloudclustergke_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustergke/contract"
-	googlecloudinspectiontypegroup_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudinspectiontypegroup/contract"
-	inspectioncore_contract "github.com/kyasbal/khi/pkg/task/inspection/inspectioncore/contract"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	googlecloudclustergke_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergke/contract"
+	googlecloudinspectiontypegroup_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudinspectiontypegroup/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 // AutocompleteMetricsK8sContainerTask returns the metrics type used for autocomplete cluster names in GKE.

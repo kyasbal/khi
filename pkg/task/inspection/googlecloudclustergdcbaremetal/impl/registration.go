@@ -15,9 +15,9 @@
 package googlecloudclustergdcbaremetal_impl
 
 import (
-	coreinspection "github.com/kyasbal/khi/pkg/core/inspection"
-	coretask "github.com/kyasbal/khi/pkg/core/task"
-	googlecloudclustergdcbaremetal_contract "github.com/kyasbal/khi/pkg/task/inspection/googlecloudclustergdcbaremetal/contract"
+	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	googlecloudclustergdcbaremetal_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustergdcbaremetal/contract"
 )
 
 // Register registers all googlecloudclustergdcbaremetal inspection tasks to the registry.

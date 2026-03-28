@@ -17,11 +17,11 @@ package commonlogk8sauditv2_contract
 import (
 	"fmt"
 
-	"github.com/kyasbal/khi/pkg/common/structured"
-	"github.com/kyasbal/khi/pkg/model"
-	"github.com/kyasbal/khi/pkg/model/history/resourceinfo/resourcelease"
-	"github.com/kyasbal/khi/pkg/model/history/resourcepath"
-	"github.com/kyasbal/khi/pkg/model/log"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	"github.com/GoogleCloudPlatform/khi/pkg/model"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourceinfo/resourcelease"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 )
 
 type ResourceIdentityType int
