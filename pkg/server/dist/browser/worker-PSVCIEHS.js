@@ -1,0 +1,1 @@
+function i(r,e){let o=new RegExp(r);return e.filter(t=>!o.test(t.logBody)&&!o.test(t.logSummary)).map(t=>t.index)}addEventListener("message",r=>{let e=r.data;postMessage({notMatch:i(e.regexInStr,e.logs),taskId:e.taskId,isKHIWorkerPacket:!0})});
