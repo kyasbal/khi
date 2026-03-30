@@ -26,7 +26,7 @@ import (
 
 // GCPK8sClusterInspectionTypes is the list of inspection types of k8s clusters from Google Cloud.
 var GCPK8sClusterInspectionTypes = []string{
-	googlecloudclustergke_contract.InspectionTypeId, googlecloudclustercomposer_contract.InspectionTypeId, googlecloudclustergdcvmware_contract.InspectionTypeId, googlecloudclustergdcbaremetal_contract.InspectionTypeId, googlecloudclustergkeonaws_contract.InspectionTypeId, googlecloudclustergkeonazure_contract.InspectionTypeId, privatecomposerv3_contract.InspectionTypeId,
+	googlecloudclustergke_contract.InspectionTypeId, googlecloudclustercomposer_contract.InspectionTypeId, googlecloudclustergdcvmware_contract.InspectionTypeId, googlecloudclustergdcbaremetal_contract.InspectionTypeId, googlecloudclustergkeonaws_contract.InspectionTypeId, googlecloudclustergkeonazure_contract.InspectionTypeId, privatecomposerv3_contract.InspectionTypeId, privatecomposerv3_contract.InspectionTypeId,
 }
 
 // GKEBasedClusterInspectionTypes is the list of inspection types of GKE.
