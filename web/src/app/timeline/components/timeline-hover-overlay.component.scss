@@ -20,11 +20,14 @@
 $hover-log-tint: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 300);
 $selected-log-tint: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 400);
 
-@mixin revision-style-box($revisionColor, $borderThickness) {
+$hover-event-scale: 1.3;
+$selected-event-scale: 1.5;
+
+@mixin revision-style-box($revisionColor, $borderThickness, $transparency) {
   box-sizing: border-box;
   $revisionBackgroundColor: color-mix(
     in display-p3,
-    $revisionColor 40%,
+    $revisionColor $transparency,
     transparent
   );
   $revisionDarkerColor: $revisionColor;
@@ -95,7 +98,7 @@ $selected-log-tint: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 400);
   grid-template-areas: "state misc time log";
   grid-template-columns: auto auto auto minmax(0, 1fr);
   grid-auto-rows: auto;
-  padding-bottom: 22px;
+  padding-bottom: 10px;
   .header {
     grid-column: 1 / -1;
     display: grid;
@@ -142,13 +145,25 @@ $selected-log-tint: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 400);
 
       .revision-state-top {
         grid-row: 1;
-        @include revision-style-box(var(--revision-state-color), 2px);
+        &.selected {
+          @include revision-style-box(var(--revision-state-color), 3px, 60%);
+        }
+        &.hovered {
+          @include revision-style-box(var(--revision-state-color), 2.5px, 50%);
+        }
+        @include revision-style-box(var(--revision-state-color), 1.5px, 40%);
       }
 
       .revision-state-bottom {
         grid-row: 3;
         position: relative;
-        @include revision-style-box(var(--revision-state-color), 2px);
+        &.selected {
+          @include revision-style-box(var(--revision-state-color), 3px, 60%);
+        }
+        &.hovered {
+          @include revision-style-box(var(--revision-state-color), 2.5px, 50%);
+        }
+        @include revision-style-box(var(--revision-state-color), 1.5px, 40%);
         &.is-last-row {
           height: calc(100% + 10px);
         }
@@ -182,6 +197,28 @@ $selected-log-tint: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 400);
             common.mix-hdr-color(var(--log-type-color), white, 50%)
               $colorChangePoint
           );
+          &.selected {
+            background: linear-gradient(
+              135deg,
+              common.mix-hdr-color(var(--severity-color), yellow, 100%)
+                $colorChangePoint,
+              common.mix-hdr-color(var(--log-type-color), yellow, 100%)
+                $colorChangePoint
+            );
+            transform: translateX(-50%) translateY(-50%) rotate(45deg)
+              scale($selected-event-scale);
+          }
+          &.hovered {
+            background: linear-gradient(
+              135deg,
+              common.mix-hdr-color(var(--severity-color), yellow, 100%)
+                $colorChangePoint,
+              common.mix-hdr-color(var(--log-type-color), yellow, 100%)
+                $colorChangePoint
+            );
+            transform: translateX(-50%) translateY(-50%) rotate(45deg)
+              scale($hover-event-scale);
+          }
           &:after {
             content: "";
             position: absolute;
@@ -196,22 +233,6 @@ $selected-log-tint: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 400);
               var(--log-type-color) $colorChangePointEdge
             );
           }
-        }
-      }
-
-      .more-icon {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: dimgray;
-        mat-icon {
-          @include common.adjust-mat-icon-size(12px);
-        }
-        &.top-icon {
-          grid-row: 1;
-        }
-        &.bottom-icon {
-          grid-row: 4;
         }
       }
     }

@@ -34,11 +34,6 @@
             class="body-state-container"
             [style.--revision-state-color]="log.revisionStateColor"
           >
-            @if (index === 0) {
-              <div class="more-icon top-icon">
-                <mat-icon>more_vert</mat-icon>
-              </div>
-            }
             @if (index > 0) {
               @let prevLog = vm.logs[index - 1];
               <div
@@ -58,7 +53,45 @@
                   prevLog.statusContinous === StatusContinousMode.End ||
                   prevLog.statusContinous === StatusContinousMode.StartAndEnd
                 "
+                [class.selected]="
+                  prevLog.lastRevisionHightlightType !== null &&
+                  prevLog.lastRevisionHightlightType ===
+                    TimelineChartItemHighlightType.Selected
+                "
+                [class.hovered]="
+                  prevLog.lastRevisionHightlightType !== null &&
+                  prevLog.lastRevisionHightlightType ===
+                    TimelineChartItemHighlightType.Hovered
+                "
               ></div>
+            } @else if (index === 0) {
+              @let initialRevisionState = vm.initialRevisionState;
+              @if (initialRevisionState) {
+                <div
+                  class="revision-state-top"
+                  [style.--revision-state-color]="
+                    initialRevisionState.revisionStateColor
+                  "
+                  [class.style-normal]="
+                    initialRevisionState.revisionStateStyle ===
+                    RevisionStateStyle.Normal
+                  "
+                  [class.style-partial-info]="
+                    initialRevisionState.revisionStateStyle ===
+                    RevisionStateStyle.PartialInfo
+                  "
+                  [class.style-deleted]="
+                    initialRevisionState.revisionStateStyle ===
+                    RevisionStateStyle.Deleted
+                  "
+                  [class.status-end]="
+                    initialRevisionState.statusContinous ===
+                      StatusContinousMode.End ||
+                    initialRevisionState.statusContinous ===
+                      StatusContinousMode.StartAndEnd
+                  "
+                ></div>
+              }
             }
             @if (!log.isRevision) {
               <div
@@ -66,7 +99,16 @@
                 [style.--log-type-color]="log.logTypeColor"
                 [style.--severity-color]="log.severityColor"
               >
-                <div class="event-rect"></div>
+                <div
+                  class="event-rect"
+                  [class.selected]="
+                    log.highlightType ===
+                    TimelineChartItemHighlightType.Selected
+                  "
+                  [class.hovered]="
+                    log.highlightType === TimelineChartItemHighlightType.Hovered
+                  "
+                ></div>
               </div>
             }
             @let nextLog = vm.logs[index];
@@ -88,6 +130,16 @@
                 nextLog.statusContinous === StatusContinousMode.StartAndEnd
               "
               [class.is-last-row]="index === vm.logs.length - 1"
+              [class.selected]="
+                nextLog.lastRevisionHightlightType !== null &&
+                nextLog.lastRevisionHightlightType ===
+                  TimelineChartItemHighlightType.Selected
+              "
+              [class.hovered]="
+                nextLog.lastRevisionHightlightType !== null &&
+                nextLog.lastRevisionHightlightType ===
+                  TimelineChartItemHighlightType.Hovered
+              "
             >
               @if (
                 nextLog.statusContinous === StatusContinousMode.Start ||
@@ -98,11 +150,6 @@
                 }}</mat-icon>
               }
             </div>
-            @if (index === vm.logs.length - 1) {
-              <div class="more-icon bottom-icon">
-                <mat-icon>more_vert</mat-icon>
-              </div>
-            }
           </div>
           <div class="body-misc-colors bottom-line">
             <div
