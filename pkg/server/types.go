@@ -20,8 +20,8 @@ type SerializedMetadata = map[string]any
 
 // ServerStat represents the memory statistics of the server.
 type ServerStat struct {
-	CurrentMemoryUsage int `json:"currentMemoryUsage"`
-	TotalMemory        int `json:"totalMemory"`
+	CurrentMemoryUsage uint64 `json:"currentMemoryUsage"`
+	TotalMemory        uint64 `json:"totalMemory"`
 }
 
 // GetInspectionTypesResponse is the type of the response for /api/v3/inspection/types

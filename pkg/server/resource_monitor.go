@@ -25,32 +25,32 @@ import (
 // ResourceMonitor provides methods to monitor server resources.
 type ResourceMonitor interface {
 	// GetUsedMemory returns the current memory usage of the server process in bytes.
-	GetUsedMemory() int
+	GetUsedMemory() uint64
 
 	// GetTotalMemory returns the total physical memory of the server in bytes.
-	GetTotalMemory() int
+	GetTotalMemory() uint64
 }
 
 // ResourceMonitorImpl is the real implementation of ResourceMonitor.
 type ResourceMonitorImpl struct {
-	totalMemory int
+	totalMemory uint64
 	once        sync.Once
 }
 
 // GetUsedMemory returns the current memory usage using runtime.MemStats (Alloc).
-func (r *ResourceMonitorImpl) GetUsedMemory() int {
+func (r *ResourceMonitorImpl) GetUsedMemory() uint64 {
 	var memStat runtime.MemStats
 	runtime.ReadMemStats(&memStat)
-	return int(memStat.Alloc)
+	return memStat.Alloc
 }
 
 // GetTotalMemory returns the total physical memory using gopsutil.
 // The result is cached after the first call.
-func (r *ResourceMonitorImpl) GetTotalMemory() int {
+func (r *ResourceMonitorImpl) GetTotalMemory() uint64 {
 	r.once.Do(func() {
 		v, err := mem.VirtualMemory()
 		if err == nil {
-			r.totalMemory = int(v.Total)
+			r.totalMemory = v.Total
 		} else {
 			slog.Error("Failed to get total memory", "error", err)
 		}
@@ -62,17 +62,17 @@ var _ ResourceMonitor = &ResourceMonitorImpl{}
 
 // ResourceMonitorMock is a mock implementation of ResourceMonitor for testing.
 type ResourceMonitorMock struct {
-	UsedMemory  int
-	TotalMemory int
+	UsedMemory  uint64
+	TotalMemory uint64
 }
 
 // GetUsedMemory returns the mocked used memory.
-func (r *ResourceMonitorMock) GetUsedMemory() int {
+func (r *ResourceMonitorMock) GetUsedMemory() uint64 {
 	return r.UsedMemory
 }
 
 // GetTotalMemory returns the mocked total memory.
-func (r *ResourceMonitorMock) GetTotalMemory() int {
+func (r *ResourceMonitorMock) GetTotalMemory() uint64 {
 	return r.TotalMemory
 }
 
