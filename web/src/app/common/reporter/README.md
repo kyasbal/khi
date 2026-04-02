@@ -25,7 +25,7 @@ Inject the `Reporter` and use the `send` method to report events.
 
 ```typescript
 import { Component, inject } from "@angular/core";
-import { Reporter } from "./common/reporter/reporter";
+import { Reporter } from 'src/app/common/reporter/reporter';
 
 @Component({
   // ...
@@ -45,7 +45,7 @@ Use `provideReporterContext` in the `providers` array of a component to add stat
 
 ```typescript
 import { Component } from "@angular/core";
-import { provideReporterContext } from "./common/reporter/reporter";
+import { provideReporterContext } from 'src/app/common/reporter/reporter';
 
 @Component({
   // ...
