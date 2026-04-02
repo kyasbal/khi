@@ -30,8 +30,8 @@ export class ReporterErrorHandler implements ErrorHandler {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handleError(error: any): void {
-    const message = error.message || error.toString();
-    const stack = error.stack || '';
+    const message = error?.message || String(error);
+    const stack = error?.stack || '';
 
     this.reporter.send({
       event: 'unhandled_error',

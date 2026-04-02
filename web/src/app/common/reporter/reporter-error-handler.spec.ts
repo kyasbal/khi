@@ -64,4 +64,28 @@ describe('ReporterErrorHandler', () => {
 
     expect(console.error).toHaveBeenCalledWith('String error');
   });
+
+  it('should handle null error', () => {
+    errorHandler.handleError(null);
+
+    expect(mockReporter.send).toHaveBeenCalledWith({
+      event: 'unhandled_error',
+      message: 'null',
+      stack: '',
+    });
+
+    expect(console.error).toHaveBeenCalledWith(null);
+  });
+
+  it('should handle undefined error', () => {
+    errorHandler.handleError(undefined);
+
+    expect(mockReporter.send).toHaveBeenCalledWith({
+      event: 'unhandled_error',
+      message: 'undefined',
+      stack: '',
+    });
+
+    expect(console.error).toHaveBeenCalledWith(undefined);
+  });
 });
