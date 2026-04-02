@@ -104,7 +104,7 @@ foo/
    - **MUST** have a corresponding Storybook story (`*.stories.ts`) to verify its visual states independently.
    - **DO NOT** use suffixes like `-dumb` or `-ui` in the component name. Name them based on their semantic meaning (e.g., `user-profile`, `data-table`).
 
-## General Coding Rules for SCSS
+### 3.2 General Coding Rules for SCSS
 
 1. Do not use color literal in SCSS files like `background-color: #FF00FF;`.
 

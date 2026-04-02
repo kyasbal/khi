@@ -72,7 +72,7 @@ When developing or modifying Go code in the KHI project, you **must** adhere to 
 > }
 > ```
 
-## 3. Subagent Review Guidelines
+## 5. Subagent Review Guidelines
 
 Follow these rules to perform code reviews using three parallel temporary subagents with distinct perspectives to catch more issues.
 
