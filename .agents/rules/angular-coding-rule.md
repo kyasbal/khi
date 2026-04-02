@@ -63,7 +63,7 @@ Follow these rules to perform code reviews using a temporary subagent before ask
 - **Define**: Use `define_subagent` to create a temporary subagent specialized for Angular and TypeScript.
 - **Invoke**: Pass the modified file paths (TS, HTML, SCSS) to the subagent during `invoke_subagent`.
 - **Capabilities**: The subagent can read files and perform web searches.
-- **Timeout and Retry**: You MUST set set 180sec as a deadline duration. If a subagent does not respond within the expected time or seems to be stuck, invoke a new subagent to retry the task.
+- **Timeout and Retry**: You MUST set 180sec as a deadline duration. If a subagent does not respond within the expected time or seems to be stuck, invoke a new subagent to retry the task.
 
 ### Review Checklist Focus
 

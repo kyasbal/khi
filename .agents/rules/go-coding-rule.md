@@ -82,7 +82,7 @@ Follow these rules to perform code reviews using a temporary subagent.
 - **Define**: Use `define_subagent` to create a temporary subagent.
 - **Invoke**: Pass the modified file paths to the subagent during `invoke_subagent`.
 - **Capabilities**: The subagent can read files and perform web searches.
-- **Timeout and Retry**: You MUST set a reasonable expectation for response time. If a subagent does not respond within the expected time or seems to be stuck, invoke a new subagent to retry the task.
+- **Timeout and Retry**: You MUST set 180sec as a deadline duration. If a subagent does not respond within the expected time or seems to be stuck, invoke a new subagent to retry the task.
 
 ### Review Checklist Focus
 
