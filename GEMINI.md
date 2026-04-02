@@ -26,6 +26,6 @@ Language specific rules are written in each language's rule files. Please respec
 
 * All comments must be written in English.
 * License headers are automatically added by commit hook. Do not add license header.
-* Do not modify/remove existing test codes without asking it to the user.
+* Do not modify/remove existing test code without asking the user.
 * Do not perform git commit/push without any approval from the user.
 * Do not assume before reading files. Read the file before changing it.

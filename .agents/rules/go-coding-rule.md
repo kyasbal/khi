@@ -7,20 +7,29 @@ globs: **/*.go
 
 When developing or modifying Go code in the KHI project, you **must** adhere to the following rules and best practices.
 
-## 1. General Coding Rules
+## 1. Verifications
 
 1. **Build Verification**: Before running tests or submitting changes, you must always verify that your code compiles successfully.
    - Run `make build-go` to ensure there are no compilation errors across the backend.
-2. **Review Verification**: Before asking the user to verify your changes, you MUST invoke a subagent to review your code. See Section 3 for the procedure. **If you make any modifications based on the review, you MUST run the review again to verify the changes.**
-3. **Test Verification**: Run `go test` with appropriate filter to run tests only for changed parts first. But make sure you run `make test` before asking user to verify.
+2. **Review Verification**: Before asking the user to verify your changes, you MUST invoke a subagent for code review. See Section 5 for the procedure. **If you make any modifications based on the review, you MUST run the review again to verify the changes.**
+3. **Test Verification**: Run `go test` with an appropriate filter to run tests only for changed parts first. But make sure you run `make test-go` before asking the user to verify.
 4. **Formatting and Linting**:
+   - Run `make format-go` to ensure standard Go formatting.
    - Run `make lint-go` if applicable, and ensure no new linting errors are introduced.
-5. **Comments**:
+5. **Restart on Correction**: If you make any corrections during a verification phase, you MUST restart the verification from the beginning for that phase.
+
+## 2. General Coding Rules
+
+1. **Comments**:
+   - All comments must be written in English.
    - Use `godoc`-style comments for all public types, functions, and methods.
-6. **Implementing Interface**
+
+## 3. Language-Specific Conventions
+
+1. **Implementing Interface**:
    - Add `var _ Interface = &Implementation{};` after the type definition to show that it's implementing the interface explicitly.
 
-## 2. Testing Practices
+## 4. Testing Practices
 
 1. **Table-Driven Tests**: Tests must be written using the table-driven testing pattern. Define a slice of anonymous structs representing the test cases, and iterate over them using `t.Run()`.
 2. **Assertions and Diffs**:
@@ -63,7 +72,7 @@ When developing or modifying Go code in the KHI project, you **must** adhere to 
 > }
 > ```
 
-## 3. Subagent Review Guidelines
+## 5. Subagent Review Guidelines
 
 > [!IMPORTANT]
 > **DO NOT FORGET** to invoke the subagent for code review after making changes. You must complete the subagent review before asking the user to verify your implementation.
@@ -72,7 +81,8 @@ Follow these rules to perform code reviews using a temporary subagent.
 
 - **Define**: Use `define_subagent` to create a temporary subagent.
 - **Invoke**: Pass the modified file paths to the subagent during `invoke_subagent`.
-- **Capabilities**: The subagent can read files and perform web searches (e.g., to reference external style guides like [Go Style Decisions](https://google.github.io/styleguide/go/decisions)).
+- **Capabilities**: The subagent can read files and perform web searches.
+- **Timeout and Retry**: You MUST set a reasonable expectation for response time. If a subagent does not respond within the expected time or seems to be stuck, invoke a new subagent to retry the task.
 
 ### Review Checklist Focus
 
@@ -110,3 +120,8 @@ The subagent must verify:
   "Prompt": "Review the changes in: [file path]"
 }
 ```
+
+---
+
+> [!NOTE]
+> For detailed KHI-specific architecture rules (e.g., package structure, KHI task system parsing patterns), please refer to the `KHI Go Coding and Testing Standards` skill file.
