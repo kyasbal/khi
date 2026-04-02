@@ -1,5 +1,5 @@
 <!--
- Copyright 2024 Google LLC
+ Copyright 2026 Google LLC
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -14,23 +14,12 @@
  limitations under the License.
 -->
 
-<button
-  mat-button
-  class="menu-group"
-  color="menu-group"
-  [matMenuTriggerFor]="fileMenu"
->
-  <mat-icon class="icon">folder_open</mat-icon>
-  <span class="menu-group-label">File</span>
-</button>
-
-<mat-menu #fileMenu="matMenu">
-  <button mat-menu-item (click)="downloadAsPng()">
-    <mat-icon>download</mat-icon>
-    <span>Export as PNG</span>
-  </button>
-  <button mat-menu-item (click)="downloadAsSvg()">
-    <mat-icon>download</mat-icon>
-    <span>Export as SVG</span>
-  </button>
-</mat-menu>
+<khi-header-v2
+  [version]="version"
+  [viewerMode]="viewerMode()"
+  [menuGroups]="menuManager.groups()"
+  [serverMemory]="serverMemory()"
+  [serverMaxMemory]="serverMaxMemory()"
+  [sessionId]="sessionId()"
+  (menuItemClick)="handleMenuItemClick($event)"
+></khi-header-v2>

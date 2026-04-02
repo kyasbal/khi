@@ -22,14 +22,21 @@
 .container {
   display: grid;
   grid-template:
-    "header" auto
+    "titlebar" auto
+    "toolbar" auto
     "main" minmax(0, 1fr) /
     minmax(0, 1fr);
   height: 100%;
   overflow: hidden;
-  khi-header {
-    grid-area: header;
+
+  khi-header-v2-smart {
+    grid-area: titlebar;
   }
+
+  khi-timeline-toolbar-smart {
+    grid-area: toolbar;
+  }
+
   .layout-container {
     grid-area: main;
     height: 100%;
