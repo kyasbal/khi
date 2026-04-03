@@ -7,24 +7,27 @@ globs: **/*.ts, **/*.html, **/*.scss
 
 When developing or modifying Angular code in the KHI project, you **must** adhere to the following rules and best practices.
 
-## General Coding Rules for Typescript
+## 1. Verifications
 
-1. **Verifications**
+1. **Build Verification**: Run `make build-web` to check compilation.
+2. **Lint Verification**: Run `make lint-web` to check style.
+3. **Test Verification**: Run `make test-web-headless` to check unit tests.
+4. **Storybook Verification**: Run `make build-storybook` to check compilation for storybook.
+5. **Review Verification**: Before asking the user to verify your changes, you MUST invoke a subagent for code review. See Section 4 for the procedure. **If you make any modifications based on the review, you MUST run the review again to verify the changes.**
+6. **Restart on Correction**: If you make any corrections during a verification phase, you MUST restart the verification from the beginning for that phase.
 
-   - Run `make build-web` to check compilation.
-   - Run `make lint-web` to check style.
-   - Run `make test-web-headless` to check unit tests.
-   - Run `make build-storybook` to check compilation for storybook.
-   - **MUST** invoke a subagent for code review before asking the user for verification. See Section 4 for the procedure. **If you make any modifications based on the review, you MUST run the review again to verify the changes.**
+## 2. General Coding Rules
 
-2. **Comments**:
+1. **Comments**:
    - Use TSDoc-style comments for all public types, functions, and methods.
-3. **Naming Conventions**:
-   - Component selectors should have a khi- prefix.
-4. Test files must be named with A.spec.ts if A.ts exists. Do not define spec files by scenarios.
-5. Do not use any.
+2. **Naming Conventions**:
+   - Component selectors should have a `khi-` prefix.
+3. **Test File Naming**: Test files must be named with `A.spec.ts` if `A.ts` exists. Do not define spec files by scenarios.
+4. **Type Safety**: Do not use `any`.
 
-## Modern Angular Conventions
+## 3. Language-Specific Conventions (TypeScript & SCSS)
+
+### 3.1 Modern Angular Conventions
 
 These rules apply when creating new components or refactoring existing ones:
 
@@ -36,17 +39,14 @@ These rules apply when creating new components or refactoring existing ones:
    - Use `output()` instead of `@Output`.
    - Use `model()` for two-way bindings.
    - Use `signal()` and `computed()` for component-level state management.
-3. **Control Flow**:
-   - Use built-in control flow (`@if`, `@for`, `@switch`) in templates instead of structural directives (`*ngIf`, `*ngFor`).
+3. **Control Flow**: Use built-in control flow (`@if`, `@for`, `@switch`) in templates instead of structural directives (`*ngIf`, `*ngFor`).
 4. **Access Modifiers**:
    - Members accessed only from the template must be `protected`.
    - Members used only within the TypeScript class must be `private`.
    - Use `readonly` for properties that are not reassigned.
-5. **RxJS to Signal Conversion**:
-   - If a service returns an Observable, convert it to a Signal in the component using `toSignal`.
-6. **Icons**:
-   - When importing `MatIconModule`, you must also import `KHIIconRegistrationModule`.
-7. Styles and template must be defined in an independent file. Do not directly supply them in @Component
+5. **RxJS to Signal Conversion**: If a service returns an Observable, convert it to a Signal in the component using `toSignal`.
+6. **Icons**: When importing `MatIconModule`, you must also import `KHIIconRegistrationModule`.
+7. **File Separation**: Styles and templates must be defined in separate files. Do not directly supply them in `@Component`.
 
 ## Smart-Dumb Component Architecture
 
