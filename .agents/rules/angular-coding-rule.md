@@ -76,6 +76,34 @@ foo/
    - **MUST** have a corresponding Storybook story (`*.stories.ts`) to verify its visual states independently.
    - **DO NOT** use suffixes like `-dumb` or `-ui` in the component name. Name them based on their semantic meaning (e.g., `user-profile`, `data-table`).
 
+## Smart-Dumb Component Architecture
+
+To maintain a clean separation of concerns and improve testability, we adopt the Smart-Dumb component strategy.
+
+### Directory Structure
+
+Each feature or complex component should use the following directory structure:
+
+```text
+foo/
+  components/           # Place non-smart (Dumb) components here
+  types/                # Place component-specific types/ViewModels here (not shared outside foo/)
+  foo-smart.component.ts
+  foo-smart.component.scss
+  foo-smart.component.html
+```
+
+### Dependency Rules
+
+1. **Smart Components**:
+   - Responsible for state management and data fetching.
+   - Allowed to depend on Angular Services.
+2. **Dumb Components**:
+   - Responsible only for rendering UI and propagating events.
+   - **MUST NOT** depend on Angular Services. They should only communicate via Inputs (`input()`, `model()`) and Outputs (`output()`).
+   - **MUST** have a corresponding Storybook story (`*.stories.ts`) to verify its visual states independently.
+   - **DO NOT** use suffixes like `-dumb` or `-ui` in the component name. Name them based on their semantic meaning (e.g., `user-profile`, `data-table`).
+
 ## General Coding Rules for SCSS
 
 1. Do not use color literal in SCSS files like `background-color: #FF00FF;`.
@@ -103,6 +131,7 @@ foo/
 ## 4. Subagent Review Guidelines
 
 > [!IMPORTANT]
+
 > **DO NOT FORGET** to invoke the subagent for code review after making changes. You must complete the subagent review before asking the user to verify your implementation.
 
 Follow these rules to perform code reviews using a temporary subagent before asking the user to verify your changes.
