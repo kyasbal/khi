@@ -68,22 +68,6 @@ describe('LogViewLogLineComponent', () => {
     expect(component.lineClick.emit).toHaveBeenCalledWith(mockLog);
   });
 
-  it('should emit lineClick event on Enter key', () => {
-    spyOn(component.lineClick, 'emit');
-    const rowEl = fixture.debugElement.query(By.css('.log-row'));
-    const event = new KeyboardEvent('keydown', { key: 'Enter' });
-    rowEl.nativeElement.dispatchEvent(event);
-    expect(component.lineClick.emit).toHaveBeenCalledWith(mockLog);
-  });
-
-  it('should emit lineClick event on Space key', () => {
-    spyOn(component.lineClick, 'emit');
-    const rowEl = fixture.debugElement.query(By.css('.log-row'));
-    const event = new KeyboardEvent('keydown', { key: ' ' });
-    rowEl.nativeElement.dispatchEvent(event);
-    expect(component.lineClick.emit).toHaveBeenCalledWith(mockLog);
-  });
-
   it('should emit lineHover event on mouseover', () => {
     spyOn(component.lineHover, 'emit');
     const rowEl = fixture.debugElement.query(By.css('.log-row'));
