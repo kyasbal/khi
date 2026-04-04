@@ -72,3 +72,17 @@ export const ErrorLog: Story = {
     log: mockErrorLog,
   },
 };
+
+export const Highlighted: Story = {
+  args: {
+    log: mockLog,
+    highlighted: true,
+  },
+};
+
+export const Selected: Story = {
+  args: {
+    log: mockLog,
+    selected: true,
+  },
+};
