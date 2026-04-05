@@ -23,44 +23,38 @@ import (
 func TestResourceMonitorImpl(t *testing.T) {
 	monitor := &ResourceMonitorImpl{}
 
-	t.Run("GetUsedMemory", func(t *testing.T) {
-		got := monitor.GetUsedMemory()
-		if got <= 0 {
-			t.Errorf("GetUsedMemory() = %d; want > 0", got)
-		}
-	})
+	testCases := []struct {
+		name string
+		op   func() int
+	}{
+		{
+			name: "GetUsedMemory",
+			op:   monitor.GetUsedMemory,
+		},
+	}
 
-	t.Run("GetTotalMemory", func(t *testing.T) {
-		got := monitor.GetTotalMemory()
-		// Depending on the environment, gopsutil might fail or return 0.
-		// But in a normal test environment it should return something > 0.
-		if got <= 0 {
-			t.Logf("Warning: GetTotalMemory() returned %d", got)
-		}
-
-		// Test caching
-		got2 := monitor.GetTotalMemory()
-		if got != got2 {
-			t.Errorf("GetTotalMemory() cached value mismatch: got %d, want %d", got2, got)
-		}
-	})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.op()
+			if got <= 0 {
+				t.Errorf("%s() = %d; want > 0", tc.name, got)
+			}
+		})
+	}
 }
 
 func TestResourceMonitorMock(t *testing.T) {
 	testCases := []struct {
-		name      string
-		mock      ResourceMonitorMock
-		wantUsed  int
-		wantTotal int
+		name     string
+		mock     ResourceMonitorMock
+		wantUsed int
 	}{
 		{
 			name: "mock returns set values",
 			mock: ResourceMonitorMock{
-				UsedMemory:  100,
-				TotalMemory: 1000,
+				UsedMemory: 100,
 			},
-			wantUsed:  100,
-			wantTotal: 1000,
+			wantUsed: 100,
 		},
 	}
 
@@ -68,9 +62,6 @@ func TestResourceMonitorMock(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			if diff := cmp.Diff(tc.wantUsed, tc.mock.GetUsedMemory()); diff != "" {
 				t.Errorf("GetUsedMemory() mismatch (-want +got):\n%s", diff)
-			}
-			if diff := cmp.Diff(tc.wantTotal, tc.mock.GetTotalMemory()); diff != "" {
-				t.Errorf("GetTotalMemory() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

@@ -77,15 +77,11 @@ export class HeaderV2SmartComponent {
   protected readonly serverMemory = computed(() => {
     const stat = this.serverStat();
     if (!stat) return '';
-    return (stat.currentMemoryUsage / this.BYTES_TO_GB).toFixed(2);
+    return (stat.totalMemoryAvailable / this.BYTES_TO_GB).toFixed(2);
   });
 
   /** Server maximum memory limit string. */
-  protected readonly serverMaxMemory = computed(() => {
-    const stat = this.serverStat();
-    if (!stat || stat.totalMemory === 0) return '';
-    return (stat.totalMemory / this.BYTES_TO_GB).toFixed(2);
-  });
+  protected readonly serverMaxMemory = computed(() => '');
 
   /**
    * Handles menu item click events from the dumb component.
