@@ -25,7 +25,7 @@ func TestResourceMonitorImpl(t *testing.T) {
 
 	t.Run("GetUsedMemory", func(t *testing.T) {
 		got := monitor.GetUsedMemory()
-		if got <= 0 {
+		if got == 0 {
 			t.Errorf("GetUsedMemory() = %d; want > 0", got)
 		}
 	})
@@ -34,7 +34,7 @@ func TestResourceMonitorImpl(t *testing.T) {
 		got := monitor.GetTotalMemory()
 		// Depending on the environment, gopsutil might fail or return 0.
 		// But in a normal test environment it should return something > 0.
-		if got <= 0 {
+		if got == 0 {
 			t.Logf("Warning: GetTotalMemory() returned %d", got)
 		}
 
