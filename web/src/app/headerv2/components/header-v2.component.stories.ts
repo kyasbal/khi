@@ -21,6 +21,7 @@ import {
   MenuItemType,
 } from '../../services/menu/menu-manager.service';
 import { signal } from '@angular/core';
+import { ServerStatus } from '../types/server-status';
 
 const mockMenuGroups: MenuGroupViewModel[] = [
   {
@@ -115,7 +116,7 @@ export const Default: Story = {
     version: '1.2.3',
     viewerMode: false,
     menuGroups: mockMenuGroups,
-    serverStatus: 'Connected',
+    serverStatus: ServerStatus.Connected,
     serverMemory: '120MB',
     serverMaxMemory: '512MB',
     sessionId: '1',
@@ -127,7 +128,7 @@ export const Viewer: Story = {
     version: '1.2.3',
     viewerMode: true,
     menuGroups: mockMenuGroups,
-    serverStatus: 'Connected',
+    serverStatus: ServerStatus.Connected,
     serverMemory: '120MB',
     serverMaxMemory: '512MB',
     sessionId: '1',
@@ -139,7 +140,7 @@ export const OnlyCurrentMemory: Story = {
     version: '1.2.3',
     viewerMode: false,
     menuGroups: mockMenuGroups,
-    serverStatus: 'Connected',
+    serverStatus: ServerStatus.Connected,
     serverMemory: '120MB',
     serverMaxMemory: '',
     sessionId: '1',
@@ -151,7 +152,7 @@ export const Disconnected: Story = {
     version: '1.2.3',
     viewerMode: false,
     menuGroups: mockMenuGroups,
-    serverStatus: 'Disconnected',
+    serverStatus: ServerStatus.Disconnected,
     serverMemory: '',
     serverMaxMemory: '',
     sessionId: '',

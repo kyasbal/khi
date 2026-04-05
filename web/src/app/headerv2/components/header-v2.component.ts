@@ -26,6 +26,7 @@ import {
   MenuItemType,
 } from '../../services/menu/menu-manager.service';
 import { KHIIconRegistrationModule } from '../../shared/module/icon-registration.module';
+import { ServerStatus } from '../types/server-status';
 
 /**
  * Header component version 2 (Dumb component).
@@ -48,6 +49,9 @@ export class HeaderV2Component {
   /** Expose MenuItemType to template. */
   protected readonly MenuItemType = MenuItemType;
 
+  /** Expose ServerStatus to template. */
+  protected readonly ServerStatus = ServerStatus;
+
   /** Current version of the application. */
   readonly version = input<string>('');
 
@@ -58,7 +62,7 @@ export class HeaderV2Component {
   readonly menuGroups = input<MenuGroupViewModel[]>([]);
 
   /** Status of the server connection. */
-  readonly serverStatus = input<string>('Connected');
+  readonly serverStatus = input<ServerStatus>(ServerStatus.Connected);
 
   /** Server current memory usage string. */
   readonly serverMemory = input<string>('');

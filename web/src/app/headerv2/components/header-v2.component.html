@@ -68,7 +68,7 @@
     <div class="status-item connection-status">
       <span
         class="status-dot"
-        [class.connected]="serverStatus() === 'Connected'"
+        [class.connected]="serverStatus() === ServerStatus.Connected"
       ></span>
       <span class="status-label">Server: {{ serverStatus() }}</span>
     </div>
