@@ -50,8 +50,8 @@ func TestResourceMonitorMock(t *testing.T) {
 	testCases := []struct {
 		name      string
 		mock      ResourceMonitorMock
-		wantUsed  int
-		wantTotal int
+		wantUsed  uint64
+		wantTotal uint64
 	}{
 		{
 			name: "mock returns set values",
