@@ -68,7 +68,14 @@
     <div class="status-item connection-status">
       <span
         class="status-dot"
-        [class.connected]="serverStatus() === ServerStatus.Connected"
+        [class.connected]="serverStatus() === BackendConnectionStatus.Connected"
+        [class.connecting]="
+          serverStatus() === BackendConnectionStatus.Connecting
+        "
+        [class.disconnected]="
+          serverStatus() === BackendConnectionStatus.Disconnected
+        "
+        aria-hidden="true"
       ></span>
       <span class="status-label">Server: {{ serverStatus() }}</span>
     </div>

@@ -47,9 +47,9 @@ import { BackendAPIImpl } from './services/api/backend-api.service';
 import { NotificationManager } from './services/notification/notification';
 import { ProgressDialogService } from './services/progress/progress-dialog.service';
 import {
-  BACKEND_CONNECTION,
-  BackendConnectionServiceImpl,
-} from './services/api/backend-connection.service';
+  BACKEND_SYNC,
+  BackendSyncServiceImpl,
+} from './services/api/backend-sync.service';
 import { DiffPageDataSource } from './services/frame-connection/frames/diff-page-datasource.service';
 import { DiffPageDataSourceServer } from './services/frame-connection/frames/diff-page-datasource-server.service';
 import { GraphPageDataSourceServer } from './services/frame-connection/frames/graph-page-datasource-server.service';
@@ -119,8 +119,8 @@ import { KHIIconRegistrationModule } from './shared/module/icon-registration.mod
       useClass: BackendAPIImpl,
     },
     {
-      provide: BACKEND_CONNECTION,
-      useClass: BackendConnectionServiceImpl,
+      provide: BACKEND_SYNC,
+      useClass: BackendSyncServiceImpl,
     },
     {
       provide: POPUP_MANAGER,

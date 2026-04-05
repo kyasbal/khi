@@ -153,4 +153,25 @@ header {
   &.connected {
     background-color: mat.m2-get-color-from-palette(mat.$m2-green-palette, 500);
   }
+
+  @keyframes pulse {
+    0% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.4;
+    }
+  }
+
+  &.connecting {
+    background-color: mat.m2-get-color-from-palette(mat.$m2-amber-palette, 500);
+    animation: pulse 2s infinite ease-in-out;
+  }
+
+  &.disconnected {
+    background-color: mat.m2-get-color-from-palette(mat.$m2-red-palette, 500);
+  }
 }
