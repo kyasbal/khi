@@ -21,7 +21,7 @@ import {
   MenuItemType,
 } from '../../services/menu/menu-manager.service';
 import { signal } from '@angular/core';
-import { ServerStatus } from '../types/server-status';
+import { BackendConnectionStatus } from '../../services/api/backend-sync-interface';
 
 const mockMenuGroups: MenuGroupViewModel[] = [
   {
@@ -116,7 +116,7 @@ export const Default: Story = {
     version: '1.2.3',
     viewerMode: false,
     menuGroups: mockMenuGroups,
-    serverStatus: ServerStatus.Connected,
+    serverStatus: BackendConnectionStatus.Connecting,
     serverMemory: '120MB',
     serverMaxMemory: '512MB',
     sessionId: '1',
@@ -128,7 +128,7 @@ export const Viewer: Story = {
     version: '1.2.3',
     viewerMode: true,
     menuGroups: mockMenuGroups,
-    serverStatus: ServerStatus.Connected,
+    serverStatus: BackendConnectionStatus.Connected,
     serverMemory: '120MB',
     serverMaxMemory: '512MB',
     sessionId: '1',
@@ -140,7 +140,7 @@ export const OnlyCurrentMemory: Story = {
     version: '1.2.3',
     viewerMode: false,
     menuGroups: mockMenuGroups,
-    serverStatus: ServerStatus.Connected,
+    serverStatus: BackendConnectionStatus.Connected,
     serverMemory: '120MB',
     serverMaxMemory: '',
     sessionId: '1',
@@ -152,7 +152,7 @@ export const Disconnected: Story = {
     version: '1.2.3',
     viewerMode: false,
     menuGroups: mockMenuGroups,
-    serverStatus: ServerStatus.Disconnected,
+    serverStatus: BackendConnectionStatus.Disconnected,
     serverMemory: '',
     serverMaxMemory: '',
     sessionId: '',

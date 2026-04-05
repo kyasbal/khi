@@ -14,23 +14,37 @@
  * limitations under the License.
  */
 
-import { Observable } from 'rxjs';
+import { ResourceRef, Signal } from '@angular/core';
 import {
   GetInspectionResponse,
   GetInspectionTypesResponse,
 } from 'src/app/common/schema/api-types';
 
 /**
- * BackendConnectionService communicates the backend continuously and emit the latest information.
+ * Connection status to the backend.
  */
-export interface BackendConnectionService {
+export enum BackendConnectionStatus {
+  Connecting = 'connecting',
+  Connected = 'connected',
+  Disconnected = 'disconnected',
+}
+
+/**
+ * BackendSyncService maintains the latest information from the backend.
+ */
+export interface BackendSyncService {
   /**
-   * Return an observable to monitor the available task types on tge backend.
+   * Current connection status to the backend.
    */
-  inspectionTypes(): Observable<GetInspectionTypesResponse>;
+  readonly connectionStatus: Signal<BackendConnectionStatus>;
 
   /**
-   * Return an observable to monitor the task lists on the backend.
+   * Monitored available task types on the backend.
    */
-  tasks(): Observable<GetInspectionResponse>;
+  readonly inspectionTypes: ResourceRef<GetInspectionTypesResponse>;
+
+  /**
+   * Monitored task lists on the backend.
+   */
+  readonly tasks: ResourceRef<GetInspectionResponse>;
 }

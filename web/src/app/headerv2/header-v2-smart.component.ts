@@ -25,8 +25,8 @@ import { VERSION } from 'src/environments/version';
 import { map } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { HeaderV2Component } from './components/header-v2.component';
-import { BACKEND_CONNECTION } from '../services/api/backend-connection.service';
-import { BackendConnectionService } from '../services/api/backend-connection-interface';
+import { BACKEND_SYNC } from '../services/api/backend-sync.service';
+import { BackendSyncService } from '../services/api/backend-sync-interface';
 import { WindowConnectorService } from '../services/frame-connection/window-connector.service';
 
 /**
@@ -44,8 +44,7 @@ export class HeaderV2SmartComponent {
   protected readonly menuManager = inject(MenuManager);
 
   private readonly backendAPI = inject(BACKEND_API);
-  private readonly backendConnection =
-    inject<BackendConnectionService>(BACKEND_CONNECTION);
+  private readonly backendSync = inject<BackendSyncService>(BACKEND_SYNC);
   private readonly windowConnector = inject(WindowConnectorService);
 
   /** Divisor to convert bytes to GB. */
@@ -69,8 +68,13 @@ export class HeaderV2SmartComponent {
   );
 
   /** Server statistics. */
-  private readonly serverStat = toSignal(
-    this.backendConnection.tasks().pipe(map((resp) => resp.serverStat)),
+  private readonly serverStat = computed(
+    () => this.backendSync.tasks.value()?.serverStat,
+  );
+
+  /** Server connection status from BackendSyncService. */
+  protected readonly serverStatus = computed(() =>
+    this.backendSync.connectionStatus(),
   );
 
   /** Server current memory usage string. */
