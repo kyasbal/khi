@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,6 @@
  * limitations under the License.
  */
 
-@use "@angular/material" as mat;
-
 :host {
-  display: flex;
-  gap: 1px;
-}
-
-.menu-group {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 140px;
-
-  &.mat-menu-group {
-    color: white;
-    background-color: mat.m2-get-color-from-palette(
-      mat.$m2-indigo-palette,
-      400
-    );
-    font-size: 20px;
-  }
+  display: block;
 }
