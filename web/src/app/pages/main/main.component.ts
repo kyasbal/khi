@@ -124,7 +124,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit() {
     this.setupMenu();
     if (!this.extensionStore.tryOpenDataFromURL()) {
-      return;
       this.dialog.open(StartupDialogComponent, {
         maxWidth: '100vw',
         panelClass: 'startup-modalbox',
