@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint  @angular-eslint/prefer-standalone: 0 */
-
 import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { KHIIconRegistrationModule } from './shared/module/icon-registration.module';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'khi-root',
   templateUrl: './root.component.html',
   styleUrls: ['./root.component.scss'],
-  standalone: false,
+  imports: [
+    RouterOutlet,
+    KHIIconRegistrationModule,
+    ...environment.pluginModules,
+  ],
 })
 export class RootComponent {}
