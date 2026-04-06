@@ -31,6 +31,7 @@ const mockMenuGroups: MenuGroupViewModel[] = [
     icon: '',
     items: [
       {
+        id: 'open',
         label: 'Open',
         type: MenuItemType.Button,
         icon: 'folder_open',
@@ -41,6 +42,7 @@ const mockMenuGroups: MenuGroupViewModel[] = [
         priority: 1,
       },
       {
+        id: 'save',
         label: 'Save',
         type: MenuItemType.Button,
         icon: 'save',
@@ -51,6 +53,7 @@ const mockMenuGroups: MenuGroupViewModel[] = [
         priority: 2,
       },
       {
+        id: 'separator-1',
         label: '',
         type: MenuItemType.Separator,
         icon: '',
@@ -61,6 +64,7 @@ const mockMenuGroups: MenuGroupViewModel[] = [
         priority: 3,
       },
       {
+        id: 'exit',
         label: 'Exit',
         type: MenuItemType.Button,
         icon: 'close',
@@ -79,6 +83,7 @@ const mockMenuGroups: MenuGroupViewModel[] = [
     icon: '',
     items: [
       {
+        id: 'toggle-sidebar',
         label: 'Toggle Sidebar',
         type: MenuItemType.Checkbox,
         icon: '',
@@ -89,6 +94,7 @@ const mockMenuGroups: MenuGroupViewModel[] = [
         priority: 1,
       },
       {
+        id: 'zoom-in',
         label: 'Zoom In',
         type: MenuItemType.Button,
         icon: 'zoom_in',
