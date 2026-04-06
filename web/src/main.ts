@@ -20,7 +20,9 @@ import {
   inject,
   provideAppInitializer,
   Injector,
+  ErrorHandler,
 } from '@angular/core';
+import { ReporterErrorHandler } from './app/common/reporter/reporter-error-handler';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { RootComponent } from './app/root.component';
 import { environment } from './environments/environment';
@@ -92,6 +94,7 @@ bootstrapApplication(RootComponent, {
       },
     }),
     { provide: TitleStrategy, useClass: KHITitleStrategy },
+    { provide: ErrorHandler, useClass: ReporterErrorHandler },
     ...ProgressDialogService.providers(),
     InspectionDataLoaderService,
     DiffPageDataSourceServer,
