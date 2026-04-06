@@ -59,17 +59,26 @@ class LogListScrollingStrategy extends FixedSizeVirtualScrollStrategy {
   ],
 })
 export class LogListComponent {
+  /** The total number of logs. */
   public readonly allLogsCount = input.required<number>();
+  /** The list of filtered log entries. */
   public readonly filteredLogs = input.required<LogEntry[]>();
+  /** The index of the currently selected log. */
   public readonly selectedLogIndex = input.required<number>();
+  /** The set of indices of highlighted logs. */
   public readonly highlightLogIndices = input.required<Set<number>>();
+  /** The list of selected timelines including their children. */
   public readonly selectedTimelinesWithChildren =
     input.required<ResourceTimeline[]>();
 
+  /** Whether to filter logs by selected timelines. */
   public readonly filterByTimeline = model<boolean>(true);
+  /** Whether to include child timelines in the filter. */
   public readonly includeTimelineChildren = model<boolean>(true);
 
+  /** Emits when a log entry is selected. */
   public readonly logSelected = output<LogEntry>();
+  /** Emits when a log entry is hovered. */
   public readonly logHovered = output<LogEntry>();
 
   private readonly viewPort = viewChild(CdkVirtualScrollViewport);
