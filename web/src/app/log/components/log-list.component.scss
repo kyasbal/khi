@@ -21,25 +21,27 @@
 
 @use "../../color-palette.scss" as cp;
 
+$toolbar-shadow-color: rgba(0, 0, 0, 0.15);
+
 .log-list-wrapper {
-  height: 100%;
-  width: 100%;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 
 .log-toolbar {
   display: flex;
-  box-shadow: 1px 1px 1px black;
+  box-shadow: 1px 1px 1px $toolbar-shadow-color;
 
   .spacer {
     flex: 1;
     margin: 0;
-    text-align: center;
-    line-height: 25px;
-    white-space: nowrap;
     overflow: hidden;
+    line-height: 25px;
+    text-align: center;
+    white-space: nowrap;
     text-overflow: ellipsis;
   }
 
@@ -50,34 +52,22 @@
   }
 }
 
-.log-type-filter-button {
-  grid-column: 3;
-}
-
-.count-indicator {
-  background-color: #3f51b5;
-  border-radius: 10px;
-  padding: 3px 5px;
-  margin: 0 0 0 10px;
-  color: white;
-  font-size: smaller;
-
-  .divisor {
-    padding: 0 3px;
-  }
-}
-
 .virtual-viewport {
   height: 100%;
 }
 
 .log-list-container {
-  height: 100%;
-  flex: 1;
-  overflow-y: scroll;
-  overflow-x: hidden;
   position: relative;
-  border-collapse: collapse;
-  table-layout: fixed;
+  flex: 1;
   width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+.log-list {
+  display: grid;
+  grid-template: "type severity ts message" / auto auto auto 1fr;
+  width: max-content;
+  min-width: 100%;
 }

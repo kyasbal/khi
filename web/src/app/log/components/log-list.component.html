@@ -35,17 +35,19 @@
     </div>
     <p class="spacer">{{ shownLogsCount() }}/{{ allLogsCount() }} logs</p>
   </div>
-  <table class="log-list-container" tabindex="0">
+  <div class="log-list-container" tabindex="0">
     <cdk-virtual-scroll-viewport class="virtual-viewport">
-      <ng-container *cdkVirtualFor="let log of shownLogs()">
-        <khi-log-view-log-line
-          [log]="log"
-          [selected]="selectedLogIndex() === log.logIndex"
-          [highlighted]="highlightLogIndices().has(log.logIndex)"
-          (lineClick)="selectLog($event)"
-          (lineHover)="onLogHover($event)"
-        ></khi-log-view-log-line>
-      </ng-container>
+      <div class="log-list">
+        <ng-container *cdkVirtualFor="let log of shownLogs()">
+          <khi-log-view-log-line
+            [log]="log"
+            [selected]="selectedLogIndex() === log.logIndex"
+            [highlighted]="highlightLogIndices().has(log.logIndex)"
+            (lineClick)="selectLog($event)"
+            (lineHover)="onLogHover($event)"
+          ></khi-log-view-log-line>
+        </ng-container>
+      </div>
     </cdk-virtual-scroll-viewport>
-  </table>
+  </div>
 </div>

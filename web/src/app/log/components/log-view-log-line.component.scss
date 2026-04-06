@@ -17,44 +17,69 @@
 @use "../../zzz-generated" as gen;
 @use "../../common.scss" as common;
 
+@use "@angular/material" as mat;
+@use "../../color-palette.scss" as cp;
+
+$text-white: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 50);
+$border-color: rgba(
+  mat.m2-get-color-from-palette(mat.$m2-gray-palette, 900),
+  0.3
+);
+$highlight-bg-color: rgba(
+  mat.m2-get-color-from-palette(mat.$m2-gray-palette, 900),
+  0.1
+);
+$ts-color: mat.m2-get-color-from-palette(cp.$khi-menu-palette, 500);
+$selected-bg-color: rgba($ts-color, 0.2);
+$ts-bg-color: rgba($ts-color, 0.05);
+
 :host {
-  display: block;
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  width: 100%;
 }
 
-tr {
+.log-row {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
   width: 100%;
   height: 12px;
+  border-bottom: 0.2px solid $border-color;
   line-height: 12px;
   font-size: 10px;
-  border-bottom: 0.2px solid rgba(0, 0, 0, 0.3);
 
-  td {
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  div {
     overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   &.highlight {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: $highlight-bg-color;
     cursor: pointer;
   }
 
   &.selected {
-    background-color: #07080c66;
+    background-color: $selected-bg-color;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $ts-color;
+    outline-offset: -2px;
   }
 
   .ts {
     padding: 0 3px;
-    color: rgba(63, 81, 181, 1);
-    background-color: rgba(63, 81, 181, 0.05);
-    width: 60px;
+    color: $ts-color;
+    background-color: $ts-bg-color;
   }
 
   .message {
-    width: 100%;
-    text-overflow: ellipsis;
     overflow: hidden;
     white-space: pre;
+    text-overflow: ellipsis;
     font-family: common.$font-code;
   }
 
@@ -69,7 +94,7 @@ tr {
   .severity-indicator-wrap {
     .severity-indicator {
       width: 14px;
-      color: white;
+      color: $text-white;
       text-align: center;
 
       @include gen.log-severity-colors-for-all;
