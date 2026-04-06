@@ -15,9 +15,13 @@
  */
 
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { BackendSyncServiceImpl } from './backend-sync.service';
+import {
+  BackendSyncServiceImpl,
+  PROGRESS_POLLING_INTERVAL,
+  LIST_INSPECTION_TYPES_RETRY_TIME,
+} from './backend-sync.service';
 import { BACKEND_API, BackendAPI } from './backend-api-interface';
-import { defer, of, throwError } from 'rxjs';
+import { defer, of, throwError, EMPTY } from 'rxjs';
 import { BackendConnectionStatus } from './backend-sync-interface';
 
 describe('BackendSyncService', () => {
@@ -65,7 +69,7 @@ describe('BackendSyncService', () => {
   it('should become Connected when tasks succeeds', fakeAsync(() => {
     service = TestBed.inject(BackendSyncServiceImpl);
     service.tasks.value();
-    tick(BackendSyncServiceImpl.PROGRESS_POLLING_INTERVAL);
+    tick(PROGRESS_POLLING_INTERVAL);
     expect(service.connectionStatus()).toBe(BackendConnectionStatus.Connected);
   }));
 
@@ -73,6 +77,7 @@ describe('BackendSyncService', () => {
     mockBackendApi.getInspectionTypes.and.returnValue(
       throwError(() => new Error('API Error')),
     );
+    mockBackendApi.getInspections.and.returnValue(EMPTY);
 
     service = TestBed.inject(BackendSyncServiceImpl);
     service.inspectionTypes.value();
@@ -90,7 +95,7 @@ describe('BackendSyncService', () => {
 
     service = TestBed.inject(BackendSyncServiceImpl);
     service.tasks.value();
-    tick(BackendSyncServiceImpl.PROGRESS_POLLING_INTERVAL);
+    tick(PROGRESS_POLLING_INTERVAL);
 
     expect(service.connectionStatus()).toBe(
       BackendConnectionStatus.Disconnected,
@@ -108,21 +113,53 @@ describe('BackendSyncService', () => {
         return of({ types: [] });
       }),
     );
+    mockBackendApi.getInspections.and.returnValue(EMPTY);
 
     service = TestBed.inject(BackendSyncServiceImpl);
     service.inspectionTypes.value();
     tick(); // First call fails
-    TestBed.tick();
 
     expect(callCount).toBe(1);
     expect(service.connectionStatus()).toBe(
       BackendConnectionStatus.Disconnected,
     );
 
-    tick(BackendSyncServiceImpl.LIST_INSPECTION_TYPES_RETRY_TIME); // Wait for retry
-    TestBed.tick();
+    tick(LIST_INSPECTION_TYPES_RETRY_TIME); // Wait for retry
 
     expect(callCount).toBe(2);
+    expect(service.connectionStatus()).toBe(BackendConnectionStatus.Connected);
+  }));
+
+  it('should recover and become Connected when tasks succeeds after failure', fakeAsync(() => {
+    let callCount = 0;
+    mockBackendApi.getInspections.and.returnValue(
+      defer(() => {
+        callCount++;
+        if (callCount === 1) {
+          return throwError(() => new Error('API Error'));
+        }
+        return of({
+          inspections: {},
+          serverStat: { currentMemoryUsage: 0, totalMemory: 0 },
+        });
+      }),
+    );
+    mockBackendApi.getInspectionTypes.and.returnValue(EMPTY);
+
+    service = TestBed.inject(BackendSyncServiceImpl);
+    service.tasks.value();
+
+    tick(); // Process timer(0)
+
+    // First call happens immediately with timer(0) and fails
+    expect(service.connectionStatus()).toBe(
+      BackendConnectionStatus.Disconnected,
+    );
+
+    // Wait for the next polling interval
+    tick(PROGRESS_POLLING_INTERVAL);
+
+    // Second call succeeds
     expect(service.connectionStatus()).toBe(BackendConnectionStatus.Connected);
   }));
 });

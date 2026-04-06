@@ -16,7 +16,7 @@
 
 import { Injectable, InjectionToken, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { catchError, EMPTY, exhaustMap, interval, retry, tap } from 'rxjs';
+import { catchError, EMPTY, exhaustMap, retry, tap, timer } from 'rxjs';
 import { BACKEND_API, BackendAPI } from './backend-api-interface';
 import {
   BackendSyncService,
@@ -35,21 +35,21 @@ export const BACKEND_SYNC = new InjectionToken<BackendSyncService>(
 );
 
 /**
+ * Interval to poll task progresses.
+ */
+export const PROGRESS_POLLING_INTERVAL = 1000;
+
+/**
+ * Interval to poll the list of inspection types.
+ */
+export const LIST_INSPECTION_TYPES_RETRY_TIME = 1000;
+
+/**
  * BackendSyncServiceImpl provides resources by polling backend endpoints.
  */
 @Injectable()
 export class BackendSyncServiceImpl implements BackendSyncService {
   private readonly backendApi = inject<BackendAPI>(BACKEND_API);
-
-  /**
-   * Interval to poll task progresses.
-   */
-  static readonly PROGRESS_POLLING_INTERVAL = 1000;
-
-  /**
-   * Interval to poll the list of inspection types.
-   */
-  static readonly LIST_INSPECTION_TYPES_RETRY_TIME = 1000;
 
   /**
    * Signal to manage the connection status internally.
@@ -72,7 +72,7 @@ export class BackendSyncServiceImpl implements BackendSyncService {
       this.backendApi.getInspectionTypes().pipe(
         tap(this.getStatusUpdater('getInspectionTypes')),
         retry({
-          delay: BackendSyncServiceImpl.LIST_INSPECTION_TYPES_RETRY_TIME,
+          delay: LIST_INSPECTION_TYPES_RETRY_TIME,
         }),
       ),
   });
@@ -86,10 +86,13 @@ export class BackendSyncServiceImpl implements BackendSyncService {
       serverStat: { currentMemoryUsage: 0, totalMemory: 0 },
     },
     stream: () =>
-      interval(BackendSyncServiceImpl.PROGRESS_POLLING_INTERVAL).pipe(
-        exhaustMap(() => this.backendApi.getInspections()),
-        tap(this.getStatusUpdater('getInspections')),
-        catchError(() => EMPTY),
+      timer(0, PROGRESS_POLLING_INTERVAL).pipe(
+        exhaustMap(() =>
+          this.backendApi.getInspections().pipe(
+            tap(this.getStatusUpdater('getInspections')),
+            catchError(() => EMPTY),
+          ),
+        ),
       ),
   });
 
@@ -98,7 +101,7 @@ export class BackendSyncServiceImpl implements BackendSyncService {
       next: () =>
         this.connectionStatusSignal.set(BackendConnectionStatus.Connected),
       error: (err: unknown) => {
-        console.warn(`Failed in ${context}:\n` + JSON.stringify(err));
+        console.warn(`Failed in ${context}:`, err);
         this.connectionStatusSignal.set(BackendConnectionStatus.Disconnected);
       },
     };
