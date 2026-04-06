@@ -44,6 +44,7 @@ export class GraphComponent implements OnInit {
   ngOnInit() {
     this.menuManager.addGroup('graph-download', 'Download', 10, 'download');
     this.menuManager.addItem('graph-download', {
+      id: 'download-png',
       label: 'Download as PNG',
       type: MenuItemType.Button,
       icon: 'image',
@@ -51,6 +52,7 @@ export class GraphComponent implements OnInit {
       priority: 1,
     });
     this.menuManager.addItem('graph-download', {
+      id: 'download-svg',
       label: 'Download as SVG',
       type: MenuItemType.Button,
       icon: 'code',

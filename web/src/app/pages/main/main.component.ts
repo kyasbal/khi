@@ -181,6 +181,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private setupMenu() {
     this.menuManager.addGroup('file', 'File', 1, 'browse');
     this.menuManager.addItem('file', {
+      id: 'open-inspection',
       label: 'Open inspection dialog',
       type: MenuItemType.Button,
       icon: 'home',

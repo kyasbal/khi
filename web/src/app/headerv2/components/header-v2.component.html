@@ -41,7 +41,7 @@
       </button>
       <!-- Child menu item buttons-->
       <mat-menu #menu="matMenu">
-        @for (item of group.items; track item.label || $index) {
+        @for (item of group.items; track item.id) {
           @if (item.type === MenuItemType.Separator) {
             <mat-divider></mat-divider>
           } @else {

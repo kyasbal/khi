@@ -69,6 +69,7 @@ describe('HeaderV2Component', () => {
 
   it('should emit menuItemClick when a menu item is clicked', async () => {
     const mockItem: MenuItemViewModel = {
+      id: 'test-item',
       label: 'Test Item',
       type: MenuItemType.Button,
       icon: '',

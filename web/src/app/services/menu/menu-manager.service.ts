@@ -30,6 +30,8 @@ export enum MenuItemType {
  * Represents a menu item configuration provided by users.
  */
 export interface MenuItem {
+  /** Identifier for the menu item. */
+  id: string;
   /** Label for the menu item. Not required if type is 'separator'. */
   label?: string;
   /** Type of the menu item. Default is MenuItemType.Button. */
@@ -70,6 +72,7 @@ export interface MenuGroup {
  * Represents a normalized menu item for display in components.
  */
 export interface MenuItemViewModel {
+  id: string;
   label: string;
   type: MenuItemType;
   icon: string;
@@ -98,6 +101,7 @@ export interface MenuGroupViewModel {
  */
 export function createMenuItemViewModel(item: MenuItem): MenuItemViewModel {
   return {
+    id: item.id,
     label: item.label || '',
     type: item.type || MenuItemType.Button,
     icon: item.icon || '',
