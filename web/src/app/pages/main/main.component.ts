@@ -36,7 +36,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { HeaderComponent } from 'src/app/header/header.component';
 import { TimelineSmartComponent } from 'src/app/timeline/timeline-smart.component';
 import { AngularSplitModule } from 'angular-split';
-import { StartupDialogComponent } from 'src/app/dialogs/startup/startup.component';
+import { openStartupDialog } from 'src/app/dialogs/startup/startup-smart.component';
 import {
   RequestUserActionPopupComponent,
   RequestUserActionPopupRequest,
@@ -77,9 +77,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     if (!this.extensionStore.tryOpenDataFromURL()) {
-      this.dialog.open(StartupDialogComponent, {
-        maxWidth: '100vw',
-        panelClass: 'startup-modalbox',
+      openStartupDialog(this.dialog, {
         disableClose: true,
       });
     }

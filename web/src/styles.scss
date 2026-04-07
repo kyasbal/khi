@@ -109,6 +109,7 @@ code {
   background-color: transparent !important;
 
   .mat-mdc-dialog-surface {
-    border-radius: 20px !important;
+    overflow: hidden;
+    background-color: transparent !important;
   }
 }

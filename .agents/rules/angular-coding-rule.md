@@ -47,6 +47,7 @@ These rules apply when creating new components or refactoring existing ones:
 5. **RxJS to Signal Conversion**: If a service returns an Observable, convert it to a Signal in the component using `toSignal`.
 6. **Icons**: When importing `MatIconModule`, you must also import `KHIIconRegistrationModule`.
 7. **File Separation**: Styles and templates must be defined in separate files. Do not directly supply them in `@Component`.
+8. Prefer defining a new enum type rather than defining a type with union string like `type A = 'foo' | 'bar'`.
 
 ## Smart-Dumb Component Architecture
 
@@ -61,7 +62,6 @@ foo/
   components/           # Place non-smart (Dumb) components here
   types/                # Place component-specific types/ViewModels here (not shared outside foo/)
   foo-smart.component.ts
-  foo-smart.component.scss
   foo-smart.component.html
 ```
 
@@ -70,6 +70,8 @@ foo/
 1. **Smart Components**:
    - Responsible for state management and data fetching.
    - Allowed to depend on Angular Services.
+   - Smart component never have its layout. It must just embed a single dumb component. If you need layouting multiple dumb component, define a foo-layout.component in the components folder just for layout.
+   - Smart component's `:host` selector must have `display: content;` not to affect styling calculation. This is allowed to be in `@Component` definition directly.
 2. **Dumb Components**:
    - Responsible only for rendering UI and propagating events.
    - **MUST NOT** depend on Angular Services. They should only communicate via Inputs (`input()`, `model()`) and Outputs (`output()`).
