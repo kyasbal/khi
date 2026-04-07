@@ -111,11 +111,15 @@ export class InspectionListItemComponent {
 
   /** Commits the title change and exits editing mode. */
   protected commitTitleChange(): void {
+    if (!this.isEditing()) {
+      return;
+    }
     this.isEditing.set(false);
-    if (this.taskNameInput() !== this.item().label) {
+    const newTitle = this.taskNameInput().trim();
+    if (newTitle !== '' && newTitle !== this.item().label) {
       this.changeInspectionTitle.emit({
         id: this.item().id,
-        changeTo: this.taskNameInput(),
+        changeTo: newTitle,
       });
     }
   }
