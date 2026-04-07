@@ -60,7 +60,7 @@ describe('MenuManager', () => {
   it('should fallback to default values in ViewModel', () => {
     service.addGroup('a', 'A', 1);
 
-    const item: MenuItem = { id: 'item', priority: 1 }; // label, type などを省略
+    const item: MenuItem = { id: 'item', priority: 1 };
     service.addItem('a', item);
 
     const groups = service.groups();
