@@ -61,7 +61,11 @@ export class InspectionListItemComponent {
   constructor() {
     effect(() => {
       if (this.isEditing()) {
-        this.titleInput()?.nativeElement.focus();
+        const element = this.titleInput()?.nativeElement;
+        if (element) {
+          element.focus();
+          element.select();
+        }
       }
     });
   }
