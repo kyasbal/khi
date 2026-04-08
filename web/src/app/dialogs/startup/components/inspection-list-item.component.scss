@@ -346,7 +346,7 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
       text-decoration: underline;
 
       &:hover {
-        color: darken($error-color, 10%);
+        color: color.adjust($error-color, $lightness: -10%);
       }
     }
 
