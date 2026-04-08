@@ -72,14 +72,26 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
   }
 }
 
+@mixin chip-style($bg-color, $text-color, $dot-color, $pulse: false) {
+  color: $text-color;
+  background-color: $bg-color;
+
+  &::before {
+    background-color: $dot-color;
+    @if $pulse {
+      animation: chip-pulse 2s infinite ease-in-out;
+    }
+  }
+}
+
 .container {
   display: grid;
   grid-template:
     "content" auto
     / 100%;
 
-  width: 100%;
   border: 1px solid mat.m2-get-color-from-palette(mat.$m2-gray-palette, 200);
+  width: 100%;
   border-radius: 8px;
 
   background-color: $white;
@@ -141,11 +153,11 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
   grid-area: title;
 
   .title-input {
-    width: 100%;
     margin: 0;
-    padding: 0;
     border: none;
     border-bottom: 2px solid $primary-color;
+    padding: 0;
+    width: 100%;
 
     font-size: 1.2em;
     font-weight: 600;
@@ -185,37 +197,16 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
     }
 
     &.DONE {
-      background-color: $chip-done-bg;
-      color: $chip-done-text;
-
-      &::before {
-        background-color: $chip-done-dot;
-      }
+      @include chip-style($chip-done-bg, $chip-done-text, $chip-done-dot);
     }
     &.RUNNING {
-      background-color: $chip-running-bg;
-      color: $chip-running-text;
-
-      &::before {
-        background-color: $chip-running-dot;
-        animation: chip-pulse 2s infinite ease-in-out;
-      }
+      @include chip-style($chip-running-bg, $chip-running-text, $chip-running-dot, true);
     }
     &.CANCELLED {
-      background-color: $chip-cancelled-bg;
-      color: $chip-cancelled-text;
-
-      &::before {
-        background-color: $chip-cancelled-dot;
-      }
+      @include chip-style($chip-cancelled-bg, $chip-cancelled-text, $chip-cancelled-dot);
     }
     &.ERROR {
-      background-color: $chip-error-bg;
-      color: $chip-error-text;
-
-      &::before {
-        background-color: $chip-error-dot;
-      }
+      @include chip-style($chip-error-bg, $chip-error-text, $chip-error-dot);
     }
   }
 }
@@ -248,15 +239,15 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
     background-color: $bg-muted;
 
     &.total-progress {
-      height: 24px;
       margin-bottom: 6px;
+      height: 24px;
       font-size: 13px;
     }
 
     &.sub-task-progress {
-      height: 14px;
       margin-bottom: 1px;
       margin-left: 16px;
+      height: 14px;
       font-size: 10px;
     }
 
