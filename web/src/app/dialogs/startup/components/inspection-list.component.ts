@@ -16,7 +16,10 @@
 
 import { Component, input, output } from '@angular/core';
 import { InspectionListItemComponent } from './inspection-list-item.component';
-import { InspectionListItemViewModel } from '../types/inspection-activity.model';
+import {
+  InspectionListItemViewModel,
+  InspectionTitleChangeRequest,
+} from '../types/inspection-activity.model';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
@@ -64,8 +67,6 @@ export class InspectionListComponent {
   public readonly downloadInspectionResult = output<string>();
 
   /** Emits the ID and the new title when an inspection title is changed. */
-  public readonly changeInspectionTitle = output<{
-    id: string;
-    changeTo: string;
-  }>();
+  public readonly changeInspectionTitle =
+    output<InspectionTitleChangeRequest>();
 }
