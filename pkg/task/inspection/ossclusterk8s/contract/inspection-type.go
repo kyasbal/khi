@@ -32,8 +32,8 @@ var OSSKubernetesLogFilesInspectionType = coreinspection.InspectionType{
 	Icon:        "assets/icons/k8s.png",
 	Priority:    math.MaxInt - 1000,
 	Labels: map[string]string{
+		inspectioncore_contract.InspectionTypeLabelKeyLogSource:    "file",
 		inspectioncore_contract.InspectionTypeLabelKeyEnvironment:  "oss",
 		inspectioncore_contract.InspectionTypeLabelKeyBasePlatform: "kubernetes",
-		inspectioncore_contract.InspectionTypeLabelKeyLogSource:    "file",
 	},
 }

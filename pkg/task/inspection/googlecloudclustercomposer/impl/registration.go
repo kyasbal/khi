@@ -32,10 +32,10 @@ func Register(registry coreinspection.InspectionTaskRegistry) error {
 		registry,
 		inspectioncore_contract.InspectionTypeLabelSelector(map[string]string{
 			inspectioncore_contract.InspectionTypeLabelKeyLogSource:      "cloud_logging",
-			googlecloudcommon_contract.InspectionTypeLabelKeyProduct:     "composer",
 			inspectioncore_contract.InspectionTypeLabelKeyEnvironment:    "googlecloud",
-			googlecloudcommon_contract.InspectionTypeLabelKeyClusterType: "gke",
 			inspectioncore_contract.InspectionTypeLabelKeyBasePlatform:   "kubernetes",
+			googlecloudcommon_contract.InspectionTypeLabelKeyClusterType: "gke",
+			googlecloudcommon_contract.InspectionTypeLabelKeyProduct:     "composer",
 		}),
 	)
 
@@ -46,10 +46,10 @@ func Register(registry coreinspection.InspectionTaskRegistry) error {
 	scopedAll := coreinspection.NewScopedRegistry(
 		registry,
 		inspectioncore_contract.InspectionTypeLabelSelector(map[string]string{
-			googlecloudcommon_contract.InspectionTypeLabelKeyProduct:     "composer",
 			inspectioncore_contract.InspectionTypeLabelKeyEnvironment:    "googlecloud",
-			googlecloudcommon_contract.InspectionTypeLabelKeyClusterType: "gke",
 			inspectioncore_contract.InspectionTypeLabelKeyBasePlatform:   "kubernetes",
+			googlecloudcommon_contract.InspectionTypeLabelKeyClusterType: "gke",
+			googlecloudcommon_contract.InspectionTypeLabelKeyProduct:     "composer",
 		}),
 	)
 
