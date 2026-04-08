@@ -21,6 +21,8 @@ import {
   provideAppInitializer,
   Injector,
   ErrorHandler,
+  importProvidersFrom,
+  ApplicationConfig,
 } from '@angular/core';
 import { ReporterErrorHandler } from './app/common/reporter/reporter-error-handler';
 import { bootstrapApplication } from '@angular/platform-browser';
@@ -74,12 +76,17 @@ import {
 } from './app/extensions/extension-common/extension-store';
 import { KHI_FRONTEND_EXTENSION_BUNDLES } from './app/extensions/extension-common/extension';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { KHIIconRegistrationModule } from './app/shared/module/icon-registration.module';
 
 if (environment.production) {
   enableProdMode();
 }
 
-bootstrapApplication(RootComponent, {
+/**
+ * Application configuration for KHI.
+ * Defines providers used during bootstrap.
+ */
+export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection(),
     provideRouter(KHIRoutes),
@@ -142,6 +149,8 @@ bootstrapApplication(RootComponent, {
     },
     NotificationManager,
     DiffPageDataSource,
+    importProvidersFrom(KHIIconRegistrationModule),
+    importProvidersFrom(...environment.pluginModules),
     provideAppInitializer(() => {
       const extensionStore = inject(EXTENSION_STORE);
       const notificationManager = inject(NotificationManager);
@@ -156,4 +165,8 @@ bootstrapApplication(RootComponent, {
       notificationManager.initialize();
     }),
   ],
-}).catch((err) => console.error(err));
+};
+
+bootstrapApplication(RootComponent, appConfig).catch((err) =>
+  console.error(err),
+);

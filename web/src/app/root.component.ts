@@ -15,17 +15,11 @@
  */
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { KHIIconRegistrationModule } from './shared/module/icon-registration.module';
-import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'khi-root',
   templateUrl: './root.component.html',
   styleUrls: ['./root.component.scss'],
-  imports: [
-    RouterOutlet,
-    KHIIconRegistrationModule,
-    ...environment.pluginModules,
-  ],
+  imports: [RouterOutlet],
 })
 export class RootComponent {}
