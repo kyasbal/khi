@@ -200,10 +200,19 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
       @include chip-style($chip-done-bg, $chip-done-text, $chip-done-dot);
     }
     &.RUNNING {
-      @include chip-style($chip-running-bg, $chip-running-text, $chip-running-dot, true);
+      @include chip-style(
+        $chip-running-bg,
+        $chip-running-text,
+        $chip-running-dot,
+        true
+      );
     }
     &.CANCELLED {
-      @include chip-style($chip-cancelled-bg, $chip-cancelled-text, $chip-cancelled-dot);
+      @include chip-style(
+        $chip-cancelled-bg,
+        $chip-cancelled-text,
+        $chip-cancelled-dot
+      );
     }
     &.ERROR {
       @include chip-style($chip-error-bg, $chip-error-text, $chip-error-dot);
