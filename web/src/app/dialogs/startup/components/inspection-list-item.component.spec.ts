@@ -68,9 +68,6 @@ describe('InspectionListItemComponent', () => {
     const titleContainerEl = fixture.debugElement.query(
       By.css('.title-container'),
     );
-    expect(titleContainerEl.nativeElement.getAttribute('aria-label')).toBe(
-      'Click to edit title',
-    );
     titleContainerEl.nativeElement.click();
     fixture.detectChanges();
     expect(component['isEditing']()).toBeTrue();

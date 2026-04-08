@@ -26,7 +26,6 @@
           (blur)="commitTitleChange()"
           (keydown.enter)="commitTitleChange()"
           (keydown.escape)="cancelEditing()"
-          aria-label="Edit inspection title"
           #titleInput
         />
       </div>
@@ -38,7 +37,6 @@
         (click)="startEditing()"
         (keydown.enter)="startEditing()"
         (keydown.space)="startEditing(); $event.preventDefault()"
-        aria-label="Click to edit title"
       >
         <p class="title">{{ i.label }}</p>
         <mat-icon>edit</mat-icon>
@@ -51,16 +49,7 @@
   </div>
   <div class="progress-container">
     @if (i.phase === "RUNNING") {
-      <div
-        class="progress-element total-progress"
-        role="progressbar"
-        [attr.aria-valuenow]="
-          i.totalProgress.indeterminate ? null : i.totalProgress.percentage
-        "
-        aria-valuemin="0"
-        aria-valuemax="100"
-        [attr.aria-label]="i.totalProgress.label"
-      >
+      <div class="progress-element total-progress" role="progressbar">
         <div
           class="progress-bar"
           [style.--percentage]="i.totalProgress.percentage"
@@ -86,12 +75,6 @@
           class="progress-element sub-task-progress"
           [ngClass]="{ intermediate: progress.indeterminate }"
           role="progressbar"
-          [attr.aria-valuenow]="
-            progress.indeterminate ? null : progress.percentage
-          "
-          aria-valuemin="0"
-          aria-valuemax="100"
-          [attr.aria-label]="progress.label"
         >
           <div
             class="progress-bar"
@@ -170,7 +153,6 @@
             class="metadata-button"
             mat-icon-button
             matTooltip="Show the inspection metadata"
-            aria-label="Show metadata"
             (click)="openInspectionMetadata.emit(i.id)"
           >
             <mat-icon>database</mat-icon>
