@@ -22,11 +22,9 @@
 $primary-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 500);
 $bg-muted: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 800);
 $text-muted: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 600);
-$success-color: mat.m2-get-color-from-palette(mat.$m2-green-palette, 500);
 $error-color: mat.m2-get-color-from-palette(mat.$m2-red-palette, 500);
 $white: #ffffff;
 $text-default: #000000;
-$shadow-color: rgba(0, 0, 0, 0.1);
 $hover-bg: rgba(0, 0, 0, 0.05);
 $white-transparent: rgba(255, 255, 255, 0);
 $white-semi-transparent: rgba(255, 255, 255, 0.4);
@@ -230,13 +228,6 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
 
 .progress-container {
   padding: 8px 20px;
-
-  .progress-container-header {
-    margin: 0 0 8px 0;
-
-    font-size: 14px;
-    font-weight: 600;
-  }
 
   .progress-element {
     position: relative;
