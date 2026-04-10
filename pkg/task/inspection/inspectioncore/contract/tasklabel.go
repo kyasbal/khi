@@ -45,7 +45,7 @@ const (
 	InspectionTypeLabelKeyEnvironment = "khi.google.com/environment"
 
 	// InspectionTypeLabelKeyBasePlatform is the label key for the base platform of the cluster.
-	// Expected values of this label key: "kubernetes", "oss" etc.
+	// Expected values of this label key: "kubernetes", etc.
 	InspectionTypeLabelKeyBasePlatform = "khi.google.com/base_platform"
 )
 
