@@ -41,7 +41,7 @@ const (
 	InspectionTypeLabelKeyLogSource = "khi.google.com/log_source"
 
 	// InspectionTypeLabelKeyEnvironment is the label key for the environment where the target product is running.
-	// Expected values of this label key: "googlecloud", "onprem", etc.
+	// Expected values of this label key: "googlecloud", "onprem", "oss", etc.
 	InspectionTypeLabelKeyEnvironment = "khi.google.com/environment"
 
 	// InspectionTypeLabelKeyBasePlatform is the label key for the base platform of the cluster.
