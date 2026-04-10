@@ -18,6 +18,9 @@ import (
 	"math"
 
 	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	privatecommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecommon/contract"
 )
 
 // InspectionTypeId is the inspection type id for Private Cloud Composer v3.
@@ -29,4 +32,12 @@ var ComposerV3InspectionType = coreinspection.InspectionType{
 	Description: "Fetch both Cloud Composer backend and GKE tenant project logs to generate composer specific results.",
 	Icon:        "assets/icons/composer.webp",
 	Priority:    math.MaxInt - 5,
+	Labels: map[string]string{
+		inspectioncore_contract.InspectionTypeLabelKeyLogSource:      "cloud_logging",
+		inspectioncore_contract.InspectionTypeLabelKeyEnvironment:    "googlecloud",
+		inspectioncore_contract.InspectionTypeLabelKeyBasePlatform:   "kubernetes",
+		googlecloudcommon_contract.InspectionTypeLabelKeyClusterType: "gke",
+		googlecloudcommon_contract.InspectionTypeLabelKeyProduct:     "composer",
+		privatecommon_contract.InspectionTypeLabelKeyPrivate:         "true",
+	},
 }

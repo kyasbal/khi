@@ -17,6 +17,9 @@ package privatecomposerv3_impl
 import (
 	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	privatecommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecommon/contract"
 	privatecomposerv3_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposerv3/contract"
 )
 
@@ -26,7 +29,16 @@ func Register(registry coreinspection.InspectionTaskRegistry) error {
 	if err != nil {
 		return err
 	}
-	return coretask.RegisterTasks(registry,
+	scoped := coreinspection.NewScopedRegistry(registry, inspectioncore_contract.InspectionTypeLabelSelector(
+		map[string]string{
+			inspectioncore_contract.InspectionTypeLabelKeyLogSource:      "cloud_logging",
+			inspectioncore_contract.InspectionTypeLabelKeyEnvironment:    "googlecloud",
+			inspectioncore_contract.InspectionTypeLabelKeyBasePlatform:   "kubernetes",
+			googlecloudcommon_contract.InspectionTypeLabelKeyClusterType: "gke",
+			googlecloudcommon_contract.InspectionTypeLabelKeyProduct:     "composer",
+			privatecommon_contract.InspectionTypeLabelKeyPrivate:         "true",
+		}))
+	return coretask.RegisterTasks(scoped,
 		InputComposerV3TenantProjectIdTask,
 		ClusterIdentityTask,
 		ComposerClusterIdentityTask,
