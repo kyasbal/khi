@@ -38,8 +38,8 @@ This type can also be used for GCDE or GDCH.`,
 	Labels: map[string]string{
 		inspectioncore_contract.InspectionTypeLabelKeyLogSource:         "cloud_logging",
 		inspectioncore_contract.InspectionTypeLabelKeyEnvironment:       "googlecloud",
+		inspectioncore_contract.InspectionTypeLabelKeyBasePlatform:      "kubernetes",
 		googlecloudcommon_contract.InspectionTypeLabelKeyClusterType:    "gdc",
 		googlecloudcommon_contract.InspectionTypeLabelKeyClusterSubType: "baremetal",
-		inspectioncore_contract.InspectionTypeLabelKeyBasePlatform:      "kubernetes",
 	},
 }

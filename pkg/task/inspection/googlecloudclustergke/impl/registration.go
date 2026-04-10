@@ -32,8 +32,8 @@ func Register(registry coreinspection.InspectionTaskRegistry) error {
 		registry,
 		inspectioncore_contract.InspectionTypeLabelSelector(map[string]string{
 			inspectioncore_contract.InspectionTypeLabelKeyEnvironment:    "googlecloud",
-			googlecloudcommon_contract.InspectionTypeLabelKeyClusterType: "gke",
 			inspectioncore_contract.InspectionTypeLabelKeyBasePlatform:   "kubernetes",
+			googlecloudcommon_contract.InspectionTypeLabelKeyClusterType: "gke",
 		}),
 	)
 

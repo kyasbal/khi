@@ -30,9 +30,9 @@ func Register(registry coreinspection.InspectionTaskRegistry) error {
 	scoped := coreinspection.NewScopedRegistry(
 		registry,
 		inspectioncore_contract.InspectionTypeLabelSelector(map[string]string{
+			inspectioncore_contract.InspectionTypeLabelKeyLogSource:    "file",
 			inspectioncore_contract.InspectionTypeLabelKeyEnvironment:  "oss",
 			inspectioncore_contract.InspectionTypeLabelKeyBasePlatform: "kubernetes",
-			inspectioncore_contract.InspectionTypeLabelKeyLogSource:    "file",
 		}),
 	)
 
