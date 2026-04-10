@@ -36,8 +36,8 @@ Supporting K8s audit log, K8s event log, K8s node log, K8s container log and OnP
 	Labels: map[string]string{
 		inspectioncore_contract.InspectionTypeLabelKeyLogSource:         "cloud_logging",
 		inspectioncore_contract.InspectionTypeLabelKeyEnvironment:       "googlecloud",
+		inspectioncore_contract.InspectionTypeLabelKeyBasePlatform:      "kubernetes",
 		googlecloudcommon_contract.InspectionTypeLabelKeyClusterType:    "gdc",
 		googlecloudcommon_contract.InspectionTypeLabelKeyClusterSubType: "vmware",
-		inspectioncore_contract.InspectionTypeLabelKeyBasePlatform:      "kubernetes",
 	},
 }

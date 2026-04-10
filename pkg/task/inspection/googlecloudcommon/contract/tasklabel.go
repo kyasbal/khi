@@ -18,15 +18,15 @@ import "github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 
 const (
 	// InspectionTypeLabelKeyProduct is the label key for the Google Cloud product name running on the cluster.
-	// Expected values: "composer", etc.
+	// Expected values of this label key: "composer", etc.
 	InspectionTypeLabelKeyProduct = "cloud.google.com/product"
 
 	// InspectionTypeLabelKeyClusterType is the label key for the cluster type.
-	// Expected values: "gke", "gdc", "gke_multicloud", etc.
+	// Expected values of this label key: "gke", "gdc", "gke_multicloud", etc.
 	InspectionTypeLabelKeyClusterType = "cloud.google.com/cluster_type"
 
 	// InspectionTypeLabelKeyClusterSubType is the label key for the cluster sub type.
-	// Expected values: "aws", "azure", etc.
+	// Expected values of this label key: "aws", "azure", etc.
 	InspectionTypeLabelKeyClusterSubType = "cloud.google.com/cluster_subtype"
 )
 
