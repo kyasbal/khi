@@ -17,7 +17,7 @@
 .row {
   display: grid;
   grid-template-columns: auto auto auto auto auto 1fr;
-  grid-template-areas: "icon key colon value copy-button space";
+  grid-template-areas: 'icon key colon value copy-button space';
 }
 
 .icon {

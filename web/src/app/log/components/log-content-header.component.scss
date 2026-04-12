@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@use "../../zzz-generated" as gen;
+@use '../../zzz-generated' as gen;
 
 $selected-timeline-ref-color: #1a237e;
 
@@ -95,7 +95,7 @@ mat-icon {
 
 .resource-ref-label {
   &::before {
-    content: "・";
+    content: '・';
   }
 
   margin: 3px 0 0 5px;

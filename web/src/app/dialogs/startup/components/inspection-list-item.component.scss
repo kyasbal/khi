@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-@use "sass:color";
-@use "@angular/material" as mat;
-@use "../../../common.scss" as common;
+@use 'sass:color';
+@use '@angular/material' as mat;
+@use '../../../common.scss' as common;
 
 // Color Variables
 $primary-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 500);
@@ -88,7 +88,7 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
 .container {
   display: grid;
   grid-template:
-    "content" auto
+    'content' auto
     / 100%;
 
   border: 1px solid mat.m2-get-color-from-palette(mat.$m2-gray-palette, 200);
@@ -102,8 +102,8 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
 .header {
   display: grid;
   grid-template:
-    "title phase" 20px
-    "title time" auto
+    'title phase' 20px
+    'title time' auto
     / 1fr auto;
   align-items: center;
 
@@ -190,7 +190,7 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
     text-transform: uppercase;
 
     &::before {
-      content: "";
+      content: '';
       display: inline-block;
       width: 6px;
       height: 6px;
@@ -295,7 +295,7 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
 
     &.intermediate {
       &::after {
-        content: "";
+        content: '';
         position: absolute;
         top: 0;
         left: 0;
@@ -356,7 +356,7 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
 .task-commands {
   display: grid;
   grid-template:
-    "left middle right" auto
+    'left middle right' auto
     / auto 1fr auto;
   align-items: center;
 

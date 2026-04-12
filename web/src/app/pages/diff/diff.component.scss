@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-@use "@angular/material" as mat;
+@use '@angular/material' as mat;
 
 $TOOLBAR_BACKGROUND: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 100);
 
 .diff {
   flex: 1;
   display: grid;
-  grid-template-areas: "toolbar" "warning" "diffbody";
+  grid-template-areas: 'toolbar' 'warning' 'diffbody';
   grid-template-rows: auto auto 1fr;
   overflow: auto;
 
   .diff-inner {
-    grid: "diffbody";
+    grid: 'diffbody';
     overflow: auto;
   }
 
   .diff-warning {
-    grid: "warning";
+    grid: 'warning';
     background-color: rgb(255, 255, 200);
     font-weight: bold;
     color: rgb(255, 150, 10);

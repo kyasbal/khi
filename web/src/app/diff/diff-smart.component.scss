@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-@use "../common" as common;
+@use '../common' as common;
 
-@use "@angular/material" as mat;
+@use '@angular/material' as mat;
 
-@use "../zzz-generated" as gen;
+@use '../zzz-generated' as gen;
 
 $TOOLBAR_BACKGROUND: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 100);
 
@@ -62,6 +62,6 @@ as-split {
 }
 
 ngx-unified-diff {
-  --ngx-diff-font-family: "Google Sans Code";
+  --ngx-diff-font-family: 'Google Sans Code';
   --ngx-diff-font-size: 10px;
 }

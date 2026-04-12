@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-@use "../../zzz-generated" as gen;
-@use "../../common.scss" as common;
+@use '../../zzz-generated' as gen;
+@use '../../common.scss' as common;
 
-@use "@angular/material" as mat;
-@use "../../color-palette.scss" as cp;
+@use '@angular/material' as mat;
+@use '../../color-palette.scss' as cp;
 
 $text-white: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 50);
 $border-color: rgba(

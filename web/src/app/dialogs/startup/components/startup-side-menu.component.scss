@@ -27,9 +27,9 @@ $icon-bg-alpha: rgba(255, 255, 255, 0.2);
 .side-menu-container {
   display: grid;
   grid-template:
-    "brand" auto
-    "actions" 1fr
-    "footer" auto
+    'brand' auto
+    'actions' 1fr
+    'footer' auto
     / 100%;
   gap: 40px;
 
@@ -45,8 +45,8 @@ $icon-bg-alpha: rgba(255, 255, 255, 0.2);
   grid-area: brand;
   display: grid;
   grid-template:
-    "logo title" auto
-    "tagline tagline" auto
+    'logo title' auto
+    'tagline tagline' auto
     / auto 1fr;
   gap: 16px;
   align-items: center;
@@ -74,8 +74,8 @@ $icon-bg-alpha: rgba(255, 255, 255, 0.2);
   grid-area: title;
   display: grid;
   grid-template:
-    "name" auto
-    "version" auto
+    'name' auto
+    'version' auto
     / 100%;
   gap: 4px;
 }
@@ -83,7 +83,7 @@ $icon-bg-alpha: rgba(255, 255, 255, 0.2);
 .title {
   margin: 0;
 
-  font-family: "Inter", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: $text-dark;
@@ -133,7 +133,7 @@ $icon-bg-alpha: rgba(255, 255, 255, 0.2);
 
 .footer-link {
   display: grid;
-  grid-template: "icon text" / auto 1fr;
+  grid-template: 'icon text' / auto 1fr;
   gap: 8px;
   align-items: center;
 

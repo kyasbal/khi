@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-@use "sass:color";
+@use 'sass:color';
 
-@use "@angular/material" as mat;
+@use '@angular/material' as mat;
 
 $verified-icon-color: mat.m2-get-color-from-palette(
   mat.$m2-indigo-palette,
@@ -29,7 +29,7 @@ $dirty-icon-size: 15px;
 
 .label-row {
   display: grid;
-  grid-template-areas: "validation title dirty";
+  grid-template-areas: 'validation title dirty';
   gap: 3px;
   justify-content: start;
   align-items: center;

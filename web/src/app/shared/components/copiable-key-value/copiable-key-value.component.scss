@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@use "@angular/material" as mat;
+@use '@angular/material' as mat;
 
 $ICON_SIZE: 18px;
 $FONT_SIZE: 10px;
@@ -63,7 +63,7 @@ $COPY_BUTTON_SIZE: 15px;
     margin-left: -25px;
 
     &::before {
-      content: "";
+      content: '';
       position: absolute;
       top: 50%;
       left: 100%;

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-@use "sass:map";
-@use "sass:color";
-@use "../../common.scss" as common;
-@use "@angular/material" as mat;
-@use "../../zzz-generated" as gen;
+@use 'sass:map';
+@use 'sass:color';
+@use '../../common.scss' as common;
+@use '@angular/material' as mat;
+@use '../../zzz-generated' as gen;
 
 :host {
   display: block;
@@ -29,48 +29,48 @@ $tint-border-color: mat.m2-get-color-from-palette(mat.$m2-green-palette, 600);
 
 $kind-base-color: rgba(63, 81, 181, 1);
 $kind-style: (
-  "height": 25px,
-  "background-color": $kind-base-color,
-  "font-color": white,
-  "sub-label-color": color.adjust($kind-base-color, $lightness: 40%),
-  "legend-background": color.adjust($kind-base-color, $lightness: 20%),
-  "font-weight": 400,
-  "left-padding": 5px,
-  "legend-shrink-width": 200px,
+  'height': 25px,
+  'background-color': $kind-base-color,
+  'font-color': white,
+  'sub-label-color': color.adjust($kind-base-color, $lightness: 40%),
+  'legend-background': color.adjust($kind-base-color, $lightness: 20%),
+  'font-weight': 400,
+  'left-padding': 5px,
+  'legend-shrink-width': 200px,
 );
 
 $namespace-base-color: rgba(100, 100, 100, 1);
 $namespace-style: (
-  "height": 25px,
-  "background-color": $namespace-base-color,
-  "font-color": white,
-  "sub-label-color": transparent,
-  "legend-background": color.adjust($namespace-base-color, $lightness: 20%),
-  "font-weight": 400,
-  "left-padding": 5px,
-  "legend-shrink-width": 200px,
+  'height': 25px,
+  'background-color': $namespace-base-color,
+  'font-color': white,
+  'sub-label-color': transparent,
+  'legend-background': color.adjust($namespace-base-color, $lightness: 20%),
+  'font-weight': 400,
+  'left-padding': 5px,
+  'legend-shrink-width': 200px,
 );
 
 $name-style: (
-  "height": 30px,
-  "background-color": rgba(230, 230, 230, 1),
-  "font-color": black,
-  "sub-label-color": transparent,
-  "legend-background": transparent,
-  "font-weight": 400,
-  "left-padding": 10px,
-  "legend-shrink-width": 0px,
+  'height': 30px,
+  'background-color': rgba(230, 230, 230, 1),
+  'font-color': black,
+  'sub-label-color': transparent,
+  'legend-background': transparent,
+  'font-weight': 400,
+  'left-padding': 10px,
+  'legend-shrink-width': 0px,
 );
 
 $subresource-style: (
-  "height": 22px,
-  "background-color": rgba(255, 255, 255, 1),
-  "font-color": black,
-  "sub-label-color": transparent,
-  "legend-background": transparent,
-  "font-weight": 400,
-  "left-padding": 10px,
-  "legend-shrink-width": 0px,
+  'height': 22px,
+  'background-color': rgba(255, 255, 255, 1),
+  'font-color': black,
+  'sub-label-color': transparent,
+  'legend-background': transparent,
+  'font-weight': 400,
+  'left-padding': 10px,
+  'legend-shrink-width': 0px,
 );
 
 .container {
@@ -78,27 +78,27 @@ $subresource-style: (
 }
 
 @mixin itemContainerStyle($style) {
-  height: map.get($style, "height");
-  background-color: map.get($style, "background-color");
-  color: map.get($style, "font-color");
-  padding-left: map.get($style, "left-padding");
-  font-weight: map.get($style, "font-weight");
+  height: map.get($style, 'height');
+  background-color: map.get($style, 'background-color');
+  color: map.get($style, 'font-color');
+  padding-left: map.get($style, 'left-padding');
+  font-weight: map.get($style, 'font-weight');
   border-left: 5px dashed transparent;
 
   .index {
     .sub-label {
-      color: map.get($style, "sub-label-color");
+      color: map.get($style, 'sub-label-color');
     }
   }
 
   .legend {
-    background-color: map.get($style, "legend-background");
-    color: map.get($style, "background-color");
+    background-color: map.get($style, 'legend-background');
+    color: map.get($style, 'background-color');
   }
 
   &.selected {
     background-color: color.mix(
-      map.get($style, "background-color"),
+      map.get($style, 'background-color'),
       color.adjust($tint-base-color, $lightness: -30%),
       60%
     );
@@ -111,7 +111,7 @@ $subresource-style: (
 
   &.children-of-selected {
     background-color: color.mix(
-      map.get($style, "background-color"),
+      map.get($style, 'background-color'),
       $tint-base-color,
       60%
     );
@@ -124,11 +124,11 @@ $subresource-style: (
 
   &.hovered {
     background-color: color.mix(
-      map.get($style, "background-color"),
+      map.get($style, 'background-color'),
       $tint-base-color,
       40%
     );
-    font-weight: map.get($style, "font-weight") * 1.1;
+    font-weight: map.get($style, 'font-weight') * 1.1;
 
     .main-name {
       font-weight: 600;

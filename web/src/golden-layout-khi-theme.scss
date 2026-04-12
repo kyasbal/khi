@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-@use "golden-layout/dist/css/goldenlayout-base.css";
-@use "@angular/material" as mat;
+@use 'golden-layout/dist/css/goldenlayout-base.css';
+@use '@angular/material' as mat;
 
 $primaryColor: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 500);
 $primaryColorLight: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 50);
@@ -114,7 +114,7 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #fff);
     .lm_close_tab {
       width: 11px;
       height: 11px;
-      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAATElEQVR4nG3OwQ0DMQwDwZGRBtR/j1YJzMc5+IDoR+yCVO29g+pu981MFgqZmRdAfU7+CYWcbF11LwALjpBL0N0qybNx/RPU+gOeiS/+XCRwDlTgkQAAAABJRU5ErkJggg==");
+      background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAATElEQVR4nG3OwQ0DMQwDwZGRBtR/j1YJzMc5+IDoR+yCVO29g+pu981MFgqZmRdAfU7+CYWcbF11LwALjpBL0N0qybNx/RPU+gOeiS/+XCRwDlTgkQAAAABJRU5ErkJggg==');
       background-position: center center;
       background-repeat: no-repeat;
       top: 4px;
@@ -193,16 +193,16 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #fff);
   // Icon to Maximize Pane, so it will fill the entire GoldenLayout Container
   .lm_maximise {
     &::after {
-      content: "expand_content";
-      font-family: "Material Symbols Outlined";
+      content: 'expand_content';
+      font-family: 'Material Symbols Outlined';
     }
   }
 
   // Icon to Close Pane and so remove it from GoldenLayout Container
   .lm_close {
     &::after {
-      content: "close";
-      font-family: "Material Symbols Outlined";
+      content: 'close';
+      font-family: 'Material Symbols Outlined';
     }
   }
 }
@@ -218,8 +218,8 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #fff);
   .lm_controls {
     .lm_maximise {
       &::after {
-        content: "close_fullscreen";
-        font-family: "Material Symbols Outlined";
+        content: 'close_fullscreen';
+        font-family: 'Material Symbols Outlined';
       }
     }
   }

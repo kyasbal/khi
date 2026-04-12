@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-@use "../../zzz-generated" as gen;
-@use "../../common" as common;
-@use "@angular/material" as mat;
+@use '../../zzz-generated' as gen;
+@use '../../common' as common;
+@use '@angular/material' as mat;
 
 $row-background-color: white;
 $row-border-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 100);
@@ -51,7 +51,7 @@ $unchanged-icon-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 600);
     margin: 0;
     display: grid;
     grid-template-columns: auto auto auto auto 1fr;
-    grid-template-areas: "index change-indicator ts operation author";
+    grid-template-areas: 'index change-indicator ts operation author';
   }
 }
 
@@ -65,7 +65,7 @@ $unchanged-icon-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 600);
   background-color: $row-background-color;
 
   &::after {
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     left: 0;

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-@use "sass:color";
-@use "../../../common.scss" as common;
+@use 'sass:color';
+@use '../../../common.scss' as common;
 
 .container {
   height: 100%;
   display: grid;
-  grid-template-areas: "icon" "title" "new-inspection-button" "open-button";
+  grid-template-areas: 'icon' 'title' 'new-inspection-button' 'open-button';
   grid-template-rows: auto auto auto auto;
   gap: 5px 0;
   justify-content: center;
@@ -85,7 +85,7 @@
   box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.35);
 
   display: grid;
-  grid-template-areas: "leftspace icon middlespace labels rightspace";
+  grid-template-areas: 'leftspace icon middlespace labels rightspace';
   grid-template-columns: 15px 40px 10px 1fr 10px;
   grid-template-rows: 70px;
   align-items: center;

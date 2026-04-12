@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-@use "@angular/material" as mat;
-@use "sass:color";
+@use '@angular/material' as mat;
+@use 'sass:color';
 
 $exclusion-color: #ff4141;
 $alias-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 600);

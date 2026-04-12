@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-@use "sass:math";
-@use "@angular/material" as mat;
-@use "../../common.scss" as common;
+@use 'sass:math';
+@use '@angular/material' as mat;
+@use '../../common.scss' as common;
 
 $z-index-spacer: 999;
 $z-index-index: 800;
@@ -91,7 +91,7 @@ $z-index-resizer: 1000;
   grid-row: 1 / 3;
   pointer-events: none;
   display: grid;
-  grid-template-areas: "spacer header" "index chart";
+  grid-template-areas: 'spacer header' 'index chart';
   grid-template-columns: var(--index-pane-width) 1fr;
   grid-template-rows: var(--header-height) 1fr;
   overflow: hidden;
@@ -100,7 +100,7 @@ $z-index-resizer: 1000;
 .container {
   height: 100%;
   display: grid;
-  grid-template-areas: "fill";
+  grid-template-areas: 'fill';
   grid-template-columns: 1fr;
   grid-template-rows: 1fr;
 
@@ -118,7 +118,7 @@ $z-index-resizer: 1000;
   grid-area: fill;
 
   display: grid;
-  grid-template-areas: "corner header" "index chart";
+  grid-template-areas: 'corner header' 'index chart';
   grid-template-columns: var(--index-pane-width) 1fr;
   grid-template-rows: var(--header-height) 1fr;
   overflow: auto;

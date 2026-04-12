@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@use "sass:color";
+@use 'sass:color';
 
 // Main layout
 $inspection-type-icon-size: 80px;
@@ -187,7 +187,7 @@ mat-card.inspection-type {
   height: 100%;
   overflow: hidden;
   display: grid;
-  grid-template-areas: "parameter metadata" "footer footer";
+  grid-template-areas: 'parameter metadata' 'footer footer';
   grid-template-rows: 1fr 100px;
   grid-template-columns: 1fr 1fr;
 
