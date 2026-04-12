@@ -43,6 +43,7 @@ format-go: ## Format backend source code
 .PHONY: format-web
 format-web: $(GENERATE_FRONTEND_DUMMY) ## Format frontend source code
 	cd web && npx prettier --ignore-path .gitignore --write "./**/*.+(ts|json|html|scss)"
+	cd web && npx stylelint "src/**/*.scss" --fix
 
 .PHONY: check-format-go
 check-format-go: ## Check backend source code format
