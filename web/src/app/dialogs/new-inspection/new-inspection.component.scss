@@ -49,7 +49,7 @@ mat-step {
   }
 
   .mat-horizontal-content-container {
-    padding: 0px 24px 0px 24px;
+    padding: 0 24px;
     flex: 1;
   }
 
@@ -62,7 +62,7 @@ mat-step {
   overflow-y: scroll;
 
   &::-webkit-scrollbar {
-    -webkit-appearance: none;
+    appearance: none;
     width: 7px;
   }
 
@@ -100,7 +100,7 @@ mat-card.inspection-type {
     }
 
     .inspection-type-description {
-      padding: 10px 0px;
+      padding: 10px 0;
 
       pre {
         white-space: pre-line;
@@ -115,10 +115,10 @@ mat-card.inspection-type {
   align-content: start;
   gap: 10px;
   overflow-y: scroll;
-  padding: 0px 10px 0px 0px;
+  padding: 0 10px 0 0;
 
   &::-webkit-scrollbar {
-    -webkit-appearance: none;
+    appearance: none;
     width: 7px;
   }
 
@@ -163,14 +163,14 @@ mat-card.inspection-type {
 }
 
 .features-footer {
-  margin: 10px 0px 0px 0px;
+  margin: 10px 0 0;
   display: flex;
   justify-content: flex-end;
   align-items: center;
 
   .errmsg-no-selected-feature {
     color: redi;
-    margin: 0px 20px;
+    margin: 0 20px;
   }
 }
 
@@ -193,7 +193,7 @@ mat-card.inspection-type {
 
   .parameters-form-view {
     grid-area: parameter;
-    margin: 0px 0px 0px -10px;
+    margin: 0 0 0 -10px;
   }
 
   .parameters-metadata-view {
@@ -206,34 +206,35 @@ mat-card.inspection-type {
 }
 
 .parameters-footer {
-  margin: 10px 0px 0px 0px;
+  margin: 10px 0 0;
   display: flex;
   justify-content: flex-end;
   align-items: center;
 
   .errmsg-parameters-error {
     color: red;
-    margin: 0px 20px;
+    margin: 0 20px;
   }
 }
 
 .progress-parameters-forms {
-  margin: 50px 0px;
+  margin: 50px 0;
+
   .message {
     text-align: center;
   }
 }
 
 .query-section-card {
-  margin: 0px 0px 5px 0px;
+  margin: 0 0 5px;
 }
 
 .query-card {
-  margin: 0px 0px 5px 0px;
+  margin: 0 0 5px;
 }
 
 .query-section-query-pre {
-  padding: 0px 0px 0px 10px;
+  padding: 0 0 0 10px;
   overflow-x: auto;
   border-left: 5px solid $query-accent;
 }
@@ -248,7 +249,7 @@ mat-card.inspection-type {
   overflow-y: scroll;
 
   &::-webkit-scrollbar {
-    -webkit-appearance: none;
+    appearance: none;
     width: 7px;
   }
 

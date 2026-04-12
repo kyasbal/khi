@@ -5,7 +5,8 @@
     "storybook": "ng run frontend:storybook",
     "build-storybook": "ng run frontend:build-storybook",
     "test": "ng run frontend:test --browsers=",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "lint:style": "stylelint \"src/**/*.scss\""
   },
   "private": true,
   "dependencies": {

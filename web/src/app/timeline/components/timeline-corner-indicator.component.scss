@@ -103,6 +103,7 @@ $text-color-secondary: #666;
       font-size: 9px;
       border-radius: 3px;
       box-sizing: border-box;
+
       mat-icon {
         @include common.adjust-mat-icon-size(9px);
       }

@@ -32,6 +32,7 @@
     grid: "toolbar";
     display: flex;
     justify-content: flex-end;
+
     .toolbar-button {
       $button-size: 20px;
       @include mat.icon-button-overrides(
@@ -41,6 +42,7 @@
           icon-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 500),
         )
       );
+
       mat-icon {
         @include common.adjust-mat-icon-size(14px);
         position: absolute;

@@ -25,7 +25,7 @@ $date-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 400);
   height: $histogram-height;
 }
 
-$cursor-color: #00ff00;
+$cursor-color: #0f0;
 
 .container {
   position: relative;
@@ -60,8 +60,8 @@ $cursor-color: #00ff00;
   transform: translateX(-50%);
   background-color: rgba(100, 100, 100, 0.7);
   color: white;
-  box-shadow: 0px 0px 1px 0px rgba(0, 0, 0, 0.3);
-  padding: 0px 3px;
+  box-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.3);
+  padding: 0 3px;
   border-radius: 2px;
 
   font-size: 12px;
@@ -75,20 +75,22 @@ $cursor-color: #00ff00;
   z-index: 10;
   transform: translateX(calc(-50%));
   background-color: rgba(255, 255, 255, 0.7);
-  box-shadow: 0px 0px 1px 0px rgba(0, 0, 0, 0.3);
-  padding: 0px 3px;
+  box-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.3);
+  padding: 0 3px;
   font-size: 14px;
   font-weight: 500;
   color: $date-color;
   display: flex;
-  gap: 0px 5px;
+  gap: 0 5px;
   align-items: center;
+
   mat-icon {
     @include common.adjust-mat-icon-size(14px);
   }
+
   .date-label-divider {
     position: absolute;
-    top: 0px;
+    top: 0;
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);

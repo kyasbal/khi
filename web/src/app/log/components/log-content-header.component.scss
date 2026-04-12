@@ -53,7 +53,7 @@ mat-icon {
     }
 
     .spacer {
-      margin: 0px;
+      margin: 0;
       margin-left: 10px;
     }
 
@@ -89,7 +89,7 @@ mat-icon {
 }
 
 .resource-ref-title {
-  margin: 3px 0px;
+  margin: 3px 0;
   font-weight: 600;
 }
 
@@ -98,7 +98,7 @@ mat-icon {
     content: "・";
   }
 
-  margin: 3px 0px 0px 5px;
+  margin: 3px 0 0 5px;
   white-space: nowrap;
   font-size: smaller;
 

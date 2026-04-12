@@ -48,7 +48,7 @@ $VALUE_COLOR: black;
 
   // Force showing scrollbar
   &::-webkit-scrollbar {
-    -webkit-appearance: none;
+    appearance: none;
     width: 7px;
   }
 

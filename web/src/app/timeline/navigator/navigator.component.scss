@@ -41,7 +41,7 @@ $LAYER_ICON_SIZE: 14px;
 
 .layer-title {
   display: flex;
-  padding: 0px 5px;
+  padding: 0 5px;
   column-gap: 5px;
   align-items: center;
 
@@ -52,7 +52,7 @@ $LAYER_ICON_SIZE: 14px;
   }
 
   .layer-label {
-    margin: 0px;
+    margin: 0;
   }
 }
 

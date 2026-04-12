@@ -27,15 +27,15 @@ $activeTabForeColor: var(--color-layout-active-tab-fore, #ccc);
 
 $dropTargetIndicatorOutlineForeColor: var(
   --color-layout-drop-target-indicator-outline-fore,
-  #cccccc
+  #ccc
 );
 
 $selectedHeaderBkgdColor: var(--color-layout-selected-header-bkgd, #452500);
 $transitionIndicatorBorderForeColor: var(
   --color-layout-transition-indicator-border-fore,
-  #555555
+  #555
 );
-$dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #ffffff);
+$dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #fff);
 
 // ".lm_dragging" is applied to BODY tag during Drag and is also directly applied to the root of the object being dragged
 // Entire GoldenLayout Container, if a background is set, it is visible as color of "pane header" and "splitters" (if these latest has opacity very low)
@@ -74,8 +74,8 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #ffffff);
 
   transition: opacity 200ms ease;
 
-  &:hover, // When hovered by mouse...
-    &.lm_dragging {
+  &:hover,
+  &.lm_dragging {
     background: $primaryColorLight;
     opacity: 1;
   }
@@ -114,7 +114,7 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #ffffff);
     .lm_close_tab {
       width: 11px;
       height: 11px;
-      background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAATElEQVR4nG3OwQ0DMQwDwZGRBtR/j1YJzMc5+IDoR+yCVO29g+pu981MFgqZmRdAfU7+CYWcbF11LwALjpBL0N0qybNx/RPU+gOeiS/+XCRwDlTgkQAAAABJRU5ErkJggg==);
+      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAATElEQVR4nG3OwQ0DMQwDwZGRBtR/j1YJzMc5+IDoR+yCVO29g+pu981MFgqZmRdAfU7+CYWcbF11LwALjpBL0N0qybNx/RPU+gOeiS/+XCRwDlTgkQAAAABJRU5ErkJggg==");
       background-position: center center;
       background-repeat: no-repeat;
       top: 4px;
@@ -146,6 +146,7 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #ffffff);
 .lm_stack.lm_bottom {
   .lm_header .lm_tab {
     box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.3);
+
     &.lm_active {
       box-shadow: 0 2px 2px $baseBkgdColor;
     }
@@ -160,16 +161,15 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #ffffff);
 }
 
 .lm_tab {
-  &:hover, // If Tab is hovered
-    &.lm_active // If Tab is active, so if it's in foreground
-  {
+  &:hover,
+  &.lm_active {
     background: $primaryColor;
     color: $activeTabForeColor;
   }
 }
 
 // Dropdown arrow for additional tabs when too many to be displayed
-.lm_header .lm_controls .lm_tabdropdown:before {
+.lm_header .lm_controls .lm_tabdropdown::before {
   color: $dropDownArrowForeColor;
 }
 

@@ -29,7 +29,7 @@ $font-code: "Google Sans Code", monospace;
   overflow-y: scroll;
 
   &::-webkit-scrollbar {
-    -webkit-appearance: none;
+    appearance: none;
     width: 7px;
   }
 

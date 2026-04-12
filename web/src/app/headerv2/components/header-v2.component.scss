@@ -105,7 +105,7 @@ header {
 
 .menu-group {
   position: relative;
-  margin: 0px 2px;
+  margin: 0 2px;
   font-weight: 600;
 
   &::after {
@@ -193,9 +193,11 @@ header {
     0% {
       opacity: 0.4;
     }
+
     50% {
       opacity: 1;
     }
+
     100% {
       opacity: 0.4;
     }

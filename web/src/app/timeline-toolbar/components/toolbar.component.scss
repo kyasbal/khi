@@ -16,8 +16,8 @@
 
 mat-icon {
   &.draw-diagram-button-icon {
-    margin-left: 0px;
-    margin-right: 0px;
+    margin-left: 0;
+    margin-right: 0;
   }
 
   &.filter-button-icon {
@@ -106,12 +106,12 @@ mat-icon {
     }
 
     &::-webkit-outer-spin-button {
-      -webkit-appearance: none;
+      appearance: none;
       margin: 0;
     }
 
     &::-webkit-inner-spin-button {
-      -webkit-appearance: none;
+      appearance: none;
       margin: 0;
     }
   }

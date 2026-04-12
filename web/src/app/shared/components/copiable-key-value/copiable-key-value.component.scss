@@ -47,6 +47,7 @@ $COPY_BUTTON_SIZE: 15px;
     background-color: $LABEL_BACKGROUND;
     display: flex;
     align-items: center;
+
     .label-text {
       flex: 1;
       text-align: center;
@@ -61,7 +62,7 @@ $COPY_BUTTON_SIZE: 15px;
     padding: 3px;
     margin-left: -25px;
 
-    &:before {
+    &::before {
       content: "";
       position: absolute;
       top: 50%;

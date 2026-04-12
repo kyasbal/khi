@@ -52,13 +52,16 @@ $font-weight-light: 300;
     transparent
   );
   $revisionDarkerColor: $revisionColor;
+
   mat-icon {
     color: $revisionDarkerColor;
   }
+
   &.style-normal {
     background-color: $revisionBackgroundColor;
     border: $borderThickness solid $revisionDarkerColor;
   }
+
   &.style-partial-info {
     $stripeBrighter: color-mix(
       in display-p3,
@@ -74,6 +77,7 @@ $font-weight-light: 300;
     );
     border: $borderThickness solid $revisionDarkerColor;
   }
+
   &.style-deleted {
     background-color: $revisionBackgroundColor;
     @include dashed-border(2px, 2px, $borderThickness, $revisionDarkerColor);
@@ -112,16 +116,19 @@ $font-weight-light: 300;
   display: flex;
   flex-direction: column;
   gap: 5px;
-  padding: 5px 0 5px 0;
+  padding: 5px 0;
   border-bottom: 1px solid lightgray;
   margin-bottom: 5px;
+
   .label-container {
     display: flex;
     align-items: center;
     gap: 5px;
+
     mat-icon {
       @include common.adjust-mat-icon-size(18px);
     }
+
     .label {
       color: var(--timeline-type-color);
       background-color: var(--timeline-type-background-color);
@@ -129,12 +136,14 @@ $font-weight-light: 300;
       border-radius: 5px;
     }
   }
+
   .hint-container {
     display: flex;
     align-items: center;
     gap: 5px;
     font-size: 12px;
     color: dimgray;
+
     mat-icon {
       @include common.adjust-mat-icon-size(14px);
     }
@@ -153,7 +162,7 @@ $font-weight-light: 300;
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 0 0 0;
+  padding: 5px 0 0;
 }
 
 .toggle-button-container {
@@ -170,6 +179,7 @@ $font-weight-light: 300;
   align-items: center;
   justify-content: center;
   color: var(--revision-color);
+
   mat-icon {
     @include common.adjust-mat-icon-size(16px);
   }
@@ -186,7 +196,7 @@ $font-weight-light: 300;
 }
 
 .severity-info {
-  margin: 5px 0 0 0;
+  margin: 5px 0 0;
   color: $text-color-primary;
   font-weight: $font-weight-light;
 }

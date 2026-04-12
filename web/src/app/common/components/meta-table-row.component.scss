@@ -39,7 +39,7 @@
 
 .colon {
   grid-area: colon;
-  margin: 0px 3px;
+  margin: 0 3px;
 }
 
 .value {
@@ -48,7 +48,7 @@
   user-select: none;
 
   .value-inner {
-    margin: 0px;
+    margin: 0;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;

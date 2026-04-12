@@ -23,6 +23,7 @@ $progress-bar-bg-color: dimgray;
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(200%);
   }
@@ -34,7 +35,7 @@ $progress-bar-bg-color: dimgray;
   display: flex;
   flex-direction: column;
 
-  box-shadow: 0px 2px 5px 0px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.1);
 }
 
 .header {
@@ -53,19 +54,23 @@ $progress-bar-bg-color: dimgray;
   display: flex;
   align-items: center;
   gap: 5px;
+
   .title {
     margin: 0;
     font-size: 1.2em;
     font-weight: 600;
   }
+
   mat-icon {
     display: none;
     @include common.adjust-mat-icon-size(15px);
   }
+
   &:hover {
     cursor: pointer;
     background-color: rgba(0, 0, 0, 0.05);
     border-radius: 4px;
+
     mat-icon {
       display: block;
       color: dimgray;
@@ -80,8 +85,8 @@ $progress-bar-bg-color: dimgray;
     width: 100%;
     font-size: 1.2em;
     font-weight: 600;
-    margin: 0px;
-    padding: 0px;
+    margin: 0;
+    padding: 0;
     border: none;
     outline: none;
     background: transparent;
@@ -91,21 +96,26 @@ $progress-bar-bg-color: dimgray;
 
 .phase {
   grid-area: phase;
+
   .phase-inner {
-    padding: 0px 10px;
+    padding: 0 10px;
     border-radius: 5px;
     color: white;
+
     &.DONE {
       background-color: #3f51b5;
     }
+
     &.RUNNING {
-      background-color: #11aa55;
+      background-color: #1a5;
     }
+
     &.CANCELLED {
       background-color: dimgray;
     }
+
     &.ERROR {
-      background-color: #ff5555;
+      background-color: #f55;
     }
   }
 }
@@ -119,10 +129,12 @@ $progress-bar-bg-color: dimgray;
 
 .progress-container {
   padding: 3px 20px;
+
   .progress-container-header {
     font-size: 1em;
     font-weight: 600;
   }
+
   .progress-element {
     position: relative;
     background-color: $progress-bar-bg-color;
@@ -141,12 +153,14 @@ $progress-bar-bg-color: dimgray;
       display: flex;
       align-items: center;
       overflow: hidden;
+
       .progress-label-inner {
         margin: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
+
       .progress-message-span {
         font-weight: 600;
       }
@@ -183,16 +197,20 @@ $progress-bar-bg-color: dimgray;
 
 .error-container {
   padding: 3px 5px;
+
   .error {
     display: flex;
     align-items: center;
+
     .error-icon {
       color: red;
     }
+
     .error-link {
       display: flex;
       align-items: center;
     }
+
     .error-link-icon {
       @include common.adjust-mat-icon-size(15px);
     }
