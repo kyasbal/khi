@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-mat-icon {
-  &.draw-diagram-button-icon {
-    margin-left: 0;
-    margin-right: 0;
-  }
+.draw-diagram-button-icon {
+  margin-left: 0;
+  margin-right: 0;
+}
 
-  &.filter-button-icon {
-    margin-left: 5px;
-    margin-right: 5px;
-  }
+.filter-button-icon {
+  margin-left: 5px;
+  margin-right: 5px;
 }
 
 .container {
@@ -92,7 +90,7 @@ mat-icon {
     user-select: none;
   }
 
-  input[type='number'] {
+  .timezone-input {
     width: 60px;
     font-size: 20px;
     text-align: center;

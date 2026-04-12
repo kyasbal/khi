@@ -9,7 +9,6 @@
       { "ignorePseudoElements": ["ng-deep"] }
     ],
     "scss/dollar-variable-pattern": null,
-    "selector-no-qualifying-type": null,
     "@stylistic/indentation": null
   },
   "overrides": [

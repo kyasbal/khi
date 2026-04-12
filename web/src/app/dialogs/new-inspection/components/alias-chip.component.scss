@@ -24,7 +24,7 @@ $alias-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 600);
   display: inline-flex;
 }
 
-mat-chip-row {
+.alias-chip-row {
   @include mat.chips-overrides(
     (
       container-shape-radius: 5px,
