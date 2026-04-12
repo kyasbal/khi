@@ -19,7 +19,7 @@
 
 $resizer-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
 $header-size: 20px;
-$FONT_SIZE: 14px;
+$font-size: 14px;
 
 .pane {
   display: grid;
@@ -33,7 +33,7 @@ $FONT_SIZE: 14px;
   grid-area: header;
   height: $header-size;
   user-select: none;
-  font-size: $FONT_SIZE;
+  font-size: $font-size;
 }
 
 .body {

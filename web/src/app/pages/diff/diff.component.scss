@@ -16,7 +16,7 @@
 
 @use '@angular/material' as mat;
 
-$TOOLBAR_BACKGROUND: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 100);
+$toolbar-background: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 100);
 
 .diff {
   flex: 1;
@@ -70,7 +70,7 @@ $TOOLBAR_BACKGROUND: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 100);
   border-top: 1px solid rgba(0, 0, 0, 0.3);
   border-bottom: 1px solid rgba(0, 0, 0, 0.3);
   box-sizing: border-box;
-  background-color: $TOOLBAR_BACKGROUND;
+  background-color: $toolbar-background;
 }
 
 .empty-message {

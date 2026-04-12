@@ -25,67 +25,67 @@ $selected-event-scale: 1.5;
 
 @mixin revision-style-box($revisionColor, $borderThickness, $transparency) {
   box-sizing: border-box;
-  $revisionBackgroundColor: color-mix(
+  $revision-background-color: color-mix(
     in display-p3,
     $revisionColor $transparency,
     transparent
   );
-  $revisionDarkerColor: $revisionColor;
+  $revision-darker-color: $revisionColor;
 
   mat-icon {
-    color: $revisionDarkerColor;
+    color: $revision-darker-color;
   }
 
   &.style-normal {
-    background-color: $revisionBackgroundColor;
-    border-left: $borderThickness solid $revisionDarkerColor;
-    border-right: $borderThickness solid $revisionDarkerColor;
+    background-color: $revision-background-color;
+    border-left: $borderThickness solid $revision-darker-color;
+    border-right: $borderThickness solid $revision-darker-color;
 
     &.status-start {
-      border-top: $borderThickness solid $revisionDarkerColor;
+      border-top: $borderThickness solid $revision-darker-color;
     }
 
     &.status-end {
-      border-bottom: $borderThickness solid $revisionDarkerColor;
+      border-bottom: $borderThickness solid $revision-darker-color;
     }
   }
 
   &.style-partial-info {
-    $stripeBrighter: color-mix(
+    $stripe-brighter: color-mix(
       in display-p3,
-      $revisionBackgroundColor 50%,
+      $revision-background-color 50%,
       transparent
     );
     background-image: repeating-linear-gradient(
       45deg,
-      $stripeBrighter,
-      $stripeBrighter 5px,
-      $revisionBackgroundColor 5px,
-      $revisionBackgroundColor 10px
+      $stripe-brighter,
+      $stripe-brighter 5px,
+      $revision-background-color 5px,
+      $revision-background-color 10px
     );
-    border-left: $borderThickness solid $revisionDarkerColor;
-    border-right: $borderThickness solid $revisionDarkerColor;
+    border-left: $borderThickness solid $revision-darker-color;
+    border-right: $borderThickness solid $revision-darker-color;
 
     &.status-start {
-      border-top: $borderThickness solid $revisionDarkerColor;
+      border-top: $borderThickness solid $revision-darker-color;
     }
 
     &.status-end {
-      border-bottom: $borderThickness solid $revisionDarkerColor;
+      border-bottom: $borderThickness solid $revision-darker-color;
     }
   }
 
   &.style-deleted {
-    background-color: $revisionBackgroundColor;
-    border-left: $borderThickness dashed $revisionDarkerColor;
-    border-right: $borderThickness dashed $revisionDarkerColor;
+    background-color: $revision-background-color;
+    border-left: $borderThickness dashed $revision-darker-color;
+    border-right: $borderThickness dashed $revision-darker-color;
 
     &.status-start {
-      border-top: $borderThickness dashed $revisionDarkerColor;
+      border-top: $borderThickness dashed $revision-darker-color;
     }
 
     &.status-end {
-      border-bottom: $borderThickness dashed $revisionDarkerColor;
+      border-bottom: $borderThickness dashed $revision-darker-color;
     }
   }
 }
@@ -209,22 +209,22 @@ $selected-event-scale: 1.5;
           transform: translateX(-50%) translateY(-50%) rotate(45deg);
           width: 10px;
           height: 10px;
-          $colorChangePoint: 40%;
+          $color-change-point: 40%;
           background: linear-gradient(
             135deg,
             common.mix-hdr-color(var(--severity-color), white, 50%)
-              $colorChangePoint,
+              $color-change-point,
             common.mix-hdr-color(var(--log-type-color), white, 50%)
-              $colorChangePoint
+              $color-change-point
           );
 
           &.selected {
             background: linear-gradient(
               135deg,
               common.mix-hdr-color(var(--severity-color), yellow, 100%)
-                $colorChangePoint,
+                $color-change-point,
               common.mix-hdr-color(var(--log-type-color), yellow, 100%)
-                $colorChangePoint
+                $color-change-point
             );
             transform: translateX(-50%) translateY(-50%) rotate(45deg)
               scale($selected-event-scale);
@@ -234,9 +234,9 @@ $selected-event-scale: 1.5;
             background: linear-gradient(
               135deg,
               common.mix-hdr-color(var(--severity-color), yellow, 100%)
-                $colorChangePoint,
+                $color-change-point,
               common.mix-hdr-color(var(--log-type-color), yellow, 100%)
-                $colorChangePoint
+                $color-change-point
             );
             transform: translateX(-50%) translateY(-50%) rotate(45deg)
               scale($hover-event-scale);
@@ -249,11 +249,11 @@ $selected-event-scale: 1.5;
             left: 2px;
             right: 2px;
             bottom: 2px;
-            $colorChangePointEdge: 33%;
+            $color-change-point-edge: 33%;
             background: linear-gradient(
               135deg,
-              var(--severity-color) $colorChangePointEdge,
-              var(--log-type-color) $colorChangePointEdge
+              var(--severity-color) $color-change-point-edge,
+              var(--log-type-color) $color-change-point-edge
             );
           }
         }

@@ -17,66 +17,69 @@
 @use 'golden-layout/dist/css/goldenlayout-base.css';
 @use '@angular/material' as mat;
 
-$primaryColor: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 500);
-$primaryColorLight: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 50);
+$primary-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 500);
+$primary-color-light: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 50);
 
 // Color variables (appears count calculates by raw css)
-$baseBkgdColor: var(--color-layout-base-bkgd, #fff); // Appears 7 times
-$singlePaneContentBkgdColor: var(--color-layout-single-pane-content-bkgd, #fff);
-$activeTabForeColor: var(--color-layout-active-tab-fore, #ccc);
+$base-bkgd-color: var(--color-layout-base-bkgd, #fff); // Appears 7 times
+$single-pane-content-bkgd-color: var(
+  --color-layout-single-pane-content-bkgd,
+  #fff
+);
+$active-tab-fore-color: var(--color-layout-active-tab-fore, #ccc);
 
-$dropTargetIndicatorOutlineForeColor: var(
+$drop-target-indicator-outline-fore-color: var(
   --color-layout-drop-target-indicator-outline-fore,
   #ccc
 );
 
-$selectedHeaderBkgdColor: var(--color-layout-selected-header-bkgd, #452500);
-$transitionIndicatorBorderForeColor: var(
+$selected-header-bkgd-color: var(--color-layout-selected-header-bkgd, #452500);
+$transition-indicator-border-fore-color: var(
   --color-layout-transition-indicator-border-fore,
   #555
 );
-$dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #fff);
+$drop-down-arrow-fore-color: var(--color-layout-drop-down-arrow-fore, #fff);
 
 // ".lm_dragging" is applied to BODY tag during Drag and is also directly applied to the root of the object being dragged
 // Entire GoldenLayout Container, if a background is set, it is visible as color of "pane header" and "splitters" (if these latest has opacity very low)
 .lm_goldenlayout {
-  background: $baseBkgdColor;
+  background: $base-bkgd-color;
 }
 
 // Single Pane content (area in which final dragged content is contained)
 .lm_content {
-  background: $singlePaneContentBkgdColor;
+  background: $single-pane-content-bkgd-color;
 }
 
 // Single Pane content during Drag (style of moving window following mouse)
 .lm_dragProxy {
   .lm_content {
-    box-shadow: 2px 2px 8px $primaryColor;
+    box-shadow: 2px 2px 8px $primary-color;
   }
 }
 
 // Placeholder Container of target position
 .lm_dropTargetIndicator {
-  box-shadow: inset 0 0 30px $primaryColor;
-  outline: 1px dashed $dropTargetIndicatorOutlineForeColor;
+  box-shadow: inset 0 0 30px $primary-color;
+  outline: 1px dashed $drop-target-indicator-outline-fore-color;
   transition: all 200ms ease;
 
   // Inner Placeholder
   .lm_inner {
-    background: $primaryColor;
+    background: $primary-color;
     opacity: 0.2;
   }
 }
 
 // Separator line (handle to change pane size)
 .lm_splitter {
-  background: $primaryColor;
+  background: $primary-color;
 
   transition: opacity 200ms ease;
 
   &:hover,
   &.lm_dragging {
-    background: $primaryColorLight;
+    background: $primary-color-light;
     opacity: 1;
   }
 }
@@ -85,11 +88,11 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #fff);
 .lm_header {
   height: 20px;
   user-select: none;
-  background-color: $primaryColorLight;
+  background-color: $primary-color-light;
 
   .lm_controls {
-    background: $primaryColorLight;
-    color: $primaryColor;
+    background: $primary-color-light;
+    color: $primary-color;
     right: 0;
     display: flex;
   }
@@ -97,7 +100,7 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #fff);
   // Single Tab container. A single Tab is set for each pane, a group of Tabs are contained in ".lm_header"
   .lm_tab {
     font-size: 12px;
-    color: $primaryColor;
+    color: $primary-color;
     font-weight: 500;
     margin-right: 2px;
     padding-bottom: 2px;
@@ -136,7 +139,7 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #fff);
       }
 
       &.lm_focused {
-        background-color: $primaryColor;
+        background-color: $primary-color;
       }
     }
   }
@@ -148,7 +151,7 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #fff);
     box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.3);
 
     &.lm_active {
-      box-shadow: 0 2px 2px $baseBkgdColor;
+      box-shadow: 0 2px 2px $base-bkgd-color;
     }
   }
 }
@@ -156,21 +159,21 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #fff);
 // If Pane Header (container of Tabs for each pane) is selected (used only if addition of new Contents is made "by selection" and not "by drag")
 .lm_selected {
   .lm_header {
-    background-color: $selectedHeaderBkgdColor;
+    background-color: $selected-header-bkgd-color;
   }
 }
 
 .lm_tab {
   &:hover,
   &.lm_active {
-    background: $primaryColor;
-    color: $activeTabForeColor;
+    background: $primary-color;
+    color: $active-tab-fore-color;
   }
 }
 
 // Dropdown arrow for additional tabs when too many to be displayed
 .lm_header .lm_controls .lm_tabdropdown::before {
-  color: $dropDownArrowForeColor;
+  color: $drop-down-arrow-fore-color;
 }
 
 // Pane controls (popout, maximize, minimize, close)
@@ -211,7 +214,7 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #fff);
 .lm_maximised {
   // Pane Header (container of Tabs for each pane) can have different style when is Maximized
   .lm_header {
-    background-color: $primaryColorLight;
+    background-color: $primary-color-light;
   }
 
   // Pane controls are different in Maximized Mode, especially the old Icon "Maximise" that now has a different meaning, so "Minimize" (even if CSS Class did not change)
@@ -226,6 +229,6 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #fff);
 }
 
 .lm_transition_indicator {
-  background-color: $baseBkgdColor;
-  border: 1px dashed $transitionIndicatorBorderForeColor;
+  background-color: $base-bkgd-color;
+  border: 1px dashed $transition-indicator-border-fore-color;
 }

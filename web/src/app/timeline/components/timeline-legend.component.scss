@@ -46,41 +46,41 @@ $font-weight-light: 300;
 
 @mixin revision-style-box($revisionColor, $borderThickness) {
   box-sizing: border-box;
-  $revisionBackgroundColor: color-mix(
+  $revision-background-color: color-mix(
     in display-p3,
     $revisionColor 40%,
     transparent
   );
-  $revisionDarkerColor: $revisionColor;
+  $revision-darker-color: $revisionColor;
 
   mat-icon {
-    color: $revisionDarkerColor;
+    color: $revision-darker-color;
   }
 
   &.style-normal {
-    background-color: $revisionBackgroundColor;
-    border: $borderThickness solid $revisionDarkerColor;
+    background-color: $revision-background-color;
+    border: $borderThickness solid $revision-darker-color;
   }
 
   &.style-partial-info {
-    $stripeBrighter: color-mix(
+    $stripe-brighter: color-mix(
       in display-p3,
-      $revisionBackgroundColor 50%,
+      $revision-background-color 50%,
       transparent
     );
     background-image: repeating-linear-gradient(
       45deg,
-      $stripeBrighter,
-      $stripeBrighter 5px,
-      $revisionBackgroundColor 5px,
-      $revisionBackgroundColor 10px
+      $stripe-brighter,
+      $stripe-brighter 5px,
+      $revision-background-color 5px,
+      $revision-background-color 10px
     );
-    border: $borderThickness solid $revisionDarkerColor;
+    border: $borderThickness solid $revision-darker-color;
   }
 
   &.style-deleted {
-    background-color: $revisionBackgroundColor;
-    @include dashed-border(2px, 2px, $borderThickness, $revisionDarkerColor);
+    background-color: $revision-background-color;
+    @include dashed-border(2px, 2px, $borderThickness, $revision-darker-color);
   }
 }
 

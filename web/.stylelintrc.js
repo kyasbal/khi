@@ -24,7 +24,6 @@ module.exports = {
       true,
       { ignorePseudoElements: ["ng-deep"] }
     ],
-    "scss/dollar-variable-pattern": null,
     // Indentation is handled by Prettier, so it is disabled here to avoid conflicts.
     "@stylistic/indentation": null
   },
