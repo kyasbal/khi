@@ -10,7 +10,6 @@
     ],
     "scss/dollar-variable-pattern": null,
     "selector-no-qualifying-type": null,
-    "declaration-property-value-disallowed-list": null,
     "@stylistic/indentation": null
   },
   "overrides": [

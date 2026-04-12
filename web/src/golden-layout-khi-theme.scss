@@ -128,7 +128,7 @@ $dropDownArrowForeColor: var(--color-layout-drop-down-arrow-fore, #fff);
 
     // If Tab is active, so if it's in foreground
     &.lm_active {
-      border-bottom: none;
+      border-bottom: 0;
       padding-bottom: 3px;
 
       .lm_close_tab {

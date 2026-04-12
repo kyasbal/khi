@@ -155,7 +155,7 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
 
   .title-input {
     margin: 0;
-    border: none;
+    border: 0;
     border-bottom: 2px solid $primary-color;
     padding: 0;
     width: 100%;
