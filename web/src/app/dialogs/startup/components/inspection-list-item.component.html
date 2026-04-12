@@ -43,7 +43,9 @@
       </div>
     }
     <p class="phase">
-      <span class="phase-inner" [ngClass]="i.phase">{{ i.phase }}</span>
+      <span class="phase-inner" [ngClass]="i.phase.toLowerCase()">{{
+        i.phase
+      }}</span>
     </p>
     <p class="time">Started: {{ i.inspectionTimeLabel }}</p>
   </div>

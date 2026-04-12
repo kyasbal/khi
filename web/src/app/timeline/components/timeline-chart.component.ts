@@ -79,8 +79,8 @@ export interface TimelineChartMouseEvent extends HitTestResult {
 export class TimelineChartComponent implements AfterViewInit {
   private readonly container =
     viewChild<ElementRef<HTMLDivElement>>('container');
-  private readonly background2DCanvas =
-    viewChild<ElementRef<HTMLCanvasElement>>('background2DCanvas');
+  private readonly background2dCanvas =
+    viewChild<ElementRef<HTMLCanvasElement>>('background2dCanvas');
   private readonly glCanvas =
     viewChild<ElementRef<HTMLCanvasElement>>('glCanvas');
 
@@ -184,7 +184,7 @@ export class TimelineChartComponent implements AfterViewInit {
   }
 
   async ngAfterViewInit(): Promise<void> {
-    const bgCanvas = this.background2DCanvas()!.nativeElement;
+    const bgCanvas = this.background2dCanvas()!.nativeElement;
     const bgContext = bgCanvas.getContext('2d', { colorSpace: 'display-p3' });
     if (!bgContext) {
       throw new Error('Failed to get 2D context');
@@ -255,7 +255,7 @@ export class TimelineChartComponent implements AfterViewInit {
   private handleResize() {
     const container = this.container()!.nativeElement;
     const rect = container.getBoundingClientRect();
-    const canvas = this.background2DCanvas()!.nativeElement;
+    const canvas = this.background2dCanvas()!.nativeElement;
     const glCanvas = this.glCanvas()!.nativeElement;
     const dpr = window.devicePixelRatio || 1;
 

@@ -197,11 +197,11 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
       border-radius: 50%;
     }
 
-    &.DONE {
+    &.done {
       @include chip-style($chip-done-bg, $chip-done-text, $chip-done-dot);
     }
 
-    &.RUNNING {
+    &.running {
       @include chip-style(
         $chip-running-bg,
         $chip-running-text,
@@ -210,7 +210,7 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
       );
     }
 
-    &.CANCELLED {
+    &.cancelled {
       @include chip-style(
         $chip-cancelled-bg,
         $chip-cancelled-text,
@@ -218,7 +218,7 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
       );
     }
 
-    &.ERROR {
+    &.error {
       @include chip-style($chip-error-bg, $chip-error-text, $chip-error-dot);
     }
   }

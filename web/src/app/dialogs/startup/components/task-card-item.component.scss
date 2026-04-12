@@ -102,19 +102,19 @@ $progress-bar-bg-color: dimgray;
     border-radius: 5px;
     color: white;
 
-    &.DONE {
+    &.done {
       background-color: #3f51b5;
     }
 
-    &.RUNNING {
+    &.running {
       background-color: #1a5;
     }
 
-    &.CANCELLED {
+    &.cancelled {
       background-color: dimgray;
     }
 
-    &.ERROR {
+    &.error {
       background-color: #f55;
     }
   }
