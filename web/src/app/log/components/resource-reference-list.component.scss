@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@use "sass:color";
+@use 'sass:color';
 
-@use "@angular/material" as mat;
+@use '@angular/material' as mat;
 
-$FONT_SIZE: 12px;
-$LABEL_BACKGROUND: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 600);
-$BACKGROUND: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 100);
-$LABEL_COLOR: white;
-$VALUE_COLOR: black;
+$font-size: 12px;
+$label-background: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 600);
+$background: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 100);
+$label-color: white;
+$value-color: black;
 
 .label {
   margin: 0;
-  font-size: $FONT_SIZE;
+  font-size: $font-size;
   font-weight: 600;
-  background-color: $LABEL_BACKGROUND;
-  color: $LABEL_COLOR;
+  background-color: $label-background;
+  color: $label-color;
   white-space: nowrap;
   text-overflow: ellipsis;
   display: flex;
@@ -36,9 +36,9 @@ $VALUE_COLOR: black;
 
   mat-icon {
     margin-right: 3px;
-    width: $FONT_SIZE;
-    height: $FONT_SIZE;
-    font-size: $FONT_SIZE;
+    width: $font-size;
+    height: $font-size;
+    font-size: $font-size;
   }
 }
 
@@ -48,7 +48,7 @@ $VALUE_COLOR: black;
 
   // Force showing scrollbar
   &::-webkit-scrollbar {
-    -webkit-appearance: none;
+    appearance: none;
     width: 7px;
   }
 
@@ -60,16 +60,16 @@ $VALUE_COLOR: black;
 }
 
 .path {
-  color: $VALUE_COLOR;
-  font-size: $FONT_SIZE;
+  color: $value-color;
+  font-size: $font-size;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  background-color: $BACKGROUND;
+  background-color: $background;
 
   &:hover {
-    background-color: color.adjust($BACKGROUND, $lightness: -5%);
+    background-color: color.adjust($background, $lightness: -5%);
     text-decoration: underline;
     cursor: pointer;
   }
@@ -79,7 +79,7 @@ $VALUE_COLOR: black;
     width: 15px;
     height: 100%;
     margin: 0.5px 3px 0.5px 0;
-    background-color: color.adjust($BACKGROUND, $lightness: -10%);
+    background-color: color.adjust($background, $lightness: -10%);
     color: white;
     text-align: center;
     padding: 0 3px;

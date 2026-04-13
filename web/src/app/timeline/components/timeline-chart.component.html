@@ -20,8 +20,8 @@
   (mousemove)="onMouseEvent($event, mouseMoveOnTimelineItem)"
   (click)="onMouseEvent($event, clickOnTimelineItem)"
 >
-  <canvas class="background2DCanvas" #background2DCanvas></canvas>
-  <canvas class="glCanvas" #glCanvas></canvas>
+  <canvas class="background-2d-canvas" #background2dCanvas></canvas>
+  <canvas class="gl-canvas" #glCanvas></canvas>
   @if (showLoadingScreen()) {
     <div class="overlay">
       <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@use "../../zzz-generated" as gen;
+@use '../../zzz-generated' as gen;
 
 $selected-timeline-ref-color: #1a237e;
 
@@ -53,7 +53,7 @@ mat-icon {
     }
 
     .spacer {
-      margin: 0px;
+      margin: 0;
       margin-left: 10px;
     }
 
@@ -79,7 +79,7 @@ mat-icon {
 
 .copy-button {
   appearance: none;
-  border: none;
+  border: 0;
   border-radius: 4px;
 
   &:hover {
@@ -89,16 +89,16 @@ mat-icon {
 }
 
 .resource-ref-title {
-  margin: 3px 0px;
+  margin: 3px 0;
   font-weight: 600;
 }
 
 .resource-ref-label {
   &::before {
-    content: "・";
+    content: '・';
   }
 
-  margin: 3px 0px 0px 5px;
+  margin: 3px 0 0 5px;
   white-space: nowrap;
   font-size: smaller;
 

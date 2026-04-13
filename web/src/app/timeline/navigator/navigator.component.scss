@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-@use "@angular/material" as mat;
+@use '@angular/material' as mat;
 
-$OUTER_MARGIN: 4px;
-$BASE_COLOR: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 800);
-$LABEL_COLOR: white;
-$DEFAULT_OPACITY: 0.95;
+$outer-margin: 4px;
+$base-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 800);
+$label-color: white;
+$default-opacity: 0.95;
 
-$LAYER_ICON_SIZE: 14px;
+$layer-icon-size: 14px;
 
 .container {
   pointer-events: all;
   position: absolute;
-  bottom: $OUTER_MARGIN;
-  right: $OUTER_MARGIN;
+  bottom: $outer-margin;
+  right: $outer-margin;
   min-width: 300px;
-  opacity: $DEFAULT_OPACITY;
-  background-color: $BASE_COLOR;
-  color: $LABEL_COLOR;
-  border: 1px solid $BASE_COLOR;
+  opacity: $default-opacity;
+  background-color: $base-color;
+  color: $label-color;
+  border: 1px solid $base-color;
 
   &:hover {
     opacity: 1;
@@ -41,18 +41,18 @@ $LAYER_ICON_SIZE: 14px;
 
 .layer-title {
   display: flex;
-  padding: 0px 5px;
+  padding: 0 5px;
   column-gap: 5px;
   align-items: center;
 
   .layer-icon {
-    width: $LAYER_ICON_SIZE;
-    height: $LAYER_ICON_SIZE;
-    font-size: $LAYER_ICON_SIZE;
+    width: $layer-icon-size;
+    height: $layer-icon-size;
+    font-size: $layer-icon-size;
   }
 
   .layer-label {
-    margin: 0px;
+    margin: 0;
   }
 }
 

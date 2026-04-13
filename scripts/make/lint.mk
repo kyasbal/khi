@@ -19,6 +19,7 @@ CONTAINER_CMD ?= $(shell command -v docker || command -v podman)
 .PHONY: lint-web
 lint-web: $(GENERATE_FRONTEND_DUMMY)## Run frontend linter
 	cd web && npx ng lint
+	cd web && npm run lint:style
 
 .PHONY: lint-go
 lint-go: ## Run backend linter
@@ -42,6 +43,7 @@ format-go: ## Format backend source code
 .PHONY: format-web
 format-web: $(GENERATE_FRONTEND_DUMMY) ## Format frontend source code
 	cd web && npx prettier --ignore-path .gitignore --write "./**/*.+(ts|json|html|scss)"
+	cd web && npx stylelint "src/**/*.scss" --fix
 
 .PHONY: check-format-go
 check-format-go: ## Check backend source code format
