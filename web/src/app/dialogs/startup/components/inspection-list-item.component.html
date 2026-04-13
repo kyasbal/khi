@@ -43,7 +43,7 @@
       </div>
     }
     <p class="phase">
-<span class="phase-inner" [ngClass]="i.phase?.toLowerCase()">{{
+      <span class="phase-inner" [ngClass]="i.phase | lowercase">{{
         i.phase
       }}</span>
     </p>
