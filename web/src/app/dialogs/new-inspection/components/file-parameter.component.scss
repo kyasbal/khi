@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-@use "sass:color";
+@use 'sass:color';
 
-@use "@angular/material" as mat;
+@use '@angular/material' as mat;
 
 $drop-area-color-inactive-base-color: lightgray;
 $drop-area-color-tint-background: mat.m2-get-color-from-palette(
@@ -30,15 +30,15 @@ $drop-area-color-tint-border: mat.m2-get-color-from-palette(
 $done-label-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 400);
 
 .container {
-  padding: 0px 10px 0px 0px;
+  padding: 0 10px 0 0;
 }
 
 .form-body {
-  margin: 0px 0px 0px 20px;
+  margin: 0 0 0 20px;
 }
 
 .drop-area-outer {
-  margin: 5px 0px;
+  margin: 5px 0;
   width: 100%;
 }
 
@@ -54,7 +54,7 @@ $done-label-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 400);
   }
 
   .drop-area-inner {
-    padding: 20px 0px;
+    padding: 20px 0;
     pointer-events: none;
   }
 
@@ -93,18 +93,18 @@ $done-label-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 400);
 }
 
 .description {
-  margin: (-10px) 0px 2px 0px;
+  margin: (-10px) 0 2px;
   font-size: 12px;
   line-height: 16px;
-  padding: 4px 0px;
+  padding: 4px 0;
 }
 
 .footer-container {
-  margin: 4px 0px;
+  margin: 4px 0;
   display: flex;
 
   .progress-label {
-    margin: 0px 20px 0px 10px;
+    margin: 0 20px 0 10px;
     color: dimgray;
     font-size: 12px;
   }

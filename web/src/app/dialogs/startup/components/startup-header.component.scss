@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-@use "sass:color";
-@use "../../../common.scss" as common;
+@use 'sass:color';
+@use '../../../common.scss' as common;
 
 .container {
   height: 100%;
   display: grid;
-  grid-template-areas: "icon" "title" "new-inspection-button" "open-button";
+  grid-template-areas: 'icon' 'title' 'new-inspection-button' 'open-button';
   grid-template-rows: auto auto auto auto;
-  gap: 5px 0px;
+  gap: 5px 0;
   justify-content: center;
   align-content: space-around;
   text-align: center;
@@ -30,10 +30,12 @@
 
 .title {
   grid-area: title;
+
   h1 {
-    margin: 0px;
-    color: #666666;
+    margin: 0;
+    color: #666;
   }
+
   .version {
     grid-area: version;
     color: #888;
@@ -43,17 +45,21 @@
 @mixin task-button-appearance($front, $background, $cursor) {
   color: $front;
   background-color: $background;
+
   &:disabled {
     background-color: dimgray;
     color: lightgray;
     cursor: not-allowed;
   }
+
   .task-description {
     color: color.adjust($front, $lightness: -5%);
+
     &:disabled {
       color: lightgray;
     }
   }
+
   &:hover:not(:disabled) {
     background-color: color.adjust($background, $lightness: -5%);
     cursor: $cursor;
@@ -73,13 +79,13 @@
 .task-button {
   appearance: none;
   outline: none;
-  border: none;
+  border: 0;
   border-radius: 10px;
   padding: 8px 0;
-  box-shadow: 0px 2px 5px 0px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.35);
 
   display: grid;
-  grid-template-areas: "leftspace icon middlespace labels rightspace";
+  grid-template-areas: 'leftspace icon middlespace labels rightspace';
   grid-template-columns: 15px 40px 10px 1fr 10px;
   grid-template-rows: 70px;
   align-items: center;
@@ -87,6 +93,7 @@
 
   .icon-container {
     grid-area: icon;
+
     mat-icon {
       @include common.adjust-mat-icon-size(30px);
     }
@@ -97,6 +104,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+
     .task-title {
       font-size: 1.5em;
       font-weight: 600;

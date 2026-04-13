@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@use "sass:color";
+@use 'sass:color';
 
-@use "../../common" as common;
+@use '../../common' as common;
 
-@use "@angular/material" as mat;
+@use '@angular/material' as mat;
 
-@use "../../color-palette.scss" as cp;
+@use '../../color-palette.scss' as cp;
 
 $toolbar-shadow-color: rgba(0, 0, 0, 0.15);
 
@@ -48,7 +48,7 @@ $toolbar-shadow-color: rgba(0, 0, 0, 0.15);
   .timeline-filter-wrapper {
     box-sizing: border-box;
     border-right: 0.5px solid
-      mat.m2-get-color-from-palette(cp.$khi-menu-palette, "darker");
+      mat.m2-get-color-from-palette(cp.$khi-menu-palette, 'darker');
   }
 }
 
@@ -67,7 +67,7 @@ $toolbar-shadow-color: rgba(0, 0, 0, 0.15);
 
 .log-list {
   display: grid;
-  grid-template: "type severity ts message" / auto auto auto 1fr;
+  grid-template: 'type severity ts message' / auto auto auto 1fr;
   width: max-content;
   min-width: 100%;
 }

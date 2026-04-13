@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@use "@angular/material" as mat;
+@use '@angular/material' as mat;
 
 $primary-bg-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 50);
 $primary-text-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 500);
@@ -65,7 +65,7 @@ $session-badge-bg-color: mat.m2-get-color-from-palette(
 header {
   display: grid;
   grid-template:
-    "title-section main-menu status-section"
+    'title-section main-menu status-section'
     / auto auto 1fr;
   height: 100%;
   background-color: $primary-bg-color;
@@ -105,7 +105,7 @@ header {
 
 .menu-group {
   position: relative;
-  margin: 0px 2px;
+  margin: 0 2px;
   font-weight: 600;
 
   &::after {
@@ -113,7 +113,7 @@ header {
     bottom: 0;
     left: 0;
     right: 0;
-    content: "";
+    content: '';
     width: 100%;
     height: 2px;
     background-color: $primary-text-color;
@@ -193,9 +193,11 @@ header {
     0% {
       opacity: 0.4;
     }
+
     50% {
       opacity: 1;
     }
+
     100% {
       opacity: 0.4;
     }

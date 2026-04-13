@@ -36,7 +36,9 @@
       </div>
     }
     <p class="phase">
-      <span class="phase-inner" [ngClass]="t.phase">{{ t.phase }}</span>
+      <span class="phase-inner" [ngClass]="t.phase | lowercase">{{
+        t.phase
+      }}</span>
     </p>
     <p class="time">Started: {{ t.inspectionTimeLabel }}</p>
   </div>

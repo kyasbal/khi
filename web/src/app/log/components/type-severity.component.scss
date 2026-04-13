@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-@use "../../zzz-generated" as gen;
+@use '../../zzz-generated' as gen;
 
-@use "@angular/material" as mat;
+@use '@angular/material' as mat;
 
-$FONT_SIZE: 12px;
-$LABEL_BACKGROUND: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 600);
-$BACKGROUND: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 100);
-$LABEL_COLOR: white;
+$font-size: 12px;
+$label-background: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 600);
+$background: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 100);
+$label-color: white;
 
 .container {
-  color: $LABEL_COLOR;
-  background-color: $BACKGROUND;
+  color: $label-color;
+  background-color: $background;
   display: flex;
   user-select: none;
 
@@ -46,8 +46,8 @@ $LABEL_COLOR: white;
   @include gen.log-type-shape-colors-for-all;
 
   color: white;
-  padding: 0px 8px;
-  font-size: $FONT_SIZE;
+  padding: 0 8px;
+  font-size: $font-size;
 }
 
 .log-severity {
@@ -55,8 +55,8 @@ $LABEL_COLOR: white;
   @include gen.log-severity-colors-for-all;
 
   color: white;
-  padding: 0px 8px;
-  font-size: $FONT_SIZE;
+  padding: 0 8px;
+  font-size: $font-size;
 }
 
 .log-severity-empty {

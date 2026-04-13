@@ -67,6 +67,7 @@ limitations under the License.
         <div class="features-wrapper">
           @for (feature of currentTaskFeatures | async; track feature) {
             <mat-card
+              class="feature-card"
               (click)="toggleFeature(feature.id)"
               [ngClass]="{ selected: feature.enabled }"
             >

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@use "@angular/material" as mat;
+@use '@angular/material' as mat;
 
 $foreground: white;
 $background: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 500);

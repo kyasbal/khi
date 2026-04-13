@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-@use "@angular/material" as mat;
-@use "sass:color";
+@use '@angular/material' as mat;
+@use 'sass:color';
 
 $exclusion-color: #ff4141;
 $alias-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 600);
@@ -24,7 +24,7 @@ $alias-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 600);
   display: inline-flex;
 }
 
-mat-chip-row {
+.alias-chip-row {
   @include mat.chips-overrides(
     (
       container-shape-radius: 5px,
@@ -38,12 +38,13 @@ mat-chip-row {
 
 .display-label {
   font-weight: 600;
-  margin: 0px 4px;
+  margin: 0 4px;
 }
 
 .display-label-alias {
   color: $alias-color;
 }
+
 .display-label-exclusion {
   color: $exclusion-color;
 }
@@ -55,6 +56,7 @@ mat-chip-row {
   font-size: 10px;
   pointer-events: all;
   margin: 0 2px;
+
   mat-icon {
     width: 12px;
     height: 12px;

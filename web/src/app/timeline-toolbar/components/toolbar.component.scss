@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-mat-icon {
-  &.draw-diagram-button-icon {
-    margin-left: 0px;
-    margin-right: 0px;
-  }
+.draw-diagram-button-icon {
+  margin-left: 0;
+  margin-right: 0;
+}
 
-  &.filter-button-icon {
-    margin-left: 5px;
-    margin-right: 5px;
-  }
+.filter-button-icon {
+  margin-left: 5px;
+  margin-right: 5px;
 }
 
 .container {
@@ -92,11 +90,11 @@ mat-icon {
     user-select: none;
   }
 
-  input[type="number"] {
+  .timezone-input {
     width: 60px;
     font-size: 20px;
     text-align: center;
-    border: none;
+    border: 0;
     appearance: none;
     border-bottom: 3px solid #3f51b5;
 
@@ -106,12 +104,12 @@ mat-icon {
     }
 
     &::-webkit-outer-spin-button {
-      -webkit-appearance: none;
+      appearance: none;
       margin: 0;
     }
 
     &::-webkit-inner-spin-button {
-      -webkit-appearance: none;
+      appearance: none;
       margin: 0;
     }
   }

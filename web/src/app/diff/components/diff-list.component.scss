@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-@use "../../zzz-generated" as gen;
-@use "../../common" as common;
-@use "@angular/material" as mat;
+@use '../../zzz-generated' as gen;
+@use '../../common' as common;
+@use '@angular/material' as mat;
 
 $row-background-color: white;
 $row-border-color: mat.m2-get-color-from-palette(mat.$m2-indigo-palette, 100);
@@ -51,7 +51,7 @@ $unchanged-icon-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 600);
     margin: 0;
     display: grid;
     grid-template-columns: auto auto auto auto 1fr;
-    grid-template-areas: "index change-indicator ts operation author";
+    grid-template-areas: 'index change-indicator ts operation author';
   }
 }
 
@@ -65,7 +65,7 @@ $unchanged-icon-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 600);
   background-color: $row-background-color;
 
   &::after {
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
@@ -85,7 +85,7 @@ $unchanged-icon-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 600);
   .index {
     grid-area: index;
     font-size: 10px;
-    padding: 0px 2px;
+    padding: 0 2px;
     background-color: black;
     color: white;
     text-align: center;
@@ -99,7 +99,7 @@ $unchanged-icon-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 600);
     color: $ts-color;
     background-color: $ts-background-color;
     font-weight: 600;
-    padding: 0px 2px;
+    padding: 0 2px;
   }
 
   .change-indicator {
@@ -109,8 +109,10 @@ $unchanged-icon-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 600);
     display: flex;
     align-items: center;
     justify-content: center;
+
     &.changed {
       background-color: $changed-icon-color;
+
       mat-icon {
         color: white;
         font-weight: 600;
@@ -119,10 +121,12 @@ $unchanged-icon-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 600);
 
     &.unchanged {
       background-color: $unchanged-icon-color;
+
       mat-icon {
         color: white;
       }
     }
+
     mat-icon {
       @include common.adjust-mat-icon-size(11px);
     }
@@ -140,6 +144,7 @@ $unchanged-icon-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 600);
       border-radius: 2px;
       padding: 0 2px;
       margin: 0 4px;
+
       &.user {
         background-color: #e53935;
       }
@@ -155,7 +160,7 @@ $unchanged-icon-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 600);
     font-size: 0;
 
     .operation-span {
-      padding: 0px 4px;
+      padding: 0 4px;
       font-size: 10px;
       font-weight: bold;
       line-height: normal;
