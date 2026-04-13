@@ -15,12 +15,12 @@
 -->
 
 <div class="list-header">
-  <mat-icon aria-hidden="true">list</mat-icon>
+  <mat-icon>list</mat-icon>
   <h2>Available inspection data</h2>
 </div>
 
 @if (isLoading()) {
-  <div class="loading-overlay" aria-busy="true">
+  <div class="loading-overlay">
     <mat-spinner diameter="40"></mat-spinner>
     <span>Loading inspections...</span>
   </div>
@@ -43,7 +43,7 @@
     @if (!isViewerMode()) {
       <button mat-stroked-button (click)="createNewInspection.emit()">
         New Inspection
-        <mat-icon aria-hidden="true">add</mat-icon>
+        <mat-icon>add</mat-icon>
       </button>
     }
   </div>

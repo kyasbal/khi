@@ -123,7 +123,6 @@ describe('InspectionListComponent', () => {
     expect(loadingOverlay.nativeElement.textContent).toContain(
       'Loading inspections...',
     );
-    expect(loadingOverlay.nativeElement.getAttribute('aria-busy')).toBe('true');
   });
 
   it('should show New Inspection button in empty state when not in viewer mode', () => {
