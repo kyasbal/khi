@@ -17,7 +17,7 @@
 .row {
   display: grid;
   grid-template-columns: auto auto auto auto auto 1fr;
-  grid-template-areas: "icon key colon value copy-button space";
+  grid-template-areas: 'icon key colon value copy-button space';
 }
 
 .icon {
@@ -39,7 +39,7 @@
 
 .colon {
   grid-area: colon;
-  margin: 0px 3px;
+  margin: 0 3px;
 }
 
 .value {
@@ -48,7 +48,7 @@
   user-select: none;
 
   .value-inner {
-    margin: 0px;
+    margin: 0;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
@@ -58,7 +58,7 @@
 .copy-button {
   grid-area: copy-button;
   appearance: none;
-  border: none;
+  border: 0;
   border-radius: 4px;
 
   &:hover {

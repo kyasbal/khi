@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@use "sass:color";
-@use "../../common.scss" as common;
+@use 'sass:color';
+@use '../../common.scss' as common;
 
 .container {
   pointer-events: all;
@@ -25,15 +25,15 @@
   max-height: 95vh;
   overflow: hidden;
   background-color: #f8f8f8;
-  box-shadow: 0px 5px 15px 0px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 5px 15px 0 rgba(0, 0, 0, 0.35);
   display: grid;
-  grid-template-areas: "header header" "left right" "footer footer";
+  grid-template-areas: 'header header' 'left right' 'footer footer';
   grid-template-columns: 1fr 1fr;
   grid-template-rows: auto 1fr auto;
   z-index: 999;
 
   ::-webkit-scrollbar {
-    -webkit-appearance: none;
+    appearance: none;
     width: 7px;
   }
 

@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@use "@angular/material" as mat;
+@use '@angular/material' as mat;
 
-@use "@fontsource/roboto/300.css" as roboto_300;
-@use "@fontsource/roboto/400.css" as roboto_400;
-@use "@fontsource/roboto/500.css" as roboto_500;
-@use "@fontsource/google-sans-code";
-@use "material-symbols";
+@use '@fontsource/roboto/300.css' as roboto_300;
+@use '@fontsource/roboto/400.css' as roboto_400;
+@use '@fontsource/roboto/500.css' as roboto_500;
+@use '@fontsource/google-sans-code';
+@use 'material-symbols';
 
-@use "@angular/cdk/overlay-prebuilt.css";
-@use "ngx-diff/styles/default-theme";
-@use "./golden-layout-khi-theme.scss";
+@use '@angular/cdk/overlay-prebuilt.css';
+@use 'ngx-diff/styles/default-theme';
+@use './golden-layout-khi-theme.scss';
 
 html,
 body,
@@ -50,10 +50,6 @@ body {
   width: 100%;
   max-width: 100%;
   max-height: 100%;
-}
-
-td.hljs-ln-code {
-  padding: 0 0 0 10px !important;
 }
 
 .hljs-ln-numbers {
@@ -89,7 +85,7 @@ code {
 .button-with-icon-and-label {
   .mat-button-wrapper {
     display: grid;
-    grid-template-areas: "icon label";
+    grid-template-areas: 'icon label';
     gap: 5px;
     align-items: center;
     justify-content: center;

@@ -16,7 +16,7 @@
 
 $resizer-thickness: 5px;
 
-$font-code: "Google Sans Code", monospace;
+$font-code: 'Google Sans Code', monospace;
 
 @mixin adjust-mat-icon-size($size) {
   width: $size;
@@ -29,7 +29,7 @@ $font-code: "Google Sans Code", monospace;
   overflow-y: scroll;
 
   &::-webkit-scrollbar {
-    -webkit-appearance: none;
+    appearance: none;
     width: 7px;
   }
 

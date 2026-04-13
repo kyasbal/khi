@@ -14,7 +14,11 @@
  limitations under the License.
 -->
 
-<mat-chip-row (removed)="remove.emit()">
+<mat-chip-row
+  [class.exclusion]="isExclusion()"
+  class="alias-chip-row"
+  (removed)="remove.emit()"
+>
   <span class="display-label">
     @if (isExclusion()) {
       <span class="display-label-exclusion">-</span>

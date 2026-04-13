@@ -24,7 +24,7 @@ import {
   ElementRef,
   effect,
 } from '@angular/core';
-import { NgClass } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -41,7 +41,7 @@ import {
 @Component({
   selector: 'khi-inspection-list-item',
   imports: [
-    NgClass,
+    CommonModule,
     MatIconModule,
     MatButtonModule,
     MatTooltipModule,

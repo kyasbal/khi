@@ -17,7 +17,7 @@
 .root {
   height: 100%;
   display: grid;
-  grid-template-areas: "title" "graph";
+  grid-template-areas: 'title' 'graph';
   grid-template-rows: auto 1fr;
 
   .graph-wrapper {
