@@ -1,6 +1,7 @@
 package khifilev6
 
 import (
+	"iter"
 	"sync"
 
 	pb "github.com/GoogleCloudPlatform/khi/pkg/generated/khifile/v6"
@@ -103,4 +104,13 @@ func (p *TimelinePathPool) getOrCreateSingle(parent *TimelinePath, name string, 
 	// 3. Atomic store or retrieve if another goroutine won the race.
 	actual, _ := p.paths.LoadOrStore(key, newPath)
 	return actual.(*TimelinePath)
+}
+
+// Paths returns an iterator over all TimelinePath instances present in the pool.
+func (p *TimelinePathPool) Paths() iter.Seq[*TimelinePath] {
+	return func(yield func(*TimelinePath) bool) {
+		p.paths.Range(func(key, value any) bool {
+			return yield(value.(*TimelinePath))
+		})
+	}
 }

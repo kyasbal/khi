@@ -67,3 +67,5 @@ When developing or modifying Go code in the KHI project, you **must** adhere to 
 >  }
 > }
 > ```
+
+5. Use protocmp.Transform() with cmp.Diff to compare proto data in test.

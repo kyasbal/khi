@@ -6,7 +6,7 @@ import (
 
 	pb "github.com/GoogleCloudPlatform/khi/pkg/generated/khifile/v6"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
+	"google.golang.org/protobuf/testing/protocmp"
 )
 
 func TestTimelinePathPool_Get(t *testing.T) {
@@ -38,7 +38,7 @@ func TestTimelinePathPool_Get(t *testing.T) {
 				if diff := cmp.Diff("root", p1.Name.Resolve()); diff != "" {
 					t.Errorf("name mismatch (-want +got):\n%s", diff)
 				}
-				if diff := cmp.Diff(typeA, p1.Type, cmpopts.IgnoreUnexported(pb.TimelineType{})); diff != "" {
+				if diff := cmp.Diff(typeA, p1.Type, protocmp.Transform()); diff != "" {
 					t.Errorf("type mismatch (-want +got):\n%s", diff)
 				}
 			},
