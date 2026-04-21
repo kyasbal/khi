@@ -5,4 +5,7 @@
         "editor.defaultFormatter": "golang.go"
     },
     "go.lintTool": "golangci-lint",
+    "[typescript]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
 }

@@ -6,11 +6,11 @@ GCLOUD=gcloud --project $(GCLOUD_PROJECT)
 
 .PHONY=watch-web-internal
 watch-web-internal: $(GENERATE_FRONTEND_DUMMY) ## Run frontend development server for Google internal production version
-	cd web && NG_APP_BACKEND_URL_PREFIX="http://localhost:8080" ng serve -c dev-internal
+	cd web && npx ng serve -c dev-internal
 
 .PHONY=watch-web-internal-khi-ro
 watch-web-internal-khi-ro: $(GENERATE_FRONTEND_DUMMY) ## Run frontend development server for the read-only build of Google internal production version
-	cd web && NG_APP_BACKEND_URL_PREFIX="http://localhost:8080" ng serve -c dev-internal-khi-ro
+	cd web && npx ng serve -c dev-internal-khi-ro
 
 
 .PHONY=build-web-internal

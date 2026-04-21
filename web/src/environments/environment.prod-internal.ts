@@ -16,6 +16,7 @@
 import { GoogleDriveDataLoaderKHIExtension } from 'src/app/extensions/google-drive/module';
 import { PrivateKHIExtension } from 'src/app/extensions/private/module';
 import { PublicKHIExtension } from 'src/app/extensions/public/module';
+import { links } from './documents';
 
 export const environment = {
   production: true,
@@ -31,4 +32,5 @@ export const environment = {
   options: {
     GTAG_ID: 'G-JJ6G0C6V06',
   } as Record<string, unknown>,
+  links,
 };
