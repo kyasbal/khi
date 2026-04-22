@@ -20,7 +20,7 @@ import {
   ChunkDefinition,
   IDataAssembler,
 } from 'src/app/parser/core/interfaces';
-import { InspectionData } from 'src/app/store/inspection-data';
+import { InspectionDataBuilder } from 'src/app/parser/core/builder';
 
 describe('KHIFileStreamer', () => {
   /**
@@ -125,9 +125,19 @@ describe('KHIFileStreamer', () => {
 
     const result = await streamer.parse(buffer);
 
-    expect(result).toBeNull(); // Because assembly logic is deferred to the builder
+    expect(result).toBeDefined();
 
     expect(mockAssembler1.ingest).toHaveBeenCalledWith('hello');
     expect(mockAssembler2.ingest).toHaveBeenCalledWith(42);
+
+    expect(mockAssembler2.assembleInto).toHaveBeenCalledBefore(
+      mockAssembler1.assembleInto,
+    );
+    expect(mockAssembler1.assembleInto).toHaveBeenCalledWith(
+      jasmine.any(InspectionDataBuilder),
+    );
+    expect(mockAssembler2.assembleInto).toHaveBeenCalledWith(
+      jasmine.any(InspectionDataBuilder),
+    );
   });
 });

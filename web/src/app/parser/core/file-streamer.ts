@@ -27,6 +27,7 @@ import {
   ParserBlueprint,
 } from 'src/app/parser/core/interfaces';
 import { BinaryReader } from 'src/app/parser/core/binary-reader';
+import { ParsedKHIFile, InspectionDataBuilder } from 'src/app/parser/core/builder';
 
 /**
  * Orchestrator class responsible for streaming and parsing KHI inspection files.
@@ -44,7 +45,7 @@ export class KHIFileStreamer {
   /**
    * Parses the raw KHI binary file into the final UI View Model.
    */
-  async parse(buffer: ArrayBuffer): Promise<InspectionData> {
+  async parse(buffer: ArrayBuffer): Promise<ParsedKHIFile> {
     const reader = new BinaryReader(buffer);
 
     // 1. Header Validation
@@ -97,8 +98,27 @@ export class KHIFileStreamer {
     }
 
     // 4. Priority-Based Assembly Phase
-    // The assembly logic and domain stores instantiation (InspectionDataBuilder)
-    // will be implemented in a subsequent stage.
-    return null as unknown as InspectionData;
+    const builder = new InspectionDataBuilder();
+
+    // Sort the definitions of the active assemblers by their priority
+    const sortedDefinitions = Array.from(blueprint.values())
+      .filter((def) => activeAssemblers.has(def.typeId))
+      .sort((a, b) => a.priority - b.priority);
+
+    // Sequentially apply data to the builder
+    for (const def of sortedDefinitions) {
+      try {
+        const assembler = activeAssemblers.get(def.typeId)!;
+        assembler.assembleInto(builder);
+      } catch (error) {
+        throw new KHIDataAssemblyError({
+          version,
+          typeId: def.typeId,
+          cause: error,
+        });
+      }
+    }
+
+    return builder.build();
   }
 }

@@ -17,7 +17,6 @@
 import { fromBinary } from '@bufbuild/protobuf';
 import { ParserBlueprint } from 'src/app/parser/core/interfaces';
 import { V6DummyAssembler } from 'src/app/parser/assemblers/v6/dummy-assemblers';
-import { V6InterningPoolAssembler } from 'src/app/parser/assemblers/v6/interning-pool-assembler';
 
 import { MetadataChunkSchema } from 'src/app/generated/khifile/v6/metadata_pb';
 import { InterningPoolChunkSchema } from 'src/app/generated/khifile/v6/intern_pool_pb';
@@ -52,7 +51,7 @@ export const V6_BLUEPRINT: ParserBlueprint = new Map([
     {
       typeId: ChunkType.INTERN_POOL,
       decode: (bytes) => fromBinary(InterningPoolChunkSchema, bytes),
-      createAssembler: () => new V6InterningPoolAssembler(),
+      createAssembler: () => new V6DummyAssembler('InterningPoolAssembler'),
       priority: 10,
     },
   ],
