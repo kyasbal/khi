@@ -11,201 +11,57 @@ Language: [English](./README.md) | 日本語
 
 # Kubernetes History Inspector
 
-Kubernetes History Inspector (KHI) は、Kubernetes クラスタのログ可視化ツールです。
-大量のログをインタラクティブなタイムラインビューなどで可視化し、Kubernetes クラスタ内の複数のコンポーネントにまたがる複雑な問題のトラブルシューティングを強力にサポートします。
+[![Go Version](https://img.shields.io/github/go-mod/go-version/GoogleCloudPlatform/khi)](https://golang.org/doc/devel/release.html)
+[![License](https://img.shields.io/github/license/GoogleCloudPlatform/khi)](https://github.com/GoogleCloudPlatform/khi/blob/main/LICENSE)
+[![Release](https://img.shields.io/github/v/release/GoogleCloudPlatform/khi)](https://github.com/GoogleCloudPlatform/khi/releases)
 
-クラスタ内へのエージェント等のインストールの必要はなく、ログを読み込ませるだけで、トラブルシューティングに役立つ以下のログの可視化を提供します。
+Kubernetes History Inspector (KHI) は、複雑なKubernetesのトラブルシューティングを強力にサポートするインタラクティブなログ可視化ツールです。
 
 |タイムラインビュー|クラスタダイアグラム|
 |---|---|
 |![Timeline view](./docs/images/timeline.png)|![Cluster diagram](./docs/images/cluster-diagram.png)|
 |監査ログ等から特定期間の複数リソースに対する変更、ステータス等の遷移をわかりやすくタイムライン、差分として表示。|kube-apiserverの監査ログから復元した特定タイミングのリソースの関係性をわかりやすく可視化。|
 
-## KHIの特徴
+## ✨ KHIの特徴
 
-### ログの可視化
+### 📊 直感的なログの可視化 (Rich Visualization)
+従来のテキストベースのログ分析とは異なり、各リソースのアクティビティを**タイムラインベースのグラフ**として可視化します。
+*   **一目で把握**: 複数のリソースを横断したイベントの流れを視覚的に理解。
+*   **詳細な深掘り**: 特定の瞬間の生ログ（テキスト形式）や、イベント発生時の YAML マニフェストの差分（Diff）もシームレスに確認可能。
+*   **トポロジーの把握**: 特定時点におけるクラスタのリソース状態と関係性を示す「クラスタダイアグラム」の生成。
 
-KHIの主要な強みは、従来のテキストベースのログ分析を超えて、各Kubernetesリソースに関連する多数のアクティビティログをタイムラインベースのグラフとして視覚化できる点です。
-単一のリソースでログを手動でフィルタリングしたり、個々のアクティビティログをテキストデータで時系列に読み進めたりする必要はありません。KHIを使用すると、タイムラインの視覚化から何が起こったのかを一目で把握できます。
+### 🚀 エージェントレスで簡単導入 (Agentless & Easy Setup)
+*   対象の Kubernetes クラスタに**エージェントをインストールする必要はありません**。
+*   複雑な事前設定なしで、誰でもすぐに使い始めることができます。
+*   ログの取得は GUI 操作で完結し、複雑なクエリの記述は不要です。
 
-また、ログの視覚化に加えて、KHIでは特定の瞬間のログデータを従来のテキスト形式で確認したり、特定のイベント発生時のYAMLマニフェストの差分を確認したりことも可能です。これにより、事象の原因を特定するプロセスが大幅に簡素化されます。
-
-さらに、KHIはある特定の時点でのKubernetesクラスターのリソースの状態とその関係を示すクラスタダイアグラムを生成することもできます。これは、インシデント発生時の特定の時間におけるリソースのステータスやクラスターのトポロジーを理解する上で非常に役に立ちます。
-
-### エージェントレス
-
-KHIのセットアップはとても簡単です。エージェントレスなので、対象クラスターに複雑な事前設定をすることなく、誰でも簡単に使い始めることができます。また、KHIはGUI操作でKubernetesログを視覚化できます。ログの取得のために複雑なクエリやコマンドを記述する必要はありません。
 ![機能: ログ収集のための迅速かつ簡単なステップ](./docs/ja/images/feature-query.png)
 
-### トラブルシューティングの知見
+### 💡 プロの知見を凝縮 (Built from Real Experience)
+Google Cloud のサポートエンジニアが、日々の Kubernetes トラブルシューティング業務で直面した課題を解決するために開発されました。現場の深い専門知識がツールに組み込まれています。
 
-KHIは、Google Cloud サポートチームが開発し、その後オープンソース化されました。Google Cloudのサポートエンジニアが日々の業務でKubernetesログを分析する中で培った経験から生まれたツールです。KHIには、Kubernetesのログトラブルシューティングにおける彼らの深い専門知識が凝縮されています。
+## 🚀 クイックスタート
 
-## サポートされている製品
+KHI は Docker があればすぐに使い始めることができます。
 
-### Kubernetes クラスタ
+1. 以下のコマンドを実行します。
+```bash
+docker run -p 127.0.0.1:8080:8080 gcr.io/kubernetes-history-inspector/release:latest
+```
+2. ブラウザで `http://localhost:8080` を開きます。
 
-- Google Cloud
+> **Note:** メタデータサーバが利用できないローカル環境などで Google Cloud の認証情報をマウントして実行する方法や、その他の詳細な起動方法については [Getting Started](/docs/en/tutorial/getting-started.md) をご参照ください。
 
-  - [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine/docs/concepts/kubernetes-engine-overview)
-  - [Cloud Composer](https://cloud.google.com/composer/docs/composer-3/composer-overview)
-  - [GKE on AWS](https://cloud.google.com/kubernetes-engine/multi-cloud/docs/aws/concepts/architecture)
-  - [GKE on Azure](https://cloud.google.com/kubernetes-engine/multi-cloud/docs/azure/concepts/architecture)
-  - [GDCV for Baremetal](https://cloud.google.com/kubernetes-engine/distributed-cloud/bare-metal/docs/concepts/about-bare-metal)
-  - [GDCV for VMWare](https://cloud.google.com/kubernetes-engine/distributed-cloud/vmware/docs/overview)
+## 📚 ドキュメント
 
-- その他環境
-  - JSONlines 形式の kube-apiserver 監査ログ ([チュートリアル (Using KHI with OSS Kubernetes Clusters - Example with Loki | 英語のみ)](/docs/en/setup-guide/oss-kubernetes-clusters.md))
+より詳細な設定や情報については、以下のドキュメントを参照してください。
 
-### ログバックエンド
+*   [**ユーザーガイド**](/docs/ja/visualization-guide/user-guide.md) - 基本的な操作方法
+*   [**よくあるトラブル (Troubleshooting)**](/docs/ja/troubleshooting.md) - 画面が正しく表示されない等の問題が発生した場合
+*   [**マネージド環境毎の設定**](/docs/ja/setup-guide/managed-environments.md) - Google Cloud (GKE) 環境等での IAM 権限や監査ログの推奨設定
+*   [**OSS Kubernetesクラスタのログの可視化 (Loki)**](/docs/ja/setup-guide/oss-kubernetes-clusters.md) - 独自クラスタ等からのログの読み込み方法
+*   [**KHIプロジェクトへの貢献**](/docs/en/development-contribution/contributing.md) - ソースコードからのビルド・開発ガイド
 
-- Google Cloud
-
-  - Cloud Logging（Google Cloud 上のすべてのクラスタ）
-
-- その他環境
-  - ファイルによるログアップロード([チュートリアル (Using KHI with OSS Kubernetes Clusters - Example with Loki | 英語のみ)](/docs/en/setup-guide/oss-kubernetes-clusters.md))
-
-## 実行方法
-
-### Docker イメージから実行
-
-#### 動作環境
-
-- Google Chrome（最新版）
-- `docker` コマンド
-
-> [!IMPORTANT]
-> KHI は最新のGoogle Chromeでしかテストされていません。
-> 他のブラウザでも動作する可能性はありますが、動作しない場合でもプロジェクトとしてサポートしていません。
-
-> [!IMPORTANT]
-> Chrome 139以降、GPUを搭載していない環境では、CPUベースのWebGLエミュレーションが無効化されました。
-> リモートデスクトップ経由でGPU非搭載のサーバーからKHIにアクセスしている場合、タイムラインが正しく描画されない可能性があります。
-> この問題を解決するには、`chrome://flags/#ignore-gpu-blocklist` の設定を `Enabled` に変更してください。
->
-> *注: ほとんどのコンシューマー向けラップトップ（専用グラフィックスカードを搭載していないものを含む）は、iGPUが搭載されているはずですのでこの影響は受けません。*
-
-#### KHI の実行
-
-1. [Cloud Shell](https://shell.cloud.google.com) を開きます。
-2. `docker run -p 127.0.0.1:8080:8080 gcr.io/kubernetes-history-inspector/release:latest` を実行します。
-3. ターミナル上のリンク `http://localhost:8080` をクリックして、KHI の使用を開始してください！
-
-> [!WARNING]
-> コンテナイメージのレポジトリが `asia.gcr.io` から `gcr.io` に変更されました。古いレポジトリも当面の間利用可能ですが、将来的には廃止される予定のため、新しいレポジトリへの切り替えを推奨します。
-
-> [!TIP]
-> メタデータサーバが利用できない他の環境で KHI を実行する場合は、[アプリケーションのデフォルト認証情報](https://cloud.google.com/docs/authentication/provide-credentials-adc)をホストのファイルシステムからコンテナにマウントして認証できます。
->
-> **Linux, MacOS or WSL 環境**
->
->```bash
-> gcloud auth application-default login
-> docker run \
->  -p 127.0.0.1:8080:8080 \
->  -v ~/.config/gcloud/application_default_credentials.json:/root/.config/gcloud/application_default_credentials.json:ro \
->  gcr.io/kubernetes-history-inspector/release:latest
->```
->
-> **Windows PowerShell 環境**
->
-> ```bash
-> gcloud auth application-default login
-> docker run `
-> -p 127.0.0.1:8080:8080 `
-> -v $env:APPDATA\gcloud\application_default_credentials.json:/root/.config/gcloud/application_default_credentials.json:ro `
-> gcr.io/kubernetes-history-inspector/release:latest
-> ```
->
-
-詳細は [Getting Started](/docs/en/tutorial/getting-started.md) を参照してください。
-
-### ソースから実行
-
-<details>
-<summary>動かしてみる (ソースから実行)</summary>
-
-#### ビルドに必要な依存関係
-
-- Go 1.25.\*
-- Node.js 環境 22.13.\*
-- [`gcloud` CLI](https://cloud.google.com/sdk/docs/install)
-- [`jq`コマンド](https://jqlang.org/)
-
-#### 環境構築
-
-1. このリポジトリをダウンロードまたはクローンします。  
-   例: `git clone https://github.com/GoogleCloudPlatform/khi.git`
-2. プロジェクトルートに移動します。  
-   例: `cd khi`
-3. プロジェクトルートから `make setup` を実行します。
-(この Make ターゲットは、npm パッケージのインストール、自動生成コードの生成、git フックの設定を行います)
-
-#### KHI のビルドと実行
-
-1. [`gcloud` で認証します。](https://cloud.google.com/docs/authentication/gcloud)  
-   例: ユーザーアカウントの認証情報を使用する場合は、`gcloud auth login` を実行します。
-2. `make build` を実行します。
-3. 生成された実行ファイル `./khi` を実行します。
-4. `http://localhost:8080` を開き、KHI の使用を開始してください！
-
-</details>
-
-> [!IMPORTANT]
-> KHI のポートをインターネット向けに公開しないでください。
-> KHI 自身は認証、認可の機能を提供しておらず、ローカルユーザからのみアクセスされることが想定されています。
-
-### 権限設定
-
-## マネージド環境毎の設定
-
-### Google Cloud
-
-#### 権限
-
-以下の権限が必須・推奨されます。
-
-- **必須権限**
-  - `logging.logEntries.list`
-- **推奨権限**
-  - New Inspectionダイアログでの入力時にオートコンプリートの入力候補を取得するために使用します。権限がなくても問題がありませんが、入力時にクラスタ名の候補が表示されません。
-    - `monitoring.timeSeries.list`
-    - `container.clusters.list` (Cloud Composer向け機能利用時のみ)
-- **設定手順**
-
-  - Compute Engine 仮想マシン上など、サービスアカウントがアタッチされた Google Cloud 環境で KHI を実行する場合、対応するリソースにアタッチされたサービスアカウントに上記権限を付与します。
-  - ローカル環境や Cloud Shell など、ユーザアカウント権限で KHI を実行する場合、対応するユーザ上記権限を付与します。
-
-#### 監査ログ出力設定
-
-- **必須設定無し**
-- **推奨設定**
-  - Kubernetes Engine API データ書き込み監査ログの有効化
-
-> [!TIP]
-> Pod や Node リソースの`.status`フィールドへのパッチリクエストが記録されており、
-> トラブルシューティングに詳細なコンテナの情報も必要な場合に推奨されます。
-> Kubernetes Engine API データ書き込み監査ログが未出力の場合も、KHI は Pod 削除時の監査ログから最終のコンテナの状態を表示できますが、Pod が削除されない間のコンテナの状態変化が記録されません。
-
-- **設定手順**
-  1. Google Cloud コンソールで、[監査ログページに移動](https://console.cloud.google.com/iam-admin/audit)します。
-  1. 「データアクセス監査ログの構成」以下の、「サービス」列から「Kubernetes Engine API」を選択します。
-  1. 「ログタイプ」タブで、「データ書き込み」を選択します。
-  1. 「保存」をクリックします。
-
-### OSS Kubernetes
-
-[OSS Kubernetesクラスタのログの可視化（Loki）](/docs/ja/setup-guide/oss-kubernetes-clusters.md)を参照してください。
-
-## ユーザーガイド
-
-[ユーザーガイド](/docs/ja/visualization-guide/user-guide.md) をご確認ください。
-
-## KHIプロジェクトへの貢献
-
-プロジェクトへの貢献をご希望の場合は、[コントリビューションガイド](/docs/en/development-contribution/contributing.md) をお読みの上、[KHI開発環境のセットアップ](/docs/ja/development-contribution/development-guide.md)を実施してください。
-
-## 免責事項
+## ⚠️ 免責事項
 
 KHI は Google Cloud の公式製品ではございません。不具合のご報告や機能に関するご要望がございましたら、お手数ですが当リポジトリの[Github issues](https://github.com/GoogleCloudPlatform/khi/issues/new?template=Blank+issue)にご登録ください。可能な範囲で対応させていただきます。
