@@ -16,7 +16,7 @@
 import { GoogleDriveDataLoaderKHIExtension } from 'src/app/extensions/google-drive/module';
 import { PrivateKHIExtension } from 'src/app/extensions/private/module';
 import { PublicKHIExtension } from 'src/app/extensions/public/module';
-import { links } from './documents';
+import { links } from './private-links';
 
 export const environment = {
   production: true,
