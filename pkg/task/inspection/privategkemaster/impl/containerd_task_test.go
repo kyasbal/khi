@@ -24,7 +24,7 @@ import (
 	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 	googlecloudlogk8snode_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8snode/contract"
 	privategkemaster_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privategkemaster/contract"
@@ -38,7 +38,7 @@ func TestContainerdLogLogToTimelineMapper(t *testing.T) {
 		inputMessage         string
 		inputNodeLogFieldSet *privategkemaster_contract.GKEMasterLogFieldSet
 		inputPodIDInfo       map[string]*googlecloudlogk8snode_contract.PodSandboxIDInfo
-		inputContainerIDInfo map[string]*commonlogk8sauditv2_contract.ContainerIdentity
+		inputContainerIDInfo map[string]*commonlogk8saudit_contract.ContainerIdentity
 		asserter             []testchangeset.ChangeSetAsserter
 	}{
 		{
@@ -90,7 +90,7 @@ func TestContainerdLogLogToTimelineMapper(t *testing.T) {
 					podIDFinder.AddPattern(k, v)
 				}
 			}
-			containerIDFinder := patternfinder.NewNaivePatternFinder[*commonlogk8sauditv2_contract.ContainerIdentity]()
+			containerIDFinder := patternfinder.NewNaivePatternFinder[*commonlogk8saudit_contract.ContainerIdentity]()
 			if tc.inputContainerIDInfo != nil {
 				for k, v := range tc.inputContainerIDInfo {
 					containerIDFinder.AddPattern(k, v)
@@ -99,7 +99,7 @@ func TestContainerdLogLogToTimelineMapper(t *testing.T) {
 
 			ctx := inspectiontest.WithDefaultTestInspectionTaskContext(t.Context())
 			ctx = tasktest.WithTaskResult(ctx, privategkemaster_contract.PodSandboxIDDiscoveryTaskID.Ref(), podIDFinder)
-			ctx = tasktest.WithTaskResult(ctx, commonlogk8sauditv2_contract.ContainerIDPatternFinderTaskID.Ref(), containerIDFinder)
+			ctx = tasktest.WithTaskResult(ctx, commonlogk8saudit_contract.ContainerIDPatternFinderTaskID.Ref(), containerIDFinder)
 			ctx = tasktest.WithTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(), googlecloudk8scommon_contract.GoogleCloudClusterIdentity{
 				ClusterName: "cluster",
 				ProjectID:   "project",

@@ -20,7 +20,7 @@ import (
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
 	googlecloudlogk8snode_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8snode/contract"
 )
 
@@ -124,4 +124,4 @@ var ContainerdLogLogToTimelineMapperTaskID = taskid.NewDefaultImplementationID[s
 var PodSandboxIDDiscoveryTaskID = taskid.NewDefaultImplementationID[patternfinder.PatternFinder[*googlecloudlogk8snode_contract.PodSandboxIDInfo]](PrivateGKEMasterCommonTaskIDPrefix + "containerd/pod-sandbox-id-discovery")
 
 // ContainerIDDiscoveryTaskID is the task ID to discover container IDs.
-var ContainerIDDiscoveryTaskID = taskid.NewDefaultImplementationID[commonlogk8sauditv2_contract.ContainerIDToContainerIdentity](PrivateGKEMasterCommonTaskIDPrefix + "containerd/container-id-discovery")
+var ContainerIDDiscoveryTaskID = taskid.NewDefaultImplementationID[commonlogk8saudit_contract.ContainerIDToContainerIdentity](PrivateGKEMasterCommonTaskIDPrefix + "containerd/container-id-discovery")

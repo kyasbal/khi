@@ -26,7 +26,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 	googlecloudlogk8scontrolplane_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
 	privategkemaster_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privategkemaster/contract"
@@ -108,7 +108,7 @@ type controllerManagerLogToTimelineMapperTaskSetting struct {
 // Dependencies implements inspectiontaskbase.LogToTimelineMapper.
 func (o *controllerManagerLogToTimelineMapperTaskSetting) Dependencies() []taskid.UntypedTaskReference {
 	return []taskid.UntypedTaskReference{
-		commonlogk8sauditv2_contract.ResourceUIDPatternFinderTaskID.Ref(),
+		commonlogk8saudit_contract.ResourceUIDPatternFinderTaskID.Ref(),
 		googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(),
 	}
 }
@@ -125,7 +125,7 @@ func (o *controllerManagerLogToTimelineMapperTaskSetting) LogIngesterTask() task
 
 // ProcessLogByGroup implements inspectiontaskbase.LogToTimelineMapper.
 func (o *controllerManagerLogToTimelineMapperTaskSetting) ProcessLogByGroup(ctx context.Context, l *log.Log, cs *history.ChangeSet, builder *history.Builder, prevGroupData struct{}) (struct{}, error) {
-	finder := coretask.GetTaskResult(ctx, commonlogk8sauditv2_contract.ResourceUIDPatternFinderTaskID.Ref())
+	finder := coretask.GetTaskResult(ctx, commonlogk8saudit_contract.ResourceUIDPatternFinderTaskID.Ref())
 	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
 	masterFieldSet, err := log.GetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
 	if err != nil {

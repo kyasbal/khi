@@ -25,7 +25,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 	googlecloudlogk8scontrolplane_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
 	privategkemaster_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privategkemaster/contract"
@@ -71,7 +71,7 @@ func (p *otherLogToTimelineMapperTaskSetting) LogIngesterTask() taskid.TaskRefer
 
 func (p *otherLogToTimelineMapperTaskSetting) Dependencies() []taskid.UntypedTaskReference {
 	return []taskid.UntypedTaskReference{
-		commonlogk8sauditv2_contract.ResourceUIDPatternFinderTaskID.Ref(),
+		commonlogk8saudit_contract.ResourceUIDPatternFinderTaskID.Ref(),
 		googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(),
 	}
 }
@@ -95,7 +95,7 @@ func (p *otherLogToTimelineMapperTaskSetting) ProcessLogByGroup(ctx context.Cont
 
 	cs.SetLogSummary(summary)
 
-	finder := coretask.GetTaskResult(ctx, commonlogk8sauditv2_contract.ResourceUIDPatternFinderTaskID.Ref())
+	finder := coretask.GetTaskResult(ctx, commonlogk8saudit_contract.ResourceUIDPatternFinderTaskID.Ref())
 	resources := patternfinder.FindAllWithStarterRunes(commonLogField.Message, finder, false, p.uidPrefixTokenCandidates...)
 	writtenResourcePaths := map[string]struct{}{}
 	for _, resource := range resources {

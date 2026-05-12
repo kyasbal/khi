@@ -27,7 +27,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	commonlogk8sauditv2_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8sauditv2/contract"
+	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 	privategkemaster_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privategkemaster/contract"
 )
@@ -67,8 +67,8 @@ type kubeletNodeLogLogToTimelineMapperSetting struct{}
 func (k *kubeletNodeLogLogToTimelineMapperSetting) Dependencies() []taskid.UntypedTaskReference {
 	return []taskid.UntypedTaskReference{
 		privategkemaster_contract.PodSandboxIDDiscoveryTaskID.Ref(),
-		commonlogk8sauditv2_contract.ContainerIDPatternFinderTaskID.Ref(),
-		commonlogk8sauditv2_contract.ResourceUIDPatternFinderTaskID.Ref(),
+		commonlogk8saudit_contract.ContainerIDPatternFinderTaskID.Ref(),
+		commonlogk8saudit_contract.ResourceUIDPatternFinderTaskID.Ref(),
 		googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(),
 	}
 }
@@ -86,9 +86,9 @@ func (k *kubeletNodeLogLogToTimelineMapperSetting) LogIngesterTask() taskid.Task
 // ProcessLogByGroup implements inspectiontaskbase.LogToTimelineMapper.
 func (k *kubeletNodeLogLogToTimelineMapperSetting) ProcessLogByGroup(ctx context.Context, l *log.Log, cs *history.ChangeSet, builder *history.Builder, prevGroupData struct{}) (struct{}, error) {
 	masterFieldSet := log.MustGetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
-	containerIDPatternFinder := coretask.GetTaskResult(ctx, commonlogk8sauditv2_contract.ContainerIDPatternFinderTaskID.Ref())
+	containerIDPatternFinder := coretask.GetTaskResult(ctx, commonlogk8saudit_contract.ContainerIDPatternFinderTaskID.Ref())
 	podIDFinder := coretask.GetTaskResult(ctx, privategkemaster_contract.PodSandboxIDDiscoveryTaskID.Ref())
-	resourceUIDPatternFinder := coretask.GetTaskResult(ctx, commonlogk8sauditv2_contract.ResourceUIDPatternFinderTaskID.Ref())
+	resourceUIDPatternFinder := coretask.GetTaskResult(ctx, commonlogk8saudit_contract.ResourceUIDPatternFinderTaskID.Ref())
 	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
 
 	for _, path := range masterFieldSet.ResourcePaths(clusterIdentity.ClusterName) {
