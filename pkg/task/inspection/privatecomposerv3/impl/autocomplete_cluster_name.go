@@ -84,12 +84,7 @@ var AutocompleteComposerClusterNamesTask = inspectiontaskbase.NewCachedTask(task
 	var filteredClusters []map[string]string
 	for _, labels := range metricsLabels {
 		clusterName := labels["cluster_name"]
-		if clusterNamePrefix == "" {
-			if !strings.Contains(clusterName, "/") {
-				filteredClusters = append(filteredClusters, labels)
-			}
-		} else if strings.HasPrefix(clusterName, clusterNamePrefix) {
-			labels["cluster_name"] = strings.TrimPrefix(clusterName, clusterNamePrefix)
+		if !strings.Contains(clusterName, "/") {
 			filteredClusters = append(filteredClusters, labels)
 		}
 	}
@@ -101,10 +96,10 @@ var AutocompleteComposerClusterNamesTask = inspectiontaskbase.NewCachedTask(task
 	identities := make([]googlecloudk8scommon_contract.GoogleCloudClusterIdentity, len(filteredClusters))
 	for i, labels := range filteredClusters {
 		identities[i] = googlecloudk8scommon_contract.GoogleCloudClusterIdentity{
-			ProjectID:         projectID,
-			ClusterTypePrefix: clusterNamePrefix,
-			ClusterName:       labels["cluster_name"],
-			Location:          labels["location"],
+			ProjectID:    projectID,
+			PrefixPolicy: googlecloudk8scommon_contract.ClusterPrefixPolicy{}, // Composer 3 is based on standard GKE. It has no prefixes.
+			ClusterName:  labels["cluster_name"],
+			Location:     labels["location"],
 		}
 	}
 

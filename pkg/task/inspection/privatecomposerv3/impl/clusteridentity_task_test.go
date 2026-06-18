@@ -32,7 +32,7 @@ func TestClusterIdentityTask(t *testing.T) {
 	mockTenantIDTask := tasktest.StubTaskFromReferenceID(privatecomposerv3_contract.InputComposerV3TenantProjectIdTaskID.Ref(), "my-tenant-project-tp", nil)
 	mockClusterNameTask := tasktest.StubTaskFromReferenceID(googlecloudk8scommon_contract.InputClusterNameTaskID.Ref(), "my-cluster", nil)
 	mockLocationsTask := tasktest.StubTaskFromReferenceID(googlecloudcommon_contract.InputLocationsTaskID.Ref(), "us-central1-c", nil)
-	mockPrefixTask := tasktest.StubTaskFromReferenceID(googlecloudk8scommon_contract.ClusterNamePrefixTaskRef, "my-cluster-prefix-", nil)
+	mockPrefixTask := tasktest.StubTaskFromReferenceID(googlecloudk8scommon_contract.ClusterNamePrefixTaskRef, googlecloudk8scommon_contract.ClusterPrefixPolicy{}, nil)
 
 	result, _, err := inspectiontest.RunInspectionTaskWithDependency(
 		inspectiontest.WithDefaultTestInspectionTaskContext(context.Background()),
@@ -77,7 +77,7 @@ func TestComposerClusterIdentityTask(t *testing.T) {
 	if result.ClusterName != "" {
 		t.Errorf("expected actual cluster name %q, but got %q", "", result.ClusterName)
 	}
-	if result.ClusterTypePrefix != "" {
-		t.Errorf("expected actual cluster type prefix %q, but got %q", "", result.ClusterTypePrefix)
+	if result.PrefixPolicy.Prefix != "" {
+		t.Errorf("expected actual cluster type prefix %q, but got %q", "", result.PrefixPolicy.Prefix)
 	}
 }

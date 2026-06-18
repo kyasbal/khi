@@ -19,6 +19,7 @@ import (
 
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	privatecomposerv3_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposerv3/contract"
 )
@@ -27,8 +28,8 @@ import (
 var ComposerV3ClusterNamePrefixTask = coretask.NewTask(
 	privatecomposerv3_contract.ComposerV3ClusterNamePrefixTaskID,
 	[]taskid.UntypedTaskReference{},
-	func(ctx context.Context) (string, error) {
-		return "", nil
+	func(ctx context.Context) (googlecloudk8scommon_contract.ClusterPrefixPolicy, error) {
+		return googlecloudk8scommon_contract.ClusterPrefixPolicy{}, nil
 	},
 	inspectioncore_contract.InspectionTypeLabel(privatecomposerv3_contract.InspectionTypeId),
 )
