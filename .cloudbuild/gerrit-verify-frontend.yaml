@@ -21,6 +21,13 @@ steps:
       - |
         cd ./web
         npm ci
+        cd ..
+        npx @bufbuild/buf generate
+        cd web
+        npx prettier --write "src/app/generated/**/*.d.ts"
+        cd ..
+        touch scripts/make/build-proto.done # this step uses go and node dependnecy. So run commands inside separately
+        cd scripts/msdf-generator && npm i
     waitFor:
       - "-"
   - id: generate frontend codes
@@ -29,6 +36,7 @@ steps:
     args:
       - -c
       - |
+        gofmt -s -w pkg/generated
         apt-get update && apt-get install jq -y
         make generate-frontend
         make generate-backend
@@ -57,11 +65,11 @@ steps:
   - id: upload coverage result
     name: "gcr.io/cloud-builders/gcloud-slim"
     args:
-    - "storage"
-    - "cp"
-    - "--recursive"
-    - "./web/coverage/frontend"
-    - "gs://kubernetes-history-inspector_cloudbuild/artifacts/$COMMIT_SHA/frontend"
+      - "storage"
+      - "cp"
+      - "--recursive"
+      - "./web/coverage/frontend"
+      - "gs://kubernetes-history-inspector_cloudbuild/artifacts/$COMMIT_SHA/frontend"
   - id: lint web
     name: node:22-trixie
     entrypoint: /bin/bash

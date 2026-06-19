@@ -21,7 +21,6 @@ import (
 
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
@@ -51,8 +50,7 @@ func (l *listLogEntriesTaskSetting) Dependencies() []taskid.UntypedTaskReference
 // Description implements [googlecloudcommon_contract.ListLogEntriesTaskSetting].
 func (l *listLogEntriesTaskSetting) Description() *googlecloudcommon_contract.ListLogEntriesTaskDescription {
 	return &googlecloudcommon_contract.ListLogEntriesTaskDescription{
-		QueryName:      "Private GKE master logs",
-		DefaultLogType: enum.LogTypeControlPlaneComponent,
+		QueryName: "Private GKE master logs",
 		ExampleQuery: `resource.type=("container" OR "gce_instance")
 -log_id("cloudaudit.googleapis.com/activity")
 -log_id("cloudaudit.googleapis.com/data_access")

@@ -17,10 +17,13 @@ package privategkemaster_impl
 import (
 	"context"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
+	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	googlecloudlogk8scontrolplane_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	privategkemaster_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privategkemaster/contract"
 )
@@ -31,12 +34,52 @@ var CommonFieldSetReaderTask = inspectiontaskbase.NewFieldSetReadTask(privategke
 	[]log.FieldSetReader{
 		privategkemaster_contract.NewGKEMasterLogFieldSetReader(),
 		&privategkemaster_contract.GKEMasterCommonFieldSetReader{},
+		&gcpqueryutil.GCPCommonFieldSetReader{},
+		&googlecloudcommon_contract.GCPDefaultSeverityFieldSetReader{},
 	},
 )
 
-var logIngesterTask = inspectiontaskbase.NewLogIngesterTask(
+// PrivateGKEMasterLogIngester is a log ingester for private GKE master logs.
+type PrivateGKEMasterLogIngester struct{}
+
+// RawLogTask implements inspectiontaskbase.LogIngesterV2.
+func (i *PrivateGKEMasterLogIngester) RawLogTask() taskid.TaskReference[[]*log.Log] {
+	return privategkemaster_contract.CommonFieldSetReaderTaskID.Ref()
+}
+
+// Dependencies implements inspectiontaskbase.LogIngesterV2.
+func (i *PrivateGKEMasterLogIngester) Dependencies() []taskid.UntypedTaskReference {
+	return []taskid.UntypedTaskReference{}
+}
+
+// ProcessLog implements inspectiontaskbase.LogIngesterV2.
+func (i *PrivateGKEMasterLogIngester) ProcessLog(ctx context.Context, l *log.Log) (*khifilev6.LogChangeSet, error) {
+	cs, err := khifilev6.NewLogChangeSet(l)
+	if err != nil {
+		return nil, err
+	}
+	cs.SetLogType(googlecloudlogk8scontrolplane_contract.LogTypeControlPlaneComponent)
+
+	if commonFS, err := log.GetFieldSet(l, &log.CommonFieldSet{}); err == nil {
+		cs.SetTimestamp(commonFS.Timestamp)
+	}
+
+	if severityFS, err := log.GetFieldSet(l, &inspectioncore_contract.DefaultSeverityFieldSet{}); err == nil {
+		cs.SetSeverity(severityFS.Severity)
+	}
+
+	if msgFS, err := log.GetFieldSet(l, &googlecloudlogk8scontrolplane_contract.K8sControlplaneCommonMessageFieldSet{}); err == nil {
+		cs.SetSummary(msgFS.Message)
+	}
+
+	return cs, nil
+}
+
+var _ inspectiontaskbase.LogIngesterV2 = (*PrivateGKEMasterLogIngester)(nil)
+
+var logIngesterTask = inspectiontaskbase.NewLogIngesterTaskV2(
 	privategkemaster_contract.LogIngesterTaskID,
-	privategkemaster_contract.ListLogEntriesTaskID.Ref(),
+	&PrivateGKEMasterLogIngester{},
 )
 
 // TailTask is the task to ensure all logs are processed.
@@ -51,10 +94,9 @@ var TailTask = inspectiontaskbase.NewInspectionTask(privategkemaster_contract.Ta
 	func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (struct{}, error) {
 		return struct{}{}, nil
 	},
-	inspectioncore_contract.FeatureTaskLabel(
+	inspectioncore_contract.FeatureTaskLabelV2(
 		"GKE Master Logs(PRIVATE)",
 		`GKE KCP logs from the tenant project. You may need to request access via AoD to use this feature. Please check go/khi-master-log for more details.`,
-		enum.LogTypeControlPlaneComponent,
 		20000,
 		false,
 	),

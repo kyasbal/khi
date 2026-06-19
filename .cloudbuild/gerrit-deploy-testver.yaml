@@ -21,6 +21,10 @@ steps:
       - |
         cd ./web
         npm ci
+        cd ..
+        npx @bufbuild/buf generate
+        touch scripts/make/build-proto.done
+        cd scripts/msdf-generator && npm i
     waitFor:
       - "-"
   - id: generate frontend codes
@@ -32,6 +36,7 @@ steps:
         apt-get update && apt-get install jq -y
         make generate-frontend
         make generate-backend
+        go run ./scripts/fontlist-gen
     waitFor:
       - npm install
   - id: build web for internal version

@@ -21,7 +21,9 @@ steps:
       - |
         cd ./web
         npm ci
-    waitFor:
+        cd ..
+        npx @bufbuild/buf generate
+        touch scripts/make/build-proto.done
       - "-"
   - id: generate frontend codes
     name: golang:1.25-trixie

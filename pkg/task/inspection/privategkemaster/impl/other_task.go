@@ -21,9 +21,7 @@ import (
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
@@ -57,64 +55,61 @@ var otherGrouperTask = inspectiontaskbase.NewLogGrouperTask(
 	},
 )
 
-type otherLogToTimelineMapperTaskSetting struct {
+// OtherTimelineMapper maps other control plane logs to timeline paths.
+type OtherTimelineMapper struct {
+	inspectiontaskbase.StatelessMapperBase
 	uidPrefixTokenCandidates []rune
 }
 
-func (p *otherLogToTimelineMapperTaskSetting) GroupedLogTask() taskid.TaskReference[inspectiontaskbase.LogGroupMap] {
-	return privategkemaster_contract.OtherGrouperTaskID.Ref()
-}
-
-func (p *otherLogToTimelineMapperTaskSetting) LogIngesterTask() taskid.TaskReference[[]*log.Log] {
-	return privategkemaster_contract.LogIngesterTaskID.Ref()
-}
-
-func (p *otherLogToTimelineMapperTaskSetting) Dependencies() []taskid.UntypedTaskReference {
+// Dependencies implements inspectiontaskbase.LogToTimelineMapperV2.
+func (p *OtherTimelineMapper) Dependencies() []taskid.UntypedTaskReference {
 	return []taskid.UntypedTaskReference{
 		commonlogk8saudit_contract.ResourceUIDPatternFinderTaskID.Ref(),
 		googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(),
 	}
 }
 
-func (p *otherLogToTimelineMapperTaskSetting) ProcessLogByGroup(ctx context.Context, l *log.Log, cs *history.ChangeSet, builder *history.Builder, prevGroupData struct{}) (struct{}, error) {
+// GroupedLogTask implements inspectiontaskbase.LogToTimelineMapperV2.
+func (p *OtherTimelineMapper) GroupedLogTask() taskid.TaskReference[inspectiontaskbase.LogGroupMap] {
+	return privategkemaster_contract.OtherGrouperTaskID.Ref()
+}
+
+// LogIngesterTask implements inspectiontaskbase.LogToTimelineMapperV2.
+func (p *OtherTimelineMapper) LogIngesterTask() taskid.TaskReference[[]*log.Log] {
+	return privategkemaster_contract.LogIngesterTaskID.Ref()
+}
+
+// ProcessLogByGroup implements inspectiontaskbase.LogToTimelineMapperV2.
+func (p *OtherTimelineMapper) ProcessLogByGroup(ctx context.Context, l *log.Log, _ struct{}) (*khifilev6.TimelineChangeSet, struct{}, error) {
 	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
 	masterLogField := log.MustGetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
 	commonLogField := log.MustGetFieldSet(l, &googlecloudlogk8scontrolplane_contract.K8sControlplaneCommonMessageFieldSet{})
 
-	for _, path := range masterLogField.ResourcePaths(clusterIdentity.ClusterName) {
-		cs.AddEvent(path)
+	cs := khifilev6.NewTimelineChangeSet(l)
+	writtenResourcePaths := map[uint32]struct{}{}
+	for _, tPath := range masterLogField.ResourceTimelines(ctx, clusterIdentity.ClusterName) {
+		cs.AddEvent(tPath)
+		writtenResourcePaths[tPath.ID] = struct{}{}
 	}
-
-	summary := commonLogField.Message
-	if masterLogField.StructuredBody != nil {
-		msg, err := masterLogField.StructuredBody.MainMessage()
-		if err == nil {
-			summary = msg
-		}
-	}
-
-	cs.SetLogSummary(summary)
 
 	finder := coretask.GetTaskResult(ctx, commonlogk8saudit_contract.ResourceUIDPatternFinderTaskID.Ref())
 	resources := patternfinder.FindAllWithStarterRunes(commonLogField.Message, finder, false, p.uidPrefixTokenCandidates...)
-	writtenResourcePaths := map[string]struct{}{}
 	for _, resource := range resources {
-		path := resource.Value.ResourcePathString()
-		if _, ok := writtenResourcePaths[path]; ok {
+		tPath := commonlogk8saudit_contract.MustResourceTimeline(ctx, clusterIdentity.ClusterName, resource.Value)
+		if _, ok := writtenResourcePaths[tPath.ID]; ok {
 			continue
 		}
-		cs.AddEvent(resourcepath.ResourcePath{
-			Path:               path,
-			ParentRelationship: enum.RelationshipChild,
-		})
-		writtenResourcePaths[path] = struct{}{}
+		cs.AddEvent(tPath)
+		writtenResourcePaths[tPath.ID] = struct{}{}
 	}
-	return struct{}{}, nil
+	return cs, struct{}{}, nil
 }
 
-var otherLogToTimelineMapperTask = inspectiontaskbase.NewLogToTimelineMapperTask(
+var _ inspectiontaskbase.LogToTimelineMapperV2[struct{}] = (*OtherTimelineMapper)(nil)
+
+var otherLogToTimelineMapperTask = inspectiontaskbase.NewLogToTimelineMapperTaskV2(
 	privategkemaster_contract.OtherLogToTimelineMapperTaskID,
-	&otherLogToTimelineMapperTaskSetting{
+	&OtherTimelineMapper{
 		uidPrefixTokenCandidates: []rune{
 			'"', ' ', '\'', '=',
 		},

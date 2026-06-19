@@ -21,6 +21,13 @@ steps:
       - |
         cd ./web
         npm ci
+        cd ..
+        npx @bufbuild/buf generate
+        cd web
+        npx prettier --write "src/app/generated/**/*.d.ts"
+        cd ..
+        touch scripts/make/build-proto.done # this step uses go and node dependnecy. So run commands inside separately
+        cd scripts/msdf-generator && npm i
     waitFor:
       - "-"
   - id: codegen
@@ -32,6 +39,7 @@ steps:
         apt-get update && apt-get install jq -y
         make generate-frontend
         make generate-backend
+        go run ./scripts/fontlist-gen
     waitFor:
       - "npm install"
   - id: build-web
@@ -60,16 +68,16 @@ steps:
         make check-format-go
     waitFor:
       - "build-web"
-  - name: 'golangci/golangci-lint:v2.7.1'
-    entrypoint: 'golangci-lint'
-    args: ['run', '--config=.golangci.yaml']
-    id: 'Run-golangci-lint'
+  - name: "golangci/golangci-lint:v2.7.1"
+    entrypoint: "golangci-lint"
+    args: ["run", "--config=.golangci.yaml"]
+    id: "Run-golangci-lint"
     waitFor:
-      - 'build-web'
+      - "build-web"
 
 artifacts:
   objects:
-    location: 'gs://kubernetes-history-inspector_cloudbuild/artifacts/$COMMIT_SHA'
+    location: "gs://kubernetes-history-inspector_cloudbuild/artifacts/$COMMIT_SHA"
     paths:
       - go-cover.html
 options:

@@ -15,6 +15,7 @@
 package privategkemaster_impl
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -22,7 +23,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logutil"
 	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
 	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
@@ -39,7 +40,7 @@ func TestContainerdLogLogToTimelineMapper(t *testing.T) {
 		inputNodeLogFieldSet *privategkemaster_contract.GKEMasterLogFieldSet
 		inputPodIDInfo       map[string]*googlecloudlogk8snode_contract.PodSandboxIDInfo
 		inputContainerIDInfo map[string]*commonlogk8saudit_contract.ContainerIdentity
-		asserter             []testchangeset.ChangeSetAsserter
+		assert               func(t *testing.T, ctx context.Context, cs *khifilev6.TimelineChangeSet)
 	}{
 		{
 			desc:         "log with pod sandbox id",
@@ -55,16 +56,10 @@ func TestContainerdLogLogToTimelineMapper(t *testing.T) {
 					PodSandboxID: "6123c6aacf0c78dc38ec4f0ff72edd3cf04eb82ca0e3e7dddd3950ea9753bdf1",
 				},
 			},
-			asserter: []testchangeset.ChangeSetAsserter{
-				&testchangeset.HasEvent{
-					ResourcePath: "core/v1#node#cluster-scope#node-1#containerd",
-				},
-				&testchangeset.HasEvent{
-					ResourcePath: "core/v1#pod#kube-system#podname",
-				},
-				&testchangeset.HasLogSummary{
-					WantLogSummary: `RunPodSandbox for &PodSandboxMetadata{Name:podname,Uid:b86b49f2431d244c613996c6472eb864,Namespace:kube-system,Attempt:0,} returns sandbox id "【podname (Namespace: kube-system)】"`,
-				},
+			assert: func(t *testing.T, ctx context.Context, cs *khifilev6.TimelineChangeSet) {
+				wantPodPath := mustK8sPodTimeline(ctx, "cluster", "kube-system", "podname")
+				testchangeset.AssertTimeline(t, cs).
+					HasEvent(wantPodPath)
 			},
 		},
 		{
@@ -74,10 +69,8 @@ func TestContainerdLogLogToTimelineMapper(t *testing.T) {
 				ComponentName: "containerd",
 				HostName:      "node-1",
 			},
-			asserter: []testchangeset.ChangeSetAsserter{
-				&testchangeset.HasEvent{
-					ResourcePath: "core/v1#node#cluster-scope#node-1#containerd",
-				},
+			assert: func(t *testing.T, ctx context.Context, cs *khifilev6.TimelineChangeSet) {
+				testchangeset.AssertTimeline(t, cs)
 			},
 		},
 	}
@@ -116,17 +109,12 @@ func TestContainerdLogLogToTimelineMapper(t *testing.T) {
 				&log.CommonFieldSet{Timestamp: testTime},
 				tc.inputNodeLogFieldSet,
 			)
-			cs := history.NewChangeSet(l)
-			modifier := &containerdNodeLogLogToTimelineMapperSetting{}
-			_, err := modifier.ProcessLogByGroup(ctx, l, cs, nil, struct{}{})
+			mapper := &ContainerdTimelineMapper{}
+			cs, _, err := mapper.ProcessLogByGroup(ctx, l, struct{}{})
 			if err != nil {
 				t.Fatalf("ProcessLogByGroup() error = %v", err)
 			}
-			for _, asserter := range tc.asserter {
-				asserter.Assert(t, cs)
-			}
+			tc.assert(t, ctx, cs)
 		})
-
 	}
-
 }

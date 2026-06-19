@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khierrors"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logutil"
 )
 
 // readGoStructFromString finds the struct part of a specific structName in the given string and returns its fields as a map.
@@ -64,63 +63,4 @@ func slashSplittedPodNameToNamespaceAndName(name string) (string, string, error)
 		return nameSplitted[0], nameSplitted[1], nil
 	}
 	return "", "", fmt.Errorf("invalid pod name format %q: %w", name, khierrors.ErrInvalidInput)
-}
-
-// toReadablePodSandboxName formats a pod sandbox's namespace and name into a human-readable string.
-func toReadablePodSandboxName(namespace string, name string) string {
-	return fmt.Sprintf("【%s (Namespace: %s)】", name, namespace)
-}
-
-// toReadableContainerName formats a container's name, its parent pod's name, and namespace into a human-readable string.
-func toReadableContainerName(namespace string, name string, container string) string {
-	return fmt.Sprintf("【%s (Pod: %s, Namespace: %s)】", container, name, namespace)
-}
-
-// toReadableResourceName formats a resource's name, namespace, API version, and kind into a human-readable string.
-func toReadableResourceName(apiVersion, kind, namespace, name string) string {
-	return fmt.Sprintf("【%s (Namespace: %s, APIVersion: %s, Kind: %s)】", name, namespace, apiVersion, kind)
-}
-
-// parseDefaultSummary formats given klog message into a human readable message.
-func parseDefaultSummary(structured *logutil.ParseStructuredLogResult) (string, error) {
-	subinfo := ""
-	klogmain, err := structured.MainMessage()
-	if err != nil {
-		return "", err
-	}
-	errorMsg, err := structured.StringField("error")
-	if err == nil && errorMsg != "" {
-		subinfo = fmt.Sprintf("error=%s", errorMsg)
-	}
-	probeType, err := structured.StringField("probeType")
-	if err == nil && probeType != "" {
-		subinfo = fmt.Sprintf("probeType=%s", probeType)
-	}
-	eventMsg, err := structured.StringField("event")
-	if err == nil && eventMsg != "" {
-		if eventMsg[0] == '&' || eventMsg[0] == '{' {
-			if strings.Contains(eventMsg, "Type:") {
-				subinfo = strings.Split(strings.Split(eventMsg, "Type:")[1], " ")[0]
-			}
-		} else {
-			subinfo = eventMsg
-		}
-	}
-	klogstatus, err := structured.StringField("status")
-	if err == nil && klogstatus != "" {
-		subinfo = fmt.Sprintf("status=%s", klogstatus)
-	}
-	klogExitCode, err := structured.StringField("exitCode")
-	if err == nil && klogExitCode != "" {
-		subinfo = fmt.Sprintf("exitCode=%s", klogExitCode)
-	}
-	klogGracePeriod, err := structured.StringField("gracePeriod")
-	if err == nil && klogGracePeriod != "" {
-		subinfo = fmt.Sprintf("gracePeriod=%ss", klogGracePeriod)
-	}
-	if subinfo == "" {
-		return klogmain, nil
-	} else {
-		return fmt.Sprintf("%s(%s)", klogmain, subinfo), nil
-	}
 }

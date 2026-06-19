@@ -18,16 +18,10 @@ import { inject } from '@angular/core';
 import {
   LifecycleHookExtension,
   PageType,
-} from '../../extension-common/extension-types/lifecycle-hook';
+} from 'src/app/extensions/extension-common/extension-types/lifecycle-hook';
 import { FRONTEND_ANALYTICS, KHIAnalyticsActivityType } from './types';
-import { InspectionData } from 'src/app/store/inspection-data';
 import { randomString } from 'src/app/utils/random';
-import { sha512FromArrayBuffer } from 'src/app/utils/hash';
-import { ReferenceType } from 'src/app/common/loader/interface';
-import {
-  KHIFileReferenceResolver,
-  ReferenceResolverStore,
-} from 'src/app/common/loader/reference-resolver';
+import { InspectionDataV2 } from 'src/app/store/domain/inspection-data';
 
 /**
  * AnalyticsLifecycleExtension reports event on lifecycle events with the injected FRONTEND_ANALYTICS service.
@@ -39,8 +33,7 @@ export const AnalyticsLifecycleExtension: LifecycleHookExtension = {
     analytics.init(page);
   },
   onInspectionDataOpen: (
-    inspectionData: InspectionData,
-    textBufferSource: ReferenceResolverStore,
+    inspectionData: InspectionDataV2,
     rawData: ArrayBuffer,
   ) => {
     const analytics = inject(FRONTEND_ANALYTICS);
@@ -51,25 +44,15 @@ export const AnalyticsLifecycleExtension: LifecycleHookExtension = {
       analytics.globalMetadata()['inspectionDataHash'] = hash;
       analytics.globalMetadata()['openId'] = openId;
 
-      // Calculate the total text data size
-      const binaryPartReader = textBufferSource.resolvers.find((r) =>
-        r.isSupportedReferenceType(ReferenceType.KHIFileBinary),
-      );
-      let binaryPartSize = 0;
-      if (binaryPartReader) {
-        binaryPartSize = (
-          binaryPartReader as KHIFileReferenceResolver
-        ).sourceBuffers.reduce((prev, next) => next.byteLength + prev, 0);
-      }
-
       analytics.report(KHIAnalyticsActivityType.OpenInspectionData, {
-        logLength: rawData.byteLength,
-        decompressedTextBufferLength: binaryPartSize,
-        revisionCount: inspectionData.timelines.reduce(
+        logLength: inspectionData.logStore.logs.length,
+        decompressedTextBufferLength:
+          inspectionData.metadata?.header?.fileSize ?? 0,
+        revisionCount: inspectionData.timelineStore.timelines.reduce(
           (prev, next) => next.revisions.length + prev,
           0,
         ),
-        eventCount: inspectionData.timelines.reduce(
+        eventCount: inspectionData.timelineStore.timelines.reduce(
           (prev, next) => next.events.length + prev,
           0,
         ),
@@ -83,3 +66,14 @@ export const AnalyticsLifecycleExtension: LifecycleHookExtension = {
     analytics.report(KHIAnalyticsActivityType.Inspect, {});
   },
 };
+
+/**
+ * Generate SHA-512 hash string from given ArrayBuffer
+ * @param source source of the hash
+ * @returns SHA-512 hash in hex-string
+ */
+async function sha512FromArrayBuffer(source: ArrayBuffer): Promise<string> {
+  const hashBuffer = await crypto.subtle.digest('SHA-512', source);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}

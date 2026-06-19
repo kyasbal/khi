@@ -21,6 +21,9 @@ steps:
       - |
         cd ./web
         npm ci
+        cd ..
+        npx @bufbuild/buf generate
+        touch scripts/make/build-proto.done
     waitFor:
       - "-"
   - id: generate frontend codes

@@ -14,15 +14,15 @@ watch-web-internal-khi-ro: $(GENERATE_FRONTEND_DUMMY) ## Run frontend developmen
 
 
 .PHONY=build-web-internal
-build-web-internal: $(FRONTEND_ARTIFACT_FILES_DUMMY) ./web/**/*.ts ./web/**/*.html ./web/**/*.scss ## Build frontend for Google internal production version
+build-web-internal: $(FRONTEND_ARTIFACT_FILES_DUMMY) ## Build frontend for Google internal production version
 	cd web && NG_APP_VERSION="$(VERSION)" npx ng build --output-path ../pkg/server/dist -c prod-internal
 
 .PHONY=build-web-internal-beta
-build-web-internal-beta: $(FRONTEND_ARTIFACT_FILES_DUMMY) ./web/**/*.ts ./web/**/*.html ./web/**/*.scss ## Build frontend for Google internal production version as a beta version
+build-web-internal-beta: $(FRONTEND_ARTIFACT_FILES_DUMMY) ## Build frontend for Google internal production version as a beta version
 	cd web && NG_APP_VERSION="beta-$(VERSION)@$(GIT_SHORT_HASH)" npx ng build --output-path ../pkg/server/dist --optimization=false -c dev-internal
 
 .PHONY=build-web-internal-khi-ro
-build-web-internal-khi-ro: $(FRONTEND_ARTIFACT_FILES_DUMMY) ./web/**/*.ts ./web/**/*.html ./web/**/*.scss ## Build frontend for Google internal production version as a read-only build
+build-web-internal-khi-ro: $(FRONTEND_ARTIFACT_FILES_DUMMY) ## Build frontend for Google internal production version as a read-only build
 	cd web && NG_APP_VIEWER_MODE=true NG_APP_VERSION="$(VERSION)" npx ng build --output-path ../pkg/server/dist -c prod-internal
 
 

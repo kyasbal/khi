@@ -15,13 +15,17 @@
 package privategkemaster_contract
 
 import (
+	"context"
 	"strings"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logutil"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 	googlecloudlogk8scontrolplane_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
+	googlecloudlogk8snode_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8snode/contract"
 )
 
 // PrivateGKEMasterParserType is the type of the private GKE master parser.
@@ -49,6 +53,7 @@ var componentNameToPrivateGKEMasterParserTypeMap = map[string]PrivateGKEMasterPa
 
 // GKEMasterLogFieldSet is the field set for GKE Master logs.
 type GKEMasterLogFieldSet struct {
+	ProjectID      string
 	HostName       string
 	NamespaceID    string
 	ComponentName  string
@@ -57,18 +62,27 @@ type GKEMasterLogFieldSet struct {
 	StructuredBody *logutil.ParseStructuredLogResult
 }
 
-// ResourcePaths returns the resource paths for the GKE Master log.
-func (g *GKEMasterLogFieldSet) ResourcePaths(clusterName string) []resourcepath.ResourcePath {
+// ResourceTimelines returns the timeline paths for the GKE Master log.
+func (g *GKEMasterLogFieldSet) ResourceTimelines(ctx context.Context, clusterName string) []*khifilev6.TimelinePath {
+	projectTimeline := googlecloudcommon_contract.MustGCPProjectTimeline(ctx, g.ProjectID)
+	gkeTimeline := googlecloudcommon_contract.MustGKEClusterTimeline(ctx, projectTimeline, clusterName)
+	compTimeline := googlecloudlogk8scontrolplane_contract.MustControlPlaneComponentTimeline(ctx, gkeTimeline, g.ComponentName)
+
 	if g.NamespaceID == "" {
-		return []resourcepath.ResourcePath{
-			resourcepath.ControlplaneComponent(clusterName, g.ComponentName),
-			resourcepath.NodeComponent(g.HostName, g.ComponentName),
-		}
+		clusterTimeline := commonlogk8saudit_contract.MustK8sClusterTimeline(ctx, clusterName)
+		apiVersionTimeline := commonlogk8saudit_contract.MustK8sAPIVersionTimeline(ctx, clusterTimeline, "core/v1")
+		kindTimeline := commonlogk8saudit_contract.MustK8sKindTimeline(ctx, apiVersionTimeline, "node")
+		nodeTimeline := commonlogk8saudit_contract.MustK8sClusterScopeResourceTimeline(ctx, kindTimeline, g.HostName)
+		nodeCompTimeline := googlecloudlogk8snode_contract.MustNodeComponentTimeline(ctx, nodeTimeline, g.ComponentName)
+		return []*khifilev6.TimelinePath{compTimeline, nodeCompTimeline}
 	} else {
-		return []resourcepath.ResourcePath{
-			resourcepath.ControlplaneComponent(clusterName, g.ComponentName),
-			resourcepath.Container(g.NamespaceID, g.PodID, g.ContainerName),
-		}
+		clusterTimeline := commonlogk8saudit_contract.MustK8sClusterTimeline(ctx, clusterName)
+		apiVersionTimeline := commonlogk8saudit_contract.MustK8sAPIVersionTimeline(ctx, clusterTimeline, "core/v1")
+		kindTimeline := commonlogk8saudit_contract.MustK8sKindTimeline(ctx, apiVersionTimeline, "pod")
+		nsTimeline := commonlogk8saudit_contract.MustK8sNamespaceTimeline(ctx, kindTimeline, g.NamespaceID)
+		podTimeline := commonlogk8saudit_contract.MustK8sNamespacedResourceTimeline(ctx, nsTimeline, g.PodID)
+		containerTimeline := commonlogk8saudit_contract.MustK8sContainerTimeline(ctx, podTimeline, g.ContainerName)
+		return []*khifilev6.TimelinePath{compTimeline, containerTimeline}
 	}
 }
 
@@ -126,6 +140,7 @@ func (g *GKEMasterLogFieldSetReader) FieldSetKind() string {
 // Read implements [log.FieldSetReader].
 func (g *GKEMasterLogFieldSetReader) Read(reader *structured.NodeReader) (log.FieldSet, error) {
 	result := &GKEMasterLogFieldSet{}
+	result.ProjectID = reader.ReadStringOrDefault("resource.labels.project_id", "unknown")
 	labelsReader, err := reader.GetReader("labels")
 	nodeName := "unknown-master-node"
 	if err == nil {

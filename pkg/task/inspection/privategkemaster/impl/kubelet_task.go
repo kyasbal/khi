@@ -23,9 +23,7 @@ import (
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
@@ -55,16 +53,13 @@ var KubeletLogGroupTask = inspectiontaskbase.NewLogGrouperTask(
 	},
 )
 
-// KubeletLogLogToTimelineMapperTask maps kubelet logs to the timeline.
-var KubeletLogLogToTimelineMapperTask = inspectiontaskbase.NewLogToTimelineMapperTask[struct{}](
-	privategkemaster_contract.KubeletLogLogToTimelineMapperTaskID,
-	&kubeletNodeLogLogToTimelineMapperSetting{},
-)
+// KubeletTimelineMapper maps kubelet logs to timeline paths.
+type KubeletTimelineMapper struct {
+	inspectiontaskbase.StatelessMapperBase
+}
 
-type kubeletNodeLogLogToTimelineMapperSetting struct{}
-
-// Dependencies implements inspectiontaskbase.LogToTimelineMapper.
-func (k *kubeletNodeLogLogToTimelineMapperSetting) Dependencies() []taskid.UntypedTaskReference {
+// Dependencies implements inspectiontaskbase.LogToTimelineMapperV2.
+func (k *KubeletTimelineMapper) Dependencies() []taskid.UntypedTaskReference {
 	return []taskid.UntypedTaskReference{
 		privategkemaster_contract.PodSandboxIDDiscoveryTaskID.Ref(),
 		commonlogk8saudit_contract.ContainerIDPatternFinderTaskID.Ref(),
@@ -73,42 +68,38 @@ func (k *kubeletNodeLogLogToTimelineMapperSetting) Dependencies() []taskid.Untyp
 	}
 }
 
-// GroupedLogTask implements inspectiontaskbase.LogToTimelineMapper.
-func (k *kubeletNodeLogLogToTimelineMapperSetting) GroupedLogTask() taskid.TaskReference[inspectiontaskbase.LogGroupMap] {
+// GroupedLogTask implements inspectiontaskbase.LogToTimelineMapperV2.
+func (k *KubeletTimelineMapper) GroupedLogTask() taskid.TaskReference[inspectiontaskbase.LogGroupMap] {
 	return privategkemaster_contract.KubeletLogGroupTaskID.Ref()
 }
 
-// LogIngesterTask implements inspectiontaskbase.LogToTimelineMapper.
-func (k *kubeletNodeLogLogToTimelineMapperSetting) LogIngesterTask() taskid.TaskReference[[]*log.Log] {
+// LogIngesterTask implements inspectiontaskbase.LogToTimelineMapperV2.
+func (k *KubeletTimelineMapper) LogIngesterTask() taskid.TaskReference[[]*log.Log] {
 	return privategkemaster_contract.LogIngesterTaskID.Ref()
 }
 
-// ProcessLogByGroup implements inspectiontaskbase.LogToTimelineMapper.
-func (k *kubeletNodeLogLogToTimelineMapperSetting) ProcessLogByGroup(ctx context.Context, l *log.Log, cs *history.ChangeSet, builder *history.Builder, prevGroupData struct{}) (struct{}, error) {
+// ProcessLogByGroup implements inspectiontaskbase.LogToTimelineMapperV2.
+func (k *KubeletTimelineMapper) ProcessLogByGroup(ctx context.Context, l *log.Log, _ struct{}) (*khifilev6.TimelineChangeSet, struct{}, error) {
 	masterFieldSet := log.MustGetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
 	containerIDPatternFinder := coretask.GetTaskResult(ctx, commonlogk8saudit_contract.ContainerIDPatternFinderTaskID.Ref())
 	podIDFinder := coretask.GetTaskResult(ctx, privategkemaster_contract.PodSandboxIDDiscoveryTaskID.Ref())
 	resourceUIDPatternFinder := coretask.GetTaskResult(ctx, commonlogk8saudit_contract.ResourceUIDPatternFinderTaskID.Ref())
 	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
 
-	for _, path := range masterFieldSet.ResourcePaths(clusterIdentity.ClusterName) {
-		cs.AddEvent(path)
+	cs := khifilev6.NewTimelineChangeSet(l)
+
+	for _, tPath := range masterFieldSet.ResourceTimelines(ctx, clusterIdentity.ClusterName) {
+		cs.AddEvent(tPath)
 	}
 
 	original := masterFieldSet.StructuredBody.Raw()
 
-	severity, err := masterFieldSet.StructuredBody.Severity()
-	if err == nil {
-		cs.SetLogSeverity(severity)
-	}
-
 	foundPods := map[string]struct{}{}
-	summaryReplaceMap := map[string]string{}
 	podFindResults := patternfinder.FindAllWithStarterRunes(original, podIDFinder, false, '"')
 
 	for _, result := range podFindResults {
-		cs.AddEvent(result.Value.ResourcePath())
-		summaryReplaceMap[result.Value.PodSandboxID] = toReadablePodSandboxName(result.Value.PodNamespace, result.Value.PodName)
+		podTimelinePath := mustK8sPodTimeline(ctx, clusterIdentity.ClusterName, result.Value.PodNamespace, result.Value.PodName)
+		cs.AddEvent(podTimelinePath)
 		foundPods[fmt.Sprintf("%s/%s", result.Value.PodNamespace, result.Value.PodName)] = struct{}{}
 	}
 
@@ -120,8 +111,9 @@ func (k *kubeletNodeLogLogToTimelineMapperSetting) ProcessLogByGroup(ctx context
 			continue
 		}
 		pod := foundPod[0].Value
-		cs.AddEvent(result.Value.ResourcePath(pod.PodNamespace, pod.PodName))
-		summaryReplaceMap[result.Value.ContainerID] = toReadableContainerName(pod.PodNamespace, pod.PodName, result.Value.ContainerName)
+		podTimelinePath := mustK8sPodTimeline(ctx, clusterIdentity.ClusterName, pod.PodNamespace, pod.PodName)
+		containerTimelinePath := commonlogk8saudit_contract.MustK8sContainerTimeline(ctx, podTimelinePath, result.Value.ContainerName)
+		cs.AddEvent(containerTimelinePath)
 	}
 
 	resourceFindResults := patternfinder.FindAllWithStarterRunes(original, resourceUIDPatternFinder, false, '"')
@@ -132,37 +124,8 @@ func (k *kubeletNodeLogLogToTimelineMapperSetting) ProcessLogByGroup(ctx context
 				continue
 			}
 		}
-		cs.AddEvent(resourcepath.ResourcePath{
-			Path:               res.ResourcePathString(),
-			ParentRelationship: enum.RelationshipChild,
-		})
-		uid, err := result.GetMatchedString(original)
-		if err != nil {
-			continue
-		}
-		summaryReplaceMap[uid] = toReadableResourceName(result.Value.APIVersion, result.Value.Kind, result.Value.Namespace, result.Value.Name)
-	}
-
-	// Kubelet specific severity adjustments
-	klogExitCode, err := masterFieldSet.StructuredBody.StringField("exitCode")
-	if err == nil && klogExitCode != "" && klogExitCode != "0" {
-		if klogExitCode == "137" {
-			cs.SetLogSeverity(enum.SeverityError)
-		} else {
-			cs.SetLogSeverity(enum.SeverityWarning)
-		}
-	}
-	summary, err := parseDefaultSummary(masterFieldSet.StructuredBody)
-	if err != nil {
-		summary = original
-	}
-	for k, v := range summaryReplaceMap {
-		i := strings.Index(summary, k)
-		if i == -1 {
-			summary = fmt.Sprintf("%s %s", summary, v)
-		} else {
-			summary = strings.ReplaceAll(summary, k, v)
-		}
+		resTimelinePath := commonlogk8saudit_contract.MustResourceTimeline(ctx, clusterIdentity.ClusterName, res)
+		cs.AddEvent(resTimelinePath)
 	}
 
 	// Kubelet specific resource bindings
@@ -170,16 +133,14 @@ func (k *kubeletNodeLogLogToTimelineMapperSetting) ProcessLogByGroup(ctx context
 	if err == nil && podNameWithNamespace != "" {
 		podNamespace, podName, err := slashSplittedPodNameToNamespaceAndName(podNameWithNamespace)
 		if err == nil {
+			podTimelinePath := mustK8sPodTimeline(ctx, clusterIdentity.ClusterName, podNamespace, podName)
 			containerName, err := masterFieldSet.StructuredBody.StringField("containerName")
 			if err == nil && containerName != "" {
-				cs.AddEvent(resourcepath.Container(podNamespace, podName, containerName))
-				cs.SetLogSummary(fmt.Sprintf("%s %s", summary, toReadableContainerName(podNamespace, podName, containerName)))
+				containerTimelinePath := commonlogk8saudit_contract.MustK8sContainerTimeline(ctx, podTimelinePath, containerName)
+				cs.AddEvent(containerTimelinePath)
 			} else {
-				cs.AddEvent(resourcepath.Pod(podNamespace, podName))
-				cs.SetLogSummary(fmt.Sprintf("%s %s", summary, toReadablePodSandboxName(podNamespace, podName)))
+				cs.AddEvent(podTimelinePath)
 			}
-		} else {
-			cs.SetLogSummary(summary)
 		}
 	} else {
 		podNames, err := masterFieldSet.StructuredBody.StringField("pods")
@@ -190,13 +151,28 @@ func (k *kubeletNodeLogLogToTimelineMapperSetting) ProcessLogByGroup(ctx context
 				podNamespaceAndNameWithSlash = strings.Trim(podNamespaceAndNameWithSlash, `"`)
 				podNamespace, podName, err := slashSplittedPodNameToNamespaceAndName(podNamespaceAndNameWithSlash)
 				if err == nil {
-					cs.AddEvent(resourcepath.Pod(podNamespace, podName))
-					summary = fmt.Sprintf("%s %s", summary, toReadablePodSandboxName(podNamespace, podName))
+					podTimelinePath := mustK8sPodTimeline(ctx, clusterIdentity.ClusterName, podNamespace, podName)
+					cs.AddEvent(podTimelinePath)
 				}
 			}
 		}
-		cs.SetLogSummary(summary)
 	}
 
-	return struct{}{}, nil
+	return cs, struct{}{}, nil
 }
+
+func mustK8sPodTimeline(ctx context.Context, clusterName string, namespace string, podName string) *khifilev6.TimelinePath {
+	clusterPath := commonlogk8saudit_contract.MustK8sClusterTimeline(ctx, clusterName)
+	apiVersionPath := commonlogk8saudit_contract.MustK8sAPIVersionTimeline(ctx, clusterPath, "core/v1")
+	kindPath := commonlogk8saudit_contract.MustK8sKindTimeline(ctx, apiVersionPath, "pod")
+	namespacePath := commonlogk8saudit_contract.MustK8sNamespaceTimeline(ctx, kindPath, namespace)
+	return commonlogk8saudit_contract.MustK8sNamespacedResourceTimeline(ctx, namespacePath, podName)
+}
+
+var _ inspectiontaskbase.LogToTimelineMapperV2[struct{}] = (*KubeletTimelineMapper)(nil)
+
+// KubeletLogLogToTimelineMapperTask maps kubelet logs to the timeline.
+var KubeletLogLogToTimelineMapperTask = inspectiontaskbase.NewLogToTimelineMapperTaskV2(
+	privategkemaster_contract.KubeletLogLogToTimelineMapperTaskID,
+	&KubeletTimelineMapper{},
+)
