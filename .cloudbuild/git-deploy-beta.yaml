@@ -12,60 +12,56 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+substitutions:
+  _UPDATE_VERSION_FILE: "false"
+  _MAKE_TARGET: "build-web-internal-beta"
+  _TAG: "beta"
+  _TAG_SECOND_PREFIX: "beta-"
+  _KHI_RO_DEPLOY_FLAGS: "--no-promote --version beta"
+
 steps:
-  - id: npm install
-    name: node:22-trixie
+  - id: install_deps
+    name: "gcr.io/kubernetes-history-inspector/builder:latest"
     entrypoint: /bin/bash
     args:
       - -c
       - |
         cd ./web
         npm ci
-        cd ..
-        npx @bufbuild/buf generate
-        touch scripts/make/build-proto.done
     waitFor:
       - "-"
-  - id: generate frontend codes
-    name: golang:1.25-trixie
+  - id: build_app
+    name: "gcr.io/kubernetes-history-inspector/builder:latest"
     entrypoint: /bin/bash
     args:
       - -c
       - |
-        apt-get update && apt-get install jq -y
-        make generate-frontend
-        make generate-backend
+        if [ "${_UPDATE_VERSION_FILE}" = "true" ]; then
+          echo "${_LOUHI_TAG_NAME}" > VERSION
+        fi
+        make ${_MAKE_TARGET}
     waitFor:
-      - npm install
-  - id: build web beta
-    name: node:22-trixie
-    entrypoint: /bin/bash
-    args:
-      - -c
-      - |
-        make build-web-internal-beta
-    waitFor:
-      - generate frontend codes
-  - id: build beta container
+      - install_deps
+  - id: build_container
     name: "gcr.io/cloud-builders/docker"
     entrypoint: /bin/bash
     args:
       - -c
       - |
-        docker build --file=./Dockerfile -t gcr.io/khi-internal/standalone:beta -t gcr.io/khi-internal/standalone:beta-$(cat ./VERSION) .
-        docker push gcr.io/khi-internal/standalone:beta
-        docker push gcr.io/khi-internal/standalone:beta-$(cat ./VERSION)
+        docker build --file=./Dockerfile -t gcr.io/khi-internal/standalone:${_TAG} -t gcr.io/khi-internal/standalone:${_TAG_SECOND_PREFIX}$(cat ./VERSION) .
+        docker push gcr.io/khi-internal/standalone:${_TAG}
+        docker push gcr.io/khi-internal/standalone:${_TAG_SECOND_PREFIX}$(cat ./VERSION)
     waitFor:
-      - build web beta
+      - build_app
   - id: build web viewer mode
-    name: node:22-trixie
+    name: "gcr.io/kubernetes-history-inspector/builder:latest"
     entrypoint: /bin/bash
     args:
       - -c
       - |
         make build-web-internal-khi-ro
     waitFor:
-      - build beta container # This overwrite the result from build web. Thus it can't be run parallel with building container
+      - build_container # This overwrite the result from build web. Thus it can't be run parallel with building container
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: /bin/bash
     args:
@@ -73,10 +69,10 @@ steps:
       - |
         rm .gcloudignore
         mv ./scripts/private/khi-ro.gcloudignore .gcloudignore
-        gcloud app deploy --project="google.com:khi-ro" --no-promote --version beta
+        gcloud app deploy --project="google.com:khi-ro" ${_KHI_RO_DEPLOY_FLAGS}
     waitFor:
       - build web viewer mode
 images:
-  - gcr.io/khi-internal/standalone:beta
+  - gcr.io/khi-internal/standalone:${_TAG}
 options:
   machineType: E2_HIGHCPU_32
