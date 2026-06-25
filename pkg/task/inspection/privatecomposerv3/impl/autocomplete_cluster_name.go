@@ -30,7 +30,7 @@ import (
 	privatecomposerv3_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposerv3/contract"
 )
 
-var AutocompleteComposerClusterNamesTask = inspectiontaskbase.NewCachedTask(taskid.NewImplementationID(googlecloudk8scommon_contract.AutocompleteClusterIdentityTaskID.Ref(), privatecomposerv3_contract.InspectionTypeId), []taskid.UntypedTaskReference{
+var AutocompleteComposerClusterNamesTask = inspectiontaskbase.NewGlobalCachedTask(taskid.NewImplementationID(googlecloudk8scommon_contract.AutocompleteClusterIdentityTaskID.Ref(), privatecomposerv3_contract.InspectionTypeId), []taskid.UntypedTaskReference{
 	googlecloudk8scommon_contract.ClusterNamePrefixTaskRef,
 	privatecomposerv3_contract.InputComposerV3TenantProjectIdTaskID.Ref(),
 	googlecloudcommon_contract.InputStartTimeTaskID.Ref(),
