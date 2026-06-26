@@ -97,7 +97,7 @@ var AutocompleteComposerClusterNamesTask = inspectiontaskbase.NewGlobalCachedTas
 	for i, labels := range filteredClusters {
 		identities[i] = googlecloudk8scommon_contract.GoogleCloudClusterIdentity{
 			ProjectID:    projectID,
-			PrefixPolicy: googlecloudk8scommon_contract.ClusterPrefixPolicy{}, // Composer 3 is based on standard GKE. It has no prefixes.
+			PrefixPolicy: googlecloudk8scommon_contract.ClusterPrefixPolicy{}, // Managed Airflow 3 is based on standard GKE. It has no prefixes.
 			ClusterName:  labels["cluster_name"],
 			Location:     labels["location"],
 		}

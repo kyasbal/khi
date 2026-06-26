@@ -28,8 +28,8 @@ var InspectionTypeId = "gcp-composer-v3"
 
 var ComposerV3InspectionType = coreinspection.InspectionType{
 	Id:          InspectionTypeId,
-	Name:        "Google Cloud Composer v3 (Internal)",
-	Description: "Fetch both Cloud Composer backend and GKE tenant project logs to generate composer specific results.",
+	Name:        "Google Cloud Managed Airflow 3 (Internal)",
+	Description: "Fetch both Managed Airflow 3 (formerly Cloud Composer 3) backend and GKE tenant project logs to generate Managed Airflow 3 specific results.",
 	Icon:        "assets/icons/composer.webp",
 	Priority:    math.MaxInt - 5,
 	Labels: map[string]string{

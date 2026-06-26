@@ -50,7 +50,7 @@ var ClusterIdentityTask = inspectiontaskbase.NewInspectionTask(taskid.NewImpleme
 )
 
 // ComposerClusterIdentityTask is an override for googlecloudclustercomposer_contract.ClusterIdentityTaskID
-// that ensures Composer queries read from the original customer project ID rather than the tenant project ID.
+// that ensures Managed Airflow 3 queries read from the original customer project ID rather than the tenant project ID.
 var ComposerClusterIdentityTask = inspectiontaskbase.NewInspectionTask(taskid.NewImplementationID(googlecloudclustercomposer_contract.ClusterIdentityTaskID.Ref(), privatecomposerv3_contract.InspectionTypeId), []taskid.UntypedTaskReference{
 	googlecloudcommon_contract.InputProjectIdTaskID.Ref(),
 	googlecloudcommon_contract.InputLocationsTaskID.Ref(),
