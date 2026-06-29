@@ -65,7 +65,7 @@ var SchedulerLogFieldSetReaderTaskID = taskid.NewDefaultImplementationID[[]*log.
 var SchedulerLogGrouperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogGroupMap](PrivateGKEMasterCommonTaskIDPrefix + "scheduler/grouper")
 
 // SchedulerLogToTimelineMapperTaskID is the task ID to map scheduler logs to the timeline.
-var SchedulerLogToTimelineMapperTaskID = taskid.NewDefaultImplementationID[struct{}](PrivateGKEMasterCommonTaskIDPrefix + "scheduler/log-to-timeline-mapper")
+var SchedulerLogToTimelineMapperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.TimelineMapperResult](PrivateGKEMasterCommonTaskIDPrefix + "scheduler/log-to-timeline-mapper")
 
 // Controller Manager
 
@@ -79,7 +79,7 @@ var ControllerManagerLogFieldSetReaderTaskID = taskid.NewDefaultImplementationID
 var ControllerManagerGrouperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogGroupMap](PrivateGKEMasterCommonTaskIDPrefix + "controller-manager/grouper")
 
 // ControllerManagerLogToTimelineMapperTaskID is the task ID to map controller manager logs to the timeline.
-var ControllerManagerLogToTimelineMapperTaskID = taskid.NewDefaultImplementationID[struct{}](PrivateGKEMasterCommonTaskIDPrefix + "controller-manager/log-to-timeline-mapper")
+var ControllerManagerLogToTimelineMapperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.TimelineMapperResult](PrivateGKEMasterCommonTaskIDPrefix + "controller-manager/log-to-timeline-mapper")
 
 // Other
 
@@ -93,7 +93,7 @@ var OtherLogFieldSetReaderTaskID = taskid.NewDefaultImplementationID[[]*log.Log]
 var OtherGrouperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogGroupMap](PrivateGKEMasterCommonTaskIDPrefix + "other/grouper")
 
 // OtherLogToTimelineMapperTaskID is the task ID to map other logs to the timeline.
-var OtherLogToTimelineMapperTaskID = taskid.NewDefaultImplementationID[struct{}](PrivateGKEMasterCommonTaskIDPrefix + "other/log-to-timeline-mapper")
+var OtherLogToTimelineMapperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.TimelineMapperResult](PrivateGKEMasterCommonTaskIDPrefix + "other/log-to-timeline-mapper")
 
 // TailTaskID is the task ID to ensure all logs are processed.
 var TailTaskID = taskid.NewDefaultImplementationID[struct{}](PrivateGKEMasterCommonTaskIDPrefix + "tail")
@@ -107,7 +107,7 @@ var KubeletLogFilterTaskID = taskid.NewDefaultImplementationID[[]*log.Log](Priva
 var KubeletLogGroupTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogGroupMap](PrivateGKEMasterCommonTaskIDPrefix + "kubelet/grouper")
 
 // KubeletLogLogToTimelineMapperTaskID is the task ID to map kubelet logs to the timeline.
-var KubeletLogLogToTimelineMapperTaskID = taskid.NewDefaultImplementationID[struct{}](PrivateGKEMasterCommonTaskIDPrefix + "kubelet/log-to-timeline-mapper")
+var KubeletLogLogToTimelineMapperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.TimelineMapperResult](PrivateGKEMasterCommonTaskIDPrefix + "kubelet/log-to-timeline-mapper")
 
 // Containerd task IDs
 
@@ -118,7 +118,7 @@ var ContainerdLogFilterTaskID = taskid.NewDefaultImplementationID[[]*log.Log](Pr
 var ContainerdLogGroupTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogGroupMap](PrivateGKEMasterCommonTaskIDPrefix + "containerd/grouper")
 
 // ContainerdLogLogToTimelineMapperTaskID is the task ID to map containerd logs to the timeline.
-var ContainerdLogLogToTimelineMapperTaskID = taskid.NewDefaultImplementationID[struct{}](PrivateGKEMasterCommonTaskIDPrefix + "containerd/log-to-timeline-mapper")
+var ContainerdLogLogToTimelineMapperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.TimelineMapperResult](PrivateGKEMasterCommonTaskIDPrefix + "containerd/log-to-timeline-mapper")
 
 // PodSandboxIDDiscoveryTaskID is the task ID to discover pod sandbox IDs.
 var PodSandboxIDDiscoveryTaskID = taskid.NewDefaultImplementationID[patternfinder.PatternFinder[*googlecloudlogk8snode_contract.PodSandboxIDInfo]](PrivateGKEMasterCommonTaskIDPrefix + "containerd/pod-sandbox-id-discovery")
