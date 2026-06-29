@@ -24,7 +24,7 @@ import (
 	privatecomposerv3_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposerv3/contract"
 )
 
-// ComposerV3ClusterNamePrefixTask is the task that returns the composer cluster name prefix.
+// ComposerV3ClusterNamePrefixTask is the task that returns the Managed Airflow 3 cluster name prefix.
 var ComposerV3ClusterNamePrefixTask = coretask.NewTask(
 	privatecomposerv3_contract.ComposerV3ClusterNamePrefixTaskID,
 	[]taskid.UntypedTaskReference{},

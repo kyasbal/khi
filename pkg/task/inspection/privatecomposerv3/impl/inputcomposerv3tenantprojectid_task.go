@@ -34,9 +34,9 @@ import (
 var InputComposerV3TenantProjectIdTask = formtask.NewTextFormTaskBuilder(
 	privatecomposerv3_contract.InputComposerV3TenantProjectIdTaskID,
 	googlecloudcommon_contract.PriorityForResourceIdentifierGroup+4900,
-	"Composer v3 Tenant Project ID",
+	"Managed Airflow 3 Tenant Project ID",
 ).
-	WithDescription("Type the tenant project ID for the Composer environment. You can find the tenant ID from the tenant project section in Google Admin. The project ID must end with '-tp'.").
+	WithDescription("Type the tenant project ID for the Managed Airflow 3 environment. You can find the tenant ID from the tenant project section in Google Admin. The project ID must end with '-tp'.").
 	WithValidatingTiming(inspectionmetadata.Blur).
 	WithDependencies([]taskid.UntypedTaskReference{
 		googlecloudcommon_contract.InputProjectIdTaskID.Ref(),
@@ -53,7 +53,7 @@ var InputComposerV3TenantProjectIdTask = formtask.NewTextFormTaskBuilder(
 		composerProjectID := coretask.GetTaskResult(ctx, googlecloudcommon_contract.InputProjectIdTaskID.Ref())
 		iamTokenInjector, err := khictx.GetValue(ctx, privatecommon_contract.APIClientIAMTokenInjectorOptionContextKey)
 		if err != nil {
-			return "IAMToken injector isn't set. Composer 3 parsers won't work unless you open KHI from Google Admin", nil
+			return "IAMToken injector isn't set. Managed Airflow 3 parsers won't work unless you open KHI from Google Admin", nil
 		}
 		if value == "" || !strings.HasSuffix(value, "-tp") {
 			link, linkErr := api.ToGoogleAdminLink(googlecloud.Project(composerProjectID), justification)
