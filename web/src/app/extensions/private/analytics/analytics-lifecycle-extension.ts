@@ -21,7 +21,7 @@ import {
 } from 'src/app/extensions/extension-common/extension-types/lifecycle-hook';
 import { FRONTEND_ANALYTICS, KHIAnalyticsActivityType } from './types';
 import { randomString } from 'src/app/utils/random';
-import { InspectionDataV2 } from 'src/app/store/domain/inspection-data';
+import { InspectionData } from 'src/app/store/domain/inspection-data';
 
 /**
  * AnalyticsLifecycleExtension reports event on lifecycle events with the injected FRONTEND_ANALYTICS service.
@@ -33,7 +33,7 @@ export const AnalyticsLifecycleExtension: LifecycleHookExtension = {
     analytics.init(page);
   },
   onInspectionDataOpen: (
-    inspectionData: InspectionDataV2,
+    inspectionData: InspectionData,
     rawData: ArrayBuffer,
   ) => {
     const analytics = inject(FRONTEND_ANALYTICS);

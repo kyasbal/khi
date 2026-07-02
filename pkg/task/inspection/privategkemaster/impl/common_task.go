@@ -42,17 +42,17 @@ var CommonFieldSetReaderTask = inspectiontaskbase.NewFieldSetReadTask(privategke
 // PrivateGKEMasterLogIngester is a log ingester for private GKE master logs.
 type PrivateGKEMasterLogIngester struct{}
 
-// RawLogTask implements inspectiontaskbase.LogIngesterV2.
+// RawLogTask implements inspectiontaskbase.LogIngester.
 func (i *PrivateGKEMasterLogIngester) RawLogTask() taskid.TaskReference[[]*log.Log] {
 	return privategkemaster_contract.CommonFieldSetReaderTaskID.Ref()
 }
 
-// Dependencies implements inspectiontaskbase.LogIngesterV2.
+// Dependencies implements inspectiontaskbase.LogIngester.
 func (i *PrivateGKEMasterLogIngester) Dependencies() []taskid.UntypedTaskReference {
 	return []taskid.UntypedTaskReference{}
 }
 
-// ProcessLog implements inspectiontaskbase.LogIngesterV2.
+// ProcessLog implements inspectiontaskbase.LogIngester.
 func (i *PrivateGKEMasterLogIngester) ProcessLog(ctx context.Context, l *log.Log) (*khifilev6.LogChangeSet, error) {
 	cs, err := khifilev6.NewLogChangeSet(l)
 	if err != nil {
@@ -75,9 +75,9 @@ func (i *PrivateGKEMasterLogIngester) ProcessLog(ctx context.Context, l *log.Log
 	return cs, nil
 }
 
-var _ inspectiontaskbase.LogIngesterV2 = (*PrivateGKEMasterLogIngester)(nil)
+var _ inspectiontaskbase.LogIngester = (*PrivateGKEMasterLogIngester)(nil)
 
-var logIngesterTask = inspectiontaskbase.NewLogIngesterTaskV2(
+var logIngesterTask = inspectiontaskbase.NewLogIngesterTask(
 	privategkemaster_contract.LogIngesterTaskID,
 	&PrivateGKEMasterLogIngester{},
 )
@@ -94,7 +94,7 @@ var TailTask = inspectiontaskbase.NewInspectionTask(privategkemaster_contract.Ta
 	func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (struct{}, error) {
 		return struct{}{}, nil
 	},
-	inspectioncore_contract.FeatureTaskLabelV2(
+	inspectioncore_contract.FeatureTaskLabel(
 		"GKE Master Logs(PRIVATE)",
 		`GKE KCP logs from the tenant project. You may need to request access via AoD to use this feature. Please check go/khi-master-log for more details.`,
 		20000,
