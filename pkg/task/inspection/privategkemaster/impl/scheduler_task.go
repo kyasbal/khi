@@ -17,7 +17,6 @@ package privategkemaster_impl
 import (
 	"context"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logutil"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
@@ -45,7 +44,7 @@ var schedulerLogFieldSetReaderTask = inspectiontaskbase.NewFieldSetReadTask(priv
 	privategkemaster_contract.SchedulerLogFilterTaskID.Ref(),
 	[]log.FieldSetReader{
 		&googlecloudlogk8scontrolplane_contract.K8sSchedulerComponentFieldSetReader{
-			KLogParser: logutil.NewKLogTextParser(false),
+			StructuredLogParser: privategkemaster_contract.DefaultPrivateGKEMasterControlplaneLogParser,
 		},
 	},
 )
