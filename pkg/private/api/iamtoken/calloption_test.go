@@ -257,11 +257,9 @@ func TestIamTokenCallOptionInjectorOption_RegisteredProjectIDs(t *testing.T) {
 			want: []string{"proj-a", "proj-b-tp"},
 		},
 		{
-			name: "no tokens registered",
-			prepare: func() *IAMTokenCallOptionInjectorOption {
-				return NewInjector()
-			},
-			want: []string{},
+			name:    "no tokens registered",
+			prepare: NewInjector,
+			want:    []string{},
 		},
 		{
 			name: "nil receiver",

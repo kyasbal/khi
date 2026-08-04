@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package privatecomposerv3_impl
+package privatecomposer_impl
 
 import (
 	"context"
@@ -21,15 +21,15 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
-	privatecomposerv3_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposerv3/contract"
+	privatecomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposer/contract"
 )
 
 // ComposerV3ClusterNamePrefixTask is the task that returns the Managed Airflow 3 cluster name prefix.
 var ComposerV3ClusterNamePrefixTask = coretask.NewTask(
-	privatecomposerv3_contract.ComposerV3ClusterNamePrefixTaskID,
+	privatecomposer_contract.ComposerV3ClusterNamePrefixTaskID,
 	[]taskid.UntypedTaskReference{},
 	func(ctx context.Context) (googlecloudk8scommon_contract.ClusterPrefixPolicy, error) {
 		return googlecloudk8scommon_contract.ClusterPrefixPolicy{}, nil
 	},
-	inspectioncore_contract.InspectionTypeLabel(privatecomposerv3_contract.InspectionTypeId),
+	inspectioncore_contract.InspectionTypeLabel(privatecomposer_contract.InspectionTypeId),
 )

@@ -93,13 +93,11 @@ func TestInputCSMTenantProjectIDTask(t *testing.T) {
 			},
 		},
 		{
-			name: "empty input without injector returns validation error",
-			prepareContext: func() context.Context {
-				return context.Background()
-			},
-			hasInput:      true,
-			input:         "",
-			expectedValue: "",
+			name:           "empty input without injector returns validation error",
+			prepareContext: context.Background,
+			hasInput:       true,
+			input:          "",
+			expectedValue:  "",
 			expectedFormField: inspectionmetadata.TextParameterFormField{
 				ParameterFormFieldBase: inspectionmetadata.ParameterFormFieldBase{
 					ID:          "private-csmcp-input-csm-tenant-project-id",

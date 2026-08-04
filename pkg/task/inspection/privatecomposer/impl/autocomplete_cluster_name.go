@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package privatecomposerv3_impl
+package privatecomposer_impl
 
 import (
 	"context"
@@ -27,12 +27,12 @@ import (
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
-	privatecomposerv3_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposerv3/contract"
+	privatecomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposer/contract"
 )
 
-var AutocompleteComposerClusterNamesTask = inspectiontaskbase.NewGlobalCachedTask(taskid.NewImplementationID(googlecloudk8scommon_contract.AutocompleteClusterIdentityTaskID.Ref(), privatecomposerv3_contract.InspectionTypeId), []taskid.UntypedTaskReference{
+var AutocompleteComposerClusterNamesTask = inspectiontaskbase.NewGlobalCachedTask(taskid.NewImplementationID(googlecloudk8scommon_contract.AutocompleteClusterIdentityTaskID.Ref(), privatecomposer_contract.InspectionTypeId), []taskid.UntypedTaskReference{
 	googlecloudk8scommon_contract.ClusterNamePrefixTaskRef,
-	privatecomposerv3_contract.InputComposerV3TenantProjectIdTaskID.Ref(),
+	privatecomposer_contract.InputComposerTenantProjectIdTaskID.Ref(),
 	googlecloudcommon_contract.InputStartTimeTaskID.Ref(),
 	googlecloudcommon_contract.InputEndTimeTaskID.Ref(),
 	googlecloudk8scommon_contract.AutocompleteMetricsK8sContainerTaskID.Ref(),
@@ -40,7 +40,7 @@ var AutocompleteComposerClusterNamesTask = inspectiontaskbase.NewGlobalCachedTas
 	googlecloudcommon_contract.APIClientCallOptionsInjectorTaskID.Ref(),
 }, func(ctx context.Context, prevValue inspectiontaskbase.CacheableTaskResult[*inspectioncore_contract.AutocompleteResult[googlecloudk8scommon_contract.GoogleCloudClusterIdentity]]) (inspectiontaskbase.CacheableTaskResult[*inspectioncore_contract.AutocompleteResult[googlecloudk8scommon_contract.GoogleCloudClusterIdentity]], error) {
 	clusterNamePrefix := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterNamePrefixTaskRef)
-	projectID := coretask.GetTaskResult(ctx, privatecomposerv3_contract.InputComposerV3TenantProjectIdTaskID.Ref())
+	projectID := coretask.GetTaskResult(ctx, privatecomposer_contract.InputComposerTenantProjectIdTaskID.Ref())
 	startTime := coretask.GetTaskResult(ctx, googlecloudcommon_contract.InputStartTimeTaskID.Ref())
 	endTime := coretask.GetTaskResult(ctx, googlecloudcommon_contract.InputEndTimeTaskID.Ref())
 	metricsType := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.AutocompleteMetricsK8sContainerTaskID.Ref())
@@ -72,7 +72,6 @@ var AutocompleteComposerClusterNamesTask = inspectiontaskbase.NewGlobalCachedTas
 	if err != nil {
 		return prevValue, fmt.Errorf("failed to create monitoring metric client: %w", err)
 	}
-	defer client.Close()
 
 	ctx = optionInjector.InjectToCallContext(ctx, googlecloud.Project(projectID))
 	filter := fmt.Sprintf(`metric.type="%s" AND resource.type="k8s_container"`, metricsType)
@@ -111,6 +110,6 @@ var AutocompleteComposerClusterNamesTask = inspectiontaskbase.NewGlobalCachedTas
 			Hint:   hintString,
 		},
 	}, nil
-}, inspectioncore_contract.InspectionTypeLabel(privatecomposerv3_contract.InspectionTypeId),
+}, inspectioncore_contract.InspectionTypeLabel(privatecomposer_contract.InspectionTypeId),
 	coretask.WithSelectionPriority(2000),
 )

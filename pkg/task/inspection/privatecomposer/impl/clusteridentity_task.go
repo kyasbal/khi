@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package privatecomposerv3_impl
+package privatecomposer_impl
 
 import (
 	"context"
@@ -24,16 +24,16 @@ import (
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
-	privatecomposerv3_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposerv3/contract"
+	privatecomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposer/contract"
 )
 
-var ClusterIdentityTask = inspectiontaskbase.NewInspectionTask(taskid.NewImplementationID(googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(), privatecomposerv3_contract.InspectionTypeId), []taskid.UntypedTaskReference{
-	privatecomposerv3_contract.InputComposerV3TenantProjectIdTaskID.Ref(),
+var ClusterIdentityTask = inspectiontaskbase.NewInspectionTask(taskid.NewImplementationID(googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(), privatecomposer_contract.InspectionTypeId), []taskid.UntypedTaskReference{
+	privatecomposer_contract.InputComposerTenantProjectIdTaskID.Ref(),
 	googlecloudk8scommon_contract.InputClusterNameTaskID.Ref(),
 	googlecloudcommon_contract.InputLocationsTaskID.Ref(),
 	googlecloudk8scommon_contract.ClusterNamePrefixTaskRef,
 }, func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (googlecloudk8scommon_contract.GoogleCloudClusterIdentity, error) {
-	projectId := coretask.GetTaskResult(ctx, privatecomposerv3_contract.InputComposerV3TenantProjectIdTaskID.Ref())
+	projectId := coretask.GetTaskResult(ctx, privatecomposer_contract.InputComposerTenantProjectIdTaskID.Ref())
 	clusterName := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.InputClusterNameTaskID.Ref())
 	location := coretask.GetTaskResult(ctx, googlecloudcommon_contract.InputLocationsTaskID.Ref())
 	prefixPolicy := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterNamePrefixTaskRef)
@@ -45,13 +45,13 @@ var ClusterIdentityTask = inspectiontaskbase.NewInspectionTask(taskid.NewImpleme
 		PrefixPolicy: prefixPolicy,
 	}, nil
 },
-	inspectioncore_contract.InspectionTypeLabel(privatecomposerv3_contract.InspectionTypeId),
+	inspectioncore_contract.InspectionTypeLabel(privatecomposer_contract.InspectionTypeId),
 	coretask.WithSelectionPriority(100),
 )
 
 // ComposerClusterIdentityTask is an override for googlecloudclustercomposer_contract.ClusterIdentityTaskID
 // that ensures Managed Airflow 3 queries read from the original customer project ID rather than the tenant project ID.
-var ComposerClusterIdentityTask = inspectiontaskbase.NewInspectionTask(taskid.NewImplementationID(googlecloudclustercomposer_contract.ClusterIdentityTaskID.Ref(), privatecomposerv3_contract.InspectionTypeId), []taskid.UntypedTaskReference{
+var ComposerClusterIdentityTask = inspectiontaskbase.NewInspectionTask(taskid.NewImplementationID(googlecloudclustercomposer_contract.ClusterIdentityTaskID.Ref(), privatecomposer_contract.InspectionTypeId), []taskid.UntypedTaskReference{
 	googlecloudcommon_contract.InputProjectIdTaskID.Ref(),
 	googlecloudcommon_contract.InputLocationsTaskID.Ref(),
 }, func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (googlecloudk8scommon_contract.GoogleCloudClusterIdentity, error) {
@@ -63,6 +63,6 @@ var ComposerClusterIdentityTask = inspectiontaskbase.NewInspectionTask(taskid.Ne
 		Location:  location,
 	}, nil
 },
-	inspectioncore_contract.InspectionTypeLabel(privatecomposerv3_contract.InspectionTypeId),
+	inspectioncore_contract.InspectionTypeLabel(privatecomposer_contract.InspectionTypeId),
 	coretask.WithSelectionPriority(100),
 )

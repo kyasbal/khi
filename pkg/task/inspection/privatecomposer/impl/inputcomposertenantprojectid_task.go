@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package privatecomposerv3_impl
+package privatecomposer_impl
 
 import (
 	"context"
@@ -28,15 +28,15 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/private/api"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 	privatecommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecommon/contract"
-	privatecomposerv3_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposerv3/contract"
+	privatecomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposer/contract"
 )
 
-var InputComposerV3TenantProjectIdTask = formtask.NewTextFormTaskBuilder(
-	privatecomposerv3_contract.InputComposerV3TenantProjectIdTaskID,
+var InputComposerTenantProjectIdTask = formtask.NewTextFormTaskBuilder(
+	privatecomposer_contract.InputComposerTenantProjectIdTaskID,
 	googlecloudcommon_contract.PriorityForResourceIdentifierGroup+4900,
-	"Managed Airflow 3 Tenant Project ID",
+	"Managed Airflow Tenant Project ID",
 ).
-	WithDescription("Type the tenant project ID for the Managed Airflow 3 environment. You can find the tenant ID from the tenant project section in Google Admin. The project ID must end with '-tp'.").
+	WithDescription("Type the tenant project ID for the Managed Airflow environment. You can find the tenant ID from the tenant project section in Google Admin. The project ID must end with '-tp'.").
 	WithValidatingTiming(inspectionmetadata.Blur).
 	WithDependencies([]taskid.UntypedTaskReference{
 		googlecloudcommon_contract.InputProjectIdTaskID.Ref(),
@@ -49,7 +49,7 @@ var InputComposerV3TenantProjectIdTask = formtask.NewTextFormTaskBuilder(
 		composerProjectID := coretask.GetTaskResult(ctx, googlecloudcommon_contract.InputProjectIdTaskID.Ref())
 		iamTokenInjector, err := khictx.GetValue(ctx, privatecommon_contract.APIClientIAMTokenInjectorOptionContextKey)
 		if err != nil {
-			return "IAMToken injector isn't set. Managed Airflow 3 parsers won't work unless you open KHI from Google Admin", nil
+			return "IAMToken injector isn't set. Managed Airflow parsers won't work unless you open KHI from Google Admin", nil
 		}
 		if value == "" || !strings.HasSuffix(value, "-tp") {
 			link, linkErr := api.ToGoogleAdminLink(googlecloud.Project(composerProjectID), justification)

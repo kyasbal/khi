@@ -1,4 +1,18 @@
-package privatecomposerv3_impl
+// Copyright 2025 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package privatecomposer_impl
 
 import (
 	"context"
@@ -19,7 +33,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-func TestInputComposerV3TenantProjectIdTask(t *testing.T) {
+func TestInputComposerTenantProjectIdTask(t *testing.T) {
 	mockProjectIDTask := tasktest.StubTaskFromReferenceID(googlecloudcommon_contract.InputProjectIdTaskID.Ref(), "composer-project", nil)
 	mockJustificationTask := tasktest.StubTaskFromReferenceID(privatecommon_contract.JustificationFormTaskID.Ref(), "b/12345678", nil)
 
@@ -43,10 +57,10 @@ func TestInputComposerV3TenantProjectIdTask(t *testing.T) {
 			expectedValue: "composer-env-tp",
 			expectedFormField: inspectionmetadata.TextParameterFormField{
 				ParameterFormFieldBase: inspectionmetadata.ParameterFormFieldBase{
-					ID:          "privatecomposerv3.khi.google.com/input-composer-v3-tenant-project-id",
+					ID:          "privatecomposer/input-tenant-project-id",
 					Type:        "Text",
-					Label:       "Managed Airflow 3 Tenant Project ID",
-					Description: "Type the tenant project ID for the Managed Airflow 3 environment. You can find the tenant ID from the tenant project section in Google Admin. The project ID must end with '-tp'.",
+					Label:       "Managed Airflow Tenant Project ID",
+					Description: "Type the tenant project ID for the Managed Airflow environment. You can find the tenant ID from the tenant project section in Google Admin. The project ID must end with '-tp'.",
 					HintType:    inspectionmetadata.None,
 					Hint:        "",
 				},
@@ -68,10 +82,10 @@ func TestInputComposerV3TenantProjectIdTask(t *testing.T) {
 			expectedValue: "tenant-1-tp",
 			expectedFormField: inspectionmetadata.TextParameterFormField{
 				ParameterFormFieldBase: inspectionmetadata.ParameterFormFieldBase{
-					ID:          "privatecomposerv3.khi.google.com/input-composer-v3-tenant-project-id",
+					ID:          "privatecomposer/input-tenant-project-id",
 					Type:        "Text",
-					Label:       "Managed Airflow 3 Tenant Project ID",
-					Description: "Type the tenant project ID for the Managed Airflow 3 environment. You can find the tenant ID from the tenant project section in Google Admin. The project ID must end with '-tp'.",
+					Label:       "Managed Airflow Tenant Project ID",
+					Description: "Type the tenant project ID for the Managed Airflow environment. You can find the tenant ID from the tenant project section in Google Admin. The project ID must end with '-tp'.",
 					HintType:    inspectionmetadata.None,
 					Hint:        "",
 				},
@@ -81,21 +95,19 @@ func TestInputComposerV3TenantProjectIdTask(t *testing.T) {
 			},
 		},
 		{
-			name: "missing IAM token injector returns error",
-			prepareContext: func() context.Context {
-				return context.Background()
-			},
-			hasInput:      true,
-			input:         "tenant-tp",
-			expectedValue: "",
+			name:           "missing IAM token injector returns error",
+			prepareContext: context.Background,
+			hasInput:       true,
+			input:          "tenant-tp",
+			expectedValue:  "",
 			expectedFormField: inspectionmetadata.TextParameterFormField{
 				ParameterFormFieldBase: inspectionmetadata.ParameterFormFieldBase{
-					ID:          "privatecomposerv3.khi.google.com/input-composer-v3-tenant-project-id",
+					ID:          "privatecomposer/input-tenant-project-id",
 					Type:        "Text",
-					Label:       "Managed Airflow 3 Tenant Project ID",
-					Description: "Type the tenant project ID for the Managed Airflow 3 environment. You can find the tenant ID from the tenant project section in Google Admin. The project ID must end with '-tp'.",
+					Label:       "Managed Airflow Tenant Project ID",
+					Description: "Type the tenant project ID for the Managed Airflow environment. You can find the tenant ID from the tenant project section in Google Admin. The project ID must end with '-tp'.",
 					HintType:    inspectionmetadata.Error,
-					Hint:        "IAMToken injector isn't set. Managed Airflow 3 parsers won't work unless you open KHI from Google Admin",
+					Hint:        "IAMToken injector isn't set. Managed Airflow parsers won't work unless you open KHI from Google Admin",
 				},
 				Default:          "",
 				Suggestions:      nil,
@@ -110,11 +122,11 @@ func TestInputComposerV3TenantProjectIdTask(t *testing.T) {
 			dependencies := []coretask.UntypedTask{mockProjectIDTask, mockJustificationTask}
 			inputMap := map[string]any{}
 			if tc.hasInput {
-				inputMap[InputComposerV3TenantProjectIdTask.ID().ReferenceIDString()] = tc.input
+				inputMap[InputComposerTenantProjectIdTask.ID().ReferenceIDString()] = tc.input
 			}
 			val, metadata, err := inspectiontest.RunInspectionTaskWithDependency(
 				ctx,
-				InputComposerV3TenantProjectIdTask,
+				InputComposerTenantProjectIdTask,
 				dependencies,
 				inspectioncore_contract.TaskModeDryRun,
 				inputMap,
@@ -130,7 +142,7 @@ func TestInputComposerV3TenantProjectIdTask(t *testing.T) {
 			if !found {
 				t.Fatalf("form field metadata not found")
 			}
-			field := formFields.DangerouslyGetField(InputComposerV3TenantProjectIdTask.UntypedID().GetUntypedReference().String())
+			field := formFields.DangerouslyGetField(InputComposerTenantProjectIdTask.UntypedID().GetUntypedReference().String())
 			if diff := cmp.Diff(tc.expectedFormField, field, cmpopts.IgnoreFields(inspectionmetadata.ParameterFormFieldBase{}, "Priority", "ID", "Type")); diff != "" {
 				t.Errorf("form field mismatch (-want +got):\n%s", diff)
 			}

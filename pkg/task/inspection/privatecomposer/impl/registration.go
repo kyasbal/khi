@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package privatecomposerv3_impl
+package privatecomposer_impl
 
 import (
 	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
@@ -20,16 +20,26 @@ import (
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	privatecommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecommon/contract"
-	privatecomposerv3_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposerv3/contract"
+	privatecomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposer/contract"
 )
 
-// Register registers all privatecomposerv3 inspection tasks to the registry.
+// Register registers all privatecomposer inspection tasks to the registry.
 func Register(registry coreinspection.InspectionTaskRegistry) error {
-	err := registry.AddInspectionType(privatecomposerv3_contract.ComposerV3InspectionType)
+	err := registry.AddInspectionType(privatecomposer_contract.ComposerV3InspectionType)
 	if err != nil {
 		return err
 	}
-	scoped := coreinspection.NewScopedRegistry(registry, inspectioncore_contract.InspectionTypeLabelSelector(
+
+	scopedCloudLogging := coreinspection.NewScopedRegistry(registry, inspectioncore_contract.InspectionTypeLabelSelector(
+		map[string]string{
+			inspectioncore_contract.InspectionTypeLabelKeyLogSource:      "cloud_logging",
+			inspectioncore_contract.InspectionTypeLabelKeyEnvironment:    "googlecloud",
+			inspectioncore_contract.InspectionTypeLabelKeyBasePlatform:   "kubernetes",
+			googlecloudcommon_contract.InspectionTypeLabelKeyClusterType: "gke",
+			googlecloudcommon_contract.InspectionTypeLabelKeyProduct:     "composer",
+		}))
+
+	scopedComposerV3 := coreinspection.NewScopedRegistry(registry, inspectioncore_contract.InspectionTypeLabelSelector(
 		map[string]string{
 			inspectioncore_contract.InspectionTypeLabelKeyLogSource:      "cloud_logging",
 			inspectioncore_contract.InspectionTypeLabelKeyEnvironment:    "googlecloud",
@@ -38,11 +48,27 @@ func Register(registry coreinspection.InspectionTaskRegistry) error {
 			googlecloudcommon_contract.InspectionTypeLabelKeyProduct:     "composer",
 			privatecommon_contract.InspectionTypeLabelKeyPrivate:         "true",
 		}))
-	return coretask.RegisterTasks(scoped,
-		InputComposerV3TenantProjectIdTask,
+
+	if err := coretask.RegisterTasks(scopedComposerV3,
 		ClusterIdentityTask,
 		ComposerClusterIdentityTask,
 		AutocompleteComposerClusterNamesTask,
 		ComposerV3ClusterNamePrefixTask,
+	); err != nil {
+		return err
+	}
+
+	return coretask.RegisterTasks(scopedCloudLogging,
+		InputComposerTenantProjectIdTask,
+		CloudSQLLogsQueryTask,
+		CloudSQLLogsFieldSetReadTask,
+		CloudSQLLogsIngesterTask,
+		CloudSQLLogsGrouperTask,
+		CloudSQLLogsTimelineMapperTask,
+		CloudSQLAuditLogsQueryTask,
+		CloudSQLAuditLogsFieldSetReadTask,
+		CloudSQLAuditLogsIngesterTask,
+		CloudSQLAuditLogsGrouperTask,
+		CloudSQLAuditLogsTimelineMapperTask,
 	)
 }
