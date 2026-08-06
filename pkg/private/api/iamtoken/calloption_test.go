@@ -20,6 +20,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -234,6 +235,48 @@ func TestIamTokenCallOptionInjectorOption_getTokenFor(t *testing.T) {
 			got := option.getTokenFor(tc.container)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Errorf("getTokenFor() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestIamTokenCallOptionInjectorOption_RegisteredProjectIDs(t *testing.T) {
+	testCases := []struct {
+		name    string
+		prepare func() *IAMTokenCallOptionInjectorOption
+		want    []string
+	}{
+		{
+			name: "multiple projects registered",
+			prepare: func() *IAMTokenCallOptionInjectorOption {
+				option := NewInjector()
+				option.SetTokenFor(googlecloud.Project("proj-a"), "token-a")
+				option.SetTokenFor(googlecloud.Project("proj-b-tp"), "token-b")
+				return option
+			},
+			want: []string{"proj-a", "proj-b-tp"},
+		},
+		{
+			name: "no tokens registered",
+			prepare: func() *IAMTokenCallOptionInjectorOption {
+				return NewInjector()
+			},
+			want: []string{},
+		},
+		{
+			name: "nil receiver",
+			prepare: func() *IAMTokenCallOptionInjectorOption {
+				return nil
+			},
+			want: nil,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			option := tc.prepare()
+			got := option.RegisteredProjectIDs()
+			if diff := cmp.Diff(tc.want, got, cmpopts.SortSlices(func(a, b string) bool { return a < b }), cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("RegisteredProjectIDs() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

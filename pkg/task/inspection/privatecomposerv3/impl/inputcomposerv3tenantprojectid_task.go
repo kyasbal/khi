@@ -42,12 +42,8 @@ var InputComposerV3TenantProjectIdTask = formtask.NewTextFormTaskBuilder(
 		googlecloudcommon_contract.InputProjectIdTaskID.Ref(),
 		privatecommon_contract.JustificationFormTaskID.Ref(),
 	}).
-	WithDefaultValueFunc(func(ctx context.Context, previousValues []string) (string, error) {
-		if len(previousValues) > 0 {
-			return previousValues[0], nil
-		}
-		return "", nil
-	}).
+	WithSuggestionsFunc(privatecommon_contract.TenantProjectIDSuggestionsProvider).
+	WithDefaultValueFunc(privatecommon_contract.TenantProjectIDDefaultValueProvider).
 	WithValidator(func(ctx context.Context, value string) (string, error) {
 		justification := coretask.GetTaskResult(ctx, privatecommon_contract.JustificationFormTaskID.Ref())
 		composerProjectID := coretask.GetTaskResult(ctx, googlecloudcommon_contract.InputProjectIdTaskID.Ref())
