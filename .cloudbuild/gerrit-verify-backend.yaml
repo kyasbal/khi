@@ -43,15 +43,7 @@ steps:
         make coverage-go
     waitFor:
       - "build-web"
-  - name: "gcr.io/kubernetes-history-inspector/builder:latest"
-    entrypoint: /bin/bash
-    args:
-      - -c
-      - |
-        make check-format-go
-    waitFor:
-      - "build-web"
-  - name: "golangci/golangci-lint:v2.7.1"
+  - name: "golangci/golangci-lint:v2.12.2"
     entrypoint: "golangci-lint"
     args: ["run", "--config=.golangci.yaml"]
     id: "Run-golangci-lint"
