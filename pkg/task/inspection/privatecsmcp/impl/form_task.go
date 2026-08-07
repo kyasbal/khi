@@ -30,6 +30,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	privatecommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecommon/contract"
 	privatecsmcp_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecsmcp/contract"
 )
 
@@ -44,12 +45,8 @@ var InputCSMTenantProjectIDTask = formtask.NewTextFormTaskBuilder(
 	"CSM Tenant Project ID",
 ).
 	WithDescription("The project ID of the CSM Tenant where Cloud Run metrics reside.").
-	WithDefaultValueFunc(func(ctx context.Context, previousValues []string) (string, error) {
-		if len(previousValues) > 0 {
-			return previousValues[0], nil
-		}
-		return "", nil
-	}).
+	WithSuggestionsFunc(privatecommon_contract.TenantProjectIDSuggestionsProvider).
+	WithDefaultValueFunc(privatecommon_contract.TenantProjectIDDefaultValueProvider).
 	WithValidatingTiming(inspectionmetadata.Blur).
 	WithValidator(func(ctx context.Context, value string) (string, error) {
 		trimmed := strings.TrimSpace(value)

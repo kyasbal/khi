@@ -17,6 +17,7 @@ package iamtoken
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typeddict"
@@ -69,6 +70,21 @@ func (o *IAMTokenCallOptionInjectorOption) HasTokenFor(container googlecloud.Res
 	ci := container.Identifier()
 	_, found := typeddict.Get(o.containerSpecificTokens, ci)
 	return found
+}
+
+// RegisteredProjectIDs returns a list of Google Cloud project IDs that have IAM tokens registered.
+func (o *IAMTokenCallOptionInjectorOption) RegisteredProjectIDs() []string {
+	if o == nil || o.containerSpecificTokens == nil {
+		return nil
+	}
+	keys := o.containerSpecificTokens.Keys()
+	var projectIDs []string
+	for _, key := range keys {
+		if strings.HasPrefix(key, "projects/") {
+			projectIDs = append(projectIDs, strings.TrimPrefix(key, "projects/"))
+		}
+	}
+	return projectIDs
 }
 
 func (o *IAMTokenCallOptionInjectorOption) getTokenFor(container googlecloud.ResourceContainer) string {
