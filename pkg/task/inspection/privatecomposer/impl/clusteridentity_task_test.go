@@ -117,3 +117,51 @@ func TestComposerClusterIdentityTask(t *testing.T) {
 		})
 	}
 }
+
+func TestComposerAPIAuditClusterIdentityTask(t *testing.T) {
+	testCases := []struct {
+		name              string
+		baseIdentity      googlecloudk8scommon_contract.GoogleCloudClusterIdentity
+		customerProjectID string
+		want              googlecloudk8scommon_contract.GoogleCloudClusterIdentity
+	}{
+		{
+			name: "copies base cluster identity and overwrites project ID with customer project ID",
+			baseIdentity: googlecloudk8scommon_contract.GoogleCloudClusterIdentity{
+				ProjectID:    "my-tenant-project-tp",
+				Location:     "us-central1-c",
+				ClusterName:  "my-cluster",
+				PrefixPolicy: googlecloudk8scommon_contract.ClusterPrefixPolicy{Prefix: "test-prefix"},
+			},
+			customerProjectID: "my-customer-project",
+			want: googlecloudk8scommon_contract.GoogleCloudClusterIdentity{
+				ProjectID:    "my-customer-project",
+				Location:     "us-central1-c",
+				ClusterName:  "my-cluster",
+				PrefixPolicy: googlecloudk8scommon_contract.ClusterPrefixPolicy{Prefix: "test-prefix"},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockBaseClusterIdentityTask := tasktest.StubTaskFromReferenceID(googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(), tc.baseIdentity, nil)
+			mockCustomerProjectIDTask := tasktest.StubTaskFromReferenceID(googlecloudcommon_contract.InputProjectIdTaskID.Ref(), tc.customerProjectID, nil)
+
+			result, _, err := inspectiontest.RunInspectionTaskWithDependency(
+				inspectiontest.WithDefaultTestInspectionTaskContext(context.Background()),
+				ComposerAPIAuditClusterIdentityTask,
+				[]coretask.UntypedTask{mockBaseClusterIdentityTask, mockCustomerProjectIDTask},
+				inspectioncore_contract.TaskModeRun,
+				map[string]any{},
+			)
+			if err != nil {
+				t.Fatalf("unexpected error running task: %v", err)
+			}
+
+			if diff := cmp.Diff(tc.want, result); diff != "" {
+				t.Errorf("ComposerAPIAuditClusterIdentityTask mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
