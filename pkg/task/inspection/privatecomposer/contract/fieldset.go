@@ -131,11 +131,11 @@ func extractAuditSummary(methodName, principalEmail string) string {
 // Since the timeline path is already structured under the GCP project ID, the project prefix is stripped.
 func extractDatabaseID(databaseID string) string {
 	if databaseID == "" {
-		return "unknown"
+		return ""
 	}
 	if _, instanceID, ok := strings.Cut(databaseID, ":"); ok {
 		if instanceID == "" {
-			return "unknown"
+			return ""
 		}
 		return instanceID
 	}

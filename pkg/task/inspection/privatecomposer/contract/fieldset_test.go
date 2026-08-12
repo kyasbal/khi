@@ -78,7 +78,7 @@ resource:
 textPayload: "INFO:  system check ok"
 `,
 			wantFS: &CloudSQLFieldSet{
-				DatabaseID:  "unknown",
+				DatabaseID:  "",
 				LogFileName: "unknown",
 				Summary:     "system check ok",
 			},
@@ -91,7 +91,7 @@ resource:
     database_id: "test-proj:"
 `,
 			wantFS: &CloudSQLFieldSet{
-				DatabaseID:  "unknown",
+				DatabaseID:  "",
 				LogFileName: "unknown",
 				Summary:     "",
 			},

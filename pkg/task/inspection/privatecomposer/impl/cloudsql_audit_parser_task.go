@@ -21,7 +21,6 @@ import (
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
-	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	pb "github.com/GoogleCloudPlatform/khi/pkg/generated/khifile/v6"
 	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
@@ -105,14 +104,14 @@ var CloudSQLAuditLogsGrouperTask = inspectiontaskbase.NewLogGrouperTask(
 )
 
 type cloudSQLAuditTimelineState struct {
-	Tracker         *googlecloudcommon_contract.GCPOperationTracker
-	TenantProjectID string
-	DatabaseID      string
+	Tracker              *googlecloudcommon_contract.GCPOperationTracker
+	OperationDatabaseIDs map[string]string
 }
 
 func newCloudSQLAuditTimelineState() *cloudSQLAuditTimelineState {
 	return &cloudSQLAuditTimelineState{
-		Tracker: googlecloudcommon_contract.NewGCPOperationTracker(),
+		Tracker:              googlecloudcommon_contract.NewGCPOperationTracker(),
+		OperationDatabaseIDs: make(map[string]string),
 	}
 }
 
@@ -127,9 +126,7 @@ func (m *cloudSQLAuditLogsTimelineMapper) LogIngesterTask() taskid.TaskReference
 
 // Dependencies returns additional dependencies needed for mapping audit log timelines.
 func (m *cloudSQLAuditLogsTimelineMapper) Dependencies() []taskid.UntypedTaskReference {
-	return []taskid.UntypedTaskReference{
-		privatecomposer_contract.InputComposerTenantProjectIdTaskID.Ref(),
-	}
+	return []taskid.UntypedTaskReference{}
 }
 
 // GroupedLogTask returns the reference to the Cloud SQL audit log grouper task.
@@ -152,29 +149,27 @@ func (m *cloudSQLAuditLogsTimelineMapper) ProcessLogByGroup(ctx context.Context,
 		return nil, state, err
 	}
 
-	tenantProjectID := state.TenantProjectID
+	tenantProjectID := audit.ProjectID
 	if tenantProjectID == "" {
-		if audit.ProjectID != "" && audit.ProjectID != "unknown" {
-			tenantProjectID = audit.ProjectID
-			state.TenantProjectID = tenantProjectID
-		} else {
-			tenantProjectID = coretask.GetTaskResult(ctx, privatecomposer_contract.InputComposerTenantProjectIdTaskID.Ref())
-			if tenantProjectID != "" {
-				state.TenantProjectID = tenantProjectID
-			} else {
-				tenantProjectID = "unknown"
-			}
-		}
+		tenantProjectID = "unknown"
 	}
 
-	databaseID := state.DatabaseID
-	if databaseID == "" {
-		if cloudSQLFS, err := log.GetFieldSet(l, &privatecomposer_contract.CloudSQLFieldSet{}); err == nil && cloudSQLFS.DatabaseID != "" {
-			databaseID = cloudSQLFS.DatabaseID
-			state.DatabaseID = databaseID
-		} else {
-			databaseID = "unknown"
+	var databaseID string
+	if cloudSQLFS, err := log.GetFieldSet(l, &privatecomposer_contract.CloudSQLFieldSet{}); err == nil && cloudSQLFS.DatabaseID != "" {
+		databaseID = cloudSQLFS.DatabaseID
+		if audit.OperationID != "" && !audit.ImmediateOperation() {
+			state.OperationDatabaseIDs[audit.OperationID] = databaseID
 		}
+	} else if audit.OperationID != "" {
+		databaseID = state.OperationDatabaseIDs[audit.OperationID]
+	}
+
+	if audit.OperationID != "" && audit.Ending() {
+		delete(state.OperationDatabaseIDs, audit.OperationID)
+	}
+
+	if databaseID == "" {
+		databaseID = "unknown"
 	}
 
 	instancePath := privatecomposer_contract.MustCloudSQLInstanceTimeline(ctx, tenantProjectID, databaseID)

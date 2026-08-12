@@ -115,6 +115,7 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
 				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+					ProjectID:      "my-tenant-project-tp",
 					MethodName:     "cloudsql.instances.create",
 					OperationID:    "op-12345",
 					OperationFirst: true,
@@ -149,6 +150,7 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
 				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+					ProjectID:     "my-tenant-project-tp",
 					MethodName:    "cloudsql.instances.create",
 					OperationID:   "op-12345",
 					OperationLast: true,
@@ -159,8 +161,7 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 			projectID: "my-tenant-project-tp",
 			state: func() *cloudSQLAuditTimelineState {
 				s := newCloudSQLAuditTimelineState()
-				s.TenantProjectID = "my-tenant-project-tp"
-				s.DatabaseID = "us-central1-composer-2-170061d7-sql"
+				s.OperationDatabaseIDs["op-12345"] = "us-central1-composer-2-170061d7-sql"
 				s.Tracker.ProcessOperationLog(context.Background(), khifilev6.NewTimelineChangeSet(log.NewLogWithFieldSetsForTest()), expectedCreateOpPath, &googlecloudcommon_contract.GCPAuditLogFieldSet{
 					OperationID:    "op-12345",
 					OperationFirst: true,
@@ -193,6 +194,7 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
 				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+					ProjectID:     "my-tenant-project-tp",
 					MethodName:    "cloudsql.instances.create",
 					OperationID:   "op-12345",
 					OperationLast: true,
@@ -239,6 +241,7 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
 				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+					ProjectID:      "my-tenant-project-tp",
 					MethodName:     "cloudsql.instances.create",
 					OperationFirst: true,
 					OperationLast:  true,
@@ -267,6 +270,7 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
 				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+					ProjectID:     "my-tenant-project-tp",
 					MethodName:    "cloudsql.instances.create",
 					OperationID:   "op-12345",
 					OperationLast: true,
@@ -297,6 +301,7 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
 				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+					ProjectID:      "my-tenant-project-tp",
 					MethodName:     "cloudsql.instances.delete",
 					OperationID:    "op-67890",
 					OperationFirst: true,
@@ -337,6 +342,7 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
 				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+					ProjectID:     "my-tenant-project-tp",
 					MethodName:    "cloudsql.instances.delete",
 					OperationID:   "op-67890",
 					OperationLast: true,
@@ -347,8 +353,7 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 			projectID: "my-tenant-project-tp",
 			state: func() *cloudSQLAuditTimelineState {
 				s := newCloudSQLAuditTimelineState()
-				s.TenantProjectID = "my-tenant-project-tp"
-				s.DatabaseID = "us-central1-composer-2-170061d7-sql"
+				s.OperationDatabaseIDs["op-67890"] = "us-central1-composer-2-170061d7-sql"
 				s.Tracker.MarkResourceRevision(expectedInstancePath)
 				s.Tracker.ProcessOperationLog(context.Background(), khifilev6.NewTimelineChangeSet(log.NewLogWithFieldSetsForTest()), expectedDeleteOpPath, &googlecloudcommon_contract.GCPAuditLogFieldSet{
 					OperationID:    "op-67890",
@@ -382,6 +387,7 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
 				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+					ProjectID:      "my-tenant-project-tp",
 					MethodName:     "cloudsql.instances.delete",
 					OperationFirst: true,
 					OperationLast:  true,
@@ -392,8 +398,6 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 			projectID: "my-tenant-project-tp",
 			state: func() *cloudSQLAuditTimelineState {
 				s := newCloudSQLAuditTimelineState()
-				s.TenantProjectID = "my-tenant-project-tp"
-				s.DatabaseID = "us-central1-composer-2-170061d7-sql"
 				s.Tracker.MarkResourceRevision(expectedInstancePath)
 				return s
 			}(),
@@ -417,6 +421,7 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
 				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+					ProjectID:      "my-tenant-project-tp",
 					MethodName:     "cloudsql.instances.patch",
 					OperationID:    "op-patch-1",
 					OperationFirst: true,
@@ -445,6 +450,7 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
 				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+					ProjectID:    "my-tenant-project-tp",
 					MethodName:   "cloudsql.instances.patch",
 					ResourceName: "projects/my-tenant-project-tp/instances/sql-inst",
 				},
@@ -456,22 +462,24 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 			},
 		},
 		{
-			name: "fallback to tenantProjectID and databaseID stored in state when current log is missing labels",
+			name: "fallback to databaseID stored in state for same OperationID when log is missing databaseID",
 			inputLog: log.NewLogWithFieldSetsForTest(
 				&log.CommonFieldSet{
 					Timestamp: time.Date(2026, 8, 4, 15, 30, 0, 0, time.UTC),
 				},
 				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+					ProjectID:    "my-tenant-project-tp",
 					MethodName:   "cloudsql.instances.patch",
+					OperationID:  "op-patch-1",
 					ResourceName: "projects/my-tenant-project-tp/instances/sql-inst",
 				},
 			),
 			projectID: "",
-			state: &cloudSQLAuditTimelineState{
-				TenantProjectID: "my-tenant-project-tp",
-				DatabaseID:      "us-central1-composer-2-170061d7-sql",
-				Tracker:         googlecloudcommon_contract.NewGCPOperationTracker(),
-			},
+			state: func() *cloudSQLAuditTimelineState {
+				s := newCloudSQLAuditTimelineState()
+				s.OperationDatabaseIDs["op-patch-1"] = "us-central1-composer-2-170061d7-sql"
+				return s
+			}(),
 			assert: func(t *testing.T, cs *khifilev6.TimelineChangeSet) {
 				testchangeset.AssertTimeline(t, cs).
 					HasEvent(expectedInstancePath)
