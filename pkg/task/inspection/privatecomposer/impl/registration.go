@@ -52,7 +52,7 @@ func Register(registry coreinspection.InspectionTaskRegistry) error {
 	if err := coretask.RegisterTasks(scopedComposerV3,
 		ClusterIdentityTask,
 		ComposerClusterIdentityTask,
-		AutocompleteComposerClusterNamesTask,
+		AutocompleteComposerClusterIdentityTask,
 		ComposerV3ClusterNamePrefixTask,
 	); err != nil {
 		return err

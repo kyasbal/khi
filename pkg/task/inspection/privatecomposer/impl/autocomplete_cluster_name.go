@@ -16,98 +16,97 @@ package privatecomposer_impl
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"strings"
-	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	googlecloudclustercomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	privatecomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposer/contract"
 )
 
-var AutocompleteComposerClusterNamesTask = inspectiontaskbase.NewGlobalCachedTask(taskid.NewImplementationID(googlecloudk8scommon_contract.AutocompleteClusterIdentityTaskID.Ref(), privatecomposer_contract.InspectionTypeId), []taskid.UntypedTaskReference{
-	googlecloudk8scommon_contract.ClusterNamePrefixTaskRef,
+var AutocompleteComposerClusterIdentityTask = inspectiontaskbase.NewGlobalCachedTask(taskid.NewImplementationID(googlecloudk8scommon_contract.AutocompleteClusterIdentityTaskID.Ref(), privatecomposer_contract.InspectionTypeId), []taskid.UntypedTaskReference{
+	googlecloudclustercomposer_contract.ComposerEnvironmentClusterFinderTaskID.Ref(),
 	privatecomposer_contract.InputComposerTenantProjectIdTaskID.Ref(),
+	googlecloudcommon_contract.InputLocationsTaskID.Ref(),
+	googlecloudclustercomposer_contract.InputComposerEnvironmentNameTaskID.Ref(),
 	googlecloudcommon_contract.InputStartTimeTaskID.Ref(),
 	googlecloudcommon_contract.InputEndTimeTaskID.Ref(),
-	googlecloudk8scommon_contract.AutocompleteMetricsK8sContainerTaskID.Ref(),
-	googlecloudcommon_contract.APIClientFactoryTaskID.Ref(),
-	googlecloudcommon_contract.APIClientCallOptionsInjectorTaskID.Ref(),
 }, func(ctx context.Context, prevValue inspectiontaskbase.CacheableTaskResult[*inspectioncore_contract.AutocompleteResult[googlecloudk8scommon_contract.GoogleCloudClusterIdentity]]) (inspectiontaskbase.CacheableTaskResult[*inspectioncore_contract.AutocompleteResult[googlecloudk8scommon_contract.GoogleCloudClusterIdentity]], error) {
-	clusterNamePrefix := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterNamePrefixTaskRef)
 	projectID := coretask.GetTaskResult(ctx, privatecomposer_contract.InputComposerTenantProjectIdTaskID.Ref())
+	environment := coretask.GetTaskResult(ctx, googlecloudclustercomposer_contract.InputComposerEnvironmentNameTaskID.Ref())
+	location := coretask.GetTaskResult(ctx, googlecloudcommon_contract.InputLocationsTaskID.Ref())
 	startTime := coretask.GetTaskResult(ctx, googlecloudcommon_contract.InputStartTimeTaskID.Ref())
 	endTime := coretask.GetTaskResult(ctx, googlecloudcommon_contract.InputEndTimeTaskID.Ref())
-	metricsType := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.AutocompleteMetricsK8sContainerTaskID.Ref())
-	cf := coretask.GetTaskResult(ctx, googlecloudcommon_contract.APIClientFactoryTaskID.Ref())
-	optionInjector := coretask.GetTaskResult(ctx, googlecloudcommon_contract.APIClientCallOptionsInjectorTaskID.Ref())
 
-	currentDigest := fmt.Sprintf("%s-%s-%d-%d", clusterNamePrefix, projectID, startTime.Unix(), endTime.Unix())
-	if currentDigest == prevValue.DependencyDigest {
-		return prevValue, nil
-	}
-	if projectID == "" {
+	dependencyDigest := fmt.Sprintf("%s-%s-%s-%d-%d", projectID, environment, location, startTime.Unix(), endTime.Unix())
+
+	isWIP := projectID == "" || environment == ""
+	if isWIP {
 		return inspectiontaskbase.CacheableTaskResult[*inspectioncore_contract.AutocompleteResult[googlecloudk8scommon_contract.GoogleCloudClusterIdentity]]{
+			DependencyDigest: dependencyDigest,
 			Value: &inspectioncore_contract.AutocompleteResult[googlecloudk8scommon_contract.GoogleCloudClusterIdentity]{
 				Values: []googlecloudk8scommon_contract.GoogleCloudClusterIdentity{},
-				Error:  "",
-				Hint:   "Cluster names are suggested after the tenant project ID is provided.",
+				Error:  "Project ID or Composer environment name is empty",
 			},
-			DependencyDigest: currentDigest,
 		}, nil
 	}
 
-	errorString := ""
-	hintString := ""
-	if endTime.Before(time.Now().Add(-time.Hour * 24 * 30 * 24)) {
-		hintString = "The end time is more than 24 months ago. Suggested cluster names may not be complete."
+	if location == "" {
+		return inspectiontaskbase.CacheableTaskResult[*inspectioncore_contract.AutocompleteResult[googlecloudk8scommon_contract.GoogleCloudClusterIdentity]]{
+			DependencyDigest: dependencyDigest,
+			Value: &inspectioncore_contract.AutocompleteResult[googlecloudk8scommon_contract.GoogleCloudClusterIdentity]{
+				Values: []googlecloudk8scommon_contract.GoogleCloudClusterIdentity{},
+				Error:  "",
+				Hint:   "Cluster names are suggested after the location is provided.",
+			},
+		}, nil
 	}
 
-	client, err := cf.MonitoringMetricClient(ctx, googlecloud.Project(projectID))
+	if environment != "" && dependencyDigest == prevValue.DependencyDigest {
+		return prevValue, nil
+	}
+
+	clusterFinder := coretask.GetTaskResult(ctx, googlecloudclustercomposer_contract.ComposerEnvironmentClusterFinderTaskID.Ref())
+	clusterNames, err := clusterFinder.GetGKEClusterNames(ctx, projectID, location, environment, startTime, endTime)
 	if err != nil {
-		return prevValue, fmt.Errorf("failed to create monitoring metric client: %w", err)
-	}
-
-	ctx = optionInjector.InjectToCallContext(ctx, googlecloud.Project(projectID))
-	filter := fmt.Sprintf(`metric.type="%s" AND resource.type="k8s_container"`, metricsType)
-	metricsLabels, err := googlecloud.QueryResourceLabelsFromMetrics(ctx, client, projectID, filter, startTime, endTime, []string{"resource.label.cluster_name", "resource.label.location"})
-	if err != nil {
-		errorString = err.Error()
-	}
-
-	var filteredClusters []map[string]string
-	for _, labels := range metricsLabels {
-		clusterName := labels["cluster_name"]
-		if !strings.Contains(clusterName, "/") {
-			filteredClusters = append(filteredClusters, labels)
+		if errors.Is(err, googlecloudclustercomposer_contract.ErrEnvironmentClusterNotFound) {
+			return inspectiontaskbase.CacheableTaskResult[*inspectioncore_contract.AutocompleteResult[googlecloudk8scommon_contract.GoogleCloudClusterIdentity]]{
+				DependencyDigest: dependencyDigest,
+				Value: &inspectioncore_contract.AutocompleteResult[googlecloudk8scommon_contract.GoogleCloudClusterIdentity]{
+					Values: []googlecloudk8scommon_contract.GoogleCloudClusterIdentity{},
+					Error: `Not found. It works for the clusters existed in the past but make sure the cluster name is right if you believe the cluster should be there.
+Note: If you want to inspect Managed Airflow 2, you should select another inspection type.`,
+				},
+			}, nil
 		}
+		return inspectiontaskbase.CacheableTaskResult[*inspectioncore_contract.AutocompleteResult[googlecloudk8scommon_contract.GoogleCloudClusterIdentity]]{
+			DependencyDigest: dependencyDigest,
+			Value: &inspectioncore_contract.AutocompleteResult[googlecloudk8scommon_contract.GoogleCloudClusterIdentity]{
+				Values: []googlecloudk8scommon_contract.GoogleCloudClusterIdentity{},
+				Error:  "Failed to fetch the list GKE cluster. Please confirm if the Project ID is correct, or retry later",
+			},
+		}, nil
 	}
 
-	if hintString == "" && errorString == "" && len(filteredClusters) == 0 {
-		hintString = fmt.Sprintf("No cluster names found between %s and %s. It is highly likely that the time range is incorrect. Please verify the time range, or proceed by manually entering the cluster name.", startTime.Format(time.RFC3339), endTime.Format(time.RFC3339))
-	}
-
-	identities := make([]googlecloudk8scommon_contract.GoogleCloudClusterIdentity, len(filteredClusters))
-	for i, labels := range filteredClusters {
+	identities := make([]googlecloudk8scommon_contract.GoogleCloudClusterIdentity, len(clusterNames))
+	for i, clusterName := range clusterNames {
 		identities[i] = googlecloudk8scommon_contract.GoogleCloudClusterIdentity{
+			ClusterName:  clusterName,
 			ProjectID:    projectID,
+			Location:     location,
 			PrefixPolicy: googlecloudk8scommon_contract.ClusterPrefixPolicy{}, // Managed Airflow 3 is based on standard GKE. It has no prefixes.
-			ClusterName:  labels["cluster_name"],
-			Location:     labels["location"],
 		}
 	}
 
 	return inspectiontaskbase.CacheableTaskResult[*inspectioncore_contract.AutocompleteResult[googlecloudk8scommon_contract.GoogleCloudClusterIdentity]]{
-		DependencyDigest: currentDigest,
+		DependencyDigest: dependencyDigest,
 		Value: &inspectioncore_contract.AutocompleteResult[googlecloudk8scommon_contract.GoogleCloudClusterIdentity]{
 			Values: identities,
-			Error:  errorString,
-			Hint:   hintString,
 		},
 	}, nil
 }, inspectioncore_contract.InspectionTypeLabel(privatecomposer_contract.InspectionTypeId),
