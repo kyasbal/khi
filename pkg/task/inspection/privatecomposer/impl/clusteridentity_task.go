@@ -23,6 +23,7 @@ import (
 	googlecloudclustercomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
+	googlecloudlogcomposerapiaudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogcomposerapiaudit/contract"
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	privatecomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposer/contract"
 )
@@ -62,6 +63,21 @@ var ComposerClusterIdentityTask = inspectiontaskbase.NewInspectionTask(taskid.Ne
 		ProjectID: projectId,
 		Location:  location,
 	}, nil
+},
+	inspectioncore_contract.InspectionTypeLabel(privatecomposer_contract.InspectionTypeId),
+	coretask.WithSelectionPriority(100),
+)
+
+// ComposerAPIAuditClusterIdentityTask is an override for googlecloudlogcomposerapiaudit_contract.ClusterIdentityTaskID
+// that copies ClusterIdentity from googlecloudk8scommon_contract.ClusterIdentityTaskID and overwrites only ProjectID
+// with the customer project ID (InputProjectIdTaskID) rather than the tenant project ID.
+var ComposerAPIAuditClusterIdentityTask = inspectiontaskbase.NewInspectionTask(taskid.NewImplementationID(googlecloudlogcomposerapiaudit_contract.ClusterIdentityTaskID.Ref(), privatecomposer_contract.InspectionTypeId), []taskid.UntypedTaskReference{
+	googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(),
+	googlecloudcommon_contract.InputProjectIdTaskID.Ref(),
+}, func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (googlecloudk8scommon_contract.GoogleCloudClusterIdentity, error) {
+	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
+	clusterIdentity.ProjectID = coretask.GetTaskResult(ctx, googlecloudcommon_contract.InputProjectIdTaskID.Ref())
+	return clusterIdentity, nil
 },
 	inspectioncore_contract.InspectionTypeLabel(privatecomposer_contract.InspectionTypeId),
 	coretask.WithSelectionPriority(100),
