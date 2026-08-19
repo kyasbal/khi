@@ -17,6 +17,7 @@
 import { Injectable, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { firstValueFrom } from 'rxjs';
 import { GoogleDriveAPI } from './google-drive-api';
 import {
   PROGRESS_DIALOG_STATUS_UPDATOR,
@@ -25,37 +26,45 @@ import {
 import { InspectionDataLoaderService } from 'src/app/services/data-loader.service';
 import { LoginDialogComponent } from './login-dialog/login.component';
 
+/**
+ * Service for loading inspection data from Google Drive and importing it via backend.
+ */
 @Injectable()
 export class GoogleDriveDataLoaderService {
   private readonly progress = inject<ProgressDialogStatusUpdator>(
     PROGRESS_DIALOG_STATUS_UPDATOR,
   );
-  private loaderService = inject(InspectionDataLoaderService);
-  private _dialog = inject(MatDialog);
-  private _snackBar = inject(MatSnackBar);
-  private _driveAPI = inject(GoogleDriveAPI);
+  private readonly loaderService = inject(InspectionDataLoaderService);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly driveAPI = inject(GoogleDriveAPI);
 
+  /**
+   * Loads inspection data from Google Drive by file ID and imports it into the backend.
+   *
+   * @param fileId Google Drive file ID.
+   */
   public async load(fileId: string): Promise<void> {
-    const dialogRef = this._dialog.open(LoginDialogComponent, {});
-    dialogRef.afterClosed().subscribe({
-      complete: async () => {
-        this.progress.show();
-        this.progress.updateProgress({
-          message: 'Loading inspection data from Google Drive...',
-          mode: 'indeterminate',
-          percent: 0,
-        });
-        try {
-          const fileData = await this._driveAPI.getFileAsText(fileId);
-          this.loaderService.loadInspectionDataDirect(fileData);
-        } catch (e) {
-          console.error(e);
-          this._snackBar.open('Specified inspection data not found', 'Close', {
-            duration: 10000,
-          });
-        }
-        this.progress.dismiss();
-      },
+    const dialogRef = this.dialog.open(LoginDialogComponent, {});
+    await firstValueFrom(dialogRef.afterClosed());
+
+    this.progress.show();
+    this.progress.updateProgress({
+      message: 'Loading inspection data from Google Drive...',
+      mode: 'indeterminate',
+      percent: 0,
     });
+    try {
+      const fileData = await this.driveAPI.getFileAsText(fileId);
+      const file = new File([fileData], `${fileId}.khi`);
+      await this.loaderService.importInspectionFile(file);
+    } catch (e) {
+      console.error(e);
+      this.snackBar.open('Specified inspection data not found', 'Close', {
+        duration: 10000,
+      });
+    } finally {
+      this.progress.dismiss();
+    }
   }
 }

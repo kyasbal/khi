@@ -9,6 +9,7 @@ require (
 	cloud.google.com/go/compute v1.66.0
 	cloud.google.com/go/logging v1.19.1
 	cloud.google.com/go/monitoring v1.30.0
+	connectrpc.com/connect v1.20.0
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.35.0
 	github.com/googleapis/gax-go/v2 v2.23.0
 	github.com/shirou/gopsutil/v3 v3.24.5
@@ -47,7 +48,6 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/addlicense v1.2.0 // indirect
 	github.com/google/flatbuffers v25.12.19+incompatible // indirect
 	github.com/google/pprof v0.0.0-20260802141513-ef3492d7dac3 // indirect
@@ -72,7 +72,6 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.70.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.70.0 // indirect
 	go.opentelemetry.io/otel/metric v1.45.0 // indirect
-	go.uber.org/mock v0.6.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	golang.org/x/arch v0.30.0 // indirect
 	golang.org/x/mod v0.39.0 // indirect
