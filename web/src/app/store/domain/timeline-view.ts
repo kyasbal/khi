@@ -20,12 +20,14 @@ import { Timeline } from 'src/app/store/domain/timeline';
 import { TimelineStore } from 'src/app/store/domain/timeline-store';
 import { ReadonlyDomainElement } from 'src/app/store/domain/types';
 import {
-  CancellationError,
+  isCancellationError,
   LogTimelineFilter,
   LogTimelineFilterContext,
 } from 'src/app/store/domain/filter/types';
 import { Subscription } from 'rxjs';
 import { CollapseTimelineFilter } from 'src/app/store/domain/filter/collapse-filter';
+import { BackendFilter } from 'src/app/store/domain/filter/backend-filter';
+import { WorkbenchClientService } from 'src/app/services/api/workbench/workbench-client.service';
 
 /**
  * Holds the progress information of a specific filter step.
@@ -47,6 +49,16 @@ export class TimelineView {
   private readonly filters = new Set<LogTimelineFilter>();
   private readonly subscriptions = new Map<LogTimelineFilter, Subscription>();
   private readonly collapseFilter = new CollapseTimelineFilter();
+  public readonly backendFilter: BackendFilter;
+
+  /** Active CEL expression for including timelines and expanding hierarchies. */
+  public readonly timelineQuery;
+  /** Active CEL expression for excluding timelines. */
+  public readonly timelineExclusionQuery;
+  /** Active CEL expression for filtering logs. */
+  public readonly logQuery;
+  /** Whether to hide timelines that have no matching logs. */
+  public readonly excludeNoLogs;
 
   private readonly _context = signal<LogTimelineFilterContext>({
     timelineIds: new Set(),
@@ -112,9 +124,18 @@ export class TimelineView {
   });
 
   /**
-   * Initializes a new instance of the TimelineView utilizing the target timeline store.
+   * Initializes a new instance of the TimelineView utilizing the target timeline store and optional WorkbenchClientService.
    */
-  constructor(private readonly store: TimelineStore) {
+  constructor(
+    private readonly store: TimelineStore,
+    private readonly workbenchClient?: WorkbenchClientService,
+  ) {
+    this.backendFilter = new BackendFilter(this.workbenchClient);
+    this.timelineQuery = this.backendFilter.timelineQuery;
+    this.timelineExclusionQuery = this.backendFilter.timelineExclusionQuery;
+    this.logQuery = this.backendFilter.logQuery;
+    this.excludeNoLogs = this.backendFilter.excludeNoLogs;
+
     // Initialize context with all timelines/logs initially
     const allTimelines = this.store.timelines;
     const allTimelineIds = new Set(allTimelines.map((t) => t.id));
@@ -126,6 +147,8 @@ export class TimelineView {
       timelineIds: allTimelineIds,
       logIds: allLogIds,
     });
+
+    this.addFilter(this.backendFilter);
     this.addFilter(this.collapseFilter);
   }
 
@@ -245,7 +268,7 @@ export class TimelineView {
         this._context.set(ctx);
       }
     } catch (err) {
-      if (err instanceof CancellationError) {
+      if (abortController.signal.aborted || isCancellationError(err)) {
         return;
       }
       console.error('Error during async filtering pipeline:', err);

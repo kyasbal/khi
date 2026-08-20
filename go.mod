@@ -11,6 +11,7 @@ require (
 	cloud.google.com/go/monitoring v1.30.0
 	connectrpc.com/connect v1.20.0
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.35.0
+	github.com/google/cel-go v0.24.1
 	github.com/googleapis/gax-go/v2 v2.23.0
 	github.com/shirou/gopsutil/v3 v3.24.5
 	go.opentelemetry.io/otel v1.45.0
@@ -26,6 +27,7 @@ require (
 )
 
 require (
+	cel.dev/expr v0.25.2 // indirect
 	cloud.google.com/go v0.123.0 // indirect
 	cloud.google.com/go/auth v0.23.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
@@ -34,6 +36,7 @@ require (
 	cloud.google.com/go/longrunning v1.2.0 // indirect
 	cloud.google.com/go/trace v1.16.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.59.0 // indirect
+	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/apache/arrow/go/v15 v15.0.2 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.0.2 // indirect
 	github.com/bytedance/gopkg v0.1.4 // indirect
@@ -61,6 +64,7 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20260805114148-88456608a4f6 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.61.0 // indirect
+	github.com/stoewer/go-strcase v1.2.0 // indirect
 	github.com/tklauser/go-sysconf v0.4.0 // indirect
 	github.com/tklauser/numcpus v0.12.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect

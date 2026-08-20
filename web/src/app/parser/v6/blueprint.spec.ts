@@ -38,6 +38,7 @@ import {
 } from 'src/app/generated/khifile/v6/timeline_pb';
 import {
   HDRColor4Schema,
+  IconAtlasSchema,
   SeveritySchema,
   TimelineStyleChunkSchema,
 } from 'src/app/generated/khifile/v6/style_pb';
@@ -69,7 +70,7 @@ describe('V6_BLUEPRINT', () => {
 });
 
 describe('V6InternPoolAssembler', () => {
-  it('should ingest strings and field path sets and assemble them into builder', () => {
+  it('should ingest strings and assemble them into builder', () => {
     const assembler = new V6InternPoolAssembler();
     const mockChunk = create(InterningPoolChunkSchema, {
       strings: [
@@ -95,19 +96,13 @@ describe('V6InternPoolAssembler', () => {
 
     const builder = jasmine.createSpyObj<InspectionDataBuilder>(
       'InspectionDataBuilder',
-      ['addStrings', 'addFieldPathSets', 'addStructs'],
+      ['addStrings'],
     );
     assembler.assembleInto(builder);
 
     expect(builder.addStrings).toHaveBeenCalledWith([
       { id: 1, value: 'foo' },
       { id: 2, value: 'bar' },
-    ]);
-    expect(builder.addFieldPathSets).toHaveBeenCalledWith([
-      { id: 10, fieldPathStringIds: [1, 2] },
-    ]);
-    expect(builder.addStructs).toHaveBeenCalledWith([
-      jasmine.objectContaining({ id: 100, fieldPathSetId: 10 }),
     ]);
   });
 });
@@ -144,7 +139,6 @@ describe('V6LogAssembler', () => {
         severityTypeId: 20,
         summaryStringId: 30,
         bodyStructId: 5,
-        body: undefined,
       },
     ]);
   });
@@ -194,6 +188,55 @@ describe('V6StyleAssembler', () => {
         order: 0,
       },
     ]);
+  });
+
+  it('should correctly extract ArrayBuffer slices for iconAtlas with subarray views', () => {
+    const assembler = new V6StyleAssembler();
+
+    // Create Uint8Array views with non-zero byteOffset inside a shared ArrayBuffer
+    const fullBuffer = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).buffer;
+    const msdfSubarray = new Uint8Array(fullBuffer, 2, 3); // bytes [2, 3, 4]
+    const bmfontSubarray = new Uint8Array(fullBuffer, 6, 4); // bytes [6, 7, 8, 9]
+
+    const mockChunk = create(TimelineStyleChunkSchema, {
+      severities: [],
+      verbs: [],
+      logTypes: [],
+      revisionStates: [],
+      timelineTypes: [],
+      iconAtlas: create(IconAtlasSchema, {
+        msdfIconImage: [msdfSubarray],
+        bmfontJson: bmfontSubarray,
+        nameToCodepoints: { testIcon: 'e001' },
+      }),
+    });
+
+    assembler.ingest(mockChunk);
+
+    const builder = jasmine.createSpyObj<InspectionDataBuilder>(
+      'InspectionDataBuilder',
+      [
+        'addSeverities',
+        'addVerbs',
+        'addLogTypes',
+        'addRevisionStates',
+        'addTimelineTypes',
+        'setIconAtlas',
+      ],
+    );
+    assembler.assembleInto(builder);
+
+    expect(builder.setIconAtlas).toHaveBeenCalledTimes(1);
+    const passedAtlas = builder.setIconAtlas.calls.mostRecent().args[0];
+
+    expect(passedAtlas.msdfIconImage.length).toBe(1);
+    expect(new Uint8Array(passedAtlas.msdfIconImage[0] as ArrayBuffer)).toEqual(
+      new Uint8Array([2, 3, 4]),
+    );
+    expect(new Uint8Array(passedAtlas.bmfontJson as ArrayBuffer)).toEqual(
+      new Uint8Array([6, 7, 8, 9]),
+    );
+    expect(passedAtlas.nameToCodepoints.get('testIcon')).toBe('e001');
   });
 });
 
@@ -250,7 +293,6 @@ describe('V6TimelineAssembler', () => {
         verbTypeId: 2,
         stateTypeId: 3,
         resourceBodyStructId: 99,
-        body: undefined,
         fieldAnnotations: [],
       },
     ]);

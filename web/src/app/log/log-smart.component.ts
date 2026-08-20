@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 import { InspectionDataStore } from 'src/app/services/inspection-data-store.service';
 import { SelectionManager } from 'src/app/services/selection-manager.service';
+import { WorkbenchClientService } from 'src/app/services/api/workbench/workbench-client.service';
 import { Log } from 'src/app/store/domain/log';
+import { TimelinePathNode } from 'src/app/store/domain/timeline';
 import { ReadonlyDomainElement } from 'src/app/store/domain/types';
 import { CommonModule } from '@angular/common';
 import { AngularSplitModule } from 'angular-split';
@@ -34,7 +36,6 @@ import {
   ViewStateService,
 } from 'src/app/services/view-state.service';
 import { StyleOverrideService } from 'src/app/services/style-override.service';
-import * as jsyaml from 'js-yaml';
 
 /**
  * `LogSmartComponent` is the main container for the log viewing interface.
@@ -58,6 +59,29 @@ export class LogSmartComponent {
   private readonly inspectionDataStore = inject(InspectionDataStore);
   private readonly viewState = inject(ViewStateService);
   private readonly styleOverrideService = inject(StyleOverrideService);
+  private readonly workbenchClientService = inject(WorkbenchClientService);
+  private readonly logBodyResource = resource({
+    params: () => this.selectionManager.selectedLog()?.structId,
+    loader: async ({ params: structId }) => {
+      if (!structId || structId <= 0) {
+        return '';
+      }
+      try {
+        return await this.workbenchClientService.readStructYAML(structId);
+      } catch (err) {
+        console.warn(
+          `[LogSmartComponent] Failed to read struct YAML for structId ${structId}:`,
+          err,
+        );
+        return '';
+      }
+    },
+  });
+
+  /**
+   * Signal indicating whether the log body YAML is currently being loaded.
+   */
+  public readonly isLoading = this.logBodyResource.isLoading;
 
   /** Holds the active search scope. */
   public readonly activeSearchScope = this.viewState.activeSearchScope;
@@ -155,7 +179,7 @@ export class LogSmartComponent {
             timeline.type.id,
           );
           const pathNodes: ResourcePathNodeViewModel[] = timeline.path.map(
-            (node) => ({
+            (node: TimelinePathNode) => ({
               id: node.id,
               label: node.label,
               type: this.styleOverrideService.getTimelineType(node.type.id),
@@ -172,13 +196,9 @@ export class LogSmartComponent {
         }
       }
 
-      const logBodyText = log.body
-        ? jsyaml.dump(log.body, { lineWidth: -1 })
-        : '';
       return {
         logEntry: log,
-        logBody: logBodyText,
-        parsedLogBody: log.body,
+        logBody: this.logBodyResource.value() ?? '',
         resourceRefs,
       };
     },

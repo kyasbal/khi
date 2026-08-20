@@ -41,6 +41,8 @@ import { SearchBarComponent } from 'src/app/shared/components/search-bar/search-
 import { SearchScope } from 'src/app/services/view-state.service';
 import { YamlViewerComponent } from 'src/app/shared/components/yaml-viewer/yaml-viewer.component';
 import { isEventFromOverlay, isSearchShortcut } from 'src/app/common/dom-util';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import * as yaml from 'js-yaml';
 
 /**
  * View model aggregating the full detailed data required to render the log content and header.
@@ -48,7 +50,6 @@ import { isEventFromOverlay, isSearchShortcut } from 'src/app/common/dom-util';
 export interface LogContentViewModel {
   logEntry: ReadonlyDomainElement<Log> | null;
   logBody: string;
-  parsedLogBody: unknown;
   resourceRefs: ResourceRefAnnotationViewModel[];
 }
 
@@ -72,11 +73,17 @@ export interface LogContentViewModel {
     ClipboardModule,
     SearchBarComponent,
     YamlViewerComponent,
+    MatProgressSpinnerModule,
   ],
 })
 export class LogContentComponent {
   private readonly clipboard = inject(Clipboard);
   private readonly snackBar = inject(MatSnackBar);
+
+  /**
+   * Input indicating whether the log body YAML is currently loading.
+   */
+  public readonly isLoading = input<boolean>(false);
 
   /**
    * Signal tracking whether the in-logbody search bar is currently open.
@@ -137,22 +144,34 @@ export class LogContentComponent {
    */
   public selectedTimeline = input<ReadonlyDomainElement<Timeline> | null>(null);
 
+  private readonly parsedLogBody = computed(() => {
+    const body = this.vm()?.logBody;
+    if (!body) {
+      return null;
+    }
+    try {
+      return yaml.load(body) as Record<string, unknown> | null;
+    } catch {
+      return null;
+    }
+  });
+
   private readonly timestampString = computed(() => {
-    const parsed = this.vm()?.parsedLogBody as
-      { [key: string]: string } | undefined;
+    const parsed = this.parsedLogBody();
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return parsed['timestamp'] ?? null;
+      const ts = parsed['timestamp'];
+      return typeof ts === 'string' ? ts : null;
     }
     return null;
   });
 
   private readonly insertId = computed(() => {
-    const log = this.vm()?.logEntry;
-    if (!log) {
-      return null;
+    const parsed = this.parsedLogBody();
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const id = parsed['insertId'];
+      return typeof id === 'string' && id.trim() !== '' ? id : null;
     }
-    const id = log.body?.['insertId'];
-    return typeof id === 'string' && id.trim() !== '' ? id : null;
+    return null;
   });
 
   /**

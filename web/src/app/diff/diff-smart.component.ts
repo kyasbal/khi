@@ -21,10 +21,12 @@ import {
   computed,
   inject,
   model,
+  resource,
 } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 import { InspectionDataStore } from 'src/app/services/inspection-data-store.service';
 import { SelectionManager } from 'src/app/services/selection-manager.service';
+import { WorkbenchClientService } from 'src/app/services/api/workbench/workbench-client.service';
 import {
   SearchScope,
   ViewStateService,
@@ -64,11 +66,55 @@ export class DiffSmartComponent implements OnInit, OnDestroy {
   private readonly inspectionDataStore = inject(InspectionDataStore);
   private readonly selectionManager = inject(SelectionManager);
   private readonly viewState = inject(ViewStateService);
+  private readonly workbenchClientService = inject(WorkbenchClientService);
+  private readonly currentRevisionResource = resource({
+    params: () => this.selectionManager.selectedRevision()?.structId,
+    loader: async ({ params: structId }) => {
+      if (!structId || structId <= 0) {
+        return '';
+      }
+      try {
+        return await this.workbenchClientService.readStructYAML(structId);
+      } catch (err) {
+        console.warn(
+          `[DiffSmartComponent] Failed to read struct YAML for structId ${structId}:`,
+          err,
+        );
+        return '';
+      }
+    },
+  });
+  private readonly previousRevisionResource = resource({
+    params: () => this.selectionManager.previousOfSelectedRevision()?.structId,
+    loader: async ({ params: structId }) => {
+      if (!structId || structId <= 0) {
+        return null;
+      }
+      try {
+        return await this.workbenchClientService.readStructYAML(structId);
+      } catch (err) {
+        console.warn(
+          `[DiffSmartComponent] Failed to read struct YAML for previous structId ${structId}:`,
+          err,
+        );
+        return null;
+      }
+    },
+  });
   private destroyed = new Subject<void>();
 
   ngOnDestroy(): void {
     this.destroyed.next();
   }
+
+  /**
+   * Signal indicating whether either current or previous revision YAML is currently being loaded.
+   */
+  public readonly isLoading = computed(
+    () =>
+      this.currentRevisionResource.isLoading() ||
+      this.previousRevisionResource.isLoading(),
+  );
 
   /** Holds the active search scope. */
   public readonly activeSearchScope = this.viewState.activeSearchScope;
@@ -116,10 +162,17 @@ export class DiffSmartComponent implements OnInit, OnDestroy {
   protected readonly currentRevision = this.selectionManager.selectedRevision;
 
   /**
+   * Computed raw string of the current revision's content before stripping managed fields.
+   */
+  protected readonly currentRevisionRawBody = computed(() => {
+    return this.currentRevisionResource.value() ?? '';
+  });
+
+  /**
    * Computed string of the current revision's content, formatted according to managed fields visibility.
    */
   protected readonly currentRevisionContent = computed(() => {
-    const content = this.currentRevision()?.bodyYAML ?? '';
+    const content = this.currentRevisionResource.value() ?? '';
     return this.showManagedFields()
       ? content
       : this.removeManagedField(content);
@@ -135,11 +188,10 @@ export class DiffSmartComponent implements OnInit, OnDestroy {
    * Computed string of the previous revision's content, formatted according to managed fields visibility.
    */
   protected readonly previousRevisionContent = computed<string | null>(() => {
-    const previous = this.previousRevision();
-    if (!previous) {
+    const content = this.previousRevisionResource.value();
+    if (content === undefined || content === null) {
       return null;
     }
-    const content = previous.bodyYAML ?? '';
     return this.showManagedFields()
       ? content
       : this.removeManagedField(content);
@@ -162,8 +214,6 @@ export class DiffSmartComponent implements OnInit, OnDestroy {
    * Subject to propagate keyboard selection commands (up/down).
    */
   diffSmartSelectionMoveCommand = new Subject<DiffSmartSelectionMoveCommand>();
-
-  constructor() {}
 
   ngOnInit(): void {
     this.diffSmartSelectionMoveCommand

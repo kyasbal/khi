@@ -1,0 +1,144 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+edition = "2023";
+
+package api.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1;apiv1";
+
+// WorkbenchService manages in-memory analysis sessions for .khi datasets.
+service WorkbenchService {
+  // Opens or attaches to an in-memory Workbench session with real-time loading progress streaming.
+  rpc OpenWorkbench(OpenWorkbenchRequest) returns (stream OpenWorkbenchResponse);
+
+  // Sends periodic heartbeat to keep the Workbench session alive in memory.
+  rpc HeartbeatWorkbench(HeartbeatWorkbenchRequest) returns (HeartbeatWorkbenchResponse);
+
+  // Decodes an interned struct by ID and returns its formatted YAML string.
+  rpc ReadStructYAML(ReadStructYAMLRequest) returns (ReadStructYAMLResponse);
+
+  // Evaluates a timeline and log filtering pipeline on the server and streams progress updates followed by the final matched ID sets.
+  rpc FilterTimeline(FilterTimelineRequest) returns (stream FilterTimelineResponse);
+
+  // Explicitly closes and releases an active Workbench session.
+  rpc CloseWorkbench(CloseWorkbenchRequest) returns (CloseWorkbenchResponse);
+}
+
+// Request to open or attach to a Workbench session for a specific inspection dataset.
+message OpenWorkbenchRequest {
+  // Unique persistent identifier for the user / client browser instance.
+  string user_id = 1;
+  // Session identifier matching the frontend route session ID.
+  string session_id = 2;
+  // The inspection ID to open.
+  string inspection_id = 3;
+}
+
+// Streamed loading progress or completion status for OpenWorkbench.
+message OpenWorkbenchResponse {
+  // Execution phase of the dataset loading process.
+  enum Stage {
+    STAGE_UNSPECIFIED = 0;
+    STAGE_INITIALIZING = 1;
+    STAGE_READING_FILE = 2;
+    STAGE_PARSING_CHUNKS = 3;
+    STAGE_INDEXING_DATA = 4;
+    STAGE_READY = 5;
+  }
+  Stage stage = 1;
+  double progress_percentage = 2;
+  string message = 3;
+
+  // The active workbench ID assigned to this session.
+  string workbench_id = 4;
+}
+
+// Request to refresh the lease TTL of an active Workbench session.
+message HeartbeatWorkbenchRequest {
+  string workbench_id = 1;
+}
+
+// Response confirming heartbeat reception and updated lease expiration time.
+message HeartbeatWorkbenchResponse {
+  bool active = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+// Request to decode an interned struct into its YAML representation.
+message ReadStructYAMLRequest {
+  // The active workbench session identifier.
+  string workbench_id = 1;
+  // The unique ID of the interned struct to decode.
+  uint32 struct_id = 2;
+}
+
+// Response containing the decoded YAML representation of the struct.
+message ReadStructYAMLResponse {
+  // The formatted YAML string representation of the requested struct.
+  string yaml = 1;
+}
+
+// Request to execute a complete timeline and log filtering pipeline against an active Workbench dataset.
+message FilterTimelineRequest {
+  // The active workbench session identifier.
+  string workbench_id = 1;
+  // CEL expression to filter timelines by path, name, or metadata. Empty string matches all timelines.
+  string timeline_query = 2;
+  // CEL expression to exclude timelines and their descendants. Empty string excludes none.
+  string timeline_exclusion_query = 3;
+  // CEL expression to filter log entries within remaining timelines. Empty string matches all logs.
+  string log_query = 4;
+  // When true, excludes timelines that contain no matching log entries.
+  bool exclude_no_logs = 5;
+}
+
+// Intermediate progress update emitted during filter pipeline execution.
+message FilterProgress {
+  // Name of the current pipeline stage being executed.
+  string stage_name = 1;
+  // Number of items processed in the current stage.
+  uint32 current = 2;
+  // Total number of items to process in the current stage.
+  uint32 total = 3;
+}
+
+// Final result containing the IDs of all timelines and logs that passed the filter pipeline.
+message FilterResult {
+  // List of timeline IDs that passed all active timeline filter stages.
+  repeated uint32 timeline_ids = 1;
+  // List of log IDs that passed all active log filter stages.
+  repeated uint32 log_ids = 2;
+}
+
+// Streamed message emitted during FilterTimeline execution.
+message FilterTimelineResponse {
+  // Payload containing either an intermediate progress notification or the terminal filter result.
+  oneof payload {
+    FilterProgress progress = 1;
+    FilterResult result = 2;
+  }
+}
+
+// Request to close and release a Workbench session immediately.
+message CloseWorkbenchRequest {
+  string workbench_id = 1;
+}
+
+// Response confirming closure of a Workbench session.
+message CloseWorkbenchResponse {
+  bool closed = 1;
+}
