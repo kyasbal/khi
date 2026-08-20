@@ -28,11 +28,13 @@ import {
 import { ProgressUtil } from './progress/progress-util';
 import { KHIFileParser } from 'src/app/parser/core/file-parser';
 import { V6_BLUEPRINT } from 'src/app/parser/v6/blueprint';
+import { InspectionData } from 'src/app/store/domain/inspection-data';
 import { InspectionDataStore } from 'src/app/services/inspection-data-store.service';
 import { ProgressReporter } from 'src/app/services/progress/progress-interface';
 import { ImportInspectionClientService } from 'src/app/services/api/import-inspection-client.service';
 import { BACKEND_SYNC } from 'src/app/services/api/backend-sync.service';
 import { BackendSyncService } from 'src/app/services/api/backend-sync-interface';
+import { WorkbenchClientService } from 'src/app/services/api/workbench/workbench-client.service';
 
 /**
  * Service for importing, downloading, and parsing inspection data.
@@ -49,6 +51,7 @@ export class InspectionDataLoaderService {
   });
   private readonly extension = inject<ExtensionStore>(EXTENSION_STORE);
   private readonly importClient = inject(ImportInspectionClientService);
+  private readonly workbenchClient = inject(WorkbenchClientService);
 
   /**
    * Opens file selector dialog to pick a local .khi file and uploads it to the backend server.
@@ -104,76 +107,98 @@ export class InspectionDataLoaderService {
     }
   }
 
-  /**
-   * Downloads and loads an inspection dataset from the backend server.
-   *
-   * @param inspectionID Unique ID of the inspection.
-   */
   public async loadInspectionDataFromBackend(inspectionID: string) {
+    const sessionMatch =
+      typeof window !== 'undefined'
+        ? window.location.pathname.match(/\/session\/([^/]+)/)
+        : null;
+    const sessionId = sessionMatch ? sessionMatch[1] : '0';
+
     this.progress.show();
-    this.progress.updateProgress({
-      message: 'Downloading inspection data...',
-      percent: 0,
-      mode: 'determinate',
-    });
-    try {
+
+    let localPercent = 0;
+    let localMessage = 'Downloading inspection data...';
+    let serverPercent = 0;
+    let serverMessage = 'Initializing server workbench...';
+
+    const updateCombinedProgress = () => {
+      const combinedPercent = Math.min(
+        100,
+        Math.round(localPercent * 0.5 + serverPercent * 0.5),
+      );
+      const message = `${localMessage} | Server: ${serverMessage}`;
+      this.progress.updateProgress({
+        message,
+        percent: combinedPercent,
+        mode: 'determinate',
+      });
+    };
+
+    updateCombinedProgress();
+
+    // Task 1: Server Workbench initialization
+    const serverTask = this.workbenchClient.openWorkbench(
+      sessionId,
+      inspectionID,
+      (msg, pct) => {
+        serverMessage = msg;
+        serverPercent = pct;
+        updateCombinedProgress();
+      },
+    );
+
+    // Task 2: Local download and parsing
+    const localTask = (async (): Promise<{
+      parsedData: InspectionData;
+      rawInspectionData: ArrayBuffer;
+    }> => {
       const data = await lastValueFrom(
         this.backendService.getInspectionData(inspectionID, (allSize, done) => {
-          this.progress.updateProgress({
-            message: `Downloading inspection data...(${ProgressUtil.formatPogressMessageByBytes(
-              done,
-              allSize,
-            )})`,
-            percent: (done / allSize) * 100,
-            mode: 'determinate',
-          });
+          const downloadRatio = allSize > 0 ? done / allSize : 0;
+          localPercent = downloadRatio * 50;
+          localMessage = `Downloading data (${ProgressUtil.formatPogressMessageByBytes(
+            done,
+            allSize,
+          )})`;
+          updateCombinedProgress();
         }),
       );
-      this.progress.dismiss();
-      await this.parseAndStoreInspectionData(await data.content.arrayBuffer());
-    } catch (e) {
-      console.error(e);
-      alert(
-        `Failed to load the inspection data. Please try query with shorter duration.`,
-      );
-    }
-  }
 
-  /**
-   * Parses raw binary inspection data into the InspectionDataStore.
-   *
-   * @param rawInspectionData Binary inspection data.
-   */
-  private async parseAndStoreInspectionData(rawInspectionData: ArrayBuffer) {
-    this.progress.show();
-    this.progress.updateProgress({
-      message: 'Parsing inspection data...',
-      percent: 0,
-      mode: 'determinate',
-    });
-    try {
+      localPercent = 50;
+      localMessage = 'Parsing inspection data...';
+      updateCombinedProgress();
+
+      const rawInspectionData = await data.content.arrayBuffer();
       const parser = new KHIFileParser({ 6: V6_BLUEPRINT });
       const progressReporter: ProgressReporter = {
         reportProgress: (percent?: number) => {
-          this.progress.updateProgress({
-            percent: percent ?? 0,
-            message: 'Parsing inspection data...',
-            mode: typeof percent === 'number' ? 'determinate' : 'indeterminate',
-          });
+          if (typeof percent === 'number') {
+            localPercent = 50 + (percent / 100) * 50;
+          }
+          updateCombinedProgress();
         },
         reportMessage: (message: string) => {
-          this.progress.updateProgress({
-            percent: 0,
-            message,
-            mode: 'indeterminate',
-          });
+          localMessage = message;
+          updateCombinedProgress();
         },
-        complete: () => {},
+        complete: () => {
+          localPercent = 100;
+          updateCombinedProgress();
+        },
       };
+
       const parsedData = await parser.parse(
         rawInspectionData,
         progressReporter,
       );
+      return { parsedData, rawInspectionData };
+    })();
+
+    try {
+      const [{ parsedData, rawInspectionData }] = await Promise.all([
+        localTask,
+        serverTask,
+      ]);
       this.inspectionDataStore.setNewInspectionData(parsedData);
       this.extension.notifyLifecycleOnInspectionDataOpen(
         parsedData,
@@ -182,9 +207,10 @@ export class InspectionDataLoaderService {
     } catch (e) {
       console.error(e);
       alert(
-        `Failed to parse the inspection data. The given data was invalid or too big for this environment. \nPlease consider limiting the inspection duration shorter.`,
+        `Failed to load the inspection data or initialize workbench. The given data was invalid or too big for this environment. \nPlease consider limiting the inspection duration shorter.`,
       );
+    } finally {
+      this.progress.dismiss();
     }
-    this.progress.dismiss();
   }
 }

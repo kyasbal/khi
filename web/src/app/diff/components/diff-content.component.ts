@@ -40,6 +40,7 @@ import { ManagedFieldsAnnotationProvider } from 'src/app/shared/components/yaml-
 import { RevisionFieldAnnotationProvider } from 'src/app/shared/components/yaml-viewer/revision-field-annotation.provider';
 import * as yaml from 'js-yaml';
 import { isEventFromOverlay, isSearchShortcut } from 'src/app/common/dom-util';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 /**
  * Component for displaying the unified diff of a resource revision.
@@ -53,11 +54,17 @@ import { isEventFromOverlay, isSearchShortcut } from 'src/app/common/dom-util';
     DiffToolbarComponent,
     SearchBarComponent,
     YamlViewerComponent,
+    MatProgressSpinnerModule,
   ],
 })
 export class DiffContentComponent {
   private readonly clipboard = inject(Clipboard);
   private readonly snackBar = inject(MatSnackBar);
+
+  /**
+   * Input indicating whether revision content is currently loading.
+   */
+  readonly isLoading = input<boolean>(false);
 
   /**
    * The current revision being viewed.
@@ -69,6 +76,11 @@ export class DiffContentComponent {
    * The content string of the current revision.
    */
   readonly currentRevisionContent = input.required<string>();
+
+  /**
+   * The unstripped raw content string of the current revision.
+   */
+  readonly currentRevisionRawBody = input<string>('');
 
   /**
    * The content string of the previous revision to diff against.
@@ -147,13 +159,14 @@ export class DiffContentComponent {
     // To still show tooltips on other fields, we extract the managedFields from the original unstripped YAML
     // and provide them explicitly to the provider.
     const revision = this.currentRevision();
+    const rawBody = this.currentRevisionRawBody();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let overrideFields: any[] | undefined = undefined;
 
-    if (revision && revision.bodyYAML) {
+    if (rawBody) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const yamlData = yaml.load(revision.bodyYAML) as any;
+        const yamlData = yaml.load(rawBody) as any;
         if (
           yamlData &&
           yamlData['metadata'] &&

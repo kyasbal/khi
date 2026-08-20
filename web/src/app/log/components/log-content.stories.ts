@@ -45,13 +45,6 @@ export const Default: Story = {
 kind: Pod
 metadata:
   name: test-pod`,
-          parsedLogBody: {
-            apiVersion: 'v1',
-            kind: 'Pod',
-            metadata: {
-              name: 'test-pod',
-            },
-          },
           referencedTimelineIds: [],
         },
         timezoneShift: 0,
@@ -64,5 +57,28 @@ export const NoSelectedLog: Story = {
   args: {
     vm: null,
     timezoneShift: 0,
+  },
+};
+
+export const Loading: Story = {
+  loaders: [
+    async () => ({
+      mockData: await createMockInspectionData(),
+    }),
+  ],
+  render: (args, { loaded: { mockData } }) => {
+    const logEntry = Array.from(mockData.logStore.logs())[0];
+    return {
+      props: {
+        ...args,
+        isLoading: true,
+        vm: {
+          logEntry,
+          logBody: '',
+          referencedTimelineIds: [],
+        },
+        timezoneShift: 0,
+      },
+    };
   },
 };
