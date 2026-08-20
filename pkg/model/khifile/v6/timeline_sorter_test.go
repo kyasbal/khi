@@ -24,7 +24,7 @@ import (
 )
 
 func TestCompareAlphabetical(t *testing.T) {
-	idGen := &IDGenerator{}
+	idGen := NewIDGenerator()
 	internPool := NewInternPool(idGen)
 	pool := NewTimelinePathPool(idGen, internPool)
 	timelineType := &pb.TimelineType{Id: proto.Uint32(1)}
@@ -84,7 +84,7 @@ func TestCompareAlphabetical(t *testing.T) {
 }
 
 func TestCompareChronological(t *testing.T) {
-	idGen := &IDGenerator{}
+	idGen := NewIDGenerator()
 	internPool := NewInternPool(idGen)
 	pool := NewTimelinePathPool(idGen, internPool)
 	timelineType := &pb.TimelineType{Id: proto.Uint32(1)}
@@ -149,8 +149,9 @@ func TestCompareChronological(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			logAcc := NewLogAccumulator(internPool, idGen)
-			registry := NewTimelineRegistry(idGen, internPool, logAcc)
+			serverPool := NewServerInternPool(internPool, idGen)
+			logAcc := NewLogAccumulator(internPool, serverPool, idGen)
+			registry := NewTimelineRegistry(idGen, internPool, serverPool, logAcc)
 
 			tc.setupFunc(registry)
 
@@ -163,7 +164,7 @@ func TestCompareChronological(t *testing.T) {
 }
 
 func TestCompareGroupedChronological(t *testing.T) {
-	idGen := &IDGenerator{}
+	idGen := NewIDGenerator()
 	internPool := NewInternPool(idGen)
 	pool := NewTimelinePathPool(idGen, internPool)
 	timelineType := &pb.TimelineType{Id: proto.Uint32(1)}
@@ -249,8 +250,9 @@ func TestCompareGroupedChronological(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			logAcc := NewLogAccumulator(internPool, idGen)
-			registry := NewTimelineRegistry(idGen, internPool, logAcc)
+			serverPool := NewServerInternPool(internPool, idGen)
+			logAcc := NewLogAccumulator(internPool, serverPool, idGen)
+			registry := NewTimelineRegistry(idGen, internPool, serverPool, logAcc)
 			tc.setupFunc(registry)
 
 			got := CompareGroupedChronological(tc.a, tc.b, registry, parentToChildren, "-")

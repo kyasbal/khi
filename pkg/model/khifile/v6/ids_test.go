@@ -21,7 +21,7 @@ import (
 
 func TestIDGenerator(t *testing.T) {
 	t.Run("sequential new", func(t *testing.T) {
-		g := &IDGenerator{}
+		g := NewIDGenerator()
 
 		steps := []struct {
 			name string
@@ -31,6 +31,8 @@ func TestIDGenerator(t *testing.T) {
 			{"first string", IDString, 1},
 			{"second string", IDString, 2},
 			{"first fieldset", IDFieldSet, 1},
+			{"first server string", IDServerString, ServerStringIDBase + 1},
+			{"second server string", IDServerString, ServerStringIDBase + 2},
 		}
 
 		for _, step := range steps {
@@ -44,7 +46,7 @@ func TestIDGenerator(t *testing.T) {
 	})
 
 	t.Run("set and new", func(t *testing.T) {
-		g := &IDGenerator{}
+		g := NewIDGenerator()
 		g.Set(IDString, 5)
 
 		steps := []struct {
@@ -67,7 +69,7 @@ func TestIDGenerator(t *testing.T) {
 	})
 
 	t.Run("concurrent new", func(t *testing.T) {
-		g := &IDGenerator{}
+		g := NewIDGenerator()
 		const (
 			numGoroutines = 10
 			numIncrements = 100

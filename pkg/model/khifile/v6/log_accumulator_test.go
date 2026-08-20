@@ -239,9 +239,10 @@ func TestLogAccumulator(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			idGen := &IDGenerator{}
+			idGen := NewIDGenerator()
 			pool := NewInternPool(idGen)
-			acc := NewLogAccumulator(pool, idGen)
+			serverPool := NewServerInternPool(pool, idGen)
+			acc := NewLogAccumulator(pool, serverPool, idGen)
 
 			for _, l := range tc.logsToAdd {
 				err := acc.AddLog(l)

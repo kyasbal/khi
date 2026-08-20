@@ -26,9 +26,10 @@ import (
 )
 
 func TestLogChangeSet_Flush(t *testing.T) {
-	idGen := &khifilev6.IDGenerator{}
+	idGen := khifilev6.NewIDGenerator()
 	pool := khifilev6.NewInternPool(idGen)
-	logAcc := khifilev6.NewLogAccumulator(pool, idGen)
+	serverPool := khifilev6.NewServerInternPool(pool, idGen)
+	logAcc := khifilev6.NewLogAccumulator(pool, serverPool, idGen)
 
 	node := structured.NewStandardMap(nil, nil)
 	l := log.NewLog(structured.NewNodeReader(node))
@@ -71,10 +72,11 @@ func TestLogChangeSet_Flush(t *testing.T) {
 }
 
 func TestTimelineChangeSet_Flush(t *testing.T) {
-	idGen := &khifilev6.IDGenerator{}
+	idGen := khifilev6.NewIDGenerator()
 	pool := khifilev6.NewInternPool(idGen)
-	logAcc := khifilev6.NewLogAccumulator(pool, idGen)
-	accumulator := khifilev6.NewTimelineAccumulator(idGen, pool, logAcc)
+	serverPool := khifilev6.NewServerInternPool(pool, idGen)
+	logAcc := khifilev6.NewLogAccumulator(pool, serverPool, idGen)
+	accumulator := khifilev6.NewTimelineAccumulator(idGen, pool, serverPool, logAcc)
 
 	node := structured.NewStandardMap(nil, nil)
 	l := log.NewLog(structured.NewNodeReader(node))
