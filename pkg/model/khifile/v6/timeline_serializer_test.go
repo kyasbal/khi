@@ -154,11 +154,12 @@ func TestExtractTimelinesAndItemsChunkSource(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Isolated Setup for deterministic IDs
-			idGen := &IDGenerator{}
+			idGen := NewIDGenerator()
 			internPool := NewInternPool(idGen)
+			serverPool := NewServerInternPool(internPool, idGen)
 			pathPool := NewTimelinePathPool(idGen, internPool)
-			logAcc := NewLogAccumulator(internPool, idGen)
-			registry := NewTimelineRegistry(idGen, internPool, logAcc)
+			logAcc := NewLogAccumulator(internPool, serverPool, idGen)
+			registry := NewTimelineRegistry(idGen, internPool, serverPool, logAcc)
 
 			pathMap := make(map[string]*TimelinePath)
 
