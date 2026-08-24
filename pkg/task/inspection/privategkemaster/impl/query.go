@@ -17,29 +17,28 @@ package privategkemaster_impl
 import (
 	"context"
 	"fmt"
-	"strings"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud/logestimator"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	privategkemaster_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privategkemaster/contract"
 )
 
 type listLogEntriesTaskSetting struct{}
 
-// DefaultResourceNames implements [googlecloudcommon_contract.ListLogEntriesTaskSetting].
+// DefaultResourceNames implements [googlecloudcommon_contract.StructuredListLogEntriesTaskSetting].
 func (l *listLogEntriesTaskSetting) DefaultResourceNames(ctx context.Context) ([]string, error) {
 	logSource := coretask.GetTaskResult(ctx, privategkemaster_contract.InputGKEMasterLogSourceTaskID.Ref())
 	if logSource == nil {
-		return []string{
-			"! This field is filled after you provide the master logs link.",
-		}, nil
+		return []string{}, nil
 	}
 	return []string{logSource.LogViewResourceName}, nil
 }
 
+// Dependencies implements [googlecloudcommon_contract.StructuredListLogEntriesTaskSetting].
 func (l *listLogEntriesTaskSetting) Dependencies() []taskid.UntypedTaskReference {
 	return []taskid.UntypedTaskReference{
 		privategkemaster_contract.InputGKEMasterLogSourceTaskID.Ref(),
@@ -47,72 +46,84 @@ func (l *listLogEntriesTaskSetting) Dependencies() []taskid.UntypedTaskReference
 	}
 }
 
-// Description implements [googlecloudcommon_contract.ListLogEntriesTaskSetting].
-func (l *listLogEntriesTaskSetting) Description() *googlecloudcommon_contract.ListLogEntriesTaskDescription {
-	return &googlecloudcommon_contract.ListLogEntriesTaskDescription{
-		QueryName: "Private GKE master logs",
-		ExampleQuery: `resource.type=("container" OR "gce_instance")
--log_id("cloudaudit.googleapis.com/activity")
--log_id("cloudaudit.googleapis.com/data_access")
--log_id("compute.googleapis.com/shielded_vm_integrity")
--logName: "serialconsole.googleapis.com"
-resource.labels.project_id="tp-????????"`,
-	}
+// QueryName implements [googlecloudcommon_contract.StructuredListLogEntriesTaskSetting].
+func (l *listLogEntriesTaskSetting) QueryName() string {
+	return "Private GKE master logs"
 }
 
-// LogFilters implements [googlecloudcommon_contract.ListLogEntriesTaskSetting].
-func (l *listLogEntriesTaskSetting) LogFilters(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) ([]string, error) {
+// Queries implements [googlecloudcommon_contract.StructuredListLogEntriesTaskSetting].
+func (l *listLogEntriesTaskSetting) Queries(ctx context.Context) ([]*logestimator.StructuredLogQuery, error) {
 	logSource := coretask.GetTaskResult(ctx, privategkemaster_contract.InputGKEMasterLogSourceTaskID.Ref())
 	componentFilter := coretask.GetTaskResult(ctx, privategkemaster_contract.InputPrivateGKEMasterComponentNameFilterTaskID.Ref())
-	projectID := "(Project ID is filled after you provide the master logs link)"
+	projectID := ""
 	if logSource != nil {
 		projectID = logSource.TenantProjectID
 	}
-	componentFilterStr := ""
-	if !componentFilter.SubtractMode {
-		components := componentFilter.AdditivesWithQuotes()
-		if len(components) > 0 {
-			logIdComponents := make([]string, 0, len(components))
-			for _, component := range components {
-				logIdComponents = append(logIdComponents, fmt.Sprintf("log_id(%s)", component))
-			}
-			componentFilterStr = fmt.Sprintf("\n%s", strings.Join(logIdComponents, " OR "))
-		}
-	} else {
-		if len(componentFilter.Subtractives) == 0 {
-			componentFilterStr = "-- no master component filter"
-		} else {
-			components := componentFilter.SubtractivesWithQuotes()
-			if len(components) > 0 {
-				logIdComponents := make([]string, 0, len(components))
-				for _, component := range components {
-					logIdComponents = append(logIdComponents, fmt.Sprintf("-log_id(%s)", component))
-				}
-				componentFilterStr = fmt.Sprintf("\n%s", strings.Join(logIdComponents, "\n"))
-			}
-		}
-	}
-	return []string{fmt.Sprintf(`resource.type=("container" OR "gce_instance")
--log_id("cloudaudit.googleapis.com/activity")
--log_id("cloudaudit.googleapis.com/data_access")
--log_id("compute.googleapis.com/shielded_vm_integrity")
--logName: "serialconsole.googleapis.com"
-%s
-resource.labels.project_id="%s"`, componentFilterStr, projectID)}, nil
+	return []*logestimator.StructuredLogQuery{
+		GeneratePrivateGKEMasterStructuredQuery(projectID, componentFilter),
+	}, nil
 }
 
-// TaskID implements [googlecloudcommon_contract.ListLogEntriesTaskSetting].
+// TaskID implements [googlecloudcommon_contract.StructuredListLogEntriesTaskSetting].
 func (l *listLogEntriesTaskSetting) TaskID() taskid.TaskImplementationID[[]*log.Log] {
 	return privategkemaster_contract.ListLogEntriesTaskID
 }
 
-// TimePartitionCount implements [googlecloudcommon_contract.ListLogEntriesTaskSetting].
+// TimePartitionCount implements [googlecloudcommon_contract.StructuredListLogEntriesTaskSetting].
 func (l *listLogEntriesTaskSetting) TimePartitionCount(ctx context.Context) (int, error) {
 	return 10, nil
 }
 
-var _ googlecloudcommon_contract.ListLogEntriesTaskSetting = (*listLogEntriesTaskSetting)(nil)
+var _ googlecloudcommon_contract.StructuredListLogEntriesTaskSetting = (*listLogEntriesTaskSetting)(nil)
 
-var listLogEntriesTask = googlecloudcommon_contract.NewListLogEntriesTask(
+var listLogEntriesTask = googlecloudcommon_contract.NewStructuredListLogEntriesTask(
 	&listLogEntriesTaskSetting{},
 )
+
+// GeneratePrivateGKEMasterStructuredQuery generates a structured query for Private GKE master logs.
+func GeneratePrivateGKEMasterStructuredQuery(projectID string, componentFilter *gcpqueryutil.SetFilterParseResult) *logestimator.StructuredLogQuery {
+	filters := []logestimator.LoggingMonitoringMatcher{
+		logestimator.LogID(logestimator.NoneOf(
+			"cloudaudit.googleapis.com/activity",
+			"cloudaudit.googleapis.com/data_access",
+			"compute.googleapis.com/shielded_vm_integrity",
+			"serialconsole.googleapis.com/serial_port_1_output",
+			"serialconsole.googleapis.com/serial_port_2_output",
+			"serialconsole.googleapis.com/serial_port_3_output",
+			"serialconsole.googleapis.com/serial_port_debug_output",
+		)),
+	}
+
+	if componentFilter != nil {
+		switch {
+		case componentFilter.ValidationError != "":
+			filters = append(filters, logestimator.Comment(fmt.Sprintf(`Failed to generate component name filter due to the validation error "%s"`, componentFilter.ValidationError)))
+		case componentFilter.SubtractMode:
+			if len(componentFilter.Subtractives) == 0 {
+				filters = append(filters, logestimator.Comment("no master component filter"))
+			} else {
+				filters = append(filters, logestimator.LogID(logestimator.NoneOf(componentFilter.Subtractives...)))
+			}
+		default:
+			if len(componentFilter.Additives) > 0 {
+				filters = append(filters, logestimator.LogID(logestimator.OneOf(componentFilter.Additives...)))
+			}
+		}
+	}
+
+	filters = append(filters, logestimator.ResourceLabel("project_id", logestimator.Exact(projectID)))
+
+	return &logestimator.StructuredLogQuery{
+		Incomplete:    projectID == "",
+		ResourceTypes: []string{"container", "gce_instance"},
+		// Cloud Monitoring metrics queries are disabled because users do not have permissions
+		// to query metrics in the GKE master tenant project.
+		IgnoreMetricsResourceType: []string{"container", "gce_instance"},
+		Filters:                   filters,
+	}
+}
+
+// GeneratePrivateGKEMasterQuery formats the Cloud Logging filter query for Private GKE master logs.
+func GeneratePrivateGKEMasterQuery(projectID string, componentFilter *gcpqueryutil.SetFilterParseResult) string {
+	return GeneratePrivateGKEMasterStructuredQuery(projectID, componentFilter).GenerateCloudLoggingQuery()
+}

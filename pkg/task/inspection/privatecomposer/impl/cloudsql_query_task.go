@@ -18,11 +18,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud/logestimator"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	privatecomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposer/contract"
 )
 
@@ -40,21 +40,17 @@ func (s *cloudSQLListLogEntriesTaskSetting) Dependencies() []taskid.UntypedTaskR
 	}
 }
 
-// Description returns the metadata description of this log query task.
-func (s *cloudSQLListLogEntriesTaskSetting) Description() *googlecloudcommon_contract.ListLogEntriesTaskDescription {
-	return &googlecloudcommon_contract.ListLogEntriesTaskDescription{
-		QueryName:    "Cloud Composer Tenant Project Cloud SQL Logs",
-		ExampleQuery: generateCloudSQLExampleQuery("sample-tenant-project-tp"),
-	}
+// QueryName returns the human-readable name of the query task.
+func (s *cloudSQLListLogEntriesTaskSetting) QueryName() string {
+	return "Cloud Composer Tenant Project Cloud SQL Logs"
 }
 
-// LogFilters returns the Cloud Logging filter queries for Cloud SQL databases in the tenant project.
-func (s *cloudSQLListLogEntriesTaskSetting) LogFilters(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) ([]string, error) {
+// Queries returns the list of structured log queries for Cloud SQL database logs.
+func (s *cloudSQLListLogEntriesTaskSetting) Queries(ctx context.Context) ([]*logestimator.StructuredLogQuery, error) {
 	tenantProjectID := coretask.GetTaskResult(ctx, privatecomposer_contract.InputComposerTenantProjectIdTaskID.Ref())
-	if tenantProjectID == "" {
-		return []string{}, nil
-	}
-	return []string{generateCloudSQLExampleQuery(tenantProjectID)}, nil
+	return []*logestimator.StructuredLogQuery{
+		GenerateCloudSQLStructuredQuery(tenantProjectID),
+	}, nil
 }
 
 // DefaultResourceNames returns the parent resource names to query logs from.
@@ -71,15 +67,30 @@ func (s *cloudSQLListLogEntriesTaskSetting) TimePartitionCount(ctx context.Conte
 	return 5, nil
 }
 
-var _ googlecloudcommon_contract.ListLogEntriesTaskSetting = (*cloudSQLListLogEntriesTaskSetting)(nil)
+var _ googlecloudcommon_contract.StructuredListLogEntriesTaskSetting = (*cloudSQLListLogEntriesTaskSetting)(nil)
 
 // CloudSQLLogsQueryTask executes Cloud Logging filter to fetch Cloud SQL logs in the tenant project.
-var CloudSQLLogsQueryTask = googlecloudcommon_contract.NewListLogEntriesTask(&cloudSQLListLogEntriesTaskSetting{})
+var CloudSQLLogsQueryTask = googlecloudcommon_contract.NewStructuredListLogEntriesTask(&cloudSQLListLogEntriesTaskSetting{})
 
-// generateCloudSQLExampleQuery formats the Cloud Logging filter query for a given tenant project ID.
-func generateCloudSQLExampleQuery(tenantProjectID string) string {
-	return fmt.Sprintf(`resource.type="cloudsql_database"
-resource.labels.project_id="%s"
+// GenerateCloudSQLStructuredQuery generates a structured query for Cloud SQL database logs in the tenant project.
+func GenerateCloudSQLStructuredQuery(tenantProjectID string) *logestimator.StructuredLogQuery {
+	filters := []logestimator.LoggingMonitoringMatcher{
+		logestimator.ResourceLabel("project_id", logestimator.Exact(tenantProjectID)),
+		logestimator.LogID(logestimator.OneOf(
+			"cloudsql.googleapis.com/postgres.log",
+			"cloudsql.googleapis.com/postgres-audit.log",
+			"cloudsql.googleapis.com/postgres-upgrade.log",
+		)),
+	}
 
-LOG_ID("cloudsql.googleapis.com/postgres.log") OR LOG_ID("cloudsql.googleapis.com/postgres-audit.log") OR LOG_ID("cloudsql.googleapis.com/postgres-upgrade.log")`, tenantProjectID)
+	return &logestimator.StructuredLogQuery{
+		Incomplete:    tenantProjectID == "",
+		ResourceTypes: []string{"cloudsql_database"},
+		Filters:       filters,
+	}
+}
+
+// GenerateCloudSQLExampleQuery formats the Cloud Logging filter query for a given tenant project ID.
+func GenerateCloudSQLExampleQuery(tenantProjectID string) string {
+	return GenerateCloudSQLStructuredQuery(tenantProjectID).GenerateCloudLoggingQuery()
 }

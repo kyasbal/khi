@@ -18,16 +18,16 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud/logestimator"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	privatecsmcp_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecsmcp/contract"
 )
 
 // LogQueryTask executes Cloud Logging filter to fetch CSM CP logs.
-var LogQueryTask = googlecloudcommon_contract.NewListLogEntriesTask(&csmcpLogQueryTaskSetting{})
+var LogQueryTask = googlecloudcommon_contract.NewStructuredListLogEntriesTask(&csmcpLogQueryTaskSetting{})
 
 type csmcpLogQueryTaskSetting struct{}
 
@@ -44,29 +44,19 @@ func (s *csmcpLogQueryTaskSetting) Dependencies() []taskid.UntypedTaskReference 
 	}
 }
 
-// Description returns the description of this task.
-func (s *csmcpLogQueryTaskSetting) Description() *googlecloudcommon_contract.ListLogEntriesTaskDescription {
-	return &googlecloudcommon_contract.ListLogEntriesTaskDescription{
-		QueryName: "CSM CP logs",
-		ExampleQuery: `resource.type="cloud_run_revision"
-AND LOG_ID("run.googleapis.com/stdout")`,
-	}
+// QueryName returns the human-readable name of the query task.
+func (s *csmcpLogQueryTaskSetting) QueryName() string {
+	return "CSM CP logs"
 }
 
-// LogFilters returns the log queries to execute.
-func (s *csmcpLogQueryTaskSetting) LogFilters(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) ([]string, error) {
+// Queries returns the list of structured log queries for CSM CP logs.
+func (s *csmcpLogQueryTaskSetting) Queries(ctx context.Context) ([]*logestimator.StructuredLogQuery, error) {
 	tenantProjectID := coretask.GetTaskResult(ctx, privatecsmcp_contract.InputCSMTenantProjectIDTaskID.Ref())
 	serviceName := coretask.GetTaskResult(ctx, privatecsmcp_contract.InputCSMCPCloudRunServiceNameTaskID.Ref())
 
-	if tenantProjectID == "" || serviceName == "" {
-		return []string{}, nil
-	}
-
-	query := fmt.Sprintf(`resource.type="cloud_run_revision"
-resource.labels.project_id="%s"
-resource.labels.service_name="%s"
-LOG_ID("run.googleapis.com/stdout") OR LOG_ID("run.googleapis.com/stderr")`, tenantProjectID, serviceName)
-	return []string{query}, nil
+	return []*logestimator.StructuredLogQuery{
+		GenerateCSMCPStructuredQuery(tenantProjectID, serviceName),
+	}, nil
 }
 
 // DefaultResourceNames returns the resource names to query logs from.
@@ -83,4 +73,27 @@ func (s *csmcpLogQueryTaskSetting) TimePartitionCount(ctx context.Context) (int,
 	return 10, nil
 }
 
-var _ googlecloudcommon_contract.ListLogEntriesTaskSetting = (*csmcpLogQueryTaskSetting)(nil)
+var _ googlecloudcommon_contract.StructuredListLogEntriesTaskSetting = (*csmcpLogQueryTaskSetting)(nil)
+
+// GenerateCSMCPStructuredQuery generates a structured query for CSM CP logs.
+func GenerateCSMCPStructuredQuery(tenantProjectID, serviceName string) *logestimator.StructuredLogQuery {
+	filters := []logestimator.LoggingMonitoringMatcher{
+		logestimator.ResourceLabel("project_id", logestimator.Exact(tenantProjectID)),
+		logestimator.ResourceLabel("service_name", logestimator.Exact(serviceName)),
+		logestimator.LogID(logestimator.OneOf(
+			"run.googleapis.com/stdout",
+			"run.googleapis.com/stderr",
+		)),
+	}
+
+	return &logestimator.StructuredLogQuery{
+		Incomplete:    tenantProjectID == "" || serviceName == "",
+		ResourceTypes: []string{"cloud_run_revision"},
+		Filters:       filters,
+	}
+}
+
+// GenerateCSMCPQuery formats the Cloud Logging filter query for CSM CP logs.
+func GenerateCSMCPQuery(tenantProjectID, serviceName string) string {
+	return GenerateCSMCPStructuredQuery(tenantProjectID, serviceName).GenerateCloudLoggingQuery()
+}
