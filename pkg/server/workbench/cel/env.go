@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"sync"
 
+	khifilev6model "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
 	"github.com/google/cel-go/common/types/ref"
@@ -46,6 +47,22 @@ type TimelineEvaluator struct {
 	env             *cel.Env
 	program         cel.Program
 	currentTimeline *TimelineData
+	internPool      *khifilev6model.InternPool
+	timelineMap     map[uint32]*TimelineData
+}
+
+// SetInternPool binds the InternPool for on-demand struct resolution.
+func (e *TimelineEvaluator) SetInternPool(pool *khifilev6model.InternPool) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.internPool = pool
+}
+
+// SetTimelineMap binds the timeline map for hierarchy-based path resolution.
+func (e *TimelineEvaluator) SetTimelineMap(m map[uint32]*TimelineData) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.timelineMap = m
 }
 
 // NewTimelineEvaluator creates a new TimelineEvaluator.
@@ -61,7 +78,7 @@ func NewTimelineEvaluator() (*TimelineEvaluator, error) {
 		if err != nil {
 			return types.False
 		}
-		return types.Bool(MatchTimelinePath(eval.currentTimeline, string(key), patterns))
+		return types.Bool(MatchTimelinePath(eval.currentTimeline, string(key), patterns, eval.timelineMap))
 	}
 
 	matchBindingUnary := func(arg ref.Val) ref.Val {
@@ -69,7 +86,7 @@ func NewTimelineEvaluator() (*TimelineEvaluator, error) {
 		if err != nil {
 			return types.False
 		}
-		return types.Bool(MatchTimelinePath(eval.currentTimeline, "*", patterns))
+		return types.Bool(MatchTimelinePath(eval.currentTimeline, "*", patterns, eval.timelineMap))
 	}
 
 	rbBindingBinary := func(lhs, rhs ref.Val) ref.Val {
@@ -81,7 +98,7 @@ func NewTimelineEvaluator() (*TimelineEvaluator, error) {
 		if err != nil {
 			return types.False
 		}
-		return types.Bool(MatchTimelineRevisionBodyField(eval.currentTimeline, string(pathKey), patterns))
+		return types.Bool(MatchTimelineRevisionBodyField(eval.currentTimeline, string(pathKey), patterns, eval.internPool))
 	}
 
 	rbBindingUnary := func(arg ref.Val) ref.Val {
@@ -89,7 +106,7 @@ func NewTimelineEvaluator() (*TimelineEvaluator, error) {
 		if err != nil {
 			return types.False
 		}
-		return types.Bool(MatchTimelineRevisionBodyField(eval.currentTimeline, "*", patterns))
+		return types.Bool(MatchTimelineRevisionBodyField(eval.currentTimeline, "*", patterns, eval.internPool))
 	}
 
 	minSeverityBinding := func(arg ref.Val) ref.Val {
@@ -223,10 +240,11 @@ func (e *TimelineEvaluator) Evaluate(ctx context.Context, t *TimelineData) (bool
 	e.currentTimeline = t
 	defer func() { e.currentTimeline = nil }()
 
+	path := t.ComputePath(e.timelineMap)
 	tVars := map[string]any{
 		"name":         t.Name,
 		"timelineType": t.TimelineType,
-		"path":         t.Path,
+		"path":         path,
 		"UNKNOWN":      int64(0),
 		"INFO":         int64(1),
 		"WARNING":      int64(2),
@@ -248,10 +266,34 @@ func (e *TimelineEvaluator) Evaluate(ctx context.Context, t *TimelineData) (bool
 
 // LogEvaluator compiles and executes CEL expressions on LogData.
 type LogEvaluator struct {
-	mu         sync.Mutex
-	env        *cel.Env
-	program    cel.Program
-	currentLog *LogData
+	mu           sync.Mutex
+	env          *cel.Env
+	program      cel.Program
+	currentLog   *LogData
+	internPool   *khifilev6model.InternPool
+	trigramIndex *TrigramIndex
+	structYAMLs  map[uint32]string
+}
+
+// SetInternPool binds the InternPool for on-demand struct/string resolution.
+func (e *LogEvaluator) SetInternPool(pool *khifilev6model.InternPool) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.internPool = pool
+}
+
+// SetTrigramIndex binds the TrigramIndex for fast substring struct matching.
+func (e *LogEvaluator) SetTrigramIndex(idx *TrigramIndex) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.trigramIndex = idx
+}
+
+// SetStructYAMLs binds the pre-serialized StructYAMLs map for fast YAML regex matching.
+func (e *LogEvaluator) SetStructYAMLs(yamls map[uint32]string) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.structYAMLs = yamls
 }
 
 // NewLogEvaluator creates a new LogEvaluator.
@@ -267,7 +309,11 @@ func NewLogEvaluator() (*LogEvaluator, error) {
 		if err != nil {
 			return types.False
 		}
-		return types.Bool(MatchLogField(eval.currentLog, string(pathKey), patterns))
+		matched, err := MatchLogField(eval.currentLog, string(pathKey), patterns, eval.internPool, eval.trigramIndex, eval.structYAMLs)
+		if err != nil {
+			return types.WrapErr(err)
+		}
+		return types.Bool(matched)
 	}
 
 	bodyBindingUnary := func(arg ref.Val) ref.Val {
@@ -275,7 +321,11 @@ func NewLogEvaluator() (*LogEvaluator, error) {
 		if err != nil {
 			return types.False
 		}
-		return types.Bool(MatchLogField(eval.currentLog, "*", patterns))
+		matched, err := MatchLogField(eval.currentLog, "*", patterns, eval.internPool, eval.trigramIndex, eval.structYAMLs)
+		if err != nil {
+			return types.WrapErr(err)
+		}
+		return types.Bool(matched)
 	}
 
 	env, err := cel.NewEnv(
@@ -362,12 +412,15 @@ func (e *LogEvaluator) Evaluate(ctx context.Context, l *LogData) (bool, error) {
 	e.currentLog = l
 	defer func() { e.currentLog = nil }()
 
+	summary := l.Summary
+	if summary == "" && l.SummaryStringID != 0 && e.internPool != nil {
+		summary = e.internPool.ResolveStringFromID(l.SummaryStringID)
+	}
+
 	lVars := map[string]any{
 		"logType":  l.LogType,
 		"severity": int64(l.Severity),
-		"summary":  l.Summary,
-		"body":     l.Body,
-		"bodyYAML": l.BodyYAML,
+		"summary":  summary,
 		"UNKNOWN":  int64(0),
 		"INFO":     int64(1),
 		"WARNING":  int64(2),
@@ -379,6 +432,9 @@ func (e *LogEvaluator) Evaluate(ctx context.Context, l *LogData) (bool, error) {
 	out, _, err := e.program.Eval(lVars)
 	if err != nil {
 		return false, err
+	}
+	if types.IsError(out) {
+		return false, out.(*types.Err)
 	}
 
 	if b, ok := out.Value().(bool); ok {

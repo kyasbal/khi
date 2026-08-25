@@ -21,6 +21,7 @@ import {
   FilterResultMode,
   OpenWorkbenchResponse_Stage,
   SparseBitset,
+  WatchIndexProgressResponse_IndexState,
 } from 'src/app/generated/api/v1/workbench_pb';
 import { LRUCache } from 'src/app/common/lru-cache';
 
@@ -82,6 +83,14 @@ export class WorkbenchClientService implements OnDestroy {
     WorkbenchClientService.STRUCT_YAML_CACHE_CAPACITY,
   );
 
+  private readonly indexStateSignal =
+    signal<WatchIndexProgressResponse_IndexState>(
+      WatchIndexProgressResponse_IndexState.UNSPECIFIED,
+    );
+  private readonly indexProgressPercentageSignal = signal<number>(0);
+  private readonly indexMessageSignal = signal<string>('');
+  private indexProgressAbortController: AbortController | null = null;
+
   /**
    * The ID of the currently active Workbench session, or null if none is open.
    */
@@ -92,6 +101,39 @@ export class WorkbenchClientService implements OnDestroy {
    */
   public readonly isWorkbenchActive = computed(
     () => this.activeWorkbenchIdSignal() !== null,
+  );
+
+  /**
+   * Current index construction state.
+   */
+  public readonly indexState = this.indexStateSignal.asReadonly();
+
+  /**
+   * Current index construction progress percentage (0 - 100).
+   */
+  public readonly indexProgressPercentage =
+    this.indexProgressPercentageSignal.asReadonly();
+
+  /**
+   * Current index construction status message.
+   */
+  public readonly indexMessage = this.indexMessageSignal.asReadonly();
+
+  /**
+   * Whether the fulltext search index is currently building.
+   */
+  public readonly isIndexBuilding = computed(
+    () =>
+      this.indexStateSignal() ===
+      WatchIndexProgressResponse_IndexState.BUILDING,
+  );
+
+  /**
+   * Whether the fulltext search index is ready.
+   */
+  public readonly isIndexReady = computed(
+    () =>
+      this.indexStateSignal() === WatchIndexProgressResponse_IndexState.READY,
   );
 
   private heartbeatIntervalTimer: ReturnType<typeof setInterval> | null = null;
@@ -148,9 +190,66 @@ export class WorkbenchClientService implements OnDestroy {
       this.structYamlCache.clear();
       this.activeWorkbenchIdSignal.set(workbenchId);
       this.startHeartbeat(workbenchId);
+      if (this.indexProgressAbortController) {
+        this.indexProgressAbortController.abort();
+      }
+      this.indexProgressAbortController = new AbortController();
+      void this.watchIndexProgress(
+        workbenchId,
+        this.indexProgressAbortController.signal,
+      );
     }
 
     return workbenchId;
+  }
+
+  /**
+   * Watches the index progress stream for the given workbenchId, reconnecting upon 30s cycle
+   * termination until the index becomes READY or FAILED, or until aborted.
+   */
+  public async watchIndexProgress(
+    workbenchId: string,
+    abortSignal?: AbortSignal,
+  ): Promise<void> {
+    while (!abortSignal?.aborted) {
+      try {
+        const responseStream =
+          this.connectClient.workbenchClient.watchIndexProgress(
+            { workbenchId },
+            { signal: abortSignal },
+          );
+
+        if (!responseStream) {
+          return;
+        }
+
+        for await (const res of responseStream) {
+          if (abortSignal?.aborted) {
+            return;
+          }
+          this.indexStateSignal.set(res.state);
+          this.indexProgressPercentageSignal.set(res.progressPercentage);
+          this.indexMessageSignal.set(res.message);
+
+          if (
+            res.state === WatchIndexProgressResponse_IndexState.READY ||
+            res.state === WatchIndexProgressResponse_IndexState.FAILED
+          ) {
+            return;
+          }
+        }
+      } catch (e) {
+        if (abortSignal?.aborted) {
+          return;
+        }
+        console.warn(
+          `[WorkbenchClient] WatchIndexProgress failed for ${workbenchId}:`,
+          e,
+        );
+        // Wait 1 second before reconnecting after an unexpected network or stream failure
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
   }
 
   /**
@@ -173,9 +272,18 @@ export class WorkbenchClientService implements OnDestroy {
    */
   public async closeWorkbench(workbenchId?: string): Promise<void> {
     const id = workbenchId ?? this.activeWorkbenchIdSignal();
+    if (this.indexProgressAbortController) {
+      this.indexProgressAbortController.abort();
+      this.indexProgressAbortController = null;
+    }
     this.stopHeartbeat();
     this.structYamlCache.clear();
     this.activeWorkbenchIdSignal.set(null);
+    this.indexStateSignal.set(
+      WatchIndexProgressResponse_IndexState.UNSPECIFIED,
+    );
+    this.indexProgressPercentageSignal.set(0);
+    this.indexMessageSignal.set('');
 
     if (id) {
       try {

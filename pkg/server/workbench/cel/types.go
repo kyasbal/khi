@@ -14,7 +14,10 @@
 
 package cel
 
-import "context"
+import (
+	"context"
+	"strings"
+)
 
 type contextKey string
 
@@ -31,35 +34,79 @@ type EventInfo struct {
 
 // RevisionInfo represents lightweight revision history metadata associated with a timeline for CEL evaluation.
 type RevisionInfo struct {
-	LogID       uint32
-	ChangedTime int64
-	Principal   string
-	Verb        string
-	State       string
-	Body        map[string]any
-	BodyYAML    string
-	Severity    uint32
+	LogID                uint32
+	ChangedTime          int64
+	PrincipalStringID    uint32
+	Verb                 string
+	State                string
+	ResourceBodyStructID uint32
+	Severity             uint32
 }
 
 // TimelineData encapsulates the indexed timeline attributes and nested items required for CEL evaluation.
 type TimelineData struct {
 	ID           uint32
+	ParentID     uint32
+	ChildrenIDs  []uint32
 	Name         string
 	TimelineType string
-	Path         map[string]string
 	Events       []EventInfo
 	Revisions    []RevisionInfo
 	MaxSeverity  uint32
 }
 
-// LogData encapsulates the indexed log attributes and body required for CEL evaluation.
+// ForEachLogID iterates over all log IDs associated with this timeline's events and revisions.
+// If the callback returns false, iteration stops early.
+func (t *TimelineData) ForEachLogID(cb func(logID uint32) bool) {
+	if t == nil {
+		return
+	}
+	for _, evt := range t.Events {
+		if !cb(evt.LogID) {
+			return
+		}
+	}
+	for _, rev := range t.Revisions {
+		if !cb(rev.LogID) {
+			return
+		}
+	}
+}
+
+// ComputePath resolves the timeline hierarchy path map on demand by traversing parent timelines.
+func (t *TimelineData) ComputePath(tlMap map[uint32]*TimelineData) map[string]string {
+	if t == nil {
+		return nil
+	}
+	path := make(map[string]string)
+	visited := make(map[uint32]struct{})
+	curr := t
+	for curr != nil {
+		if _, seen := visited[curr.ID]; seen {
+			break
+		}
+		visited[curr.ID] = struct{}{}
+
+		typeKey := strings.ToLower(curr.TimelineType)
+		if typeKey != "" {
+			path[typeKey] = curr.Name
+		}
+		if curr.ParentID == 0 || tlMap == nil {
+			break
+		}
+		curr = tlMap[curr.ParentID]
+	}
+	return path
+}
+
+// LogData encapsulates the indexed log attributes and struct ID required for CEL evaluation.
 type LogData struct {
-	ID       uint32
-	LogType  string
-	Severity uint32
-	Summary  string
-	Body     map[string]any
-	BodyYAML string
+	ID              uint32
+	LogType         string
+	Severity        uint32
+	SummaryStringID uint32
+	Summary         string
+	BodyStructID    uint32
 }
 
 // WithTimelineContext binds the given TimelineData to the context for CEL evaluation.

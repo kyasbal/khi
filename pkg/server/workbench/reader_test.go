@@ -128,14 +128,66 @@ func TestWorkbench_NewWorkbenchFromReader(t *testing.T) {
 			if wb.ID() != "wb-test-1" {
 				t.Errorf("ID() = %q, want %q", wb.ID(), "wb-test-1")
 			}
-			if len(wb.logChunks) != 1 {
-				t.Errorf("len(logChunks) = %d, want 1", len(wb.logChunks))
+			if wb.searchIndex == nil {
+				t.Fatalf("searchIndex is nil, want initialized search index")
 			}
-			if len(wb.timelineChunks) != 1 {
-				t.Errorf("len(timelineChunks) = %d, want 1", len(wb.timelineChunks))
+			if len(wb.searchIndex.Logs) != 2 {
+				t.Errorf("len(searchIndex.Logs) = %d, want 2", len(wb.searchIndex.Logs))
+			}
+			if len(wb.searchIndex.Timelines) != 1 {
+				t.Errorf("len(searchIndex.Timelines) = %d, want 1", len(wb.searchIndex.Timelines))
+			}
+			if len(wb.logChunks) != 0 {
+				t.Errorf("len(logChunks) = %d, want 0 (released after indexing)", len(wb.logChunks))
+			}
+			if len(wb.timelineChunks) != 0 {
+				t.Errorf("len(timelineChunks) = %d, want 0 (released after indexing)", len(wb.timelineChunks))
 			}
 			if len(capturedStages) == 0 {
 				t.Errorf("expected captured progress stages")
+			}
+		})
+	}
+}
+
+func TestFormatByteSize(t *testing.T) {
+	testCases := []struct {
+		name  string
+		input int64
+		want  string
+	}{
+		{
+			name:  "bytes below 1 KB",
+			input: 512,
+			want:  "512 B",
+		},
+		{
+			name:  "exact 1 KB",
+			input: 1024,
+			want:  "1.0 KB",
+		},
+		{
+			name:  "kilobytes with decimal",
+			input: 1536,
+			want:  "1.5 KB",
+		},
+		{
+			name:  "megabytes",
+			input: 15 * 1024 * 1024,
+			want:  "15.0 MB",
+		},
+		{
+			name:  "gigabytes",
+			input: 2 * 1024 * 1024 * 1024,
+			want:  "2.0 GB",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := formatByteSize(tc.input)
+			if got != tc.want {
+				t.Errorf("formatByteSize(%d) = %q, want %q", tc.input, got, tc.want)
 			}
 		})
 	}

@@ -18,38 +18,64 @@ import (
 	"context"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
+	khifilev6model "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestTimelineEvaluator(t *testing.T) {
+	pool := khifilev6model.NewInternPool(&khifilev6model.IDGenerator{})
+	node, err := structured.FromYAML(`kind: Pod
+metadata:
+  name: pod-sample
+spec:
+  containers:
+  - name: nginx
+`)
+	if err != nil {
+		t.Fatalf("failed to parse yaml node: %v", err)
+	}
+	sRef, err := khifilev6model.ToInternedStruct(node, pool)
+	if err != nil {
+		t.Fatalf("failed to intern struct: %v", err)
+	}
+
 	eval, err := NewTimelineEvaluator()
 	if err != nil {
 		t.Fatalf("failed to create TimelineEvaluator: %v", err)
 	}
+	eval.SetInternPool(pool)
 
-	testTimeline := &TimelineData{
+	nsTimeline := &TimelineData{
 		ID:           1,
+		Name:         "default",
+		TimelineType: "Namespace",
+	}
+	kindTimeline := &TimelineData{
+		ID:           2,
+		ParentID:     1,
+		Name:         "Pod",
+		TimelineType: "Kind",
+	}
+	testTimeline := &TimelineData{
+		ID:           3,
+		ParentID:     2,
 		Name:         "pod-sample",
 		TimelineType: "Pod",
-		Path: map[string]string{
-			"namespace": "default",
-			"kind":      "Pod",
-			"name":      "pod-sample",
-		},
-		MaxSeverity: 2, // WARNING
+		MaxSeverity:  2, // WARNING
 		Revisions: []RevisionInfo{
 			{
-				Body: map[string]any{
-					"spec": map[string]any{
-						"containers": []any{
-							map[string]any{"name": "nginx"},
-						},
-					},
-				},
-				BodyYAML: "kind: Pod\nmetadata:\n  name: pod-sample\nspec:\n  containers:\n  - name: nginx\n",
+				ResourceBodyStructID: sRef.ID(),
+				Severity:             2,
 			},
 		},
 	}
+	tlMap := map[uint32]*TimelineData{
+		1: nsTimeline,
+		2: kindTimeline,
+		3: testTimeline,
+	}
+	eval.SetTimelineMap(tlMap)
 
 	testCases := []struct {
 		name       string
@@ -99,8 +125,8 @@ func TestTimelineEvaluator(t *testing.T) {
 		},
 		{
 			name:       "revision_body alias RB with path",
-			expression: `RB("spec.containers", "nginx")`,
-			want:       false, // spec.containers is a slice, resolved by YAML wildcard
+			expression: `RB("metadata.name", "pod-sample")`,
+			want:       true,
 		},
 		{
 			name:       "minSeverity helper",
@@ -141,23 +167,44 @@ func TestTimelineEvaluator(t *testing.T) {
 }
 
 func TestLogEvaluator(t *testing.T) {
+	pool := khifilev6model.NewInternPool(&khifilev6model.IDGenerator{})
+	logNode, err := structured.FromYAML(`verb: create
+user:
+  username: system:admin
+`)
+	if err != nil {
+		t.Fatalf("failed to parse log yaml node: %v", err)
+	}
+	sRef, err := khifilev6model.ToInternedStruct(logNode, pool)
+	if err != nil {
+		t.Fatalf("failed to intern log struct: %v", err)
+	}
+
 	eval, err := NewLogEvaluator()
 	if err != nil {
 		t.Fatalf("failed to create LogEvaluator: %v", err)
 	}
+	eval.SetInternPool(pool)
+	yamlBytes, err := (&structured.YAMLNodeSerializer{}).Serialize(logNode)
+	if err != nil {
+		t.Fatalf("failed to serialize yaml: %v", err)
+	}
+	structYAMLs := map[uint32]string{
+		sRef.ID(): string(yamlBytes),
+	}
+	trigramIndex := NewTrigramIndex()
+	if err := trigramIndex.BuildFromStructYAMLs(t.Context(), structYAMLs, nil); err != nil {
+		t.Fatalf("failed to build trigram index: %v", err)
+	}
+	eval.SetTrigramIndex(trigramIndex)
+	eval.SetStructYAMLs(structYAMLs)
 
 	testLog := &LogData{
-		ID:       10,
-		LogType:  "k8s-audit",
-		Severity: 3, // ERROR
-		Summary:  "failed to schedule pod",
-		Body: map[string]any{
-			"verb": "create",
-			"user": map[string]any{
-				"username": "system:admin",
-			},
-		},
-		BodyYAML: "verb: create\nuser:\n  username: system:admin\n",
+		ID:           10,
+		LogType:      "k8s-audit",
+		Severity:     3, // ERROR
+		Summary:      "failed to schedule pod",
+		BodyStructID: sRef.ID(),
 	}
 
 	testCases := []struct {
@@ -187,13 +234,23 @@ func TestLogEvaluator(t *testing.T) {
 			want:       true,
 		},
 		{
-			name:       "body alias B with wildcard",
-			expression: `B("create")`,
+			name:       "body helper non-matching",
+			expression: `body("user.username", "anonymous")`,
+			want:       false,
+		},
+		{
+			name:       "body helper with pattern list matching one",
+			expression: `body("user.username", ["non-existent", "admin"])`,
 			want:       true,
 		},
 		{
-			name:       "body helper non-matching",
-			expression: `body("user.username", "anonymous")`,
+			name:       "body alias B with pattern list matching one",
+			expression: `B(["non-existent", "create"])`,
+			want:       true,
+		},
+		{
+			name:       "body alias B with pattern list matching none",
+			expression: `B(["non-existent-1", "non-existent-2"])`,
 			want:       false,
 		},
 	}
@@ -290,6 +347,89 @@ func TestValidateLogQuery(t *testing.T) {
 			err := ValidateLogQuery(tc.query)
 			if (err != nil) != tc.wantErr {
 				t.Errorf("ValidateLogQuery() error = %v, wantErr = %v", err, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestLogEvaluator_FallbackWithoutTrigramIndex(t *testing.T) {
+	pool := khifilev6model.NewInternPool(&khifilev6model.IDGenerator{})
+	logNode, err := structured.FromYAML(`verb: create
+user:
+  username: system:admin
+`)
+	if err != nil {
+		t.Fatalf("failed to parse log yaml node: %v", err)
+	}
+	sRef, err := khifilev6model.ToInternedStruct(logNode, pool)
+	if err != nil {
+		t.Fatalf("failed to intern log struct: %v", err)
+	}
+
+	eval, err := NewLogEvaluator()
+	if err != nil {
+		t.Fatalf("failed to create LogEvaluator: %v", err)
+	}
+	eval.SetInternPool(pool)
+	// Trigram index is NOT set (fallback to full scan)
+
+	testLog := &LogData{
+		ID:           10,
+		LogType:      "k8s-audit",
+		Severity:     3,
+		Summary:      "failed to schedule pod",
+		BodyStructID: sRef.ID(),
+	}
+
+	testCases := []struct {
+		name       string
+		expression string
+		want       bool
+	}{
+		{
+			name:       "wildcard body search succeeds by falling back to full text match",
+			expression: `body("create")`,
+			want:       true,
+		},
+		{
+			name:       "wildcard body search with non-matching pattern returns false",
+			expression: `body("non-existent-keyword")`,
+			want:       false,
+		},
+		{
+			name:       "wildcard body search with pattern list",
+			expression: `body(["non-existent", "create"])`,
+			want:       true,
+		},
+		{
+			name:       "specific body field search succeeds without trigram index",
+			expression: `body("user.username", "system:admin")`,
+			want:       true,
+		},
+		{
+			name:       "specific body field search with pattern list succeeds without trigram index",
+			expression: `body("user.username", ["non-existent", "system:admin"])`,
+			want:       true,
+		},
+		{
+			name:       "severity check succeeds without trigram index",
+			expression: `severity >= ERROR`,
+			want:       true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := eval.Compile(tc.expression); err != nil {
+				t.Fatalf("Compile() error = %v", err)
+			}
+
+			got, err := eval.Evaluate(context.Background(), testLog)
+			if err != nil {
+				t.Fatalf("Evaluate() unexpected error = %v", err)
+			}
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Errorf("Evaluate() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

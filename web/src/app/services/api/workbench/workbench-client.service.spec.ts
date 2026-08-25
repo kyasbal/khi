@@ -19,6 +19,7 @@ import {
   FilterResultMode,
   OpenWorkbenchResponse_Stage,
   SparseBitsetSchema,
+  WatchIndexProgressResponse_IndexState,
 } from 'src/app/generated/api/v1/workbench_pb';
 import { create } from '@bufbuild/protobuf';
 import { ConnectClientService } from 'src/app/services/api/connect-client.service';
@@ -38,6 +39,7 @@ describe('WorkbenchClientService', () => {
     mockConnectClient = jasmine.createSpyObj('ConnectClientService', [], {
       workbenchClient: {
         openWorkbench: jasmine.createSpy('openWorkbench'),
+        watchIndexProgress: jasmine.createSpy('watchIndexProgress'),
         heartbeatWorkbench: jasmine.createSpy('heartbeatWorkbench'),
         readStructYAML: jasmine.createSpy('readStructYAML'),
         filterTimeline: jasmine.createSpy('filterTimeline'),
@@ -326,5 +328,114 @@ describe('WorkbenchClientService', () => {
     expect(result.logMode).toBe(FilterResultMode.INCLUDE);
     expect(result.logBitset?.indices).toEqual([0]);
     expect(result.logBitset?.masks).toEqual([(1 << 10) | (1 << 20)]);
+  });
+
+  it('should watch index progress and update index state signals', async () => {
+    async function* mockIndexStream() {
+      yield {
+        state: WatchIndexProgressResponse_IndexState.BUILDING,
+        progressPercentage: 40,
+        message: 'Building index...',
+      };
+      yield {
+        state: WatchIndexProgressResponse_IndexState.READY,
+        progressPercentage: 100,
+        message: 'Search index ready.',
+      };
+    }
+
+    (
+      mockConnectClient.workbenchClient.watchIndexProgress as jasmine.Spy
+    ).and.returnValue(mockIndexStream());
+
+    expect(service.indexState()).toBe(
+      WatchIndexProgressResponse_IndexState.UNSPECIFIED,
+    );
+    expect(service.isIndexBuilding()).toBeFalse();
+    expect(service.isIndexReady()).toBeFalse();
+
+    await service.watchIndexProgress('usr-1-session-0');
+
+    expect(service.indexState()).toBe(
+      WatchIndexProgressResponse_IndexState.READY,
+    );
+    expect(service.indexProgressPercentage()).toBe(100);
+    expect(service.indexMessage()).toBe('Search index ready.');
+    expect(service.isIndexReady()).toBeTrue();
+    expect(service.isIndexBuilding()).toBeFalse();
+  });
+
+  it('should reconnect on 30s stream cycle termination until index reaches READY', async () => {
+    let invocationCount = 0;
+    (
+      mockConnectClient.workbenchClient.watchIndexProgress as jasmine.Spy
+    ).and.callFake(() => {
+      invocationCount++;
+      if (invocationCount === 1) {
+        // First 30s cycle stream: ends while still BUILDING
+        return (async function* () {
+          yield {
+            state: WatchIndexProgressResponse_IndexState.BUILDING,
+            progressPercentage: 50,
+            message: 'Building trigrams...',
+          };
+        })();
+      }
+      // Reconnected second cycle: reaches READY
+      return (async function* () {
+        yield {
+          state: WatchIndexProgressResponse_IndexState.READY,
+          progressPercentage: 100,
+          message: 'Index complete.',
+        };
+      })();
+    });
+
+    await service.watchIndexProgress('usr-1-session-0');
+
+    expect(invocationCount).toBe(2);
+    expect(service.indexState()).toBe(
+      WatchIndexProgressResponse_IndexState.READY,
+    );
+    expect(service.isIndexReady()).toBeTrue();
+  });
+
+  it('should abort active index progress stream on closeWorkbench', async () => {
+    let capturedSignal: AbortSignal | undefined;
+    async function* mockIndexStream() {
+      yield {
+        state: WatchIndexProgressResponse_IndexState.BUILDING,
+        progressPercentage: 50,
+        message: 'Building...',
+      };
+    }
+    (
+      mockConnectClient.workbenchClient.watchIndexProgress as jasmine.Spy
+    ).and.callFake((_req: unknown, opts: { signal?: AbortSignal }) => {
+      capturedSignal = opts?.signal;
+      return mockIndexStream();
+    });
+
+    async function* mockOpenStream() {
+      yield {
+        stage: OpenWorkbenchResponse_Stage.READY,
+        progressPercentage: 100,
+        message: 'Ready',
+        workbenchId: 'wb-1',
+      };
+    }
+    (
+      mockConnectClient.workbenchClient.openWorkbench as jasmine.Spy
+    ).and.returnValue(mockOpenStream());
+    (
+      mockConnectClient.workbenchClient.closeWorkbench as jasmine.Spy
+    ).and.returnValue(Promise.resolve({ closed: true }));
+
+    await service.openWorkbench('session-1', 'insp-1');
+    expect(capturedSignal).toBeDefined();
+    expect(capturedSignal?.aborted).toBeFalse();
+
+    await service.closeWorkbench('wb-1');
+    expect(capturedSignal?.aborted).toBeTrue();
   });
 });
