@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"connectrpc.com/connect"
 	apiv1 "github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1"
@@ -74,6 +75,71 @@ func (s *WorkbenchServiceServer) OpenWorkbench(
 		WorkbenchId:        proto.String(wb.ID()),
 	}
 	return stream.Send(finalRes)
+}
+
+// WatchIndexProgress streams the search index construction progress and status for an active Workbench session.
+// The server terminates the stream every 30s to accommodate proxy timeouts, and clients are expected to reconnect.
+func (s *WorkbenchServiceServer) WatchIndexProgress(
+	ctx context.Context,
+	req *connect.Request[apiv1.WatchIndexProgressRequest],
+	stream *connect.ServerStream[apiv1.WatchIndexProgressResponse],
+) error {
+	msg := req.Msg
+	if msg.GetWorkbenchId() == "" {
+		return connect.NewError(connect.CodeInvalidArgument, errors.New("workbench_id is required"))
+	}
+
+	wb, err := s.manager.GetAndTouch(msg.GetWorkbenchId())
+	if err != nil {
+		if errors.Is(err, workbench.ErrWorkbenchNotFound) || errors.Is(err, workbench.ErrWorkbenchClosed) {
+			return connect.NewError(connect.CodeNotFound, err)
+		}
+		return connect.NewError(connect.CodeInternal, err)
+	}
+
+	eventCh, unsubscribe := wb.SubscribeIndexProgress(ctx)
+	defer unsubscribe()
+
+	timer := time.NewTimer(30 * time.Second)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-timer.C:
+			// Normal 30s stream cycle termination; the client will reconnect.
+			return nil
+		case event, ok := <-eventCh:
+			if !ok {
+				return nil
+			}
+			var protoState apiv1.WatchIndexProgressResponse_IndexState
+			switch event.State {
+			case workbench.IndexStateBuilding:
+				protoState = apiv1.WatchIndexProgressResponse_INDEX_STATE_BUILDING
+			case workbench.IndexStateReady:
+				protoState = apiv1.WatchIndexProgressResponse_INDEX_STATE_READY
+			case workbench.IndexStateFailed:
+				protoState = apiv1.WatchIndexProgressResponse_INDEX_STATE_FAILED
+			default:
+				protoState = apiv1.WatchIndexProgressResponse_INDEX_STATE_UNSPECIFIED
+			}
+
+			res := &apiv1.WatchIndexProgressResponse{
+				State:              protoState.Enum(),
+				ProgressPercentage: proto.Float64(event.ProgressPercentage),
+				Message:            proto.String(event.Message),
+			}
+			if err := stream.Send(res); err != nil {
+				return err
+			}
+
+			if event.State == workbench.IndexStateReady || event.State == workbench.IndexStateFailed {
+				return nil
+			}
+		}
+	}
 }
 
 // HeartbeatWorkbench refreshes the lease expiration time for an active Workbench session.

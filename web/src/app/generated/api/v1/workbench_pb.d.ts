@@ -144,6 +144,88 @@ export enum OpenWorkbenchResponse_Stage {
 export declare const OpenWorkbenchResponse_StageSchema: GenEnum<OpenWorkbenchResponse_Stage>;
 
 /**
+ * Request to watch the search index construction progress of a Workbench session.
+ *
+ * @generated from message api.v1.WatchIndexProgressRequest
+ */
+export declare type WatchIndexProgressRequest =
+  Message<'api.v1.WatchIndexProgressRequest'> & {
+    /**
+     * The active workbench session identifier.
+     *
+     * @generated from field: string workbench_id = 1;
+     */
+    workbenchId: string;
+  };
+
+/**
+ * Describes the message api.v1.WatchIndexProgressRequest.
+ * Use `create(WatchIndexProgressRequestSchema)` to create a new message.
+ */
+export declare const WatchIndexProgressRequestSchema: GenMessage<WatchIndexProgressRequest>;
+
+/**
+ * Progress update or terminal state of search index construction.
+ *
+ * @generated from message api.v1.WatchIndexProgressResponse
+ */
+export declare type WatchIndexProgressResponse =
+  Message<'api.v1.WatchIndexProgressResponse'> & {
+    /**
+     * @generated from field: api.v1.WatchIndexProgressResponse.IndexState state = 1;
+     */
+    state: WatchIndexProgressResponse_IndexState;
+
+    /**
+     * @generated from field: double progress_percentage = 2;
+     */
+    progressPercentage: number;
+
+    /**
+     * @generated from field: string message = 3;
+     */
+    message: string;
+  };
+
+/**
+ * Describes the message api.v1.WatchIndexProgressResponse.
+ * Use `create(WatchIndexProgressResponseSchema)` to create a new message.
+ */
+export declare const WatchIndexProgressResponseSchema: GenMessage<WatchIndexProgressResponse>;
+
+/**
+ * Lifecycle state of search index construction.
+ *
+ * @generated from enum api.v1.WatchIndexProgressResponse.IndexState
+ */
+export enum WatchIndexProgressResponse_IndexState {
+  /**
+   * @generated from enum value: INDEX_STATE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: INDEX_STATE_BUILDING = 1;
+   */
+  BUILDING = 1,
+
+  /**
+   * @generated from enum value: INDEX_STATE_READY = 2;
+   */
+  READY = 2,
+
+  /**
+   * @generated from enum value: INDEX_STATE_FAILED = 3;
+   */
+  FAILED = 3,
+}
+
+/**
+ * Describes the enum api.v1.WatchIndexProgressResponse.IndexState.
+ */
+export declare const WatchIndexProgressResponse_IndexStateSchema: GenEnum<WatchIndexProgressResponse_IndexState>;
+
+/**
  * Request to refresh the lease TTL of an active Workbench session.
  *
  * @generated from message api.v1.HeartbeatWorkbenchRequest
@@ -502,6 +584,16 @@ export declare const WorkbenchService: GenService<{
     methodKind: 'server_streaming';
     input: typeof OpenWorkbenchRequestSchema;
     output: typeof OpenWorkbenchResponseSchema;
+  };
+  /**
+   * Watches the search index construction progress and status for an active Workbench session. The server terminates the stream every 30s to accommodate proxy timeouts, and clients are expected to reconnect.
+   *
+   * @generated from rpc api.v1.WorkbenchService.WatchIndexProgress
+   */
+  watchIndexProgress: {
+    methodKind: 'server_streaming';
+    input: typeof WatchIndexProgressRequestSchema;
+    output: typeof WatchIndexProgressResponseSchema;
   };
   /**
    * Sends periodic heartbeat to keep the Workbench session alive in memory.

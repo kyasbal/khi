@@ -85,6 +85,8 @@ func (f *TimelineCELFilter) Process(
 			if err != nil {
 				return fmt.Errorf("failed to initialize timeline evaluator: %w", err)
 			}
+			tlEval.SetInternPool(index.InternPool)
+			tlEval.SetTimelineMap(index.TimelineMap)
 			if err := tlEval.Compile(f.query); err != nil {
 				return fmt.Errorf("invalid timeline query: %w", err)
 			}
@@ -98,7 +100,7 @@ func (f *TimelineCELFilter) Process(
 				}
 
 				tl := index.Timelines[i]
-				matched, err := tlEval.Evaluate(groupCtx, tl.Data)
+				matched, err := tlEval.Evaluate(groupCtx, tl)
 				if err != nil {
 					return fmt.Errorf("error evaluating timeline query: %w", err)
 				}
@@ -206,6 +208,8 @@ func (f *TimelineCELExclusionFilter) Process(
 			if err != nil {
 				return fmt.Errorf("failed to initialize exclusion evaluator: %w", err)
 			}
+			exclEval.SetInternPool(index.InternPool)
+			exclEval.SetTimelineMap(index.TimelineMap)
 			if err := exclEval.Compile(f.exclusionQuery); err != nil {
 				return fmt.Errorf("invalid timeline exclusion query: %w", err)
 			}
@@ -220,7 +224,7 @@ func (f *TimelineCELExclusionFilter) Process(
 
 				id := candidateIDs[i]
 				if tl, ok := index.TimelineMap[id]; ok {
-					matched, err := exclEval.Evaluate(groupCtx, tl.Data)
+					matched, err := exclEval.Evaluate(groupCtx, tl)
 					if err != nil {
 						return fmt.Errorf("error evaluating exclusion query: %w", err)
 					}
