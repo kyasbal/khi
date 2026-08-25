@@ -20,11 +20,11 @@ import (
 	"os"
 	"sync"
 	"testing"
-	"time"
 
 	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
 	pb "github.com/GoogleCloudPlatform/khi/pkg/generated/khifile/v6"
 	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
+	"github.com/GoogleCloudPlatform/khi/pkg/server/chunkedupload"
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
@@ -302,7 +302,11 @@ func TestImportSessionManager_Errors(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				manager.maxChunkSize = 10
+				manager.chunkManager = chunkedupload.NewChunkSessionManager(t.TempDir(), chunkedupload.WithMaxChunkSize(10))
+				session, err = manager.StartSession("test.khi", 100)
+				if err != nil {
+					return err
+				}
 				_, err = manager.WriteChunk(session.Token, 0, []byte("longer than 10 bytes"))
 				return err
 			},
@@ -350,10 +354,9 @@ func TestImportSessionManager_Errors(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				session.mu.Lock()
-				session.ExpiresAt = time.Now().Add(-1 * time.Minute)
-				session.mu.Unlock()
-				manager.cleaner.Cleanup(time.Now())
+				if err := manager.chunkManager.Evict(session.Token); err != nil {
+					return err
+				}
 				_, err = manager.WriteChunk(session.Token, 0, []byte("data"))
 				return err
 			},
@@ -386,94 +389,6 @@ func TestImportSessionManager_Errors(t *testing.T) {
 				if err == nil {
 					t.Errorf("expected error, got nil")
 				}
-			}
-		})
-	}
-}
-
-func TestValidateReceivedRanges(t *testing.T) {
-	testCases := []struct {
-		name              string
-		ranges            []ByteRange
-		expectedTotalSize int64
-		wantErr           bool
-	}{
-		{
-			name: "valid single range",
-			ranges: []ByteRange{
-				{Start: 0, End: 100},
-			},
-			expectedTotalSize: 100,
-			wantErr:           false,
-		},
-		{
-			name: "valid multiple ranges in order",
-			ranges: []ByteRange{
-				{Start: 0, End: 30},
-				{Start: 30, End: 70},
-				{Start: 70, End: 100},
-			},
-			expectedTotalSize: 100,
-			wantErr:           false,
-		},
-		{
-			name: "valid multiple ranges out of order",
-			ranges: []ByteRange{
-				{Start: 70, End: 100},
-				{Start: 0, End: 30},
-				{Start: 30, End: 70},
-			},
-			expectedTotalSize: 100,
-			wantErr:           false,
-		},
-		{
-			name:              "empty ranges slice",
-			ranges:            []ByteRange{},
-			expectedTotalSize: 100,
-			wantErr:           true,
-		},
-		{
-			name: "first range does not start at zero",
-			ranges: []ByteRange{
-				{Start: 10, End: 100},
-			},
-			expectedTotalSize: 100,
-			wantErr:           true,
-		},
-		{
-			name: "gap between ranges",
-			ranges: []ByteRange{
-				{Start: 0, End: 30},
-				{Start: 40, End: 100},
-			},
-			expectedTotalSize: 100,
-			wantErr:           true,
-		},
-		{
-			name: "overlap between ranges",
-			ranges: []ByteRange{
-				{Start: 0, End: 50},
-				{Start: 40, End: 100},
-			},
-			expectedTotalSize: 100,
-			wantErr:           true,
-		},
-		{
-			name: "last range does not reach total size",
-			ranges: []ByteRange{
-				{Start: 0, End: 30},
-				{Start: 30, End: 70},
-			},
-			expectedTotalSize: 100,
-			wantErr:           true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			err := validateReceivedRanges(tc.ranges, tc.expectedTotalSize)
-			if (err != nil) != tc.wantErr {
-				t.Errorf("validateReceivedRanges() error = %v, wantErr %v", err, tc.wantErr)
 			}
 		})
 	}
