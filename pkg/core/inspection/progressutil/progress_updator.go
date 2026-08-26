@@ -17,6 +17,7 @@ package progressutil
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
@@ -28,12 +29,15 @@ type ProgressUpdatorOnTickFunc = func(tp *inspectionmetadata.TaskProgressMetadat
 
 // ProgressUpdator periodically updates a TaskProgress object at a specified
 // interval. It uses a callback function to perform the update logic on each tick.
+// A ProgressUpdator instance is intended for a single-use lifecycle and cannot be
+// reused once started.
 type ProgressUpdator struct {
 	Progress *inspectionmetadata.TaskProgressMetadata
 	Interval time.Duration
 	OnTick   ProgressUpdatorOnTickFunc
 	context  context.Context
 	cancel   func()
+	wg       sync.WaitGroup
 }
 
 // NewProgressUpdator creates and initializes a new ProgressUpdator.
@@ -47,32 +51,46 @@ func NewProgressUpdator(progress *inspectionmetadata.TaskProgressMetadata, inter
 
 // Start begins the periodic updates. It invokes the OnTick callback immediately
 // and then continues to call it at the specified interval until Done is called.
-// It returns an error if the updator has already been started.
+// It returns an error if the updator has already been started. A ProgressUpdator
+// instance cannot be reused or restarted once started.
 func (p *ProgressUpdator) Start(ctx context.Context) error {
+	if p.context != nil {
+		return fmt.Errorf("this updator is already started")
+	}
 	p.OnTick(p.Progress)
 	cancellable, cancel := context.WithCancel(ctx)
 	p.cancel = cancel
 	p.context = cancellable
+	p.wg.Add(1)
 	go func() {
-		for itr := 1; true; itr++ {
+		defer p.wg.Done()
+		ticker := time.NewTicker(p.Interval)
+		defer ticker.Stop()
+		for {
 			select {
-			case <-p.context.Done():
+			case <-cancellable.Done():
 				return
-			case <-time.After(p.Interval):
+			case <-ticker.C:
+				select {
+				case <-cancellable.Done():
+					return
+				default:
+				}
 				p.OnTick(p.Progress)
-				itr++
 			}
 		}
 	}()
 	return nil
 }
 
-// Done stops the periodic updates.
-// It returns an error if the updator was not started.
+// Done stops the periodic updates and waits for the worker goroutine to complete.
+// It returns an error if the updator was not started. Calling Done multiple times
+// is idempotent.
 func (p *ProgressUpdator) Done() error {
 	if p.context == nil {
 		return fmt.Errorf("this updator is not yet started")
 	}
 	p.cancel()
+	p.wg.Wait()
 	return nil
 }
