@@ -17,18 +17,18 @@ package defaultinit
 import (
 	coreinit "github.com/GoogleCloudPlatform/khi/pkg/core/init"
 	"github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1/apiv1connect"
-	"github.com/GoogleCloudPlatform/khi/pkg/server"
-	apiv1impl "github.com/GoogleCloudPlatform/khi/pkg/server/api/v1"
+	serverapiv1 "github.com/GoogleCloudPlatform/khi/pkg/server/api/v1"
 )
 
-// InitializerIDServerStatusService identifies the Initializer that mounts the ServerStatusService.
-const InitializerIDServerStatusService coreinit.InitializerID = "khi.default/server-status-service"
+// InitializerIDInspectionService mounts Connect-RPC InspectionService onto Gin engine.
+const InitializerIDInspectionService coreinit.InitializerID = "khi.default/inspection-service"
 
-// ServerStatusServiceInitializer mounts the ServerStatusService Connect-RPC handler onto the Gin router.
-var ServerStatusServiceInitializer = &coreinit.Initializer{
-	ID: InitializerIDServerStatusService,
+// InspectionServiceInitializer initializes and registers the InspectionService handlers.
+var InspectionServiceInitializer = &coreinit.Initializer{
+	ID: InitializerIDInspectionService,
 	Dependencies: []coreinit.InitializerID{
 		InitializerIDGinServer,
+		InitializerIDInspectionTaskServer,
 	},
 	Before: []coreinit.InitializerID{
 		InitializerIDServerRunner,
@@ -38,17 +38,19 @@ var ServerStatusServiceInitializer = &coreinit.Initializer{
 		if *jobParams.JobMode {
 			return nil
 		}
+
+		inspectionServer := coreinit.MustGet(ctx, InspectionTaskServerKey)
 		router := coreinit.MustGet(ctx, GinRouterKey)
 		basePath := coreinit.MustGet(ctx, BasePathKey)
 
-		serverStatusPath, serverStatusHandler := apiv1connect.NewServerStatusServiceHandler(
-			apiv1impl.NewServerStatusServiceServer(server.NewResourceMonitorImpl()),
-		)
-		coreinit.RegisterConnectServiceHandler(router, basePath, serverStatusPath, serverStatusHandler)
+		inspectionServiceServer := serverapiv1.NewInspectionServiceServer(inspectionServer)
+		inspectionServicePath, inspectionServiceHandler := apiv1connect.NewInspectionServiceHandler(inspectionServiceServer)
+		coreinit.RegisterConnectServiceHandler(router, basePath, inspectionServicePath, inspectionServiceHandler)
+
 		return nil
 	},
 }
 
 func init() {
-	coreinit.RegisterInitializer(ServerStatusServiceInitializer)
+	coreinit.RegisterInitializer(InspectionServiceInitializer)
 }
