@@ -15,11 +15,14 @@
  */
 
 import {
+  ComponentRef,
   inject,
   Injectable,
   OnDestroy,
   signal,
+  Type,
   ViewContainerRef,
+  WritableSignal,
 } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import {
@@ -38,6 +41,26 @@ import {
 } from 'src/app/services/menu/menu-manager.service';
 import { StyleOverrideSmartComponent } from 'src/app/dialogs/style-override/style-override-smart.component';
 import { isEventFromOverlay } from 'src/app/common/dom-util';
+
+/**
+ * Type identifiers for components managed by LayoutService.
+ */
+export enum LayoutComponentType {
+  Timeline = 'timeline',
+  Log = 'log',
+  History = 'history',
+  Graph = 'graph',
+}
+
+/**
+ * Configuration for registering a GoldenLayout component.
+ */
+interface ComponentRegistrationConfig {
+  readonly type: LayoutComponentType;
+  readonly componentClass: Type<unknown>;
+  readonly tabIcon: string;
+  readonly disabledSignal?: WritableSignal<boolean>;
+}
 
 /**
  * LayoutService manages the GoldenLayout instance and component registration.
@@ -63,6 +86,21 @@ export class LayoutService implements OnDestroy {
 
   private readonly disableCreateGraphPane = signal(false);
 
+  /** Flag indicating whether a layout switch is in progress. */
+  private isSwitchingLayout = false;
+
+  /** Pool of detached component instances waiting to be reused. */
+  private readonly componentPool = new Map<
+    LayoutComponentType,
+    ComponentRef<unknown>[]
+  >();
+
+  /** Active component instances mapped by their GoldenLayout container. */
+  private readonly activeComponentRefs = new Map<
+    ComponentContainer,
+    ComponentRef<unknown>
+  >();
+
   /** The default layout configuration used if no saved state is found. */
   private readonly defaultLayout: LayoutConfig = {
     settings: {
@@ -79,19 +117,19 @@ export class LayoutService implements OnDestroy {
           content: [
             {
               type: 'component',
-              componentType: 'timeline',
+              componentType: LayoutComponentType.Timeline,
               title: 'Timeline',
               size: '70%',
             },
             {
               type: 'component',
-              componentType: 'log',
+              componentType: LayoutComponentType.Log,
               title: 'Logs',
               size: '15%',
             },
             {
               type: 'component',
-              componentType: 'history',
+              componentType: LayoutComponentType.History,
               title: 'History',
               size: '15%',
             },
@@ -117,13 +155,13 @@ export class LayoutService implements OnDestroy {
           content: [
             {
               type: 'component',
-              componentType: 'timeline',
+              componentType: LayoutComponentType.Timeline,
               title: 'Timeline',
               size: '60%',
             },
             {
               type: 'component',
-              componentType: 'history',
+              componentType: LayoutComponentType.History,
               title: 'History',
               size: '40%',
             },
@@ -149,13 +187,13 @@ export class LayoutService implements OnDestroy {
           content: [
             {
               type: 'component',
-              componentType: 'timeline',
+              componentType: LayoutComponentType.Timeline,
               title: 'Timeline',
               size: '50%',
             },
             {
               type: 'component',
-              componentType: 'graph',
+              componentType: LayoutComponentType.Graph,
               title: 'Graph',
               size: '50%',
             },
@@ -188,61 +226,68 @@ export class LayoutService implements OnDestroy {
   /**
    * Registers components to GoldenLayout.
    */
-  private registerComponents() {
-    this.goldenLayout.registerComponentFactoryFunction(
-      'timeline',
-      (container: ComponentContainer) => {
-        const componentRef = this.viewContainerRef.createComponent(
-          TimelineSmartComponent,
-        );
-        container.element.appendChild(componentRef.location.nativeElement);
-        this.addIconToTab(container, 'view_timeline');
-        container.on('destroy', () => componentRef.destroy());
-      },
-    );
+  private registerComponents(): void {
+    this.registerComponent({
+      type: LayoutComponentType.Timeline,
+      componentClass: TimelineSmartComponent,
+      tabIcon: 'view_timeline',
+    });
 
-    this.goldenLayout.registerComponentFactoryFunction(
-      'log',
-      (container: ComponentContainer) => {
-        const componentRef =
-          this.viewContainerRef.createComponent(LogSmartComponent);
-        container.element.appendChild(componentRef.location.nativeElement);
-        this.addIconToTab(container, 'cards_stack');
-        container.on('destroy', () => {
-          componentRef.destroy();
-          this.disableCreateLogPane.set(false);
-        });
-        this.disableCreateLogPane.set(true);
-      },
-    );
+    this.registerComponent({
+      type: LayoutComponentType.Log,
+      componentClass: LogSmartComponent,
+      tabIcon: 'cards_stack',
+      disabledSignal: this.disableCreateLogPane,
+    });
 
-    this.goldenLayout.registerComponentFactoryFunction(
-      'history',
-      (container: ComponentContainer) => {
-        const componentRef =
-          this.viewContainerRef.createComponent(DiffSmartComponent);
-        container.element.appendChild(componentRef.location.nativeElement);
-        this.addIconToTab(container, 'deployed_code_history');
-        container.on('destroy', () => {
-          componentRef.destroy();
-          this.disableCreateDiffPane.set(false);
-        });
-        this.disableCreateDiffPane.set(true);
-      },
-    );
+    this.registerComponent({
+      type: LayoutComponentType.History,
+      componentClass: DiffSmartComponent,
+      tabIcon: 'deployed_code_history',
+      disabledSignal: this.disableCreateDiffPane,
+    });
 
+    this.registerComponent({
+      type: LayoutComponentType.Graph,
+      componentClass: GraphSmartComponent,
+      tabIcon: 'family_history',
+      disabledSignal: this.disableCreateGraphPane,
+    });
+  }
+
+  /**
+   * Registers a single component type with pooling and caching support.
+   */
+  private registerComponent(config: ComponentRegistrationConfig): void {
     this.goldenLayout.registerComponentFactoryFunction(
-      'graph',
+      config.type,
       (container: ComponentContainer) => {
+        const pool = this.componentPool.get(config.type);
         const componentRef =
-          this.viewContainerRef.createComponent(GraphSmartComponent);
+          pool && pool.length > 0
+            ? pool.pop()!
+            : this.viewContainerRef.createComponent(config.componentClass);
+
+        this.activeComponentRefs.set(container, componentRef);
         container.element.appendChild(componentRef.location.nativeElement);
-        this.addIconToTab(container, 'family_history');
+        this.addIconToTab(container, config.tabIcon);
+        config.disabledSignal?.set(true);
+
         container.on('destroy', () => {
-          componentRef.destroy();
-          this.disableCreateGraphPane.set(false);
+          this.activeComponentRefs.delete(container);
+          if (this.isSwitchingLayout) {
+            componentRef.location.nativeElement.remove();
+            let currentPool = this.componentPool.get(config.type);
+            if (!currentPool) {
+              currentPool = [];
+              this.componentPool.set(config.type, currentPool);
+            }
+            currentPool.push(componentRef);
+          } else {
+            componentRef.destroy();
+          }
+          config.disabledSignal?.set(false);
         });
-        this.disableCreateGraphPane.set(true);
       },
     );
   }
@@ -250,7 +295,7 @@ export class LayoutService implements OnDestroy {
   /**
    * Adds icon to tab.
    */
-  private addIconToTab(container: ComponentContainer, iconName: string) {
+  private addIconToTab(container: ComponentContainer, iconName: string): void {
     container.on('tab', (tab: Tab) => {
       const iconSpan = document.createElement('span');
       iconSpan.className = 'material-symbols-outlined khi-tab-icon';
@@ -264,24 +309,44 @@ export class LayoutService implements OnDestroy {
   }
 
   /**
+   * Executes a layout switch while preserving cached components.
+   */
+  private executeLayoutSwitch(layoutConfig: LayoutConfig): void {
+    this.isSwitchingLayout = true;
+    try {
+      this.goldenLayout.loadLayout(layoutConfig);
+
+      const timelinePool = this.componentPool.get(LayoutComponentType.Timeline);
+      if (timelinePool) {
+        while (timelinePool.length > 0) {
+          const surplus = timelinePool.pop();
+          surplus?.destroy();
+        }
+      }
+    } finally {
+      this.isSwitchingLayout = false;
+    }
+  }
+
+  /**
    * Loads default layout configuration.
    */
-  public loadDefaultLayout() {
-    this.goldenLayout.loadLayout(this.defaultLayout);
+  public loadDefaultLayout(): void {
+    this.executeLayoutSwitch(this.defaultLayout);
   }
 
   /**
    * Loads state analysis layout configuration.
    */
-  public loadStateAnalysisLayout() {
-    this.goldenLayout.loadLayout(this.stateAnalysisLayout);
+  public loadStateAnalysisLayout(): void {
+    this.executeLayoutSwitch(this.stateAnalysisLayout);
   }
 
   /**
    * Loads topology analysis layout configuration.
    */
-  public loadTopologyAnalysisLayout() {
-    this.goldenLayout.loadLayout(this.topologyAnalysisLayout);
+  public loadTopologyAnalysisLayout(): void {
+    this.executeLayoutSwitch(this.topologyAnalysisLayout);
   }
 
   /**
@@ -314,7 +379,7 @@ export class LayoutService implements OnDestroy {
       icon: 'timeline',
       priority: 1,
       action: () => {
-        this.addPane('timeline', 'Timeline');
+        this.addPane(LayoutComponentType.Timeline, 'Timeline');
       },
     });
     this.menuManager.addItem('view', {
@@ -325,7 +390,7 @@ export class LayoutService implements OnDestroy {
       priority: 2,
       disabled: this.disableCreateLogPane,
       action: () => {
-        this.addPane('log', 'Logs');
+        this.addPane(LayoutComponentType.Log, 'Logs');
       },
     });
     this.menuManager.addItem('view', {
@@ -336,7 +401,7 @@ export class LayoutService implements OnDestroy {
       disabled: this.disableCreateDiffPane,
       priority: 3,
       action: () => {
-        this.addPane('history', 'History');
+        this.addPane(LayoutComponentType.History, 'History');
       },
     });
     this.menuManager.addItem('view', {
@@ -347,7 +412,7 @@ export class LayoutService implements OnDestroy {
       disabled: this.disableCreateGraphPane,
       priority: 4,
       action: () => {
-        this.addPane('graph', 'Graph');
+        this.addPane(LayoutComponentType.Graph, 'Graph');
       },
     });
     this.menuManager.addItem('view', {
@@ -430,7 +495,7 @@ export class LayoutService implements OnDestroy {
   /**
    * Adds a new pane to the layout.
    */
-  private addPane(componentType: string, title: string) {
+  private addPane(componentType: LayoutComponentType, title: string): void {
     try {
       this.goldenLayout.addItem({
         type: 'component',
@@ -445,9 +510,21 @@ export class LayoutService implements OnDestroy {
     }
   }
 
-  ngOnDestroy(): void {
+  public ngOnDestroy(): void {
     window.removeEventListener('keydown', this.handleKeyDown);
     this.resizeObserver?.disconnect();
     this.goldenLayout?.destroy();
+
+    for (const ref of this.activeComponentRefs.values()) {
+      ref.destroy();
+    }
+    this.activeComponentRefs.clear();
+
+    for (const pool of this.componentPool.values()) {
+      for (const ref of pool) {
+        ref.destroy();
+      }
+    }
+    this.componentPool.clear();
   }
 }
