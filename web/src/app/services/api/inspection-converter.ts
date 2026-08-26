@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { create } from '@bufbuild/protobuf';
+import { create, isFieldSet } from '@bufbuild/protobuf';
 import {
   FormField,
   GroupFormField,
@@ -30,6 +30,7 @@ import {
   InspectionListItem,
   GetInspectionMetadataResponse,
   DryRunInspectionResponse,
+  InspectionQuerySchema,
 } from 'src/app/generated/api/v1/inspection_pb';
 import {
   ParameterFormField,
@@ -347,6 +348,14 @@ export function convertProtoDryRunResponseToFrontend(
         id: q.id,
         name: q.name,
         query: q.query,
+        estimatedCount: isFieldSet(
+          q,
+          InspectionQuerySchema.field.estimatedCount,
+        )
+          ? Number(q.estimatedCount)
+          : undefined,
+        incomplete: q.incomplete ? true : undefined,
+        pending: q.pending ? true : undefined,
       })),
       plan: {
         taskGraph: res.plan?.taskGraph ?? '',
@@ -382,6 +391,11 @@ export function convertProtoMetadataToInspectionMetadataOfRunResult(
       id: q.id,
       name: q.name,
       query: q.query,
+      estimatedCount: isFieldSet(q, InspectionQuerySchema.field.estimatedCount)
+        ? Number(q.estimatedCount)
+        : undefined,
+      incomplete: q.incomplete ? true : undefined,
+      pending: q.pending ? true : undefined,
     })),
     log: (res.logs ?? []).map((l) => ({
       id: l.id,
