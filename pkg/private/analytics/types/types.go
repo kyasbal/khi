@@ -19,10 +19,13 @@ import "time"
 type AnalyticsEvent = string
 
 const (
-	AnalyticsEventKHIStart        = "khi-start"
-	AnalyticsEventKHITerminate    = "khi-terminate"
-	AnalyticsEventInspectionStart = "inspection-start"
-	AnalyticsEventInspectionEnd   = "inspection-end"
+	AnalyticsEventKHIStart                   = "khi-start"
+	AnalyticsEventKHITerminate               = "khi-terminate"
+	AnalyticsEventInspectionStart            = "inspection-start"
+	AnalyticsEventInspectionEnd              = "inspection-end"
+	AnalyticsEventFrontendInit               = "INIT"
+	AnalyticsEventFrontendInspect            = "INSPECT"
+	AnalyticsEventFrontendOpenInspectionData = "OPEN_INSPECTION_DATA"
 )
 
 type RecordAnalyticsDataRequest struct {

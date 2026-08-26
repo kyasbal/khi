@@ -17,6 +17,7 @@ package private
 import (
 	coreinit "github.com/GoogleCloudPlatform/khi/pkg/core/init"
 	defaultinit "github.com/GoogleCloudPlatform/khi/pkg/core/init/default"
+	"github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1/apiv1connect"
 	privateparameters "github.com/GoogleCloudPlatform/khi/pkg/private/parameters"
 	privateserver "github.com/GoogleCloudPlatform/khi/pkg/private/server"
 	"github.com/GoogleCloudPlatform/khi/pkg/private/server/index"
@@ -41,8 +42,13 @@ var PrivateServerInitializer = &coreinit.Initializer{
 			return nil
 		}
 		index.RegisterAll()
+		router := coreinit.MustGet(ctx, defaultinit.GinRouterKey)
+		basePath := coreinit.MustGet(ctx, defaultinit.BasePathKey)
+
+		analyticsPath, analyticsHandler := apiv1connect.NewPrivateAnalyticsServiceHandler(privateserver.NewPrivateAnalyticsServer(nil))
+		coreinit.RegisterConnectServiceHandler(router, basePath, analyticsPath, analyticsHandler)
+
 		if privateparameters.Private.InspectionMode != nil && *privateparameters.Private.InspectionMode {
-			router := coreinit.MustGet(ctx, defaultinit.GinRouterKey)
 			injector, ok := coreinit.Get(ctx, IAMTokenInjectorKey)
 			if ok && injector != nil {
 				privateserver.ConfigureRoute(router, injector)

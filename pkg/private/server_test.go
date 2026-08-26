@@ -68,6 +68,7 @@ func TestPrivateServerInitializer(t *testing.T) {
 			ginEngine := gin.New()
 			var router gin.IRouter = ginEngine.Group("/test")
 			coreinit.Set(ctx, defaultinit.GinRouterKey, router)
+			coreinit.Set(ctx, defaultinit.BasePathKey, "/test")
 
 			if tc.inspectionMode {
 				injector := iamtoken.NewInjector()

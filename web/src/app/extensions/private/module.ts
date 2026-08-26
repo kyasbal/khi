@@ -15,15 +15,16 @@
  */
 
 import { NgModule } from '@angular/core';
-import { KHIExtensionBundle } from '../extension-common/extension';
-import { FRONTEND_ANALYTICS } from './analytics/types';
-import { FrontendAnalyticsWithGA } from './analytics/ga';
-import { AnalyticsLifecycleExtension } from './analytics/analytics-lifecycle-extension';
+import { KHIExtensionBundle } from 'src/app/extensions/extension-common/extension';
+import { AnalyticsLifecycleExtension } from 'src/app/extensions/private/analytics/analytics-lifecycle-extension';
+import { PrivateAnalyticsService } from 'src/app/extensions/private/analytics/private-analytics.service';
+import { FRONTEND_ANALYTICS } from 'src/app/extensions/private/analytics/types';
 
 @NgModule({
   imports: [],
   providers: [
-    { provide: FRONTEND_ANALYTICS, useValue: new FrontendAnalyticsWithGA() },
+    PrivateAnalyticsService,
+    { provide: FRONTEND_ANALYTICS, useExisting: PrivateAnalyticsService },
     KHIExtensionBundle.forExtension(initExtension),
   ],
 })
