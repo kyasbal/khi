@@ -42,17 +42,22 @@ type WorkbenchManager struct {
 	workbenches      map[string]*Workbench
 	leases           map[string]time.Time
 	inspectionServer *coreinspection.InspectionTaskServer
+	indexManager     *InspectionIndexManager
 	ttl              time.Duration
 	sweeper          *Sweeper
 	loadGroup        singleflight.Group
 }
 
 // NewWorkbenchManager creates a new WorkbenchManager instance with automatic background sweeping.
-func NewWorkbenchManager(inspectionServer *coreinspection.InspectionTaskServer, ttl time.Duration, sweeperInterval time.Duration) *WorkbenchManager {
+func NewWorkbenchManager(inspectionServer *coreinspection.InspectionTaskServer, indexManager *InspectionIndexManager, ttl time.Duration, sweeperInterval time.Duration) *WorkbenchManager {
+	if indexManager == nil {
+		panic("indexManager is required")
+	}
 	mgr := &WorkbenchManager{
 		workbenches:      make(map[string]*Workbench),
 		leases:           make(map[string]time.Time),
 		inspectionServer: inspectionServer,
+		indexManager:     indexManager,
 		ttl:              ttl,
 	}
 
@@ -62,6 +67,11 @@ func NewWorkbenchManager(inspectionServer *coreinspection.InspectionTaskServer, 
 	}
 
 	return mgr
+}
+
+// IndexManager returns the InspectionIndexManager associated with this manager.
+func (m *WorkbenchManager) IndexManager() *InspectionIndexManager {
+	return m.indexManager
 }
 
 // GetOrOpen retrieves an existing active Workbench session or loads the dataset into a new one.
@@ -119,6 +129,7 @@ func (m *WorkbenchManager) GetOrOpen(ctx context.Context, workbenchID string, in
 		if err != nil {
 			return nil, err
 		}
+		loadedWb.SetIndexManager(m.indexManager)
 
 		m.mu.Lock()
 		if oldWb, exists := m.workbenches[workbenchID]; exists && oldWb != nil && oldWb != loadedWb {
@@ -249,16 +260,18 @@ func (m *WorkbenchManager) Remove(workbenchID string) {
 	}
 }
 
-// Stop stops the background sweeper and closes all open workbench sessions.
+// Stop stops the background sweeper, closes all open workbench sessions, and waits for active indexing jobs.
 func (m *WorkbenchManager) Stop() {
 	if m.sweeper != nil {
 		m.sweeper.Stop()
 	}
 	m.mu.Lock()
-	defer m.mu.Unlock()
 	for _, wb := range m.workbenches {
 		wb.Close()
 	}
 	m.workbenches = make(map[string]*Workbench)
 	m.leases = make(map[string]time.Time)
+	m.mu.Unlock()
+
+	m.indexManager.Wait()
 }

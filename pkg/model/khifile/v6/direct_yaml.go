@@ -16,6 +16,7 @@ package khifilev6
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -104,7 +105,7 @@ func compileFieldPathSchema(keys []string) *FieldPathSchema {
 		var prefixBuilder strings.Builder
 		for lvl := common; lvl < len(parts)-1; lvl++ {
 			prefixBuilder.WriteString(strings.Repeat("  ", lvl))
-			prefixBuilder.WriteString(formatKeyName(parts[lvl]))
+			prefixBuilder.WriteString(FormatKeyName(parts[lvl]))
 			prefixBuilder.WriteString(":\n")
 		}
 
@@ -112,7 +113,7 @@ func compileFieldPathSchema(keys []string) *FieldPathSchema {
 		ops[i] = FieldOp{
 			PrefixYAML:  prefixBuilder.String(),
 			Indent:      strings.Repeat("  ", leafLvl),
-			KeyName:     formatKeyName(parts[leafLvl]),
+			KeyName:     FormatKeyName(parts[leafLvl]),
 			IndentLevel: leafLvl,
 		}
 
@@ -122,8 +123,8 @@ func compileFieldPathSchema(keys []string) *FieldPathSchema {
 	return &FieldPathSchema{Ops: ops}
 }
 
-// formatKeyName formats a mapping key safely, applying quotes if the key starts with @ or contains control characters.
-func formatKeyName(key string) string {
+// FormatKeyName formats a mapping key safely, applying quotes if the key starts with @ or contains control characters.
+func FormatKeyName(key string) string {
 	if isSafePlainScalar(key) {
 		return key
 	}
@@ -323,11 +324,37 @@ func isSafePlainScalar(str string) bool {
 	return true
 }
 
+// emitQuotedString writes a double-quoted YAML string preserving valid UTF-8 runes.
+func emitQuotedString(targetBuf *bytes.Buffer, str string) {
+	targetBuf.WriteByte('"')
+	for _, r := range str {
+		switch r {
+		case '"':
+			targetBuf.WriteString(`\"`)
+		case '\\':
+			targetBuf.WriteString(`\\`)
+		case '\n':
+			targetBuf.WriteString(`\n`)
+		case '\r':
+			targetBuf.WriteString(`\r`)
+		case '\t':
+			targetBuf.WriteString(`\t`)
+		default:
+			if r < 0x20 {
+				fmt.Fprintf(targetBuf, `\x%02x`, r)
+			} else {
+				targetBuf.WriteRune(r)
+			}
+		}
+	}
+	targetBuf.WriteByte('"')
+}
+
 // emitString writes a string value to the buffer, using plain scalar for safe identifiers and double-quotes otherwise.
 func (s *DirectYAMLSerializer) emitString(targetBuf *bytes.Buffer, str string) {
 	if isSafePlainScalar(str) {
 		targetBuf.WriteString(str)
 	} else {
-		targetBuf.WriteString(strconv.Quote(str))
+		emitQuotedString(targetBuf, str)
 	}
 }
