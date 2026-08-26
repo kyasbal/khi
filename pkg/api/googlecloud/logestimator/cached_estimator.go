@@ -67,6 +67,44 @@ func (e *CachedStructuredLogEstimator) EstimateWithTaskSlot(
 	startTime, endTime time.Time,
 	provider EstimatorProvider,
 ) (*EstimateResult, error) {
+	res, flight, pending, err := e.estimateWithTaskSlotInternal(ctx, taskSlotKey, container, query, startTime, endTime, provider)
+	if !pending {
+		return res, err
+	}
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-flight.done:
+		return flight.res, flight.err
+	}
+}
+
+// EstimateWithTaskSlotNonBlocking estimates the log volume for the given query asynchronously without blocking the caller.
+// It returns (res, false, nil) if the result is already cached.
+// It returns (nil, true, nil) if the estimation is currently in-flight (pending).
+// It returns (nil, false, err) if an error occurred during estimation.
+func (e *CachedStructuredLogEstimator) EstimateWithTaskSlotNonBlocking(
+	ctx context.Context,
+	taskSlotKey string,
+	container googlecloud.ResourceContainer,
+	query *StructuredLogQuery,
+	startTime, endTime time.Time,
+	provider EstimatorProvider,
+) (*EstimateResult, bool, error) {
+	res, _, pending, err := e.estimateWithTaskSlotInternal(ctx, taskSlotKey, container, query, startTime, endTime, provider)
+	return res, pending, err
+}
+
+// estimateWithTaskSlotInternal handles the core estimation logic under lock and returns the active flightCall pointer.
+func (e *CachedStructuredLogEstimator) estimateWithTaskSlotInternal(
+	ctx context.Context,
+	taskSlotKey string,
+	container googlecloud.ResourceContainer,
+	query *StructuredLogQuery,
+	startTime, endTime time.Time,
+	provider EstimatorProvider,
+) (*EstimateResult, *flightCall, bool, error) {
 	cacheKey := fmt.Sprintf("%s|%s|%d|%d",
 		container.Identifier(),
 		query.GenerateCloudLoggingQuery(),
@@ -79,7 +117,7 @@ func (e *CachedStructuredLogEstimator) EstimateWithTaskSlot(
 	// 1. Return cached result if present.
 	if res, ok := e.cache[cacheKey]; ok {
 		e.mu.Unlock()
-		return res, nil
+		return res, nil, false, nil
 	}
 
 	// 2. If an in-flight query exists for this task slot with a different query, cancel it.
@@ -101,13 +139,7 @@ func (e *CachedStructuredLogEstimator) EstimateWithTaskSlot(
 			}
 		}
 		e.mu.Unlock()
-
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case <-flight.done:
-			return flight.res, flight.err
-		}
+		return nil, flight, true, nil
 	}
 
 	// 4. Start a new in-flight execution.
@@ -155,12 +187,7 @@ func (e *CachedStructuredLogEstimator) EstimateWithTaskSlot(
 		res, err = estimator.Estimate(callCtx, container, query, startTime, endTime)
 	}()
 
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case <-flight.done:
-		return flight.res, flight.err
-	}
+	return nil, flight, true, nil
 }
 
 // Close cancels all active in-flight requests and clears the estimation cache.
