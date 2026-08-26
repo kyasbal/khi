@@ -1,0 +1,61 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+edition = "2023";
+
+package api.v1;
+
+option go_package = "github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1;apiv1";
+
+// ServerStat provides snapshot metrics of host server resources.
+message ServerStat {
+  // Current memory allocated by the server process in bytes.
+  uint64 current_memory_usage = 1;
+
+  // Total physical memory of the host system in bytes.
+  uint64 total_memory = 2;
+
+  // Current CPU usage percentage across all cores (0.0 to 100.0).
+  double cpu_usage_percentage = 3;
+}
+
+// Request to retrieve current server resource statistics.
+message GetServerStatRequest {}
+
+// Response containing current server resource statistics.
+message GetServerStatResponse {
+  // Current resource statistics of the server.
+  ServerStat server_stat = 1;
+}
+
+// Request to watch real-time server resource statistics.
+message WatchServerStatRequest {}
+
+// Response streamed periodically with real-time server resource statistics.
+message WatchServerStatResponse {
+  // Current resource statistics of the server.
+  ServerStat server_stat = 1;
+}
+
+// ServerStatusService provides real-time and snapshot metrics of host server resources.
+service ServerStatusService {
+  // Returns current server resource usage statistics as a one-off snapshot.
+  rpc GetServerStat(GetServerStatRequest) returns (GetServerStatResponse);
+
+  // Streams real-time server resource usage statistics.
+  // The server sends the current state immediately upon connection and pushes updates periodically.
+  // The stream terminates after approximately 30 seconds to support runtimes without long-lived connection support;
+  // clients are expected to automatically reconnect.
+  rpc WatchServerStat(WatchServerStatRequest) returns (stream WatchServerStatResponse);
+}
