@@ -33,4 +33,10 @@ export const environment = {
     GTAG_ID: 'G-JJ6G0C6V06',
   } as Record<string, unknown>,
   links,
+  /*
+   *  KHI Hosted is behind of GAE standard to put it behind of Uber-Proxy.
+   *  GAE standard doesn't support server side streaming feature.
+   *  So we need to use polling legacy for KHI Hosted.
+   */
+  usePollingLegacy: true,
 };
