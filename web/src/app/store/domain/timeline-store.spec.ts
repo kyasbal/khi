@@ -22,7 +22,7 @@ import {
 } from 'src/app/store/domain/timeline-store';
 import { InternPoolStore } from 'src/app/store/domain/intern-pool-store';
 import { StyleStore } from 'src/app/store/domain/style-store';
-import { LogStore, LogDTO } from 'src/app/store/domain/log-store';
+import { LogStore } from 'src/app/store/domain/log-store';
 
 describe('TimelineStore', () => {
   let internPool: InternPoolStore;
@@ -33,10 +33,20 @@ describe('TimelineStore', () => {
   const mockColor = { r: 0, g: 0, b: 0, a: 1 };
 
   beforeEach(() => {
-    internPool = InternPoolStore.create();
+    internPool = InternPoolStore.initialize();
     styleStore = new StyleStore();
-    logStore = LogStore.create(internPool, styleStore);
-    store = TimelineStore.create(internPool, styleStore, logStore);
+    logStore = LogStore.initialize(internPool, styleStore, [], 0);
+    store = TimelineStore.initialize(
+      internPool,
+      styleStore,
+      logStore,
+      [],
+      0,
+      [],
+      0,
+      [],
+      0,
+    );
 
     styleStore.addTimelineTypes([
       {
@@ -106,7 +116,7 @@ describe('TimelineStore', () => {
     const logs = [
       { id: 1, ts: 10n, logTypeId: 1, severityTypeId: 1, summaryStringId: 1 },
     ];
-    logStore.initialize(logs, 1);
+    logStore = LogStore.initialize(internPool, styleStore, logs, 1);
 
     const rawTimelines: TimelineDTO[] = [
       {
@@ -138,9 +148,17 @@ describe('TimelineStore', () => {
       },
     ];
 
-    expect(() =>
-      store.initialize(rawTimelines, 1, rawRevisions, 1, rawEvents, 1),
-    ).not.toThrow();
+    store = TimelineStore.initialize(
+      internPool,
+      styleStore,
+      logStore,
+      rawTimelines,
+      1,
+      rawRevisions,
+      1,
+      rawEvents,
+      1,
+    );
 
     const t = store.getTimeline(10);
     expect(t.id).toBe(10);
@@ -153,227 +171,6 @@ describe('TimelineStore', () => {
     const all = store.timelines;
     expect(all.length).toBe(1);
     expect(all[0].id).toBe(10);
-  });
-
-  it('should correctly build severity index for timelines', () => {
-    internPool.addStrings([
-      { id: 1, value: 'timeline-x' },
-      { id: 2, value: 'principal-y' },
-    ]);
-
-    // Severity 1: Info, Severity 2: Warning
-    styleStore.addSeverities([
-      {
-        id: 1,
-        label: 'Info',
-        shortLabel: 'I',
-        backgroundColor: mockColor,
-        foregroundColor: mockColor,
-        order: 1,
-      },
-      {
-        id: 2,
-        label: 'Warning',
-        shortLabel: 'W',
-        backgroundColor: mockColor,
-        foregroundColor: mockColor,
-        order: 2,
-      },
-    ]);
-
-    const logs = [
-      { id: 1, ts: 10n, logTypeId: 1, severityTypeId: 1, summaryStringId: 1 },
-      { id: 2, ts: 20n, logTypeId: 1, severityTypeId: 2, summaryStringId: 1 },
-    ];
-    logStore.initialize(logs, 2);
-
-    const rawTimelines: TimelineDTO[] = [
-      {
-        id: 10,
-        timelineTypeId: 1,
-        nameStringId: 1,
-        parentTimelineId: 0,
-        revisionIds: [100],
-        eventIds: [],
-      },
-      {
-        id: 20,
-        timelineTypeId: 1,
-        nameStringId: 1,
-        parentTimelineId: 0,
-        revisionIds: [],
-        eventIds: [200],
-      },
-      {
-        id: 30,
-        timelineTypeId: 1,
-        nameStringId: 1,
-        parentTimelineId: 0,
-        revisionIds: [],
-        eventIds: [],
-      },
-    ];
-
-    const rawRevisions: RevisionDTO[] = [
-      {
-        id: 100,
-        logId: 1,
-        changedTime: 10n,
-        principalStringId: 2,
-        verbTypeId: 1,
-        stateTypeId: 1,
-      },
-    ];
-
-    const rawEvents: EventDTO[] = [
-      {
-        id: 200,
-        logId: 2,
-      },
-    ];
-
-    store.initialize(rawTimelines, 3, rawRevisions, 1, rawEvents, 1);
-
-    const s1 = styleStore.getSeverity(1);
-    const s2 = styleStore.getSeverity(2);
-
-    const t1 = store.getTimeline(10);
-    expect(t1.hasSeverity(s1)).toBeTrue();
-    expect(t1.hasSeverity(s2)).toBeFalse();
-
-    const t2 = store.getTimeline(20);
-    expect(t2.hasSeverity(s1)).toBeFalse();
-    expect(t2.hasSeverity(s2)).toBeTrue();
-
-    const t3 = store.getTimeline(30);
-    expect(t3.hasSeverity(s1)).toBeFalse();
-    expect(t3.hasSeverity(s2)).toBeFalse();
-
-    // Invalid severity ID
-    expect(
-      t1.hasSeverity({
-        id: 99,
-        label: 'invalid',
-        shortLabel: 'inv',
-        backgroundColor: mockColor,
-        foregroundColor: mockColor,
-        order: 99,
-      }),
-    ).toBeFalse();
-  });
-
-  it('should correctly check if timeline has severities', () => {
-    internPool.addStrings([
-      { id: 1, value: 'timeline-x' },
-      { id: 2, value: 'principal-y' },
-    ]);
-
-    // Severity 1: Info (order 1), Severity 2: Warning (order 2), Severity 3: Error (order 3)
-    styleStore.addSeverities([
-      {
-        id: 1,
-        label: 'Info',
-        shortLabel: 'I',
-        backgroundColor: mockColor,
-        foregroundColor: mockColor,
-        order: 1,
-      },
-      {
-        id: 2,
-        label: 'Warning',
-        shortLabel: 'W',
-        backgroundColor: mockColor,
-        foregroundColor: mockColor,
-        order: 2,
-      },
-      {
-        id: 3,
-        label: 'Error',
-        shortLabel: 'E',
-        backgroundColor: mockColor,
-        foregroundColor: mockColor,
-        order: 3,
-      },
-    ]);
-
-    const logs = [
-      { id: 1, ts: 10n, logTypeId: 1, severityTypeId: 1, summaryStringId: 1 },
-      { id: 2, ts: 20n, logTypeId: 1, severityTypeId: 2, summaryStringId: 1 },
-      { id: 3, ts: 30n, logTypeId: 1, severityTypeId: 3, summaryStringId: 1 },
-    ];
-    logStore.initialize(logs, 3);
-
-    const rawTimelines: TimelineDTO[] = [
-      {
-        id: 10,
-        timelineTypeId: 1,
-        nameStringId: 1,
-        parentTimelineId: 0,
-        revisionIds: [100],
-        eventIds: [],
-      },
-      {
-        id: 20,
-        timelineTypeId: 1,
-        nameStringId: 1,
-        parentTimelineId: 0,
-        revisionIds: [],
-        eventIds: [200],
-      },
-      {
-        id: 30,
-        timelineTypeId: 1,
-        nameStringId: 1,
-        parentTimelineId: 0,
-        revisionIds: [],
-        eventIds: [300],
-      },
-    ];
-
-    const rawRevisions: RevisionDTO[] = [
-      {
-        id: 100,
-        logId: 1,
-        changedTime: 10n,
-        principalStringId: 2,
-        verbTypeId: 1,
-        stateTypeId: 1,
-      },
-    ];
-
-    const rawEvents: EventDTO[] = [
-      {
-        id: 200,
-        logId: 2,
-      },
-      {
-        id: 300,
-        logId: 3,
-      },
-    ];
-
-    store.initialize(rawTimelines, 3, rawRevisions, 1, rawEvents, 2);
-
-    const s1 = styleStore.getSeverity(1);
-    const s2 = styleStore.getSeverity(2);
-    const s3 = styleStore.getSeverity(3);
-
-    const t1 = store.getTimeline(10);
-    const t2 = store.getTimeline(20);
-    const t3 = store.getTimeline(30);
-
-    // Single severity checks
-    expect(t1.hasSeverity(s1)).toBeTrue();
-    expect(t1.hasSeverity(s2)).toBeFalse();
-
-    // Multiple severity checks
-    expect(t1.hasSeverity(s1, s2)).toBeTrue();
-    expect(t2.hasSeverity(s2, s3)).toBeTrue();
-    expect(t3.hasSeverity(s1, s2)).toBeFalse();
-    expect(t3.hasSeverity(s3)).toBeTrue();
-
-    // Empty severities list
-    expect(t1.hasSeverity()).toBeFalse();
   });
 
   it('should correctly decode timeline traversal path', () => {
@@ -401,7 +198,17 @@ describe('TimelineStore', () => {
       },
     ];
 
-    store.initialize(rawTimelines, 2, [], 0, [], 0);
+    store = TimelineStore.initialize(
+      internPool,
+      styleStore,
+      logStore,
+      rawTimelines,
+      2,
+      [],
+      0,
+      [],
+      0,
+    );
 
     const timeline = store.getTimeline(2);
     const computedPath = timeline.path;
@@ -442,7 +249,17 @@ describe('TimelineStore', () => {
       },
     ];
 
-    store.initialize(rawTimelines, 2, [], 0, [], 0);
+    store = TimelineStore.initialize(
+      internPool,
+      styleStore,
+      logStore,
+      rawTimelines,
+      2,
+      [],
+      0,
+      [],
+      0,
+    );
 
     const childIds = store._getChildIdsForTimeline(10);
     expect(childIds.length).toBe(1);
@@ -454,69 +271,8 @@ describe('TimelineStore', () => {
     );
   });
 
-  it('should restore from shared memory using fromSharedData and enforce readOnly guard', () => {
-    internPool.addStrings([{ id: 1, value: 'timeline-1' }]);
-
-    const timelines: TimelineDTO[] = [
-      {
-        id: 1,
-        timelineTypeId: 1,
-        nameStringId: 1,
-        parentTimelineId: 0,
-        revisionIds: [1],
-        eventIds: [],
-      },
-    ];
-
-    const revisions: RevisionDTO[] = [
-      {
-        id: 1,
-        logId: 1,
-        changedTime: 1000n,
-        principalStringId: 1,
-        verbTypeId: 1,
-        stateTypeId: 1,
-        resourceBodyStructId: 99,
-      },
-    ];
-
-    // Mock logs initialization needed by severity indexing
-    const logs: LogDTO[] = [
-      { id: 1, ts: 1000n, logTypeId: 1, severityTypeId: 1, summaryStringId: 1 },
-    ];
-    logStore.initialize(logs, 1);
-
-    store.initialize(timelines, 1, revisions, 1, [], 0);
-
-    const sharedData = store.getSharedData();
-    const restoredStore = TimelineStore.fromSharedData(
-      internPool,
-      styleStore,
-      logStore,
-      sharedData,
-    );
-
-    expect(restoredStore.timelines.length).toBe(1);
-    const restoredTimeline = restoredStore.getTimeline(1);
-    expect(restoredTimeline.id).toBe(1);
-
-    const restoredRevisions = restoredTimeline.revisions;
-    expect(restoredRevisions.length).toBe(1);
-    expect(restoredRevisions[0].id).toBe(1);
-    expect(restoredRevisions[0].structId).toBe(99);
-
-    expect(() => {
-      restoredStore.initialize(timelines, 1, revisions, 1, [], 0);
-    }).toThrowError('Cannot write to a shared read-only TimelineStore');
-  });
-
   describe('ArrayBuffer allocation', () => {
     it('should allocate ArrayBuffer and perform operations successfully', () => {
-      const fallbackStore = TimelineStore.create(
-        internPool,
-        styleStore,
-        logStore,
-      );
       const timelines: TimelineDTO[] = [
         {
           id: 1,
@@ -527,23 +283,21 @@ describe('TimelineStore', () => {
           eventIds: [],
         },
       ];
-      fallbackStore.initialize(timelines, 1, [], 0, [], 0);
+      const fallbackStore = TimelineStore.initialize(
+        internPool,
+        styleStore,
+        logStore,
+        timelines,
+        1,
+        [],
+        0,
+        [],
+        0,
+      );
 
       expect(fallbackStore.timelines.length).toBe(1);
       const timeline = fallbackStore.getTimeline(1);
       expect(timeline.id).toBe(1);
-
-      const sharedData = fallbackStore.getSharedData();
-      expect(sharedData.metadataSab instanceof ArrayBuffer).toBeTrue();
-
-      const restoredStore = TimelineStore.fromSharedData(
-        internPool,
-        styleStore,
-        logStore,
-        sharedData,
-      );
-      expect(restoredStore.timelines.length).toBe(1);
-      expect(restoredStore.getTimeline(1).id).toBe(1);
     });
   });
 });
