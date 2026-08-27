@@ -25,7 +25,7 @@ import { ServerStatusService } from 'src/app/generated/api/v1/server_status_pb';
 import { WorkbenchService } from 'src/app/generated/api/v1/workbench_pb';
 import { InspectionService } from 'src/app/generated/api/v1/inspection_pb';
 import { ApiPathUtil } from 'src/app/services/api/api-path-util';
-import { environment } from 'src/environments/environment';
+import { resolveUseBinaryFormat } from 'src/app/services/api/transport-config-resolver';
 
 /**
  * ConnectClientService manages Connect-RPC clients and transports.
@@ -36,7 +36,7 @@ import { environment } from 'src/environments/environment';
 export class ConnectClientService {
   private readonly transport = createConnectTransport({
     baseUrl: ApiPathUtil.getServerBaseUrl(),
-    useBinaryFormat: environment.production,
+    useBinaryFormat: resolveUseBinaryFormat(),
   });
 
   /**

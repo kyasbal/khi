@@ -14,11 +14,34 @@
  * limitations under the License.
  */
 
+/**
+ * Configuration options for chunked uploads defined in environments.
+ */
+export interface UploadEnvironmentConfig {
+  /** Default chunk payload size in bytes. */
+  readonly chunkSizeBytes?: number;
+  /** Maximum number of concurrent chunk uploads. */
+  readonly maxConcurrency?: number;
+}
+
+/**
+ * Configuration options for chunked downloads defined in environments.
+ */
+export interface DownloadEnvironmentConfig {
+  /** Default chunk payload size in bytes. */
+  readonly chunkSizeBytes?: number;
+  /** Maximum number of concurrent chunk downloads. */
+  readonly maxConcurrency?: number;
+}
+
 export const environment = {
   production: false,
+  useBinaryFormat: false,
   bugReportUrl: '',
   documentUrl: '',
   pluginModules: [],
   options: {} as Record<string, unknown>,
+  upload: {} as UploadEnvironmentConfig,
+  download: {} as DownloadEnvironmentConfig,
   links: [],
 };

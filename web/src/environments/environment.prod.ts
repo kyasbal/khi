@@ -15,14 +15,21 @@
  */
 
 import { PublicKHIExtension } from 'src/app/extensions/public/module';
+import {
+  UploadEnvironmentConfig,
+  DownloadEnvironmentConfig,
+} from 'src/environments/environment';
 
 export const environment = {
   production: true,
+  useBinaryFormat: true,
   bugReportUrl:
     'https://github.com/GoogleCloudPlatform/khi/issues/new?template=Blank+issue',
   documentUrl: 'https://github.com/GoogleCloudPlatform/khi',
   pluginModules: [PublicKHIExtension],
   options: {} as Record<string, unknown>,
+  upload: {} as UploadEnvironmentConfig,
+  download: {} as DownloadEnvironmentConfig,
   links: [
     {
       label: 'GitHub',
