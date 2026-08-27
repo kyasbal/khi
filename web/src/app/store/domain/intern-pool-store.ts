@@ -28,16 +28,14 @@ export interface StringEntryDTO {
   readonly value: string;
 }
 
+import { align } from 'src/app/common/memory-util';
 import { allocateBuffer } from 'src/app/store/domain/types';
 
-/**
- * Represents the shared memory structure of the intern pool.
- * This can be transferred to a WebWorker via postMessage.
- */
-export interface InternPoolSharedData {
-  readonly bufferSabs: readonly ArrayBuffer[];
-  readonly metadataSab: ArrayBuffer;
-  readonly capacity: number;
+interface InternPoolStoreLayout {
+  readonly bufferIndicesOffset: number;
+  readonly offsetsOffset: number;
+  readonly lengthsOffset: number;
+  readonly totalBytes: number;
 }
 
 /**
@@ -48,11 +46,6 @@ export class InternPoolStore {
    * Allocated buffers storing the encoded string data.
    */
   private readonly buffers: Uint8Array[] = [];
-
-  /**
-   * The ArrayBuffers backing the encoded string buffers.
-   */
-  private readonly bufferSabs: ArrayBuffer[] = [];
 
   /**
    * Tracks the buffer index for each string ID (1-based index, 0 represents uninitialized).
@@ -72,12 +65,7 @@ export class InternPoolStore {
   /**
    * The single ArrayBuffer holding all metadata arrays.
    */
-  private metadataSab: ArrayBuffer;
-
-  /**
-   * Whether this store is read-only (for worker-side decoding).
-   */
-  private readonly readOnly: boolean;
+  private metadataBuffer: ArrayBuffer;
 
   /**
    * The index of the buffer currently being written to.
@@ -92,76 +80,41 @@ export class InternPoolStore {
   private readonly encoder = new TextEncoder();
   private readonly decoder = new TextDecoder();
 
+  private static readonly INITIAL_CAPACITY = 1024;
+
   // Private constructor
-  private constructor(
-    private readonly maxBufferSize: number,
-    readOnly: boolean,
-    initialCapacityOrSharedData: number | InternPoolSharedData,
-  ) {
-    this.readOnly = readOnly;
-    if (typeof initialCapacityOrSharedData === 'number') {
-      const initialCapacity = initialCapacityOrSharedData;
-      this.metadataSab = allocateBuffer(initialCapacity * 10);
-      this.bufferIndices = new Uint16Array(
-        this.metadataSab,
-        0,
-        initialCapacity,
-      );
-      this.offsets = new Uint32Array(
-        this.metadataSab,
-        initialCapacity * 2,
-        initialCapacity,
-      );
-      this.lengths = new Uint32Array(
-        this.metadataSab,
-        initialCapacity * 6,
-        initialCapacity,
-      );
-    } else {
-      const sharedData = initialCapacityOrSharedData;
-      this.bufferSabs = Array.from(sharedData.bufferSabs);
-      this.buffers = this.bufferSabs.map((sab) => new Uint8Array(sab));
-      this.metadataSab = sharedData.metadataSab;
-      this.bufferIndices = new Uint16Array(
-        this.metadataSab,
-        0,
-        sharedData.capacity,
-      );
-      this.offsets = new Uint32Array(
-        this.metadataSab,
-        sharedData.capacity * 2,
-        sharedData.capacity,
-      );
-      this.lengths = new Uint32Array(
-        this.metadataSab,
-        sharedData.capacity * 6,
-        sharedData.capacity,
-      );
-      this.currentBufferIndex = this.buffers.length - 1;
-      this.currentOffset = 0;
-    }
+  private constructor(private readonly maxBufferSize: number) {
+    const layout = this.calculateOffsets(InternPoolStore.INITIAL_CAPACITY);
+    this.metadataBuffer = allocateBuffer(layout.totalBytes);
+    this.bufferIndices = new Uint16Array(
+      this.metadataBuffer,
+      layout.bufferIndicesOffset,
+      InternPoolStore.INITIAL_CAPACITY,
+    );
+    this.offsets = new Uint32Array(
+      this.metadataBuffer,
+      layout.offsetsOffset,
+      InternPoolStore.INITIAL_CAPACITY,
+    );
+    this.lengths = new Uint32Array(
+      this.metadataBuffer,
+      layout.lengthsOffset,
+      InternPoolStore.INITIAL_CAPACITY,
+    );
   }
 
   /**
-   * Creates a new writable InternPoolStore instance.
+   * Initializes a new InternPoolStore instance with interned strings.
+   * @param strings An iterable of objects containing id and value.
    * @param maxBufferSize The maximum capacity of each buffer segment in bytes.
    */
-  public static create(
+  public static initialize(
+    strings: Iterable<StringEntryDTO> = [],
     maxBufferSize: number = 100 * 1024 * 1024,
   ): InternPoolStore {
-    return new InternPoolStore(maxBufferSize, false, 1024);
-  }
-
-  /**
-   * Reconstructs a read-only InternPoolStore instance from shared memory data.
-   * @param sharedData The ArrayBuffers and capacity metadata.
-   * @param maxBufferSize The maximum capacity of each buffer segment in bytes.
-   */
-  public static fromSharedData(
-    sharedData: InternPoolSharedData,
-    maxBufferSize: number = 100 * 1024 * 1024,
-  ): InternPoolStore {
-    return new InternPoolStore(maxBufferSize, true, sharedData);
+    const store = new InternPoolStore(maxBufferSize);
+    store.addStrings(strings);
+    return store;
   }
 
   /**
@@ -169,9 +122,6 @@ export class InternPoolStore {
    * @param strings An iterable of objects containing id and value.
    */
   public addStrings(strings: Iterable<StringEntryDTO>): void {
-    if (this.readOnly) {
-      throw new Error('Cannot write to a shared read-only InternPoolStore');
-    }
     for (const { id, value } of strings) {
       const encoded = this.encoder.encode(value);
       this.ensureCapacity(id + 1);
@@ -181,9 +131,8 @@ export class InternPoolStore {
         this.maxBufferSize - this.currentOffset < encoded.length
       ) {
         const newSize = Math.max(this.maxBufferSize, encoded.length);
-        const sab = allocateBuffer(newSize);
-        this.bufferSabs.push(sab);
-        this.buffers.push(new Uint8Array(sab));
+        const buffer = allocateBuffer(newSize);
+        this.buffers.push(new Uint8Array(buffer));
         this.currentBufferIndex = this.buffers.length - 1;
         this.currentOffset = 0;
       }
@@ -224,26 +173,7 @@ export class InternPoolStore {
     return this.decoder.decode(bytes);
   }
 
-  /**
-   * Transfers shared memory structure of this store.
-   * @returns The ArrayBuffers and metadata.
-   */
-  public getSharedData(): InternPoolSharedData {
-    return {
-      bufferSabs: this.bufferSabs,
-      metadataSab: this.metadataSab,
-      capacity: this.bufferIndices.length,
-    };
-  }
-
-  /**
-   * Ensures the metadata TypedArrays can hold up to the given capacity by reallocating ArrayBuffers.
-   * @param minCapacity The required minimum capacity.
-   */
   private ensureCapacity(minCapacity: number): void {
-    if (this.readOnly) {
-      throw new Error('Cannot resize a shared read-only InternPoolStore');
-    }
     if (minCapacity <= this.bufferIndices.length) {
       return;
     }
@@ -253,16 +183,21 @@ export class InternPoolStore {
       newCapacity *= 2;
     }
 
-    const newMetadataSab = allocateBuffer(newCapacity * 10);
-    const newBufferIndices = new Uint16Array(newMetadataSab, 0, newCapacity);
+    const layout = this.calculateOffsets(newCapacity);
+    const newMetadataBuffer = allocateBuffer(layout.totalBytes);
+    const newBufferIndices = new Uint16Array(
+      newMetadataBuffer,
+      layout.bufferIndicesOffset,
+      newCapacity,
+    );
     const newOffsets = new Uint32Array(
-      newMetadataSab,
-      newCapacity * 2,
+      newMetadataBuffer,
+      layout.offsetsOffset,
       newCapacity,
     );
     const newLengths = new Uint32Array(
-      newMetadataSab,
-      newCapacity * 6,
+      newMetadataBuffer,
+      layout.lengthsOffset,
       newCapacity,
     );
 
@@ -270,9 +205,29 @@ export class InternPoolStore {
     newOffsets.set(this.offsets);
     newLengths.set(this.lengths);
 
-    this.metadataSab = newMetadataSab;
+    this.metadataBuffer = newMetadataBuffer;
     this.bufferIndices = newBufferIndices;
     this.offsets = newOffsets;
     this.lengths = newLengths;
+  }
+
+  private calculateOffsets(capacity: number): InternPoolStoreLayout {
+    let currentOffset = 0;
+
+    const bufferIndicesOffset = currentOffset;
+    currentOffset += capacity * 2; // Uint16Array: 2 bytes per element
+
+    const offsetsOffset = align(currentOffset, 4); // Uint32Array: 4-byte aligned
+    currentOffset = offsetsOffset + capacity * 4;
+
+    const lengthsOffset = align(currentOffset, 4); // Uint32Array: 4-byte aligned
+    currentOffset = lengthsOffset + capacity * 4;
+
+    return {
+      bufferIndicesOffset,
+      offsetsOffset,
+      lengthsOffset,
+      totalBytes: currentOffset,
+    };
   }
 }

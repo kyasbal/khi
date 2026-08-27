@@ -23,44 +23,17 @@ import {
 import { InternPoolStore } from 'src/app/store/domain/intern-pool-store';
 import {
   RevisionState,
-  Severity,
   TimelineType,
   Verb,
   StyleProvider,
 } from 'src/app/store/domain/style';
+import { align } from 'src/app/common/memory-util';
 import { LogStore } from 'src/app/store/domain/log-store';
 import {
   DomainFieldAnnotation,
   ReadonlyDomainElement,
   allocateBuffer,
 } from 'src/app/store/domain/types';
-
-/**
- * Align the offset to the specified byte alignment.
- */
-function align(offset: number, alignment: number): number {
-  return Math.ceil(offset / alignment) * alignment;
-}
-
-/**
- * Represents the shared memory structure of the timeline store.
- * This is used to pass data to the worker threads.
- * To prevent the main thread from OOM killing, the main contents are shared via ArrayBuffer.
- */
-export interface TimelineStoreSharedData {
-  readonly metadataSab: ArrayBuffer;
-  readonly timelineCount: number;
-  readonly revisionCount: number;
-  readonly eventCount: number;
-  readonly timelineRevisionIds: Uint32Array[];
-  readonly timelineEventIds: Uint32Array[];
-  readonly revisionFieldAnnotations: (
-    readonly FieldAnnotationDTO[] | undefined
-  )[];
-  readonly timelineIdToIndex: { readonly [tid: number]: number };
-  readonly revisionIdToIndex: { readonly [rid: number]: number };
-  readonly eventIdToIndex: { readonly [eid: number]: number };
-}
 
 /**
  * Raw timeline object interface from the assembler.
@@ -111,7 +84,6 @@ interface TimelineStoreLayout {
   timelineTypeIds: number;
   timelineNameStringIds: number;
   timelineParentIds: number;
-  timelineSeverities: number;
   revisionIds: number;
   revisionLogIds: number;
   revisionChangedTimes: number;
@@ -128,16 +100,13 @@ interface TimelineStoreLayout {
  * Store for managing and retrieving timelines, revisions, and events efficiently.
  */
 export class TimelineStore {
-  private readonly readOnly: boolean;
-
-  private metadataSab!: ArrayBuffer;
+  private metadataBuffer!: ArrayBuffer;
 
   // Timeline views
   private timelineIds!: Uint32Array;
   private timelineTypeIds!: Uint32Array;
   private timelineNameStringIds!: Uint32Array;
   private timelineParentIds!: Uint32Array;
-  private timelineSeverities!: Uint8Array;
 
   private readonly timelineRevisionIds: Uint32Array[] = [];
   private readonly timelineEventIds: Uint32Array[] = [];
@@ -167,91 +136,43 @@ export class TimelineStore {
     private readonly internPool: InternPoolStore,
     public readonly styleStore: StyleProvider,
     public readonly logStore: LogStore,
-    readOnly: boolean,
-    initialData:
-      | { timelineCount: number; revisionCount: number; eventCount: number }
-      | TimelineStoreSharedData,
-  ) {
-    this.readOnly = readOnly;
-
-    if ('metadataSab' in initialData) {
-      const sharedData = initialData;
-      this.metadataSab = sharedData.metadataSab;
-
-      this.timelineRevisionIds = sharedData.timelineRevisionIds;
-      this.timelineEventIds = sharedData.timelineEventIds;
-      this.revisionFieldAnnotations = Array.from(
-        sharedData.revisionFieldAnnotations,
-      );
-
-      this.timelineIdToIndex = sharedData.timelineIdToIndex;
-      this.revisionIdToIndex = sharedData.revisionIdToIndex;
-      this.eventIdToIndex = sharedData.eventIdToIndex;
-
-      this.mapMetadataViews(
-        sharedData.timelineCount,
-        sharedData.revisionCount,
-        sharedData.eventCount,
-      );
-
-      this.timelineChildrenIds = [];
-      for (let i = 0; i < sharedData.timelineCount; i++) {
-        this.timelineChildrenIds.push([]);
-      }
-      for (let i = 0; i < sharedData.timelineCount; i++) {
-        const parentId = this.timelineParentIds[i];
-        if (parentId !== 0) {
-          const pIndex = this.timelineIdToIndex[parentId];
-          if (pIndex !== undefined) {
-            this.timelineChildrenIds[pIndex].push(this.timelineIds[i]);
-          }
-        }
-      }
-
-      this.timelinesList = [];
-      for (let i = 0; i < sharedData.timelineCount; i++) {
-        this.timelinesList.push(new Timeline(this.timelineIds[i], this));
-      }
-    } else {
-      this.allocateMetadata(
-        initialData.timelineCount,
-        initialData.revisionCount,
-        initialData.eventCount,
-      );
-    }
-  }
+  ) {}
 
   /**
-   * Creates a new writable TimelineStore instance.
+   * Initializes a new TimelineStore instance with the raw timelines, revisions, and events.
+   *
+   * @param internPool Intern pool store for string interning.
+   * @param styleStore Style provider for styling information.
+   * @param logStore Log store providing log references.
+   * @param timelines Iterable of raw timelines.
+   * @param timelineCount Total number of timelines.
+   * @param revisions Iterable of raw revisions.
+   * @param revisionCount Total number of revisions.
+   * @param events Iterable of raw events.
+   * @param eventCount Total number of events.
+   * @returns An initialized TimelineStore instance.
    */
-  public static create(
+  public static initialize(
     internPool: InternPoolStore,
     styleStore: StyleProvider,
     logStore: LogStore,
+    timelines: Iterable<TimelineDTO>,
+    timelineCount: number,
+    revisions: Iterable<RevisionDTO>,
+    revisionCount: number,
+    events: Iterable<EventDTO>,
+    eventCount: number,
   ): TimelineStore {
-    return new TimelineStore(internPool, styleStore, logStore, false, {
-      timelineCount: 128,
-      revisionCount: 1024,
-      eventCount: 1024,
-    });
-  }
-
-  /**
-   * Reconstructs a read-only TimelineStore instance from shared memory data.
-   */
-  public static fromSharedData(
-    internPool: InternPoolStore,
-    styleStore: StyleProvider,
-    logStore: LogStore,
-    sharedData: TimelineStoreSharedData,
-  ): TimelineStore {
-    return new TimelineStore(
-      internPool,
-      styleStore,
-      logStore,
-      true,
-      sharedData,
+    const store = new TimelineStore(internPool, styleStore, logStore);
+    store.load(
+      timelines,
+      timelineCount,
+      revisions,
+      revisionCount,
+      events,
+      eventCount,
     );
+    return store;
   }
 
   private allocateMetadata(
@@ -264,20 +185,7 @@ export class TimelineStore {
       revisionCapacity,
       eventCapacity,
     );
-    this.metadataSab = allocateBuffer(layout.totalBytes);
-    this.applyViews(layout, timelineCapacity, revisionCapacity, eventCapacity);
-  }
-
-  private mapMetadataViews(
-    timelineCapacity: number,
-    revisionCapacity: number,
-    eventCapacity: number,
-  ): void {
-    const layout = this.calculateOffsets(
-      timelineCapacity,
-      revisionCapacity,
-      eventCapacity,
-    );
+    this.metadataBuffer = allocateBuffer(layout.totalBytes);
     this.applyViews(layout, timelineCapacity, revisionCapacity, eventCapacity);
   }
 
@@ -299,9 +207,6 @@ export class TimelineStore {
 
     const timelineParentIds = offset;
     offset += tCap * 4;
-
-    const timelineSeverities = offset;
-    offset += tCap * 1;
 
     const revisionIds = align(offset, 4);
     offset = revisionIds + rCap * 4;
@@ -335,7 +240,6 @@ export class TimelineStore {
       timelineTypeIds,
       timelineNameStringIds,
       timelineParentIds,
-      timelineSeverities,
       revisionIds,
       revisionLogIds,
       revisionPrincipalStringIds,
@@ -355,67 +259,60 @@ export class TimelineStore {
     rCap: number,
     eCap: number,
   ): void {
-    const sab = this.metadataSab;
-    this.timelineIds = new Uint32Array(sab, layout.timelineIds, tCap);
-    this.timelineTypeIds = new Uint32Array(sab, layout.timelineTypeIds, tCap);
+    const buffer = this.metadataBuffer;
+    this.timelineIds = new Uint32Array(buffer, layout.timelineIds, tCap);
+    this.timelineTypeIds = new Uint32Array(
+      buffer,
+      layout.timelineTypeIds,
+      tCap,
+    );
     this.timelineNameStringIds = new Uint32Array(
-      sab,
+      buffer,
       layout.timelineNameStringIds,
       tCap,
     );
     this.timelineParentIds = new Uint32Array(
-      sab,
+      buffer,
       layout.timelineParentIds,
       tCap,
     );
-    this.timelineSeverities = new Uint8Array(
-      sab,
-      layout.timelineSeverities,
-      tCap,
-    );
 
-    this.revisionIds = new Uint32Array(sab, layout.revisionIds, rCap);
-    this.revisionLogIds = new Uint32Array(sab, layout.revisionLogIds, rCap);
+    this.revisionIds = new Uint32Array(buffer, layout.revisionIds, rCap);
+    this.revisionLogIds = new Uint32Array(buffer, layout.revisionLogIds, rCap);
     this.revisionPrincipalStringIds = new Uint32Array(
-      sab,
+      buffer,
       layout.revisionPrincipalStringIds,
       rCap,
     );
     this.revisionVerbTypeIds = new Uint32Array(
-      sab,
+      buffer,
       layout.revisionVerbTypeIds,
       rCap,
     );
     this.revisionStateTypeIds = new Uint32Array(
-      sab,
+      buffer,
       layout.revisionStateTypeIds,
       rCap,
     );
     this.revisionBodyStructIds = new Uint32Array(
-      sab,
+      buffer,
       layout.revisionBodyStructIds,
       rCap,
     );
     this.revisionChangedTimes = new BigUint64Array(
-      sab,
+      buffer,
       layout.revisionChangedTimes,
       rCap,
     );
 
-    this.eventIds = new Uint32Array(sab, layout.eventIds, eCap);
-    this.eventLogIds = new Uint32Array(sab, layout.eventLogIds, eCap);
+    this.eventIds = new Uint32Array(buffer, layout.eventIds, eCap);
+    this.eventLogIds = new Uint32Array(buffer, layout.eventLogIds, eCap);
   }
 
   /**
-   * Initializes the store with the raw timelines, revisions, and events.
-   * @param timelines Iterable of raw timelines.
-   * @param timelineCount Total number of timelines.
-   * @param revisions Iterable of raw revisions.
-   * @param revisionCount Total number of revisions.
-   * @param events Iterable of raw events.
-   * @param eventCount Total number of events.
+   * Loads the raw timelines, revisions, and events into allocated metadata.
    */
-  public initialize(
+  private load(
     timelines: Iterable<TimelineDTO>,
     timelineCount: number,
     revisions: Iterable<RevisionDTO>,
@@ -423,10 +320,6 @@ export class TimelineStore {
     events: Iterable<EventDTO>,
     eventCount: number,
   ): void {
-    if (this.readOnly) {
-      throw new Error('Cannot write to a shared read-only TimelineStore');
-    }
-
     this.allocateMetadata(timelineCount, revisionCount, eventCount);
 
     this.timelineRevisionIds.length = 0;
@@ -486,34 +379,6 @@ export class TimelineStore {
       this.eventLogIds[eIndex] = e.logId;
       this.eventIdToIndex[e.id] = eIndex;
       eIndex++;
-    }
-
-    // Build severity index for timelines
-    for (let i = 0; i < timelineCount; i++) {
-      let mask = 0;
-      const revIds = this.timelineRevisionIds[i];
-      for (let j = 0; j < revIds.length; j++) {
-        const revIdx = this.revisionIdToIndex[revIds[j]];
-        if (revIdx !== undefined) {
-          const logId = this.revisionLogIds[revIdx];
-          const severityId = this.logStore._getSeverity(logId).id;
-          if (severityId >= 0 && severityId < 8) {
-            mask |= 1 << severityId;
-          }
-        }
-      }
-      const eventIds = this.timelineEventIds[i];
-      for (let j = 0; j < eventIds.length; j++) {
-        const eventIdx = this.eventIdToIndex[eventIds[j]];
-        if (eventIdx !== undefined) {
-          const logId = this.eventLogIds[eventIdx];
-          const severityId = this.logStore._getSeverity(logId).id;
-          if (severityId >= 0 && severityId < 8) {
-            mask |= 1 << severityId;
-          }
-        }
-      }
-      this.timelineSeverities[i] = mask;
     }
   }
 
@@ -630,25 +495,6 @@ export class TimelineStore {
    */
   public _getChildIdsForTimeline(id: number): readonly number[] {
     return this.timelineChildrenIds[this.getTimelineIndex(id)] ?? [];
-  }
-
-  /**
-   * Checks if the timeline with the specified ID has any logs with any of the specified severities.
-   *
-   * @note Intended solely for internal retrieval inside the {@link Timeline} domain adapter.
-   */
-  public _hasSeverities(
-    id: number,
-    severities: readonly ReadonlyDomainElement<Severity>[],
-  ): boolean {
-    const index = this.getTimelineIndex(id);
-    let severityMask = 0;
-    for (const s of severities) {
-      if (s.id >= 0 && s.id < 8) {
-        severityMask |= 1 << s.id;
-      }
-    }
-    return (this.timelineSeverities[index] & severityMask) !== 0;
   }
 
   private getTimelineIndex(id: number): number {
@@ -771,23 +617,5 @@ export class TimelineStore {
       throw new Error(`Event ID ${id} not found`);
     }
     return index;
-  }
-
-  /**
-   * Returns the shared memory representation of this TimelineStore.
-   */
-  public getSharedData(): TimelineStoreSharedData {
-    return {
-      metadataSab: this.metadataSab,
-      timelineCount: this.timelineIds.length,
-      revisionCount: this.revisionIds.length,
-      eventCount: this.eventIds.length,
-      timelineRevisionIds: this.timelineRevisionIds,
-      timelineEventIds: this.timelineEventIds,
-      revisionFieldAnnotations: this.revisionFieldAnnotations,
-      timelineIdToIndex: this.timelineIdToIndex,
-      revisionIdToIndex: this.revisionIdToIndex,
-      eventIdToIndex: this.eventIdToIndex,
-    };
   }
 }
