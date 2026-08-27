@@ -22,13 +22,26 @@ import { GoogleDriveDataLoaderKHIExtension } from 'src/app/extensions/google-dri
 import { PrivateKHIExtension } from 'src/app/extensions/private/module';
 import { PublicKHIExtension } from 'src/app/extensions/public/module';
 import { links } from './private-links';
+import {
+  DownloadEnvironmentConfig,
+  UploadEnvironmentConfig,
+} from './environment-types';
 
 export const environment = {
   production: false,
   viewerMode: false,
+  useBinaryFormat: true,
   bugReportUrl:
     'https://b.corp.google.com/issues/new?component=1265687&template=1747079',
   documentUrl: 'http://go/khi',
+  upload: {
+    chunkSizeBytes: 512 * 1024,
+    maxConcurrency: 16,
+  } as UploadEnvironmentConfig,
+  download: {
+    chunkSizeBytes: 512 * 1024,
+    maxConcurrency: 16,
+  } as DownloadEnvironmentConfig,
   pluginModules: [
     PrivateKHIExtension,
     PublicKHIExtension,
