@@ -47,12 +47,12 @@ type TimelineEvaluator struct {
 	env             *cel.Env
 	program         cel.Program
 	currentTimeline *TimelineData
-	internPool      *khifilev6model.InternPool
+	internPool      khifilev6model.ReadonlyPool
 	timelineMap     map[uint32]*TimelineData
 }
 
-// SetInternPool binds the InternPool for on-demand struct resolution.
-func (e *TimelineEvaluator) SetInternPool(pool *khifilev6model.InternPool) {
+// SetInternPool binds the ReadonlyPool for on-demand struct resolution.
+func (e *TimelineEvaluator) SetInternPool(pool khifilev6model.ReadonlyPool) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.internPool = pool
@@ -160,8 +160,6 @@ func NewTimelineEvaluator() (*TimelineEvaluator, error) {
 		cel.Variable("name", cel.StringType),
 		cel.Variable("timelineType", cel.StringType),
 		cel.Variable("path", cel.MapType(cel.StringType, cel.StringType)),
-		cel.Variable("events", cel.ListType(cel.MapType(cel.StringType, cel.DynType))),
-		cel.Variable("revisions", cel.ListType(cel.MapType(cel.StringType, cel.DynType))),
 		cel.Variable("UNKNOWN", cel.IntType),
 		cel.Variable("INFO", cel.IntType),
 		cel.Variable("WARNING", cel.IntType),
@@ -310,17 +308,25 @@ func (e *TimelineEvaluator) Evaluate(ctx context.Context, t *TimelineData) (bool
 
 // LogEvaluator compiles and executes CEL expressions on LogData.
 type LogEvaluator struct {
-	mu           sync.Mutex
-	env          *cel.Env
-	program      cel.Program
-	currentLog   *LogData
-	internPool   *khifilev6model.InternPool
-	trigramIndex *TrigramIndex
-	structYAMLs  map[uint32]string
+	mu            sync.Mutex
+	env           *cel.Env
+	program       cel.Program
+	currentLog    *LogData
+	internPool    khifilev6model.ReadonlyPool
+	trigramIndex  *TrigramIndex
+	structYAMLs   map[uint32]string
+	styleResolver StyleResolver
 }
 
-// SetInternPool binds the InternPool for on-demand struct/string resolution.
-func (e *LogEvaluator) SetInternPool(pool *khifilev6model.InternPool) {
+// SetStyleResolver binds the StyleResolver for on-demand log type and severity resolution.
+func (e *LogEvaluator) SetStyleResolver(resolver StyleResolver) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.styleResolver = resolver
+}
+
+// SetInternPool binds the ReadonlyPool for on-demand struct/string resolution.
+func (e *LogEvaluator) SetInternPool(pool khifilev6model.ReadonlyPool) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.internPool = pool
@@ -376,9 +382,6 @@ func NewLogEvaluator() (*LogEvaluator, error) {
 		cel.Variable("l", cel.MapType(cel.StringType, cel.DynType)),
 		cel.Variable("logType", cel.StringType),
 		cel.Variable("severity", cel.IntType),
-		cel.Variable("summary", cel.StringType),
-		cel.Variable("body", cel.MapType(cel.StringType, cel.DynType)),
-		cel.Variable("bodyYAML", cel.StringType),
 		cel.Variable("UNKNOWN", cel.IntType),
 		cel.Variable("INFO", cel.IntType),
 		cel.Variable("WARNING", cel.IntType),
@@ -456,15 +459,18 @@ func (e *LogEvaluator) Evaluate(ctx context.Context, l *LogData) (bool, error) {
 	e.currentLog = l
 	defer func() { e.currentLog = nil }()
 
-	summary := l.Summary
-	if summary == "" && l.SummaryStringID != 0 && e.internPool != nil {
-		summary = e.internPool.ResolveStringFromID(l.SummaryStringID)
+	logType := ""
+	if e.styleResolver != nil {
+		logType = e.styleResolver.ResolveLogType(l.LogTypeID)
+	}
+	severity := int64(0)
+	if e.styleResolver != nil {
+		severity = int64(e.styleResolver.ResolveSeverity(l.SeverityTypeID))
 	}
 
 	lVars := map[string]any{
-		"logType":  l.LogType,
-		"severity": int64(l.Severity),
-		"summary":  summary,
+		"logType":  logType,
+		"severity": severity,
 		"UNKNOWN":  int64(0),
 		"INFO":     int64(1),
 		"WARNING":  int64(2),
