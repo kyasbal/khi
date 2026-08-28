@@ -76,14 +76,14 @@ func parsePodPhaseState(state string) (phase string, isHealthy bool) {
 type Builder struct {
 	timelines   []*cel.TimelineData
 	timelineMap map[uint32]*cel.TimelineData
-	internPool  *khifilev6model.InternPool
+	internPool  khifilev6model.ReadonlyPool
 }
 
 // NewBuilder creates a new Builder instance.
 func NewBuilder(
 	timelines []*cel.TimelineData,
 	timelineMap map[uint32]*cel.TimelineData,
-	internPool *khifilev6model.InternPool,
+	internPool khifilev6model.ReadonlyPool,
 ) *Builder {
 	return &Builder{
 		timelines:   timelines,
