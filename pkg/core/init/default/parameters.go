@@ -38,6 +38,9 @@ var (
 
 	// RateLimitParametersKey stores parsed RateLimitParameters.
 	RateLimitParametersKey = typedmap.NewTypedKey[*parameters.RateLimitParameters]("khi.google.com/init/params/ratelimit")
+
+	// MCPParametersKey stores parsed MCPParameters.
+	MCPParametersKey = typedmap.NewTypedKey[*parameters.MCPParameters]("khi.google.com/init/params/mcp")
 )
 
 const (
@@ -60,6 +63,7 @@ var ParameterStoresInitializer = &coreinit.Initializer{
 		parameters.AddStore(parameters.Auth)
 		parameters.AddStore(parameters.Debug)
 		parameters.AddStore(parameters.RateLimit)
+		parameters.AddStore(parameters.MCP)
 		return nil
 	},
 }
@@ -80,6 +84,7 @@ var ParameterParseInitializer = &coreinit.Initializer{
 		coreinit.Set(ctx, AuthParametersKey, parameters.Auth)
 		coreinit.Set(ctx, DebugParametersKey, parameters.Debug)
 		coreinit.Set(ctx, RateLimitParametersKey, parameters.RateLimit)
+		coreinit.Set(ctx, MCPParametersKey, parameters.MCP)
 		return nil
 	},
 }
