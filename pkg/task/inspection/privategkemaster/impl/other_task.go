@@ -25,15 +25,14 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
-	googlecloudlogk8scontrolplane_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8scontrolplane/contract"
 	privategkemaster_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privategkemaster/contract"
 )
 
 var otherLogFilterTask = inspectiontaskbase.NewLogFilterTask(
 	privategkemaster_contract.OtherLogFilterTaskID,
-	privategkemaster_contract.CommonFieldSetReaderTaskID.Ref(),
+	privategkemaster_contract.ListLogEntriesTaskID.Ref(),
 	func(ctx context.Context, l *log.Log) bool {
-		componentFieldSet, err := log.GetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
+		componentFieldSet, err := privategkemaster_contract.ExtractGKEMasterLog(l.NodeReader)
 		if err != nil {
 			return false
 		}
@@ -41,16 +40,14 @@ var otherLogFilterTask = inspectiontaskbase.NewLogFilterTask(
 	},
 )
 
-var otherLogFieldSetReaderTask = inspectiontaskbase.NewFieldSetReadTask(privategkemaster_contract.OtherLogFieldSetReaderTaskID,
-	privategkemaster_contract.OtherLogFilterTaskID.Ref(),
-	[]log.FieldSetReader{}, // No additional fields to read for "Other"
-)
-
 var otherGrouperTask = inspectiontaskbase.NewLogGrouperTask(
 	privategkemaster_contract.OtherGrouperTaskID,
-	privategkemaster_contract.OtherLogFieldSetReaderTaskID.Ref(),
+	privategkemaster_contract.OtherLogFilterTaskID.Ref(),
 	func(ctx context.Context, l *log.Log) string {
-		masterLogField := log.MustGetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
+		masterLogField, err := privategkemaster_contract.ExtractGKEMasterLog(l.NodeReader)
+		if err != nil {
+			return ""
+		}
 		return masterLogField.PodID
 	},
 )
@@ -82,8 +79,14 @@ func (p *OtherTimelineMapper) LogIngesterTask() taskid.TaskReference[[]*log.Log]
 // ProcessLogByGroup implements inspectiontaskbase.LogToTimelineMapper.
 func (p *OtherTimelineMapper) ProcessLogByGroup(ctx context.Context, l *log.Log, _ struct{}) (*khifilev6.TimelineChangeSet, struct{}, error) {
 	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
-	masterLogField := log.MustGetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
-	commonLogField := log.MustGetFieldSet(l, &googlecloudlogk8scontrolplane_contract.K8sControlplaneCommonMessageFieldSet{})
+	masterLogField, err := privategkemaster_contract.ExtractGKEMasterLog(l.NodeReader)
+	if err != nil {
+		return nil, struct{}{}, err
+	}
+	commonLogMsg, err := privategkemaster_contract.ExtractGKEMasterCommonMessage(l.NodeReader)
+	if err != nil {
+		return nil, struct{}{}, err
+	}
 
 	cs := khifilev6.NewTimelineChangeSet(l)
 	writtenResourcePaths := map[uint32]struct{}{}
@@ -93,7 +96,7 @@ func (p *OtherTimelineMapper) ProcessLogByGroup(ctx context.Context, l *log.Log,
 	}
 
 	finder := coretask.GetTaskResult(ctx, commonlogk8saudit_contract.ResourceUIDPatternFinderTaskID.Ref())
-	resources := patternfinder.FindAllWithStarterRunes(commonLogField.Message, finder, false, p.uidPrefixTokenCandidates...)
+	resources := patternfinder.FindAllWithStarterRunes(commonLogMsg, finder, false, p.uidPrefixTokenCandidates...)
 	for _, resource := range resources {
 		tPath := commonlogk8saudit_contract.MustResourceTimeline(ctx, clusterIdentity.ClusterName, resource.Value)
 		if _, ok := writtenResourcePaths[tPath.ID]; ok {

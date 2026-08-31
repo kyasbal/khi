@@ -45,7 +45,6 @@ func Register(registry coreinspection.InspectionTaskRegistry) error {
 		InputCSMTenantProjectIDTask,
 		AutocompleteCSMCPCloudRunServiceNameTask,
 		InputCSMCPCloudRunServiceNameTask,
-		FieldSetReadTask,
 		LogSorterTask,
 		LogIngesterTask,
 		LogGrouperTask,

@@ -26,7 +26,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/common/patternfinder"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logutil"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progressutil"
+	inspectionprogressutil "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progressutil"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
@@ -43,9 +43,9 @@ import (
 // ContainerdLogFilterTask filters logs for containerd.
 var ContainerdLogFilterTask = inspectiontaskbase.NewLogFilterTask(
 	privategkemaster_contract.ContainerdLogFilterTaskID,
-	privategkemaster_contract.CommonFieldSetReaderTaskID.Ref(),
+	privategkemaster_contract.ListLogEntriesTaskID.Ref(),
 	func(ctx context.Context, l *log.Log) bool {
-		componentFieldSet, err := log.GetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
+		componentFieldSet, err := privategkemaster_contract.ExtractGKEMasterLog(l.NodeReader)
 		if err != nil {
 			return false
 		}
@@ -58,7 +58,10 @@ var ContainerdLogGroupTask = inspectiontaskbase.NewLogGrouperTask(
 	privategkemaster_contract.ContainerdLogGroupTaskID,
 	privategkemaster_contract.ContainerdLogFilterTaskID.Ref(),
 	func(ctx context.Context, l *log.Log) string {
-		masterLogField := log.MustGetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
+		masterLogField, err := privategkemaster_contract.ExtractGKEMasterLog(l.NodeReader)
+		if err != nil {
+			return ""
+		}
 		return fmt.Sprintf("%s#%s", masterLogField.HostName, masterLogField.ComponentName)
 	},
 )
@@ -76,7 +79,7 @@ var ContainerIDDiscoveryTask = commonlogk8saudit_contract.ContainerIDInventoryBu
 		logs := coretask.GetTaskResult(ctx, privategkemaster_contract.ContainerdLogFilterTaskID.Ref())
 
 		doneLogCount := atomic.Int32{}
-		updator := progressutil.NewProgressUpdator(progress, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
+		updator := inspectionprogressutil.NewProgressUpdator(progress, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
 			current := doneLogCount.Load()
 			if len(logs) > 0 {
 				tp.Percentage = float32(current) / float32(len(logs))
@@ -151,7 +154,7 @@ var PodSandboxIDDiscoveryTask = inspectiontaskbase.NewProgressReportableInspecti
 		logs := coretask.GetTaskResult(ctx, privategkemaster_contract.ContainerdLogFilterTaskID.Ref())
 
 		doneLogCount := atomic.Int32{}
-		updator := progressutil.NewProgressUpdator(progress, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
+		updator := inspectionprogressutil.NewProgressUpdator(progress, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
 			current := doneLogCount.Load()
 			if len(logs) > 0 {
 				tp.Percentage = float32(current) / float32(len(logs))
@@ -192,7 +195,10 @@ var PodSandboxIDDiscoveryTask = inspectiontaskbase.NewProgressReportableInspecti
 )
 
 func processPodSandboxIDDiscoveryForLog(ctx context.Context, l *log.Log, finder patternfinder.PatternFinder[*googlecloudlogk8snode_contract.PodSandboxIDInfo]) {
-	masterFieldSet := log.MustGetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
+	masterFieldSet, err := privategkemaster_contract.ExtractGKEMasterLog(l.NodeReader)
+	if err != nil || masterFieldSet.StructuredBody == nil {
+		return
+	}
 	index, err := findPodSandboxIDInfo(masterFieldSet.StructuredBody)
 	if err != nil {
 		return
@@ -228,7 +234,10 @@ func findPodSandboxIDInfo(jsonPayloadMessage *logutil.ParseStructuredLogResult) 
 }
 
 func processContainerIDDiscoveryForLog(ctx context.Context, l *log.Log, exportTarget chan *commonlogk8saudit_contract.ContainerIdentity) {
-	masterFieldSet := log.MustGetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
+	masterFieldSet, err := privategkemaster_contract.ExtractGKEMasterLog(l.NodeReader)
+	if err != nil || masterFieldSet.StructuredBody == nil {
+		return
+	}
 	container, err := findContainerIDInfo(masterFieldSet.StructuredBody)
 	if err != nil {
 		return
@@ -297,11 +306,18 @@ func (c *ContainerdTimelineMapper) ProcessLogByGroup(ctx context.Context, l *log
 	podSandboxIDFinder := coretask.GetTaskResult(ctx, privategkemaster_contract.PodSandboxIDDiscoveryTaskID.Ref())
 	containerIDPatternFinder := coretask.GetTaskResult(ctx, commonlogk8saudit_contract.ContainerIDPatternFinderTaskID.Ref())
 	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
-	masterFieldSet := log.MustGetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
+	masterFieldSet, err := privategkemaster_contract.ExtractGKEMasterLog(l.NodeReader)
+	if err != nil {
+		return nil, struct{}{}, err
+	}
 
 	cs := khifilev6.NewTimelineChangeSet(l)
 	for _, tPath := range masterFieldSet.ResourceTimelines(ctx, clusterIdentity.ClusterName) {
 		cs.AddEvent(tPath)
+	}
+
+	if masterFieldSet.StructuredBody == nil {
+		return cs, struct{}{}, nil
 	}
 
 	raw := masterFieldSet.StructuredBody.Raw()

@@ -28,6 +28,7 @@ import (
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	privatecomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposer/contract"
 	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testchangeset"
+	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testlog"
 )
 
 func TestCloudSQLLogsIngester_ProcessLog(t *testing.T) {
@@ -38,18 +39,16 @@ func TestCloudSQLLogsIngester_ProcessLog(t *testing.T) {
 	}{
 		{
 			name: "sample log with LOG summary extraction",
-			input: log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{
-					Timestamp: time.Date(2026, 8, 4, 14, 52, 17, 0, time.UTC),
-				},
-				&inspectioncore_contract.DefaultSeverityFieldSet{
+			input: testlog.NewMockLog(
+				time.Date(2026, 8, 4, 14, 52, 17, 0, time.UTC),
+				inspectioncore_contract.DefaultSeverityFieldSet{
 					Severity: inspectioncore_contract.SeverityInfo,
 				},
-				&privatecomposer_contract.CloudSQLFieldSet{
+				privatecomposer_contract.CloudSQLFieldSet{
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 					Summary:    "connection received: host=127.0.0.1 port=60716",
 				},
-				&googlecloudcommon_contract.GCPMainMessageFieldSet{
+				googlecloudcommon_contract.GCPMainMessageFieldSet{
 					MainMessage: "2026-08-04 14:52:17.232 UTC [115855]: [1-1] db=[unknown],user=[unknown] LOG:  connection received: host=127.0.0.1 port=60716",
 				},
 			),
@@ -61,18 +60,16 @@ func TestCloudSQLLogsIngester_ProcessLog(t *testing.T) {
 		},
 		{
 			name: "fallback to main message if summary is empty",
-			input: log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{
-					Timestamp: time.Date(2026, 8, 4, 14, 52, 17, 0, time.UTC),
-				},
-				&inspectioncore_contract.DefaultSeverityFieldSet{
+			input: testlog.NewMockLog(
+				time.Date(2026, 8, 4, 14, 52, 17, 0, time.UTC),
+				inspectioncore_contract.DefaultSeverityFieldSet{
 					Severity: inspectioncore_contract.SeverityError,
 				},
-				&privatecomposer_contract.CloudSQLFieldSet{
+				privatecomposer_contract.CloudSQLFieldSet{
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 					Summary:    "",
 				},
-				&googlecloudcommon_contract.GCPMainMessageFieldSet{
+				googlecloudcommon_contract.GCPMainMessageFieldSet{
 					MainMessage: "unhandled error occurred",
 				},
 			),
@@ -114,8 +111,8 @@ func TestCloudSQLLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 	}{
 		{
 			name: "adds event to cloudsql log timeline",
-			inputLog: log.NewLogWithFieldSetsForTest(
-				&privatecomposer_contract.CloudSQLFieldSet{
+			inputLog: testlog.NewMockLog(
+				privatecomposer_contract.CloudSQLFieldSet{
 					DatabaseID:  "us-central1-composer-2-170061d7-sql",
 					LogFileName: "postgres.log",
 				},

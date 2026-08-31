@@ -39,14 +39,12 @@ graph TD
 
     %% Cloud SQL Tasks
     CloudSQLQuery[CloudSQLLogsQueryTask]
-    CloudSQLFSRead[CloudSQLLogsFieldSetReadTask]
     CloudSQLIngester[CloudSQLLogsIngesterTask]
     CloudSQLGrouper[CloudSQLLogsGrouperTask]
     CloudSQLMapper[CloudSQLLogsTimelineMapperTask]:::feature
 
     %% Cloud SQL Audit Tasks
     CloudSQLAuditQuery[CloudSQLAuditLogsQueryTask]
-    CloudSQLAuditFSRead[CloudSQLAuditLogsFieldSetReadTask]
     CloudSQLAuditIngester[CloudSQLAuditLogsIngesterTask]
     CloudSQLAuditGrouper[CloudSQLAuditLogsGrouperTask]
     CloudSQLAuditMapper[CloudSQLAuditLogsTimelineMapperTask]:::feature
@@ -76,18 +74,16 @@ graph TD
 
     %% Dependencies for Cloud SQL Logs
     TenantProjectInput --> CloudSQLQuery
-    CloudSQLQuery --> CloudSQLFSRead
-    CloudSQLFSRead --> CloudSQLIngester
-    CloudSQLFSRead --> CloudSQLGrouper
+    CloudSQLQuery --> CloudSQLIngester
+    CloudSQLQuery --> CloudSQLGrouper
     CloudSQLIngester --> CloudSQLMapper
     CloudSQLGrouper --> CloudSQLMapper
     TenantProjectInput --> CloudSQLMapper
 
     %% Dependencies for Cloud SQL Audit Logs
     TenantProjectInput --> CloudSQLAuditQuery
-    CloudSQLAuditQuery --> CloudSQLAuditFSRead
-    CloudSQLAuditFSRead --> CloudSQLAuditIngester
-    CloudSQLAuditFSRead --> CloudSQLAuditGrouper
+    CloudSQLAuditQuery --> CloudSQLAuditIngester
+    CloudSQLAuditQuery --> CloudSQLAuditGrouper
     CloudSQLAuditIngester --> CloudSQLAuditMapper
     CloudSQLAuditGrouper --> CloudSQLAuditMapper
     TenantProjectInput --> CloudSQLAuditMapper

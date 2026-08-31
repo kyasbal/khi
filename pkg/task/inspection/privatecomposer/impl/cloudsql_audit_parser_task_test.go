@@ -29,6 +29,7 @@ import (
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	privatecomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposer/contract"
 	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testchangeset"
+	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testlog"
 )
 
 func TestCloudSQLAuditLogsIngester_ProcessLog(t *testing.T) {
@@ -39,14 +40,12 @@ func TestCloudSQLAuditLogsIngester_ProcessLog(t *testing.T) {
 	}{
 		{
 			name: "audit log sets summary from main message",
-			input: log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{
-					Timestamp: time.Date(2026, 8, 4, 15, 0, 0, 0, time.UTC),
-				},
-				&inspectioncore_contract.DefaultSeverityFieldSet{
+			input: testlog.NewMockLog(
+				time.Date(2026, 8, 4, 15, 0, 0, 0, time.UTC),
+				inspectioncore_contract.DefaultSeverityFieldSet{
 					Severity: inspectioncore_contract.SeverityInfo,
 				},
-				&googlecloudcommon_contract.GCPMainMessageFieldSet{
+				googlecloudcommon_contract.GCPMainMessageFieldSet{
 					MainMessage: "google.cloud.sql.v1beta4.CloudSqlInstancesService.Create",
 				},
 			),
@@ -107,14 +106,12 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 	}{
 		{
 			name: "create operation start generates provisioning revision and operation start revision",
-			inputLog: log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{
-					Timestamp: time.Date(2026, 8, 4, 15, 0, 0, 0, time.UTC),
-				},
-				&privatecomposer_contract.CloudSQLFieldSet{
+			inputLog: testlog.NewMockLog(
+				time.Date(2026, 8, 4, 15, 0, 0, 0, time.UTC),
+				privatecomposer_contract.CloudSQLFieldSet{
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
-				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+				googlecloudcommon_contract.GCPAuditLogFieldSet{
 					ProjectID:      "my-tenant-project-tp",
 					MethodName:     "cloudsql.instances.create",
 					OperationID:    "op-12345",
@@ -142,14 +139,12 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 		},
 		{
 			name: "create operation finish with prior start generates existing revision and operation succeed revision",
-			inputLog: log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{
-					Timestamp: time.Date(2026, 8, 4, 15, 5, 0, 0, time.UTC),
-				},
-				&privatecomposer_contract.CloudSQLFieldSet{
+			inputLog: testlog.NewMockLog(
+				time.Date(2026, 8, 4, 15, 5, 0, 0, time.UTC),
+				privatecomposer_contract.CloudSQLFieldSet{
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
-				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+				googlecloudcommon_contract.GCPAuditLogFieldSet{
 					ProjectID:     "my-tenant-project-tp",
 					MethodName:    "cloudsql.instances.create",
 					OperationID:   "op-12345",
@@ -162,7 +157,7 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 			state: func() *cloudSQLAuditTimelineState {
 				s := newCloudSQLAuditTimelineState()
 				s.OperationDatabaseIDs["op-12345"] = "us-central1-composer-2-170061d7-sql"
-				s.Tracker.ProcessOperationLog(context.Background(), khifilev6.NewTimelineChangeSet(log.NewLogWithFieldSetsForTest()), expectedCreateOpPath, &googlecloudcommon_contract.GCPAuditLogFieldSet{
+				s.Tracker.ProcessOperationLog(context.Background(), khifilev6.NewTimelineChangeSet(testlog.NewMockLog()), expectedCreateOpPath, &googlecloudcommon_contract.GCPAuditLogFieldSet{
 					OperationID:    "op-12345",
 					OperationFirst: true,
 				}, time.Date(2026, 8, 4, 15, 0, 0, 0, time.UTC))
@@ -186,14 +181,12 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 		},
 		{
 			name: "create operation finish without start generates log not found revisions",
-			inputLog: log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{
-					Timestamp: time.Date(2026, 8, 4, 15, 5, 0, 0, time.UTC),
-				},
-				&privatecomposer_contract.CloudSQLFieldSet{
+			inputLog: testlog.NewMockLog(
+				time.Date(2026, 8, 4, 15, 5, 0, 0, time.UTC),
+				privatecomposer_contract.CloudSQLFieldSet{
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
-				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+				googlecloudcommon_contract.GCPAuditLogFieldSet{
 					ProjectID:     "my-tenant-project-tp",
 					MethodName:    "cloudsql.instances.create",
 					OperationID:   "op-12345",
@@ -233,14 +226,12 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 		},
 		{
 			name: "create immediate operation generates existing revision without operation timeline",
-			inputLog: log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{
-					Timestamp: time.Date(2026, 8, 4, 15, 0, 0, 0, time.UTC),
-				},
-				&privatecomposer_contract.CloudSQLFieldSet{
+			inputLog: testlog.NewMockLog(
+				time.Date(2026, 8, 4, 15, 0, 0, 0, time.UTC),
+				privatecomposer_contract.CloudSQLFieldSet{
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
-				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+				googlecloudcommon_contract.GCPAuditLogFieldSet{
 					ProjectID:      "my-tenant-project-tp",
 					MethodName:     "cloudsql.instances.create",
 					OperationFirst: true,
@@ -262,14 +253,12 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 		},
 		{
 			name: "create operation failed generates event on instance timeline and failed operation revision",
-			inputLog: log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{
-					Timestamp: time.Date(2026, 8, 4, 15, 5, 0, 0, time.UTC),
-				},
-				&privatecomposer_contract.CloudSQLFieldSet{
+			inputLog: testlog.NewMockLog(
+				time.Date(2026, 8, 4, 15, 5, 0, 0, time.UTC),
+				privatecomposer_contract.CloudSQLFieldSet{
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
-				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+				googlecloudcommon_contract.GCPAuditLogFieldSet{
 					ProjectID:     "my-tenant-project-tp",
 					MethodName:    "cloudsql.instances.create",
 					OperationID:   "op-12345",
@@ -293,14 +282,12 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 		},
 		{
 			name: "delete operation start generates deleting revision and operation start revision",
-			inputLog: log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{
-					Timestamp: time.Date(2026, 8, 4, 15, 10, 0, 0, time.UTC),
-				},
-				&privatecomposer_contract.CloudSQLFieldSet{
+			inputLog: testlog.NewMockLog(
+				time.Date(2026, 8, 4, 15, 10, 0, 0, time.UTC),
+				privatecomposer_contract.CloudSQLFieldSet{
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
-				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+				googlecloudcommon_contract.GCPAuditLogFieldSet{
 					ProjectID:      "my-tenant-project-tp",
 					MethodName:     "cloudsql.instances.delete",
 					OperationID:    "op-67890",
@@ -334,14 +321,12 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 		},
 		{
 			name: "delete operation finish with prior start generates deleted revision and operation succeed revision",
-			inputLog: log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{
-					Timestamp: time.Date(2026, 8, 4, 15, 15, 0, 0, time.UTC),
-				},
-				&privatecomposer_contract.CloudSQLFieldSet{
+			inputLog: testlog.NewMockLog(
+				time.Date(2026, 8, 4, 15, 15, 0, 0, time.UTC),
+				privatecomposer_contract.CloudSQLFieldSet{
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
-				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+				googlecloudcommon_contract.GCPAuditLogFieldSet{
 					ProjectID:     "my-tenant-project-tp",
 					MethodName:    "cloudsql.instances.delete",
 					OperationID:   "op-67890",
@@ -355,7 +340,7 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 				s := newCloudSQLAuditTimelineState()
 				s.OperationDatabaseIDs["op-67890"] = "us-central1-composer-2-170061d7-sql"
 				s.Tracker.MarkResourceRevision(expectedInstancePath)
-				s.Tracker.ProcessOperationLog(context.Background(), khifilev6.NewTimelineChangeSet(log.NewLogWithFieldSetsForTest()), expectedDeleteOpPath, &googlecloudcommon_contract.GCPAuditLogFieldSet{
+				s.Tracker.ProcessOperationLog(context.Background(), khifilev6.NewTimelineChangeSet(testlog.NewMockLog()), expectedDeleteOpPath, &googlecloudcommon_contract.GCPAuditLogFieldSet{
 					OperationID:    "op-67890",
 					OperationFirst: true,
 				}, time.Date(2026, 8, 4, 15, 10, 0, 0, time.UTC))
@@ -379,14 +364,12 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 		},
 		{
 			name: "delete immediate operation generates deleted revision without operation timeline",
-			inputLog: log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{
-					Timestamp: time.Date(2026, 8, 4, 15, 10, 0, 0, time.UTC),
-				},
-				&privatecomposer_contract.CloudSQLFieldSet{
+			inputLog: testlog.NewMockLog(
+				time.Date(2026, 8, 4, 15, 10, 0, 0, time.UTC),
+				privatecomposer_contract.CloudSQLFieldSet{
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
-				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+				googlecloudcommon_contract.GCPAuditLogFieldSet{
 					ProjectID:      "my-tenant-project-tp",
 					MethodName:     "cloudsql.instances.delete",
 					OperationFirst: true,
@@ -413,14 +396,12 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 		},
 		{
 			name: "patch long running operation generates event on instance timeline and operation timeline",
-			inputLog: log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{
-					Timestamp: time.Date(2026, 8, 4, 15, 20, 0, 0, time.UTC),
-				},
-				&privatecomposer_contract.CloudSQLFieldSet{
+			inputLog: testlog.NewMockLog(
+				time.Date(2026, 8, 4, 15, 20, 0, 0, time.UTC),
+				privatecomposer_contract.CloudSQLFieldSet{
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
-				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+				googlecloudcommon_contract.GCPAuditLogFieldSet{
 					ProjectID:      "my-tenant-project-tp",
 					MethodName:     "cloudsql.instances.patch",
 					OperationID:    "op-patch-1",
@@ -442,14 +423,12 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 		},
 		{
 			name: "other method immediate generates event on instance timeline",
-			inputLog: log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{
-					Timestamp: time.Date(2026, 8, 4, 15, 20, 0, 0, time.UTC),
-				},
-				&privatecomposer_contract.CloudSQLFieldSet{
+			inputLog: testlog.NewMockLog(
+				time.Date(2026, 8, 4, 15, 20, 0, 0, time.UTC),
+				privatecomposer_contract.CloudSQLFieldSet{
 					DatabaseID: "us-central1-composer-2-170061d7-sql",
 				},
-				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+				googlecloudcommon_contract.GCPAuditLogFieldSet{
 					ProjectID:    "my-tenant-project-tp",
 					MethodName:   "cloudsql.instances.patch",
 					ResourceName: "projects/my-tenant-project-tp/instances/sql-inst",
@@ -463,11 +442,9 @@ func TestCloudSQLAuditLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 		},
 		{
 			name: "fallback to databaseID stored in state for same OperationID when log is missing databaseID",
-			inputLog: log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{
-					Timestamp: time.Date(2026, 8, 4, 15, 30, 0, 0, time.UTC),
-				},
-				&googlecloudcommon_contract.GCPAuditLogFieldSet{
+			inputLog: testlog.NewMockLog(
+				time.Date(2026, 8, 4, 15, 30, 0, 0, time.UTC),
+				googlecloudcommon_contract.GCPAuditLogFieldSet{
 					ProjectID:    "my-tenant-project-tp",
 					MethodName:   "cloudsql.instances.patch",
 					OperationID:  "op-patch-1",

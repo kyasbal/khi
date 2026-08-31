@@ -8,7 +8,7 @@ The `privatecsmcp` package is responsible for fetching, parsing, and visualizing
   - `taskid.go`: Task ID definitions provided by this package.
   - `revision_state.go`: Definitions of revision states displayed on the timeline (e.g., connection establishment states).
   - `timeline.go`, `timeline_type.go`: Helper functions for timeline hierarchy retrieval and timeline type definitions.
-  - `fieldset.go`: Struct definitions for data extracted from logs and identifier parsing logic (e.g., Pod names).
+  - `extractor.go`: Data extraction logic and identifier parsing logic (e.g., Pod names) from structured logs.
   - `log_type.go`: Constant definitions for identifying the types of logs to be parsed.
 - `impl/`: Contains the actual implementations of tasks that fetch, parse, and build timelines based on the definitions in `contract`.
   - `registration.go`: The entry point that registers all defined tasks to KHI's Inspection Task Registry.
@@ -38,7 +38,6 @@ graph TD
     AutocompleteCSMCPCloudRunServiceName[AutocompleteCSMCPCloudRunServiceNameTask]
     InputCSMCPCloudRunServiceName[InputCSMCPCloudRunServiceNameTask]
     LogQuery[LogQueryTask]
-    FieldSetRead[FieldSetReadTask]
     LogSorter[LogSorterTask]
     LogIngester[LogIngesterTask]
     LogGrouper[LogGrouperTask]
@@ -51,8 +50,7 @@ graph TD
     InputCSMTenantProjectID --> LogQuery
     InputCSMCPCloudRunServiceName --> LogQuery
 
-    LogQuery --> FieldSetRead
-    FieldSetRead --> LogSorter
+    LogQuery --> LogSorter
 
     LogSorter --> LogIngester
     LogSorter --> LogGrouper

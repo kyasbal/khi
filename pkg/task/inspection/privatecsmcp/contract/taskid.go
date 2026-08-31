@@ -36,9 +36,6 @@ var AutocompleteCSMCPCloudRunServiceNameTaskID = taskid.NewDefaultImplementation
 // LogQueryTaskID is the task ID for executing the log query.
 var LogQueryTaskID = taskid.NewDefaultImplementationID[[]*log.Log](TaskIDPrefix + "query")
 
-// FieldSetReadTaskID is the task ID for reading fieldsets from the log query result.
-var FieldSetReadTaskID = taskid.NewDefaultImplementationID[[]*log.Log](TaskIDPrefix + "fieldset-read")
-
 // LogSorterTaskID is the task ID for sorting logs by time.
 var LogSorterTaskID = taskid.NewDefaultImplementationID[[]*log.Log](TaskIDPrefix + "log-sorter")
 

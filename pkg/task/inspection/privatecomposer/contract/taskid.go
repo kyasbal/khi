@@ -1,4 +1,4 @@
-// Copyright 2025 Google LLC
+// Copyright 2026 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,9 +32,6 @@ var ComposerV3ClusterNamePrefixTaskID = taskid.NewImplementationID(googlecloudk8
 // CloudSQLLogsQueryTaskID is the task ID for querying Cloud SQL logs in the tenant project.
 var CloudSQLLogsQueryTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateComposerTaskIDPrefix + "cloudsql-query")
 
-// CloudSQLLogsFieldSetReadTaskID is the task ID for reading fieldsets from Cloud SQL logs.
-var CloudSQLLogsFieldSetReadTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateComposerTaskIDPrefix + "cloudsql-fieldset-read")
-
 // CloudSQLLogsIngesterTaskID is the task ID for ingesting Cloud SQL logs.
 var CloudSQLLogsIngesterTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateComposerTaskIDPrefix + "cloudsql-log-ingester")
 
@@ -46,9 +43,6 @@ var CloudSQLLogsTimelineMapperTaskID = taskid.NewDefaultImplementationID[inspect
 
 // CloudSQLAuditLogsQueryTaskID is the task ID for querying Cloud SQL activity audit logs in the tenant project.
 var CloudSQLAuditLogsQueryTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateComposerTaskIDPrefix + "cloudsql-audit-query")
-
-// CloudSQLAuditLogsFieldSetReadTaskID is the task ID for reading fieldsets from Cloud SQL activity audit logs.
-var CloudSQLAuditLogsFieldSetReadTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateComposerTaskIDPrefix + "cloudsql-audit-fieldset-read")
 
 // CloudSQLAuditLogsIngesterTaskID is the task ID for ingesting Cloud SQL activity audit logs.
 var CloudSQLAuditLogsIngesterTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateComposerTaskIDPrefix + "cloudsql-audit-log-ingester")

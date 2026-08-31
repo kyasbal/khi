@@ -30,9 +30,9 @@ import (
 
 var schedulerLogFilterTask = inspectiontaskbase.NewLogFilterTask(
 	privategkemaster_contract.SchedulerLogFilterTaskID,
-	privategkemaster_contract.CommonFieldSetReaderTaskID.Ref(),
+	privategkemaster_contract.ListLogEntriesTaskID.Ref(),
 	func(ctx context.Context, l *log.Log) bool {
-		componentFieldSet, err := log.GetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
+		componentFieldSet, err := privategkemaster_contract.ExtractGKEMasterLog(l.NodeReader)
 		if err != nil {
 			return false
 		}
@@ -40,18 +40,9 @@ var schedulerLogFilterTask = inspectiontaskbase.NewLogFilterTask(
 	},
 )
 
-var schedulerLogFieldSetReaderTask = inspectiontaskbase.NewFieldSetReadTask(privategkemaster_contract.SchedulerLogFieldSetReaderTaskID,
-	privategkemaster_contract.SchedulerLogFilterTaskID.Ref(),
-	[]log.FieldSetReader{
-		&googlecloudlogk8scontrolplane_contract.K8sSchedulerComponentFieldSetReader{
-			StructuredLogParser: privategkemaster_contract.DefaultPrivateGKEMasterControlplaneLogParser,
-		},
-	},
-)
-
 var schedulerGrouperTask = inspectiontaskbase.NewLogGrouperTask(
 	privategkemaster_contract.SchedulerLogGrouperTaskID,
-	privategkemaster_contract.SchedulerLogFieldSetReaderTaskID.Ref(),
+	privategkemaster_contract.SchedulerLogFilterTaskID.Ref(),
 	func(ctx context.Context, l *log.Log) string {
 		return "" // No grouping needed
 	},
@@ -82,11 +73,11 @@ func (m *SchedulerTimelineMapper) LogIngesterTask() taskid.TaskReference[[]*log.
 // ProcessLogByGroup implements inspectiontaskbase.LogToTimelineMapper.
 func (m *SchedulerTimelineMapper) ProcessLogByGroup(ctx context.Context, l *log.Log, _ struct{}) (*khifilev6.TimelineChangeSet, struct{}, error) {
 	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
-	masterFieldSet, err := log.GetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
+	masterFieldSet, err := privategkemaster_contract.ExtractGKEMasterLog(l.NodeReader)
 	if err != nil {
 		return nil, struct{}{}, err
 	}
-	schedulerMessageFieldSet, err := log.GetFieldSet(l, &googlecloudlogk8scontrolplane_contract.K8sSchedulerComponentFieldSet{})
+	schedulerMessageFieldSet, err := googlecloudlogk8scontrolplane_contract.ExtractK8sSchedulerComponent(l.NodeReader, privategkemaster_contract.DefaultPrivateGKEMasterControlplaneLogParser)
 	if err != nil {
 		return nil, struct{}{}, err
 	}

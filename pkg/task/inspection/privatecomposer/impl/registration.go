@@ -1,4 +1,4 @@
-// Copyright 2025 Google LLC
+// Copyright 2026 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -62,12 +62,10 @@ func Register(registry coreinspection.InspectionTaskRegistry) error {
 	return coretask.RegisterTasks(scopedCloudLogging,
 		InputComposerTenantProjectIdTask,
 		CloudSQLLogsQueryTask,
-		CloudSQLLogsFieldSetReadTask,
 		CloudSQLLogsIngesterTask,
 		CloudSQLLogsGrouperTask,
 		CloudSQLLogsTimelineMapperTask,
 		CloudSQLAuditLogsQueryTask,
-		CloudSQLAuditLogsFieldSetReadTask,
 		CloudSQLAuditLogsIngesterTask,
 		CloudSQLAuditLogsGrouperTask,
 		CloudSQLAuditLogsTimelineMapperTask,

@@ -27,22 +27,11 @@ import (
 	privatecomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposer/contract"
 )
 
-// CloudSQLLogsFieldSetReadTask reads necessary fieldsets from Cloud SQL database logs.
-var CloudSQLLogsFieldSetReadTask = inspectiontaskbase.NewFieldSetReadTask(
-	privatecomposer_contract.CloudSQLLogsFieldSetReadTaskID,
-	privatecomposer_contract.CloudSQLLogsQueryTaskID.Ref(),
-	[]log.FieldSetReader{
-		&privatecomposer_contract.CloudSQLFieldSetReader{},
-		&googlecloudcommon_contract.GCPDefaultSeverityFieldSetReader{},
-		&googlecloudcommon_contract.GCPMainMessageFieldSetReader{},
-	},
-)
-
 type cloudSQLLogsIngester struct{}
 
 // RawLogTask returns the reference to the task providing raw logs.
 func (i *cloudSQLLogsIngester) RawLogTask() taskid.TaskReference[[]*log.Log] {
-	return privatecomposer_contract.CloudSQLLogsFieldSetReadTaskID.Ref()
+	return privatecomposer_contract.CloudSQLLogsQueryTaskID.Ref()
 }
 
 // Dependencies returns additional task dependencies required by the ingester.
@@ -58,23 +47,20 @@ func (i *cloudSQLLogsIngester) ProcessLog(ctx context.Context, l *log.Log) (*khi
 	}
 
 	cs.SetLogType(privatecomposer_contract.LogTypeCloudSQL)
+	cs.SetTimestamp(l.Timestamp)
 
-	if commonFS, err := log.GetFieldSet(l, &log.CommonFieldSet{}); err == nil {
-		cs.SetTimestamp(commonFS.Timestamp)
-	}
-
-	if sevFS, err := log.GetFieldSet(l, &inspectioncore_contract.DefaultSeverityFieldSet{}); err == nil {
-		cs.SetSeverity(sevFS.Severity)
+	if sev, err := googlecloudcommon_contract.ExtractGCPSeverity(l.NodeReader); err == nil && sev != nil {
+		cs.SetSeverity(sev)
 	}
 
 	summarySet := false
-	if cloudSQLFS, err := log.GetFieldSet(l, &privatecomposer_contract.CloudSQLFieldSet{}); err == nil && cloudSQLFS.Summary != "" {
+	if cloudSQLFS, err := privatecomposer_contract.ExtractCloudSQL(l.NodeReader); err == nil && cloudSQLFS.Summary != "" {
 		cs.SetSummary(cloudSQLFS.Summary)
 		summarySet = true
 	}
 	if !summarySet {
-		if mainFS, err := log.GetFieldSet(l, &googlecloudcommon_contract.GCPMainMessageFieldSet{}); err == nil {
-			cs.SetSummary(mainFS.MainMessage)
+		if mainMsg, err := googlecloudcommon_contract.ExtractGCPMainMessage(l.NodeReader); err == nil && mainMsg != "" {
+			cs.SetSummary(mainMsg)
 		}
 	}
 
@@ -92,9 +78,9 @@ var CloudSQLLogsIngesterTask = inspectiontaskbase.NewLogIngesterTask(
 // CloudSQLLogsGrouperTask groups Cloud SQL database logs by database instance ID.
 var CloudSQLLogsGrouperTask = inspectiontaskbase.NewLogGrouperTask(
 	privatecomposer_contract.CloudSQLLogsGrouperTaskID,
-	privatecomposer_contract.CloudSQLLogsFieldSetReadTaskID.Ref(),
+	privatecomposer_contract.CloudSQLLogsQueryTaskID.Ref(),
 	func(ctx context.Context, l *log.Log) string {
-		if cloudSQLFS, err := log.GetFieldSet(l, &privatecomposer_contract.CloudSQLFieldSet{}); err == nil && cloudSQLFS.DatabaseID != "" {
+		if cloudSQLFS, err := privatecomposer_contract.ExtractCloudSQL(l.NodeReader); err == nil && cloudSQLFS.DatabaseID != "" {
 			return cloudSQLFS.DatabaseID
 		}
 		return "unknown"
@@ -131,7 +117,7 @@ func (m *cloudSQLLogsTimelineMapper) ProcessLogByGroup(ctx context.Context, l *l
 
 	databaseID := "unknown"
 	logFileName := "unknown"
-	if cloudSQLFS, err := log.GetFieldSet(l, &privatecomposer_contract.CloudSQLFieldSet{}); err == nil {
+	if cloudSQLFS, err := privatecomposer_contract.ExtractCloudSQL(l.NodeReader); err == nil {
 		if cloudSQLFS.DatabaseID != "" {
 			databaseID = cloudSQLFS.DatabaseID
 		}

@@ -17,7 +17,6 @@ package privategkemaster_impl
 import (
 	"context"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
@@ -28,23 +27,12 @@ import (
 	privategkemaster_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privategkemaster/contract"
 )
 
-// CommonFieldSetReaderTask reads the component name at first to filter logs for specific components in the later tasks.
-var CommonFieldSetReaderTask = inspectiontaskbase.NewFieldSetReadTask(privategkemaster_contract.CommonFieldSetReaderTaskID,
-	privategkemaster_contract.ListLogEntriesTaskID.Ref(),
-	[]log.FieldSetReader{
-		privategkemaster_contract.NewGKEMasterLogFieldSetReader(),
-		&privategkemaster_contract.GKEMasterCommonFieldSetReader{},
-		&gcpqueryutil.GCPCommonFieldSetReader{},
-		&googlecloudcommon_contract.GCPDefaultSeverityFieldSetReader{},
-	},
-)
-
 // PrivateGKEMasterLogIngester is a log ingester for private GKE master logs.
 type PrivateGKEMasterLogIngester struct{}
 
 // RawLogTask implements inspectiontaskbase.LogIngester.
 func (i *PrivateGKEMasterLogIngester) RawLogTask() taskid.TaskReference[[]*log.Log] {
-	return privategkemaster_contract.CommonFieldSetReaderTaskID.Ref()
+	return privategkemaster_contract.ListLogEntriesTaskID.Ref()
 }
 
 // Dependencies implements inspectiontaskbase.LogIngester.
@@ -59,17 +47,14 @@ func (i *PrivateGKEMasterLogIngester) ProcessLog(ctx context.Context, l *log.Log
 		return nil, err
 	}
 	cs.SetLogType(googlecloudlogk8scontrolplane_contract.LogTypeControlPlaneComponent)
+	cs.SetTimestamp(l.Timestamp)
 
-	if commonFS, err := log.GetFieldSet(l, &log.CommonFieldSet{}); err == nil {
-		cs.SetTimestamp(commonFS.Timestamp)
+	if severity, err := googlecloudcommon_contract.ExtractGCPSeverity(l.NodeReader); err == nil && severity != nil {
+		cs.SetSeverity(severity)
 	}
 
-	if severityFS, err := log.GetFieldSet(l, &inspectioncore_contract.DefaultSeverityFieldSet{}); err == nil {
-		cs.SetSeverity(severityFS.Severity)
-	}
-
-	if msgFS, err := log.GetFieldSet(l, &googlecloudlogk8scontrolplane_contract.K8sControlplaneCommonMessageFieldSet{}); err == nil {
-		cs.SetSummary(msgFS.Message)
+	if msg, err := privategkemaster_contract.ExtractGKEMasterCommonMessage(l.NodeReader); err == nil {
+		cs.SetSummary(msg)
 	}
 
 	return cs, nil

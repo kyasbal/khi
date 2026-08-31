@@ -31,23 +31,11 @@ import (
 	privatecomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposer/contract"
 )
 
-// CloudSQLAuditLogsFieldSetReadTask reads necessary fieldsets from Cloud SQL activity audit logs.
-var CloudSQLAuditLogsFieldSetReadTask = inspectiontaskbase.NewFieldSetReadTask(
-	privatecomposer_contract.CloudSQLAuditLogsFieldSetReadTaskID,
-	privatecomposer_contract.CloudSQLAuditLogsQueryTaskID.Ref(),
-	[]log.FieldSetReader{
-		&privatecomposer_contract.CloudSQLFieldSetReader{},
-		&googlecloudcommon_contract.GCPOperationAuditLogFieldSetReader{},
-		&googlecloudcommon_contract.GCPDefaultSeverityFieldSetReader{},
-		&googlecloudcommon_contract.GCPMainMessageFieldSetReader{},
-	},
-)
-
 type cloudSQLAuditLogsIngester struct{}
 
 // RawLogTask returns the reference to the task providing raw audit logs.
 func (i *cloudSQLAuditLogsIngester) RawLogTask() taskid.TaskReference[[]*log.Log] {
-	return privatecomposer_contract.CloudSQLAuditLogsFieldSetReadTaskID.Ref()
+	return privatecomposer_contract.CloudSQLAuditLogsQueryTaskID.Ref()
 }
 
 // Dependencies returns additional task dependencies required by the ingester.
@@ -63,22 +51,19 @@ func (i *cloudSQLAuditLogsIngester) ProcessLog(ctx context.Context, l *log.Log) 
 	}
 
 	cs.SetLogType(privatecomposer_contract.LogTypeCloudSQLAudit)
+	cs.SetTimestamp(l.Timestamp)
 
-	if commonFS, err := log.GetFieldSet(l, &log.CommonFieldSet{}); err == nil {
-		cs.SetTimestamp(commonFS.Timestamp)
-	}
-
-	if sevFS, err := log.GetFieldSet(l, &inspectioncore_contract.DefaultSeverityFieldSet{}); err == nil {
-		cs.SetSeverity(sevFS.Severity)
+	if sev, err := googlecloudcommon_contract.ExtractGCPSeverity(l.NodeReader); err == nil && sev != nil {
+		cs.SetSeverity(sev)
 	}
 
 	summarySet := false
-	if mainFS, err := log.GetFieldSet(l, &googlecloudcommon_contract.GCPMainMessageFieldSet{}); err == nil && mainFS.MainMessage != "" {
-		cs.SetSummary(mainFS.MainMessage)
+	if mainMsg, err := googlecloudcommon_contract.ExtractGCPMainMessage(l.NodeReader); err == nil && mainMsg != "" {
+		cs.SetSummary(mainMsg)
 		summarySet = true
 	}
 	if !summarySet {
-		if cloudSQLFS, err := log.GetFieldSet(l, &privatecomposer_contract.CloudSQLFieldSet{}); err == nil && cloudSQLFS.Summary != "" {
+		if cloudSQLFS, err := privatecomposer_contract.ExtractCloudSQL(l.NodeReader); err == nil && cloudSQLFS.Summary != "" {
 			cs.SetSummary(cloudSQLFS.Summary)
 		}
 	}
@@ -97,7 +82,7 @@ var CloudSQLAuditLogsIngesterTask = inspectiontaskbase.NewLogIngesterTask(
 // CloudSQLAuditLogsGrouperTask groups Cloud SQL activity audit logs into a single group to share state across operation logs.
 var CloudSQLAuditLogsGrouperTask = inspectiontaskbase.NewLogGrouperTask(
 	privatecomposer_contract.CloudSQLAuditLogsGrouperTaskID,
-	privatecomposer_contract.CloudSQLAuditLogsFieldSetReadTaskID.Ref(),
+	privatecomposer_contract.CloudSQLAuditLogsQueryTaskID.Ref(),
 	func(ctx context.Context, l *log.Log) string {
 		return "cloudsql-audit"
 	},
@@ -140,11 +125,7 @@ func (m *cloudSQLAuditLogsTimelineMapper) ProcessLogByGroup(ctx context.Context,
 		state = newCloudSQLAuditTimelineState()
 	}
 
-	commonFS, err := log.GetFieldSet(l, &log.CommonFieldSet{})
-	if err != nil {
-		return nil, state, err
-	}
-	audit, err := log.GetFieldSet(l, &googlecloudcommon_contract.GCPAuditLogFieldSet{})
+	audit, err := googlecloudcommon_contract.ExtractGCPAuditLog(l.NodeReader)
 	if err != nil {
 		return nil, state, err
 	}
@@ -155,7 +136,7 @@ func (m *cloudSQLAuditLogsTimelineMapper) ProcessLogByGroup(ctx context.Context,
 	}
 
 	var databaseID string
-	if cloudSQLFS, err := log.GetFieldSet(l, &privatecomposer_contract.CloudSQLFieldSet{}); err == nil && cloudSQLFS.DatabaseID != "" {
+	if cloudSQLFS, err := privatecomposer_contract.ExtractCloudSQL(l.NodeReader); err == nil && cloudSQLFS.DatabaseID != "" {
 		databaseID = cloudSQLFS.DatabaseID
 		if audit.OperationID != "" && !audit.ImmediateOperation() {
 			state.OperationDatabaseIDs[audit.OperationID] = databaseID
@@ -184,7 +165,7 @@ func (m *cloudSQLAuditLogsTimelineMapper) ProcessLogByGroup(ctx context.Context,
 			}
 		}
 		operationPath := googlecloudcommon_contract.MustGCPOperationTimeline(ctx, instancePath, shortMethodName, audit.OperationID)
-		state.Tracker.ProcessOperationLog(ctx, cs, operationPath, audit, commonFS.Timestamp)
+		state.Tracker.ProcessOperationLog(ctx, cs, operationPath, &audit, l.Timestamp)
 	}
 
 	isCreate := audit.MethodName == "cloudsql.instances.create"
@@ -225,7 +206,7 @@ func (m *cloudSQLAuditLogsTimelineMapper) ProcessLogByGroup(ctx context.Context,
 				VerbType:     commonlogk8saudit_contract.VerbCreate,
 				StateType:    stateType,
 				Principal:    principal,
-				ChangedTime:  commonFS.Timestamp,
+				ChangedTime:  l.Timestamp,
 				ResourceBody: resBody,
 			})
 			state.Tracker.MarkResourceRevision(instancePath)
@@ -264,7 +245,7 @@ func (m *cloudSQLAuditLogsTimelineMapper) ProcessLogByGroup(ctx context.Context,
 				VerbType:    commonlogk8saudit_contract.VerbDelete,
 				StateType:   stateType,
 				Principal:   principal,
-				ChangedTime: commonFS.Timestamp,
+				ChangedTime: l.Timestamp,
 			})
 			state.Tracker.MarkResourceRevision(instancePath)
 		}

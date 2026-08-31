@@ -33,9 +33,9 @@ import (
 // KubeletLogFilterTask filters logs for kubelet.
 var KubeletLogFilterTask = inspectiontaskbase.NewLogFilterTask(
 	privategkemaster_contract.KubeletLogFilterTaskID,
-	privategkemaster_contract.CommonFieldSetReaderTaskID.Ref(),
+	privategkemaster_contract.ListLogEntriesTaskID.Ref(),
 	func(ctx context.Context, l *log.Log) bool {
-		componentFieldSet, err := log.GetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
+		componentFieldSet, err := privategkemaster_contract.ExtractGKEMasterLog(l.NodeReader)
 		if err != nil {
 			return false
 		}
@@ -48,7 +48,10 @@ var KubeletLogGroupTask = inspectiontaskbase.NewLogGrouperTask(
 	privategkemaster_contract.KubeletLogGroupTaskID,
 	privategkemaster_contract.KubeletLogFilterTaskID.Ref(),
 	func(ctx context.Context, l *log.Log) string {
-		masterLogField := log.MustGetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
+		masterLogField, err := privategkemaster_contract.ExtractGKEMasterLog(l.NodeReader)
+		if err != nil {
+			return ""
+		}
 		return fmt.Sprintf("%s#%s", masterLogField.HostName, masterLogField.PodID)
 	},
 )
@@ -80,7 +83,10 @@ func (k *KubeletTimelineMapper) LogIngesterTask() taskid.TaskReference[[]*log.Lo
 
 // ProcessLogByGroup implements inspectiontaskbase.LogToTimelineMapper.
 func (k *KubeletTimelineMapper) ProcessLogByGroup(ctx context.Context, l *log.Log, _ struct{}) (*khifilev6.TimelineChangeSet, struct{}, error) {
-	masterFieldSet := log.MustGetFieldSet(l, &privategkemaster_contract.GKEMasterLogFieldSet{})
+	masterFieldSet, err := privategkemaster_contract.ExtractGKEMasterLog(l.NodeReader)
+	if err != nil {
+		return nil, struct{}{}, err
+	}
 	containerIDPatternFinder := coretask.GetTaskResult(ctx, commonlogk8saudit_contract.ContainerIDPatternFinderTaskID.Ref())
 	podIDFinder := coretask.GetTaskResult(ctx, privategkemaster_contract.PodSandboxIDDiscoveryTaskID.Ref())
 	resourceUIDPatternFinder := coretask.GetTaskResult(ctx, commonlogk8saudit_contract.ResourceUIDPatternFinderTaskID.Ref())
@@ -90,6 +96,10 @@ func (k *KubeletTimelineMapper) ProcessLogByGroup(ctx context.Context, l *log.Lo
 
 	for _, tPath := range masterFieldSet.ResourceTimelines(ctx, clusterIdentity.ClusterName) {
 		cs.AddEvent(tPath)
+	}
+
+	if masterFieldSet.StructuredBody == nil {
+		return cs, struct{}{}, nil
 	}
 
 	original := masterFieldSet.StructuredBody.Raw()

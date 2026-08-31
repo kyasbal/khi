@@ -22,7 +22,6 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
 	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	core_contract "github.com/GoogleCloudPlatform/khi/pkg/task/core/contract"
 	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
@@ -30,6 +29,7 @@ import (
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	privatecsmcp_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecsmcp/contract"
 	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testchangeset"
+	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testlog"
 )
 
 func TestCSMCPTimelineMapper_ProcessLogByGroup(t *testing.T) {
@@ -73,7 +73,7 @@ func TestCSMCPTimelineMapper_ProcessLogByGroup(t *testing.T) {
 			name:       "terminated log with previous connected state",
 			logMessage: "ADS: test-pod.default-1 terminated",
 			prevGroupData: &csmcpTimelineState{
-				ConnectedConns: map[string]bool{"1": true},
+				ConnectedConns: map[string]bool{"default/test-pod/1": true},
 			},
 			assert: func(t *testing.T, cs *khifilev6.TimelineChangeSet) {
 				testchangeset.AssertTimeline(t, cs).
@@ -85,6 +85,9 @@ func TestCSMCPTimelineMapper_ProcessLogByGroup(t *testing.T) {
 						ResourceBody: nil,
 						Principal:    "csm-cp",
 					})
+				if revisions, ok := cs.Revisions[connPath]; ok && len(revisions) != 1 {
+					t.Errorf("expected exactly 1 revision for %v, got %d", connPath, len(revisions))
+				}
 			},
 		},
 		{
@@ -125,7 +128,7 @@ func TestCSMCPTimelineMapper_ProcessLogByGroup(t *testing.T) {
 				Location:    "test-location",
 			})
 
-			fs := &privatecsmcp_contract.CSMCPFieldSet{
+			fs := privatecsmcp_contract.CSMCPFieldSet{
 				InstanceID: "unknown",
 				Message:    tc.logMessage,
 				Pods: []privatecsmcp_contract.PodIdentifier{
@@ -136,7 +139,7 @@ func TestCSMCPTimelineMapper_ProcessLogByGroup(t *testing.T) {
 					},
 				},
 			}
-			logObj := log.NewLogWithFieldSetsForTest(fs, &log.CommonFieldSet{Timestamp: time.Now()})
+			logObj := testlog.NewMockLog(time.Now(), fs)
 
 			mapper := &csmcpTimelineMapper{}
 			cs, _, err := mapper.ProcessLogByGroup(ctx, logObj, tc.prevGroupData)
@@ -178,7 +181,7 @@ func TestCSMCPTimelineMapper_PreProcessLogByGroup(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			fs := &privatecsmcp_contract.CSMCPFieldSet{
+			fs := privatecsmcp_contract.CSMCPFieldSet{
 				InstanceID: "unknown",
 				Message:    tc.logMessage,
 				Pods: []privatecsmcp_contract.PodIdentifier{
@@ -189,7 +192,7 @@ func TestCSMCPTimelineMapper_PreProcessLogByGroup(t *testing.T) {
 					},
 				},
 			}
-			logObj := log.NewLogWithFieldSetsForTest(fs)
+			logObj := testlog.NewMockLog(fs)
 
 			mapper := &csmcpTimelineMapper{}
 			state, err := mapper.PreProcessLogByGroup(t.Context(), 0, logObj, nil)

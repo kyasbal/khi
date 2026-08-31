@@ -36,9 +36,6 @@ var InputPrivateGKEMasterComponentNameFilterTaskID = taskid.NewDefaultImplementa
 // ListLogEntriesTaskID is the task ID to list log entries.
 var ListLogEntriesTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateGKEMasterCommonTaskIDPrefix + "query")
 
-// FieldSetReaderTaskID is deprecated. Use [CommonFieldSetReaderTaskID] instead.
-var FieldSetReaderTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateGKEMasterCommonTaskIDPrefix + "field-set-reader")
-
 // LogIngesterTaskID is the task ID to finalize the logs to be included in the final output.
 var LogIngesterTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateGKEMasterCommonTaskIDPrefix + "log-ingester")
 
@@ -48,18 +45,10 @@ var LogGrouperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogG
 // LogToTimelineMapperTaskID is deprecated.
 var LogToTimelineMapperTaskID = taskid.NewDefaultImplementationID[struct{}](PrivateGKEMasterCommonTaskIDPrefix + "log-to-timeline-mapper")
 
-// Common
-
-// CommonFieldSetReaderTaskID is the task ID to read common field sets.
-var CommonFieldSetReaderTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateGKEMasterCommonTaskIDPrefix + "common/field-set-reader")
-
 // Scheduler
 
 // SchedulerLogFilterTaskID is the task ID to filter scheduler logs.
 var SchedulerLogFilterTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateGKEMasterCommonTaskIDPrefix + "scheduler/filter")
-
-// SchedulerLogFieldSetReaderTaskID is the task ID to read scheduler field sets.
-var SchedulerLogFieldSetReaderTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateGKEMasterCommonTaskIDPrefix + "scheduler/field-set-reader")
 
 // SchedulerLogGrouperTaskID is the task ID to group scheduler logs.
 var SchedulerLogGrouperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogGroupMap](PrivateGKEMasterCommonTaskIDPrefix + "scheduler/grouper")
@@ -72,9 +61,6 @@ var SchedulerLogToTimelineMapperTaskID = taskid.NewDefaultImplementationID[inspe
 // ControllerManagerLogFilterTaskID is the task ID to filter controller manager logs.
 var ControllerManagerLogFilterTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateGKEMasterCommonTaskIDPrefix + "controller-manager/filter")
 
-// ControllerManagerLogFieldSetReaderTaskID is the task ID to read controller manager field sets.
-var ControllerManagerLogFieldSetReaderTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateGKEMasterCommonTaskIDPrefix + "controller-manager/field-set-reader")
-
 // ControllerManagerGrouperTaskID is the task ID to group controller manager logs.
 var ControllerManagerGrouperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogGroupMap](PrivateGKEMasterCommonTaskIDPrefix + "controller-manager/grouper")
 
@@ -85,9 +71,6 @@ var ControllerManagerLogToTimelineMapperTaskID = taskid.NewDefaultImplementation
 
 // OtherLogFilterTaskID is the task ID to filter other logs.
 var OtherLogFilterTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateGKEMasterCommonTaskIDPrefix + "other/filter")
-
-// OtherLogFieldSetReaderTaskID is the task ID to read other field sets.
-var OtherLogFieldSetReaderTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateGKEMasterCommonTaskIDPrefix + "other/field-set-reader")
 
 // OtherGrouperTaskID is the task ID to group other logs.
 var OtherGrouperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogGroupMap](PrivateGKEMasterCommonTaskIDPrefix + "other/grouper")

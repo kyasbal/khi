@@ -31,20 +31,10 @@ import (
 	privatecsmcp_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecsmcp/contract"
 )
 
-// FieldSetReadTask extracts common and specific field sets from the raw logs.
-var FieldSetReadTask = inspectiontaskbase.NewFieldSetReadTask(
-	privatecsmcp_contract.FieldSetReadTaskID,
-	privatecsmcp_contract.LogQueryTaskID.Ref(),
-	[]log.FieldSetReader{
-		&privatecsmcp_contract.CSMCPFieldSetReader{},
-		&googlecloudcommon_contract.GCPDefaultSeverityFieldSetReader{},
-	},
-)
-
 // LogSorterTask sorts logs by time.
 var LogSorterTask = inspectiontaskbase.NewLogSorterByTimeTask(
 	privatecsmcp_contract.LogSorterTaskID,
-	privatecsmcp_contract.FieldSetReadTaskID.Ref(),
+	privatecsmcp_contract.LogQueryTaskID.Ref(),
 )
 
 type csmcpLogIngester struct{}
@@ -67,16 +57,13 @@ func (i *csmcpLogIngester) ProcessLog(ctx context.Context, l *log.Log) (*khifile
 	}
 
 	cs.SetLogType(privatecsmcp_contract.LogTypeCSMCP)
+	cs.SetTimestamp(l.Timestamp)
 
-	if commonFS, err := log.GetFieldSet(l, &log.CommonFieldSet{}); err == nil {
-		cs.SetTimestamp(commonFS.Timestamp)
+	if severity, err := googlecloudcommon_contract.ExtractGCPSeverity(l.NodeReader); err == nil && severity != nil {
+		cs.SetSeverity(severity)
 	}
 
-	if severityFS, err := log.GetFieldSet(l, &inspectioncore_contract.DefaultSeverityFieldSet{}); err == nil {
-		cs.SetSeverity(severityFS.Severity)
-	}
-
-	if csmcpFS, err := log.GetFieldSet(l, &privatecsmcp_contract.CSMCPFieldSet{}); err == nil {
+	if csmcpFS, err := privatecsmcp_contract.ExtractCSMCP(l.NodeReader); err == nil {
 		cs.SetSummary(csmcpFS.Message)
 		if csmcpFS.Timestamp != nil {
 			cs.SetTimestamp(*csmcpFS.Timestamp)
@@ -85,6 +72,8 @@ func (i *csmcpLogIngester) ProcessLog(ctx context.Context, l *log.Log) (*khifile
 
 	return cs, nil
 }
+
+var _ inspectiontaskbase.LogIngester = (*csmcpLogIngester)(nil)
 
 // LogIngesterTask ingests CSM CP logs.
 var LogIngesterTask = inspectiontaskbase.NewLogIngesterTask(
@@ -141,7 +130,7 @@ func (m *csmcpTimelineMapper) PreProcessLogByGroup(ctx context.Context, passInde
 		}
 	}
 
-	csmcpFS, err := log.GetFieldSet(l, &privatecsmcp_contract.CSMCPFieldSet{})
+	csmcpFS, err := privatecsmcp_contract.ExtractCSMCP(l.NodeReader)
 	if err != nil {
 		return prevGroupData, nil // skip if not csmcp log
 	}
@@ -184,7 +173,7 @@ func (m *csmcpTimelineMapper) ProcessLogByGroup(ctx context.Context, l *log.Log,
 	serviceName := coretask.GetTaskResult(ctx, privatecsmcp_contract.InputCSMCPCloudRunServiceNameTaskID.Ref())
 	clusterIdentity := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
 
-	csmcpFS, err := log.GetFieldSet(l, &privatecsmcp_contract.CSMCPFieldSet{})
+	csmcpFS, err := privatecsmcp_contract.ExtractCSMCP(l.NodeReader)
 	if err != nil {
 		return nil, prevGroupData, err
 	}

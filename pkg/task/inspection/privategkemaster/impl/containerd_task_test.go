@@ -24,12 +24,12 @@ import (
 	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
 	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
 	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
 	googlecloudlogk8snode_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudlogk8snode/contract"
 	privategkemaster_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privategkemaster/contract"
 	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testchangeset"
+	"github.com/GoogleCloudPlatform/khi/pkg/testutil/testlog"
 )
 
 func TestContainerdLogLogToTimelineMapper(t *testing.T) {
@@ -66,11 +66,19 @@ func TestContainerdLogLogToTimelineMapper(t *testing.T) {
 			desc:         "starting log",
 			inputMessage: `starting containerd`,
 			inputNodeLogFieldSet: &privategkemaster_contract.GKEMasterLogFieldSet{
+				ProjectID:     "project",
 				ComponentName: "containerd",
 				HostName:      "node-1",
 			},
 			assert: func(t *testing.T, ctx context.Context, cs *khifilev6.TimelineChangeSet) {
-				testchangeset.AssertTimeline(t, cs)
+				for _, wantTimeline := range (&privategkemaster_contract.GKEMasterLogFieldSet{
+					ProjectID:     "project",
+					ComponentName: "containerd",
+					HostName:      "node-1",
+				}).ResourceTimelines(ctx, "cluster") {
+					testchangeset.AssertTimeline(t, cs).
+						HasEvent(wantTimeline)
+				}
 			},
 		},
 	}
@@ -105,10 +113,7 @@ func TestContainerdLogLogToTimelineMapper(t *testing.T) {
 			)
 			message := klogParser.TryParse(tc.inputMessage)
 			tc.inputNodeLogFieldSet.StructuredBody = message
-			l := log.NewLogWithFieldSetsForTest(
-				&log.CommonFieldSet{Timestamp: testTime},
-				tc.inputNodeLogFieldSet,
-			)
+			l := testlog.NewMockLog(testTime, *tc.inputNodeLogFieldSet)
 			mapper := &ContainerdTimelineMapper{}
 			cs, _, err := mapper.ProcessLogByGroup(ctx, l, struct{}{})
 			if err != nil {
