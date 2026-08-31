@@ -24,6 +24,7 @@ import (
 	coreinit "github.com/GoogleCloudPlatform/khi/pkg/core/init"
 	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
 	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
+	"github.com/GoogleCloudPlatform/khi/pkg/server/workbench"
 	"github.com/gin-gonic/gin"
 )
 
@@ -79,6 +80,11 @@ func TestMCPServerInitializer(t *testing.T) {
 			coreinit.Set(ctx, JobParametersKey, jobParams)
 			coreinit.Set(ctx, InspectionTaskServerKey, taskServer)
 
+			indexMgr := workbench.NewInspectionIndexManager(taskServer, t.TempDir())
+			wbMgr := workbench.NewWorkbenchManager(taskServer, indexMgr, 5*time.Minute, 0)
+			defer wbMgr.Stop()
+			coreinit.Set(ctx, WorkbenchManagerKey, wbMgr)
+
 			ginEngine := gin.New()
 			var router gin.IRouter = ginEngine
 			if tc.basePath != "" {
@@ -95,7 +101,7 @@ func TestMCPServerInitializer(t *testing.T) {
 			reqCtx, reqCancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 			defer reqCancel()
 
-			req := httptest.NewRequest(tc.method, tc.requestPath, nil).WithContext(reqCtx)
+			req := httptest.NewRequestWithContext(reqCtx, tc.method, tc.requestPath, nil)
 			w := httptest.NewRecorder()
 			ginEngine.ServeHTTP(w, req)
 

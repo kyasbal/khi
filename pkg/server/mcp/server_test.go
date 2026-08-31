@@ -21,108 +21,20 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	"github.com/google/go-cmp/cmp"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-func setupTestServer(t *testing.T) (*Server, *coreinspection.InspectionTaskServer) {
+func setupTestServer(t *testing.T) (*Server, *coreinspection.InspectionTaskServer, *InspectionHandler) {
 	t.Helper()
 	taskServer, err := coreinspection.NewServer(nil)
 	if err != nil {
 		t.Fatalf("NewServer failed: %v", err)
 	}
-	return NewServer(taskServer), taskServer
-}
-
-func registerMockInspection(ts *coreinspection.InspectionTaskServer, id, name, typeName string, phase inspectionmetadata.TaskProgressPhase, startUnix, endUnix, inspectUnix int64, fileSize int, errCount int) {
-	md := typedmap.NewTypedMap()
-	typedmap.Set(md, inspectionmetadata.HeaderMetadataKey, &inspectionmetadata.HeaderMetadata{
-		InspectionName:         name,
-		InspectionType:         typeName,
-		InspectTimeUnixSeconds: inspectUnix,
-		StartTimeUnixSeconds:   startUnix,
-		EndTimeUnixSeconds:     endUnix,
-		FileSize:               fileSize,
-	})
-	typedmap.Set(md, inspectionmetadata.ProgressMetadataKey, &inspectionmetadata.Progress{
-		Phase: phase,
-	})
-	if errCount > 0 {
-		errs := make([]*inspectionmetadata.ErrorMessage, errCount)
-		for i := 0; i < errCount; i++ {
-			errs[i] = &inspectionmetadata.ErrorMessage{ErrorId: i + 1, Message: "error"}
-		}
-		typedmap.Set(md, inspectionmetadata.ErrorMessageSetMetadataKey, &inspectionmetadata.ErrorMessageSetMetadata{
-			ErrorMessages: errs,
-		})
-	}
-	ts.RegisterImportedInspection(id, nil, md.AsReadonly())
-}
-
-func TestServer_ListInspections(t *testing.T) {
-	testCases := []struct {
-		name      string
-		setup     func(ts *coreinspection.InspectionTaskServer)
-		wantItems []*InspectionSummaryItem
-	}{
-		{
-			name:      "empty inspection server returns empty list",
-			setup:     func(ts *coreinspection.InspectionTaskServer) {},
-			wantItems: []*InspectionSummaryItem{},
-		},
-		{
-			name: "returns sorted active and imported inspections",
-			setup: func(ts *coreinspection.InspectionTaskServer) {
-				registerMockInspection(ts, "inspection-001", "test-inspection-1", "gcp-gke", inspectionmetadata.TaskPhaseDone, 1700000000, 1700003600, 1700000000, 1024, 1)
-				registerMockInspection(ts, "inspection-002", "test-inspection-2", "anthos", inspectionmetadata.TaskPhaseRunning, 1700005000, 1700008600, 1700005000, 2048, 0)
-			},
-			wantItems: []*InspectionSummaryItem{
-				{
-					ID:          "inspection-001",
-					Name:        "test-inspection-1",
-					Type:        "gcp-gke",
-					Status:      "DONE",
-					StartTime:   time.Unix(1700000000, 0).UTC().Format(time.RFC3339),
-					EndTime:     time.Unix(1700003600, 0).UTC().Format(time.RFC3339),
-					InspectTime: time.Unix(1700000000, 0).UTC().Format(time.RFC3339),
-					FileSize:    1024,
-					ErrorCount:  1,
-				},
-				{
-					ID:          "inspection-002",
-					Name:        "test-inspection-2",
-					Type:        "anthos",
-					Status:      "RUNNING",
-					StartTime:   time.Unix(1700005000, 0).UTC().Format(time.RFC3339),
-					EndTime:     time.Unix(1700008600, 0).UTC().Format(time.RFC3339),
-					InspectTime: time.Unix(1700005000, 0).UTC().Format(time.RFC3339),
-					FileSize:    2048,
-					ErrorCount:  0,
-				},
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			server, taskServer := setupTestServer(t)
-			tc.setup(taskServer)
-
-			got, err := server.ListInspections()
-			if err != nil {
-				t.Fatalf("ListInspections() unexpected error: %v", err)
-			}
-
-			if diff := cmp.Diff(tc.wantItems, got); diff != "" {
-				t.Errorf("ListInspections() mismatch (-want +got):\n%s", diff)
-			}
-		})
-	}
+	inspectionHandler := NewInspectionHandler(taskServer)
+	return NewServer(inspectionHandler), taskServer, inspectionHandler
 }
 
 func TestServer_ClientSession_ListInspections(t *testing.T) {
@@ -147,7 +59,7 @@ func TestServer_ClientSession_ListInspections(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			server, taskServer := setupTestServer(t)
+			server, taskServer, _ := setupTestServer(t)
 			tc.setup(taskServer)
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -208,10 +120,10 @@ func TestServer_HTTPHandler_Discover(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			server, _ := setupTestServer(t)
+			server, _, _ := setupTestServer(t)
 
 			discoverBody := `{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/clientCapabilities":{"elicitation":{"form":{},"url":{}},"roots":{"listChanged":true}},"io.modelcontextprotocol/clientInfo":{"name":"antigravity-client","version":"v1.0.0"},"io.modelcontextprotocol/protocolVersion":"2026-07-28"}}}`
-			req := httptest.NewRequest(http.MethodPost, "/mcp/sse", strings.NewReader(discoverBody))
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/mcp/sse", strings.NewReader(discoverBody))
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json, text/event-stream")
 			req.Header.Set("Mcp-Protocol-Version", "2026-07-28")
