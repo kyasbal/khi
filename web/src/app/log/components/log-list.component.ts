@@ -34,6 +34,7 @@ import { CommonModule } from '@angular/common';
 import { Log } from 'src/app/store/domain/log';
 import { Timeline } from 'src/app/store/domain/timeline';
 import { ReadonlyDomainElement } from 'src/app/store/domain/types';
+import { IdBitset } from 'src/app/store/domain/filter/id-bitset';
 import { LogViewLogLineComponent } from './log-view-log-line.component';
 import { IconToggleButtonComponent } from '../../shared/components/icon-toggle-button/icon-toggle-button.component';
 import { bisectLeft } from '../../common/misc-util';
@@ -63,8 +64,10 @@ class LogListScrollingStrategy extends FixedSizeVirtualScrollStrategy {
 export class LogListComponent {
   /** The total number of logs. */
   public readonly allLogsCount = input.required<number>();
-  /** The list of filtered log entries. */
-  public readonly filteredLogs = input.required<ReadonlyDomainElement<Log>[]>();
+  /** The list of all log entries in chronological order. */
+  public readonly allLogs = input.required<ReadonlyDomainElement<Log>[]>();
+  /** The bitset of filtered active log IDs. */
+  public readonly filteredLogIds = input.required<IdBitset>();
   /** The index of the currently selected log. */
   public readonly selectedLogIndex = input.required<number>();
   /** The set of indices of highlighted logs. */
@@ -86,12 +89,44 @@ export class LogListComponent {
   private readonly viewPort = viewChild(CdkVirtualScrollViewport);
 
   protected readonly shownLogs = computed(() => {
-    const logs = this.filteredLogs();
     const filterByTimeline = this.filterByTimeline();
-    const timelines = this.selectedTimelinesWithChildren();
+    const filterLogIds = this.filteredLogIds();
 
-    if (!filterByTimeline || !timelines || timelines.length === 0) return logs;
-    return this.filterLogsWithTimelines(logs, timelines);
+    if (filterByTimeline) {
+      const timelines = this.selectedTimelinesWithChildren();
+      if (timelines && timelines.length > 0) {
+        const seenLogIds = new Set<number>();
+        const matchedLogs: ReadonlyDomainElement<Log>[] = [];
+
+        for (const timeline of timelines) {
+          for (const revision of timeline.revisions) {
+            const logId = revision.logId;
+            if (!seenLogIds.has(logId) && filterLogIds.has(logId)) {
+              seenLogIds.add(logId);
+              matchedLogs.push(revision.log);
+            }
+          }
+          for (const event of timeline.events) {
+            const logId = event.logId;
+            if (!seenLogIds.has(logId) && filterLogIds.has(logId)) {
+              seenLogIds.add(logId);
+              matchedLogs.push(event.log);
+            }
+          }
+        }
+        matchedLogs.sort((a, b) => a.logIndex - b.logIndex);
+        return matchedLogs;
+      }
+    }
+
+    const allLogs = this.allLogs();
+    const result: ReadonlyDomainElement<Log>[] = [];
+    for (const log of allLogs) {
+      if (filterLogIds.has(log.id)) {
+        result.push(log);
+      }
+    }
+    return result;
   });
 
   protected readonly shownLogsCount = computed(() => this.shownLogs().length);
@@ -172,28 +207,6 @@ export class LogListComponent {
       // automatically scrolls to the newly selected log.
       this.logSelected.emit(logs[nextArrayIndex]);
     }
-  }
-
-  private filterLogsWithTimelines(
-    logs: ReadonlyDomainElement<Log>[],
-    timelines: ReadonlyDomainElement<Timeline>[],
-  ): ReadonlyDomainElement<Log>[] {
-    const logIndices = new Set<number>();
-    for (const timeline of timelines) {
-      for (const revision of timeline.revisions) {
-        logIndices.add(revision.logIndex);
-      }
-      for (const event of timeline.events) {
-        logIndices.add(event.logIndex);
-      }
-    }
-    const result: ReadonlyDomainElement<Log>[] = [];
-    for (const log of logs) {
-      if (logIndices.has(log.logIndex)) {
-        result.push(log);
-      }
-    }
-    return result;
   }
 
   private searchArrayIndexOfLog(

@@ -39,15 +39,13 @@ import { HitTestResult } from './canvas/hittest-shared-resource';
 import { RenderingLoopManager } from './canvas/rendering-loop-manager';
 import { TimelineRulerViewModel } from './timeline-ruler.viewmodel';
 import { TimelineChartViewModel } from './timeline-chart.viewmodel';
-import {
-  TimelineChartItemHighlight,
-  TimelineHighlight,
-} from './interaction-model';
+import { TimelineHighlight } from './interaction-model';
 import {
   TimelineRulerStyle,
   TimelineChartStyle,
 } from 'src/app/timeline/components/style-model';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { IdBitset } from 'src/app/store/domain/filter/id-bitset';
 
 /**
  * Represents a mouse event that occurred on the timeline chart, including hit test results.
@@ -126,15 +124,20 @@ export class TimelineChartComponent implements AfterViewInit {
   readonly pixelsPerMs = input<number>(1);
 
   /**
-   * A set of log indices that are currently active (e.g., matching a filter).
-   * Inactive logs may be rendered differently (e.g., dimmed).
+   * The index of the selected log, or 0xFFFFFFFF if none.
    */
-  readonly activeLogsIndices = input<Set<number>>(new Set());
+  readonly selectedLogIndex = input<number>(0xffffffff);
 
   /**
-   * Highlights for specific items (logs/events) within the timeline.
+   * Bitset of highlighted log indices.
    */
-  readonly timelineChartItemHighlights = input<TimelineChartItemHighlight>({});
+  readonly highlightedLogIndexBitset = input<IdBitset>(IdBitset.createEmpty());
+
+  /**
+   * A bitset of log IDs that are currently active (e.g., matching a filter).
+   * Inactive logs may be rendered differently (e.g., dimmed).
+   */
+  readonly activeLogIds = input<IdBitset>(IdBitset.createEmpty());
 
   /**
    * Emitted when the mouse moves over a timeline item.
@@ -287,8 +290,9 @@ export class TimelineChartComponent implements AfterViewInit {
     const chartViewModel = this.chartViewModel();
     const chartStyle = this.chartStyle();
     const timelineHighlights = this.timelineHighlights();
-    const logElementHighlights = this.timelineChartItemHighlights();
-    const activeLogsIndices = this.activeLogsIndices();
+    const selectedLogIndex = this.selectedLogIndex();
+    const highlightedLogIndexBitset = this.highlightedLogIndexBitset();
+    const activeLogIds = this.activeLogIds();
     this.invalidate.set(true);
     if (
       rulerViewModel === undefined ||
@@ -309,8 +313,9 @@ export class TimelineChartComponent implements AfterViewInit {
     this.timelineRenderer.update(
       chartViewModel,
       chartStyle,
-      logElementHighlights,
-      activeLogsIndices,
+      selectedLogIndex,
+      highlightedLogIndexBitset,
+      activeLogIds,
     );
   }
 }

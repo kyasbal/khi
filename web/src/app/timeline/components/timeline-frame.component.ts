@@ -51,6 +51,7 @@ import { CommonModule } from '@angular/common';
 import { TimelineLegendComponent } from './timeline-legend.component';
 import { Log } from 'src/app/store/domain/log';
 import { HistogramCache } from './misc/histogram-cache';
+import { IdBitset } from 'src/app/store/domain/filter/id-bitset';
 import {
   TimelineHoverOverlay,
   TimelineHoverOverlayComponent,
@@ -164,7 +165,7 @@ export class TimelineFrameComponent implements AfterViewInit {
   /**
    * The list of timelines to display.
    */
-  readonly timelines = input<ReadonlyDomainElement<Timeline>[]>([]);
+  readonly timelines = input<readonly ReadonlyDomainElement<Timeline>[]>([]);
 
   /**
    * Current set of collapsed timeline IDs.
@@ -197,22 +198,16 @@ export class TimelineFrameComponent implements AfterViewInit {
    */
   readonly allLogsWithoutFilter = input<ReadonlyDomainElement<Log>[]>([]);
   /**
-   * The list of filtered logs.
-   * Used for displaying logs on the timeline.
-   */
-  readonly filteredLogs = input<ReadonlyDomainElement<Log>[]>([]);
-
-  /**
-   * The set of indices of non-filtered active logs.
+   * The bitset of filtered active log IDs.
    * Used for showing filtering state on the timeline.
    */
-  readonly activeLogsIndices = computed(() => {
-    const filteredLogs = this.filteredLogs();
-    const set = new Set<number>();
-    for (const log of filteredLogs) {
-      set.add(log.logIndex);
-    }
-    return set;
+  readonly filteredLogIds = input<IdBitset>(IdBitset.createEmpty());
+
+  /**
+   * The bitset of all log IDs.
+   */
+  protected readonly allLogIds = computed(() => {
+    return IdBitset.fromSequential(this.allLogsWithoutFilter().length);
   });
 
   /**
@@ -235,9 +230,11 @@ export class TimelineFrameComponent implements AfterViewInit {
   protected readonly allLogsWithoutFilterHistogramCache = computed(() => {
     const minTimeSpanForHistogram = this.minTimeSpanForHistogram();
     const allLogsWithoutFilter = this.allLogsWithoutFilter();
+    const allLogIds = this.allLogIds();
     return new HistogramCache(
       this.styleStore().severities,
       allLogsWithoutFilter,
+      allLogIds,
       minTimeSpanForHistogram,
     );
   });
@@ -249,10 +246,12 @@ export class TimelineFrameComponent implements AfterViewInit {
   protected readonly filteredLogsHistogramCache = computed(() => {
     const minTimeSpanForHistogram = this.minTimeSpanForHistogram();
     const allLogsHistogramCache = this.allLogsWithoutFilterHistogramCache();
-    const filteredLogs = this.filteredLogs();
+    const allLogsWithoutFilter = this.allLogsWithoutFilter();
+    const filteredLogIds = this.filteredLogIds();
     return new HistogramCache(
       this.styleStore().severities,
-      filteredLogs,
+      allLogsWithoutFilter,
+      filteredLogIds,
       minTimeSpanForHistogram,
       allLogsHistogramCache.logMinTimeMS,
       allLogsHistogramCache.logMaxTimeMS,
@@ -289,19 +288,14 @@ export class TimelineFrameComponent implements AfterViewInit {
   readonly timelineChartItemHighlights = input<TimelineChartItemHighlight>({});
 
   /**
-   * The index of the log that is currently selected.
+   * The index of the log that is currently selected, or 0xFFFFFFFF if none.
    */
-  readonly selectedLogIndex = computed(() => {
-    const highlights = this.timelineChartItemHighlights();
-    const findResult = Object.entries(highlights).find(([, value]) => {
-      return value === TimelineChartItemHighlightType.Selected;
-    });
-    if (findResult === undefined) {
-      return null;
-    }
-    const [highlightedLogIndex] = findResult;
-    return highlightedLogIndex;
-  });
+  readonly selectedLogIndex = input<number>(0xffffffff);
+
+  /**
+   * Bitset of highlighted log indices.
+   */
+  readonly highlightedLogIndexBitset = input<IdBitset>(IdBitset.createEmpty());
 
   /**
    * Request to show a hover overlay.
@@ -400,11 +394,17 @@ export class TimelineFrameComponent implements AfterViewInit {
    * Returns the actual timeline that contains the currently selected log.
    */
   protected readonly selectedLogTimeline = computed(() => {
-    const logIndexStr = this.selectedLogIndex();
-    if (logIndexStr === null) {
-      return null;
+    let logIndex = this.selectedLogIndex();
+    if (logIndex === 0xffffffff || logIndex === undefined || logIndex < 0) {
+      const highlights = this.timelineChartItemHighlights();
+      const findResult = Object.entries(highlights).find(([, value]) => {
+        return value === TimelineChartItemHighlightType.Selected;
+      });
+      if (findResult === undefined) {
+        return null;
+      }
+      logIndex = Number(findResult[0]);
     }
-    const logIndex = Number(logIndexStr);
     const allLogs = this.allLogsWithoutFilter();
     const log = allLogs[logIndex];
     if (!log) {
