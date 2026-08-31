@@ -19,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -37,11 +36,7 @@ func TestBridgeConns(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
 
-			taskServer, err := coreinspection.NewServer(nil)
-			if err != nil {
-				t.Fatalf("NewServer failed: %v", err)
-			}
-			mcpServer := NewServer(taskServer)
+			mcpServer := NewServer()
 
 			// tServer <-> tBridge1
 			tServer, tBridge1 := mcp.NewInMemoryTransports()
@@ -64,25 +59,23 @@ func TestBridgeConns(t *testing.T) {
 			}
 			defer conn2.Close()
 
-			go func() {
-				_ = BridgeConns(ctx, conn1, conn2)
-			}()
+			// Bridge conn1 and conn2 in background
+			go BridgeConns(ctx, conn1, conn2)
 
-			client := mcp.NewClient(&mcp.Implementation{Name: "test-client", Version: "1.0.0"}, nil)
+			client := mcp.NewClient(&mcp.Implementation{
+				Name:    "test-client",
+				Version: "1.0.0",
+			}, nil)
+
 			session, err := client.Connect(ctx, tClient, nil)
 			if err != nil {
-				t.Fatalf("client.Connect failed: %v", err)
+				t.Fatalf("client.Connect through bridge failed: %v", err)
 			}
 			defer session.Close()
 
-			res, err := session.CallTool(ctx, &mcp.CallToolParams{
-				Name: "list_inspections",
-			})
-			if err != nil {
-				t.Fatalf("CallTool failed: %v", err)
-			}
-			if res.IsError {
-				t.Fatalf("CallTool returned error result")
+			// Verify ping through the bridge connection
+			if err := session.Ping(ctx, nil); err != nil {
+				t.Errorf("session.Ping() through bridge failed: %v", err)
 			}
 		})
 	}
