@@ -248,6 +248,21 @@ export class LogStore {
     }
   }
 
+  /**
+   * Gets the log ID at the specified chronological index.
+   *
+   * @param index The 0-based chronological index.
+   * @returns The log ID.
+   */
+  public getLogIdByIndex(index: number): number {
+    if (index < 0 || index >= this.logCount) {
+      throw new Error(
+        `Log index ${index} out of bounds (count: ${this.logCount})`,
+      );
+    }
+    return this.ids[index];
+  }
+
   // --- Internal getters for Log adapter ---
 
   /**
@@ -284,9 +299,11 @@ export class LogStore {
 
   /**
    * Gets the interned struct ID of a log body, or 0 if not stored as a struct.
-   * @note Intended solely for internal retrieval inside the {@link Log} domain adapter.
+   *
+   * @param id The ID of the log.
+   * @returns The struct ID, or 0 if none.
    */
-  public _getBodyStructId(id: number): number {
+  public getBodyStructId(id: number): number {
     const index = this.getIndex(id);
     return this.bodyStructIds[index] ?? 0;
   }
