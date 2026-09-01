@@ -77,7 +77,7 @@ func (k *KubeletTimelineMapper) GroupedLogTask() taskid.TaskReference[inspection
 }
 
 // LogIngesterTask implements inspectiontaskbase.LogToTimelineMapper.
-func (k *KubeletTimelineMapper) LogIngesterTask() taskid.TaskReference[[]*log.Log] {
+func (k *KubeletTimelineMapper) LogIngesterTask() taskid.TaskReference[struct{}] {
 	return privategkemaster_contract.LogIngesterTaskID.Ref()
 }
 

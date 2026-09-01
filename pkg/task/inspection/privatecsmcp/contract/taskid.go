@@ -40,7 +40,7 @@ var LogQueryTaskID = taskid.NewDefaultImplementationID[[]*log.Log](TaskIDPrefix 
 var LogSorterTaskID = taskid.NewDefaultImplementationID[[]*log.Log](TaskIDPrefix + "log-sorter")
 
 // LogIngesterTaskID is the task ID for ingesting parsed logs into LogChangeSets.
-var LogIngesterTaskID = taskid.NewDefaultImplementationID[[]*log.Log](TaskIDPrefix + "log-ingester")
+var LogIngesterTaskID = taskid.NewDefaultImplementationID[struct{}](TaskIDPrefix + "log-ingester")
 
 // LogGrouperTaskID is the task ID for grouping parsed logs.
 var LogGrouperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogGroupMap](TaskIDPrefix + "log-grouper")

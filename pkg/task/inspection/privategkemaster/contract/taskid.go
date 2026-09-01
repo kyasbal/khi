@@ -37,7 +37,7 @@ var InputPrivateGKEMasterComponentNameFilterTaskID = taskid.NewDefaultImplementa
 var ListLogEntriesTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateGKEMasterCommonTaskIDPrefix + "query")
 
 // LogIngesterTaskID is the task ID to finalize the logs to be included in the final output.
-var LogIngesterTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateGKEMasterCommonTaskIDPrefix + "log-ingester")
+var LogIngesterTaskID = taskid.NewDefaultImplementationID[struct{}](PrivateGKEMasterCommonTaskIDPrefix + "log-ingester")
 
 // LogGrouperTaskID is deprecated.
 var LogGrouperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogGroupMap](PrivateGKEMasterCommonTaskIDPrefix + "log-grouper")

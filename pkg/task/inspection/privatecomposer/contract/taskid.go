@@ -33,7 +33,7 @@ var ComposerV3ClusterNamePrefixTaskID = taskid.NewImplementationID(googlecloudk8
 var CloudSQLLogsQueryTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateComposerTaskIDPrefix + "cloudsql-query")
 
 // CloudSQLLogsIngesterTaskID is the task ID for ingesting Cloud SQL logs.
-var CloudSQLLogsIngesterTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateComposerTaskIDPrefix + "cloudsql-log-ingester")
+var CloudSQLLogsIngesterTaskID = taskid.NewDefaultImplementationID[struct{}](PrivateComposerTaskIDPrefix + "cloudsql-log-ingester")
 
 // CloudSQLLogsGrouperTaskID is the task ID for grouping Cloud SQL logs by database instance.
 var CloudSQLLogsGrouperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogGroupMap](PrivateComposerTaskIDPrefix + "cloudsql-log-grouper")
@@ -45,7 +45,7 @@ var CloudSQLLogsTimelineMapperTaskID = taskid.NewDefaultImplementationID[inspect
 var CloudSQLAuditLogsQueryTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateComposerTaskIDPrefix + "cloudsql-audit-query")
 
 // CloudSQLAuditLogsIngesterTaskID is the task ID for ingesting Cloud SQL activity audit logs.
-var CloudSQLAuditLogsIngesterTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateComposerTaskIDPrefix + "cloudsql-audit-log-ingester")
+var CloudSQLAuditLogsIngesterTaskID = taskid.NewDefaultImplementationID[struct{}](PrivateComposerTaskIDPrefix + "cloudsql-audit-log-ingester")
 
 // CloudSQLAuditLogsGrouperTaskID is the task ID for grouping Cloud SQL activity audit logs by database instance.
 var CloudSQLAuditLogsGrouperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogGroupMap](PrivateComposerTaskIDPrefix + "cloudsql-audit-log-grouper")

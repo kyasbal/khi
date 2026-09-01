@@ -113,7 +113,7 @@ func (m *ControllerManagerTimelineMapper) GroupedLogTask() taskid.TaskReference[
 }
 
 // LogIngesterTask implements inspectiontaskbase.LogToTimelineMapper.
-func (m *ControllerManagerTimelineMapper) LogIngesterTask() taskid.TaskReference[[]*log.Log] {
+func (m *ControllerManagerTimelineMapper) LogIngesterTask() taskid.TaskReference[struct{}] {
 	return privategkemaster_contract.LogIngesterTaskID.Ref()
 }
 

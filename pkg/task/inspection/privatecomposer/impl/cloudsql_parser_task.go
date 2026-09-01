@@ -92,7 +92,7 @@ type cloudSQLLogsTimelineMapper struct {
 }
 
 // LogIngesterTask returns the reference to the Cloud SQL log ingester task.
-func (m *cloudSQLLogsTimelineMapper) LogIngesterTask() taskid.TaskReference[[]*log.Log] {
+func (m *cloudSQLLogsTimelineMapper) LogIngesterTask() taskid.TaskReference[struct{}] {
 	return privatecomposer_contract.CloudSQLLogsIngesterTaskID.Ref()
 }
 

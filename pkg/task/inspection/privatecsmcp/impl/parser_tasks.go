@@ -149,7 +149,7 @@ func (m *csmcpTimelineMapper) PreProcessLogByGroup(ctx context.Context, passInde
 }
 
 // LogIngesterTask returns the task ID for log ingestion.
-func (m *csmcpTimelineMapper) LogIngesterTask() taskid.TaskReference[[]*log.Log] {
+func (m *csmcpTimelineMapper) LogIngesterTask() taskid.TaskReference[struct{}] {
 	return privatecsmcp_contract.LogIngesterTaskID.Ref()
 }
 
