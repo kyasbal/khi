@@ -341,7 +341,11 @@ func newConditionWalker(conditionPath *khifilev6.TimelinePath, conditionType str
 // checkLastTransitionTimes memorizes the last transition time of the condition. This value is used for complementing values for logs without the full status information.
 func (c *conditionWalker) checkLastTransitionTimes(condition *model.K8sResourceStatusCondition) {
 	if condition != nil && condition.Status != "" && condition.LastTransitionTime != "" {
-		c.lastTransitionStates[condition.LastTransitionTime] = condition
+		t, err := time.Parse(time.RFC3339, condition.LastTransitionTime)
+		if err != nil {
+			return
+		}
+		c.lastTransitionStates[t.UTC().Format(time.RFC3339)] = condition
 	}
 }
 
@@ -463,7 +467,7 @@ func (c *conditionWalker) getLastCondition(beforeThan time.Time) *model.K8sResou
 		return c.lastTransitionTimeSorted[i].After(beforeThan)
 	})
 	if idx > 0 {
-		return c.lastTransitionStates[c.lastTransitionTimeSorted[idx-1].Format(time.RFC3339)]
+		return c.lastTransitionStates[c.lastTransitionTimeSorted[idx-1].UTC().Format(time.RFC3339)]
 	}
 	return nil
 }
