@@ -134,10 +134,10 @@ export class TimelineChartComponent implements AfterViewInit {
   readonly highlightedLogIndexBitset = input<IdBitset>(IdBitset.createEmpty());
 
   /**
-   * A bitset of log IDs that are currently active (e.g., matching a filter).
-   * Inactive logs may be rendered differently (e.g., dimmed).
+   * A bitset of log IDs that are filtered (e.g., matching a filter).
+   * Filtered-out logs may be rendered differently (e.g., dimmed).
    */
-  readonly activeLogIds = input<IdBitset>(IdBitset.createEmpty());
+  readonly filteredLogIds = input<IdBitset>(IdBitset.createEmpty());
 
   /**
    * Emitted when the mouse moves over a timeline item.
@@ -152,7 +152,7 @@ export class TimelineChartComponent implements AfterViewInit {
   /**
    * Flag to indicate that the timeline needs to be redrawn.
    */
-  private readonly invalidate = signal(true);
+  private invalidate = true;
 
   private resizeObserver: ResizeObserver | null = null;
 
@@ -185,7 +185,7 @@ export class TimelineChartComponent implements AfterViewInit {
         chartViewModel.styleStore.stylesUpdated?.();
         this.timelineRenderer.invalidateStyles();
       }
-      this.invalidate.set(true);
+      this.invalidate = true;
       this.updateRendererParams();
     });
   }
@@ -221,7 +221,7 @@ export class TimelineChartComponent implements AfterViewInit {
 
     this.updateRendererParams();
     this.renderingLoopManager.registerRenderHandler(this.destroyRef, () => {
-      if (!this.invalidate()) {
+      if (!this.invalidate) {
         return;
       }
       this.contextManager.render({
@@ -229,7 +229,7 @@ export class TimelineChartComponent implements AfterViewInit {
         pixelsPerMs: this.pixelsPerMs(),
       });
       this.backgroundRenderer.render(this.leftEdgeTime(), this.pixelsPerMs());
-      this.invalidate.set(false);
+      this.invalidate = false;
     });
   }
 
@@ -256,7 +256,7 @@ export class TimelineChartComponent implements AfterViewInit {
         timeMS,
       });
     });
-    this.invalidate.set(true); // hittest needs redraw
+    this.invalidate = true; // hittest needs redraw
   }
 
   private handleResize() {
@@ -280,7 +280,7 @@ export class TimelineChartComponent implements AfterViewInit {
       glCanvas.height = rect.height * dpr;
       this.backgroundRenderer.resize(rect.width, rect.height, dpr);
       this.timelineRenderer.resize(rect.width, rect.height, dpr);
-      this.invalidate.set(true);
+      this.invalidate = true;
     });
   }
 
@@ -292,8 +292,8 @@ export class TimelineChartComponent implements AfterViewInit {
     const timelineHighlights = this.timelineHighlights();
     const selectedLogIndex = this.selectedLogIndex();
     const highlightedLogIndexBitset = this.highlightedLogIndexBitset();
-    const activeLogIds = this.activeLogIds();
-    this.invalidate.set(true);
+    const filteredLogIds = this.filteredLogIds();
+    this.invalidate = true;
     if (
       rulerViewModel === undefined ||
       rulerStyle === undefined ||
@@ -315,7 +315,7 @@ export class TimelineChartComponent implements AfterViewInit {
       chartStyle,
       selectedLogIndex,
       highlightedLogIndexBitset,
-      activeLogIds,
+      filteredLogIds,
     );
   }
 }
