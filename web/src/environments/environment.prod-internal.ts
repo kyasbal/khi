@@ -31,7 +31,7 @@ export const environment = {
   documentUrl: 'http://go/khi',
   upload: {
     chunkSizeBytes: 512 * 1024,
-    maxConcurrency: 16,
+    maxConcurrency: 128,
   } as UploadEnvironmentConfig,
   download: {
     chunkSizeBytes: 512 * 1024,
