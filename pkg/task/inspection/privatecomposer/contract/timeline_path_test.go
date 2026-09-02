@@ -15,12 +15,9 @@
 package privatecomposer_contract
 
 import (
-	"context"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
-	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
-	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
+	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -50,8 +47,7 @@ func TestMustCloudSQLInstanceTimeline(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			builder := khifilev6.NewBuilder()
-			ctx := khictx.WithValue(context.Background(), inspectioncore_contract.Builder, builder)
+			ctx := inspectiontest.WithDefaultTestInspectionTaskContext(t.Context())
 
 			path := MustCloudSQLInstanceTimeline(ctx, tc.projectID, tc.instanceID)
 
@@ -97,8 +93,7 @@ func TestMustCloudSQLLogTimeline(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			builder := khifilev6.NewBuilder()
-			ctx := khictx.WithValue(context.Background(), inspectioncore_contract.Builder, builder)
+			ctx := inspectiontest.WithDefaultTestInspectionTaskContext(t.Context())
 
 			path := MustCloudSQLLogTimeline(ctx, tc.projectID, tc.instanceID, tc.logFileName)
 

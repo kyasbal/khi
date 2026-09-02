@@ -18,11 +18,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
+	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
 	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
-	core_contract "github.com/GoogleCloudPlatform/khi/pkg/task/core/contract"
 	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
@@ -34,8 +32,12 @@ import (
 
 func TestCSMCPTimelineMapper_ProcessLogByGroup(t *testing.T) {
 	ctx := inspectiontest.WithDefaultTestInspectionTaskContext(t.Context())
-	builder := khifilev6.NewBuilder()
-	ctx = khictx.WithValue(ctx, inspectioncore_contract.Builder, builder)
+	ctx = tasktest.WithTaskResult(ctx, privatecsmcp_contract.InputCSMTenantProjectIDTaskID.Ref(), "test-tenant")
+	ctx = tasktest.WithTaskResult(ctx, privatecsmcp_contract.InputCSMCPCloudRunServiceNameTaskID.Ref(), "test-service")
+	ctx = tasktest.WithTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(), googlecloudk8scommon_contract.GoogleCloudClusterIdentity{
+		ClusterName: "test-cluster",
+		Location:    "test-location",
+	})
 
 	tenantProjectPath := googlecloudcommon_contract.MustGCPProjectTimeline(ctx, "test-tenant")
 	servicePath := privatecsmcp_contract.MustCloudRunServiceTimeline(ctx, tenantProjectPath, "test-service", "unknown")
@@ -119,14 +121,6 @@ func TestCSMCPTimelineMapper_ProcessLogByGroup(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Re-use outer ctx so that paths match builder
-			tm := khictx.MustGetValue(ctx, core_contract.TaskResultMapContextKey)
-			typedmap.Set(tm, typedmap.NewTypedKey[string](privatecsmcp_contract.InputCSMTenantProjectIDTaskID.Ref().ReferenceIDString()), "test-tenant")
-			typedmap.Set(tm, typedmap.NewTypedKey[string](privatecsmcp_contract.InputCSMCPCloudRunServiceNameTaskID.Ref().ReferenceIDString()), "test-service")
-			typedmap.Set(tm, typedmap.NewTypedKey[googlecloudk8scommon_contract.GoogleCloudClusterIdentity](googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref().ReferenceIDString()), googlecloudk8scommon_contract.GoogleCloudClusterIdentity{
-				ClusterName: "test-cluster",
-				Location:    "test-location",
-			})
 
 			fs := privatecsmcp_contract.CSMCPFieldSet{
 				InstanceID: "unknown",

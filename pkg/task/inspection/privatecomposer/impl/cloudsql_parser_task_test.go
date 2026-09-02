@@ -19,11 +19,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
+	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
+	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
 	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
-	core_contract "github.com/GoogleCloudPlatform/khi/pkg/task/core/contract"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 	privatecomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/privatecomposer/contract"
@@ -95,9 +94,9 @@ func TestCloudSQLLogsIngester_ProcessLog(t *testing.T) {
 }
 
 func TestCloudSQLLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
-	builder := khifilev6.NewBuilder()
+	testCtx := inspectiontest.WithDefaultTestInspectionTaskContext(t.Context())
 	expectedPath := privatecomposer_contract.MustCloudSQLLogTimeline(
-		khictx.WithValue(context.Background(), inspectioncore_contract.Builder, builder),
+		testCtx,
 		"my-tenant-project-tp",
 		"us-central1-composer-2-170061d7-sql",
 		"postgres.log",
@@ -128,10 +127,7 @@ func TestCloudSQLLogsTimelineMapper_ProcessLogByGroup(t *testing.T) {
 	mapper := &cloudSQLLogsTimelineMapper{}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx := khictx.WithValue(context.Background(), inspectioncore_contract.Builder, builder)
-			taskDependentValues := typedmap.NewTypedMap()
-			typedmap.Set(taskDependentValues, typedmap.NewTypedKey[string](privatecomposer_contract.InputComposerTenantProjectIdTaskID.ReferenceIDString()), tc.projectID)
-			ctx = khictx.WithValue(ctx, core_contract.TaskResultMapContextKey, taskDependentValues)
+			ctx := tasktest.WithTaskResult(testCtx, privatecomposer_contract.InputComposerTenantProjectIdTaskID.Ref(), tc.projectID)
 
 			cs, _, err := mapper.ProcessLogByGroup(ctx, tc.inputLog, struct{}{})
 			if err != nil {
