@@ -19,24 +19,12 @@
 package apiv1connect
 
 import (
-<<<<<<< baseline/pkg/generated/api/v1/apiv1connect/workbench.connect.go
-=======
 	connect "connectrpc.com/connect"
->>>>>>> destination/pkg/generated/api/v1/apiv1connect/workbench.connect.go
 	context "context"
 	errors "errors"
-<<<<<<< baseline/pkg/generated/api/v1/apiv1connect/workbench.connect.go
-=======
 	v1 "github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1"
->>>>>>> destination/pkg/generated/api/v1/apiv1connect/workbench.connect.go
 	http "net/http"
 	strings "strings"
-<<<<<<< baseline/pkg/generated/api/v1/apiv1connect/workbench.connect.go
-
-	connect "connectrpc.com/connect"
-	v1 "github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1"
-=======
->>>>>>> destination/pkg/generated/api/v1/apiv1connect/workbench.connect.go
 )
 
 // This is a compile-time assertion to ensure that this generated file and the connect package are

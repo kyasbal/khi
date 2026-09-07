@@ -39,7 +39,7 @@ var CloudSQLLogsIngesterTaskID = taskid.NewDefaultImplementationID[struct{}](Pri
 var CloudSQLLogsGrouperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogGroupMap](PrivateComposerTaskIDPrefix + "cloudsql-log-grouper")
 
 // CloudSQLLogsTimelineMapperTaskID is the task ID for mapping Cloud SQL logs to timelines.
-var CloudSQLLogsTimelineMapperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.TimelineMapperResult](PrivateComposerTaskIDPrefix + "cloudsql-timeline-mapper")
+var CloudSQLLogsTimelineMapperTaskID = taskid.NewDefaultImplementationID[struct{}](PrivateComposerTaskIDPrefix + "cloudsql-timeline-mapper")
 
 // CloudSQLAuditLogsQueryTaskID is the task ID for querying Cloud SQL activity audit logs in the tenant project.
 var CloudSQLAuditLogsQueryTaskID = taskid.NewDefaultImplementationID[[]*log.Log](PrivateComposerTaskIDPrefix + "cloudsql-audit-query")
@@ -51,4 +51,4 @@ var CloudSQLAuditLogsIngesterTaskID = taskid.NewDefaultImplementationID[struct{}
 var CloudSQLAuditLogsGrouperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.LogGroupMap](PrivateComposerTaskIDPrefix + "cloudsql-audit-log-grouper")
 
 // CloudSQLAuditLogsTimelineMapperTaskID is the task ID for mapping Cloud SQL activity audit logs to timelines.
-var CloudSQLAuditLogsTimelineMapperTaskID = taskid.NewDefaultImplementationID[inspectiontaskbase.TimelineMapperResult](PrivateComposerTaskIDPrefix + "cloudsql-audit-timeline-mapper")
+var CloudSQLAuditLogsTimelineMapperTaskID = taskid.NewDefaultImplementationID[struct{}](PrivateComposerTaskIDPrefix + "cloudsql-audit-timeline-mapper")

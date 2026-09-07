@@ -21,22 +21,12 @@
 package apiv1
 
 import (
-<<<<<<< baseline/pkg/generated/api/v1/workbench.pb.go
-=======
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
->>>>>>> destination/pkg/generated/api/v1/workbench.pb.go
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-<<<<<<< baseline/pkg/generated/api/v1/workbench.pb.go
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-=======
->>>>>>> destination/pkg/generated/api/v1/workbench.pb.go
 )
 
 const (
