@@ -83,10 +83,26 @@ KHIの開発環境のAngularサーバーはリクエストを `localhost:4200/ap
 make test
 ```
 
-バックエンドのテストをCloud Loggingと一緒に実行したい場合は下記のコードを実行してください。
+バックエンドのテストをCloud Loggingなしで実行したい場合は下記のコードを実行してください。
 
 ```shell
-go test ./... -args -skip-cloud-logging=true
+KHI_SKIP_CLOUD_LOGGING=true go test ./...
+```
+
+### 過去の自動生成テストファイルのクリーンアップ
+
+テストフラグが環境変数に移行される前の古い作業コピーがある場合、過去に自動生成された `zzz_testflag_test.go` ファイルが `pkg/` 配下に未追跡ファイルとして残る場合があります。
+
+残存した自動生成ファイルを一括削除するには、下記のコマンドを実行してください。
+
+```shell
+make clean
+```
+
+または、直接以下のコマンドで削除することも可能です。
+
+```shell
+find ./pkg -name "zzz_*.go" -delete
 ```
 
 ### Storybookの起動
