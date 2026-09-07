@@ -73,6 +73,7 @@ type Workbench struct {
 	timelineChunks    []*khifilev6.TimelineChunk
 	rawTimelines      []rawTimeline
 	rawTimelineItems  map[uint32]*rawTimelineItems
+	seenTimelineIDs   map[uint32]bool
 	searchIndex       *SearchIndex
 
 	indexMu          sync.RWMutex
@@ -120,10 +121,12 @@ type rawTimelineItems struct {
 // NewWorkbench creates a new Workbench instance.
 func NewWorkbench(id string, inspectionID string) *Workbench {
 	return &Workbench{
-		id:           id,
-		inspectionID: inspectionID,
-		internPool:   khifilev6model.NewReadonlyInternPool(),
-		filterJobs:   streamingutil.NewAsyncJobManager[*apiv1.FilterProgress, *apiv1.FilterResult](15*time.Second, 1*time.Minute),
+		id:               id,
+		inspectionID:     inspectionID,
+		internPool:       khifilev6model.NewReadonlyInternPool(),
+		filterJobs:       streamingutil.NewAsyncJobManager[*apiv1.FilterProgress, *apiv1.FilterResult](15*time.Second, 1*time.Minute),
+		rawTimelineItems: make(map[uint32]*rawTimelineItems),
+		seenTimelineIDs:  make(map[uint32]bool),
 	}
 }
 
@@ -152,6 +155,13 @@ func (w *Workbench) IsClosed() bool {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 	return w.closed
+}
+
+// SearchIndex returns the built SearchIndex for this workbench.
+func (w *Workbench) SearchIndex() *SearchIndex {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.searchIndex
 }
 
 // ReadStructYAMLs decodes the interned structs matching the given structIDs and returns a map of struct ID to YAML string representation.
