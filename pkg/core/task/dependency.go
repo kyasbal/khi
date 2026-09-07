@@ -21,6 +21,19 @@ import (
 // Dependency represents any task dependency descriptor, such as a point-to-point reference or a fan-in tag reference.
 type Dependency = taskid.DependencyDescriptor
 
+var (
+	// Optional configures the dependency condition to ConditionOptional.
+	Optional = taskid.Optional
+	// OrderOnly configures the dependency kind to EdgeKindOrderOnly.
+	OrderOnly = taskid.OrderOnly
+	// FromActiveFeatures configures the dependency scope to ScopeActiveFeatures.
+	FromActiveFeatures = taskid.ScopeActiveFeatures
+	// FromActiveGraph configures the dependency scope to ScopeActiveGraph.
+	FromActiveGraph = taskid.ScopeActiveGraph
+	// FromAll configures the dependency scope to ScopeAll.
+	FromAll = taskid.ScopeAll
+)
+
 // TagReference defines a typed reference to an aggregation of tasks providing a specific tag.
 type TagReference[TaskResult any] interface {
 	taskid.FanInDescriptor

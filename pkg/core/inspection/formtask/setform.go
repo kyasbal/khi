@@ -86,7 +86,7 @@ func NewSetFormTaskBuilder[T any](id taskid.TaskImplementationID[T], priority in
 	}
 }
 
-func (b *SetFormTaskBuilder[T]) WithDependencies(dependencies []taskid.UntypedTaskReference) *SetFormTaskBuilder[T] {
+func (b *SetFormTaskBuilder[T]) WithDependencies(dependencies []common_task.Dependency) *SetFormTaskBuilder[T] {
 	b.FormTaskBuilderBase.WithDependencies(dependencies)
 	return b
 }

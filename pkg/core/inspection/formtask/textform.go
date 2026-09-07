@@ -95,7 +95,7 @@ func NewTextFormTaskBuilder[T any](id taskid.TaskImplementationID[T], priority i
 	}
 }
 
-func (b *TextFormTaskBuilder[T]) WithDependencies(dependencies []taskid.UntypedTaskReference) *TextFormTaskBuilder[T] {
+func (b *TextFormTaskBuilder[T]) WithDependencies(dependencies []common_task.Dependency) *TextFormTaskBuilder[T] {
 	b.FormTaskBuilderBase.WithDependencies(dependencies)
 	return b
 }

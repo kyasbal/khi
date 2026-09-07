@@ -46,7 +46,7 @@ type LogGrouperFunc = func(ctx context.Context, log *log.Log) string
 // It processes a list of logs and organizes them into a map of LogGroup,
 // where each group contains logs with the same key.
 func NewLogGrouperTask(taskId taskid.TaskImplementationID[LogGroupMap], logTask taskid.TaskReference[[]*log.Log], grouper LogGrouperFunc) coretask.Task[LogGroupMap] {
-	return NewProgressReportableInspectionTask(taskId, []taskid.UntypedTaskReference{
+	return NewProgressReportableInspectionTask(taskId, []coretask.Dependency{
 		logTask,
 	},
 		func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (LogGroupMap, error) {

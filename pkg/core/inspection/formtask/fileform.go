@@ -42,7 +42,7 @@ func NewFileFormTaskBuilder(id taskid.TaskImplementationID[upload.UploadResult],
 }
 
 // WithDependencies sets the task dependencies
-func (b *FileFormTaskBuilder) WithDependencies(dependencies []taskid.UntypedTaskReference) *FileFormTaskBuilder {
+func (b *FileFormTaskBuilder) WithDependencies(dependencies []common_task.Dependency) *FileFormTaskBuilder {
 	b.FormTaskBuilderBase.WithDependencies(dependencies)
 	return b
 }
