@@ -15,20 +15,20 @@
 package structured
 
 import (
+	"strings"
 	"sync"
 )
 
 // lazyJSONCacheKey identifies a specific field lookup within a LazyJSONNode.
 type lazyJSONCacheKey struct {
-	ptr   uintptr
-	index int
-	key   string
+	blockID   uint32
+	absOffset uint32
+	key       string
 }
 
 // lazyJSONCacheEntry represents a single cached child index in the LRU doubly linked list.
 type lazyJSONCacheEntry struct {
 	key      lazyJSONCacheKey
-	dataRef  []byte
 	valIndex int
 	prev     *lazyJSONCacheEntry
 	next     *lazyJSONCacheEntry
@@ -63,11 +63,10 @@ func (s *lazyJSONCacheShard) get(k lazyJSONCacheKey) (int, bool) {
 	return valIndex, true
 }
 
-func (s *lazyJSONCacheShard) put(k lazyJSONCacheKey, valIndex int, dataRef []byte) {
+func (s *lazyJSONCacheShard) put(k lazyJSONCacheKey, valIndex int) {
 	s.mu.Lock()
 	if entry, ok := s.items[k]; ok {
 		entry.valIndex = valIndex
-		entry.dataRef = dataRef
 		s.moveToHead(entry)
 		s.mu.Unlock()
 		return
@@ -75,7 +74,6 @@ func (s *lazyJSONCacheShard) put(k lazyJSONCacheKey, valIndex int, dataRef []byt
 
 	entry := &lazyJSONCacheEntry{
 		key:      k,
-		dataRef:  dataRef,
 		valIndex: valIndex,
 	}
 	s.items[k] = entry
@@ -87,7 +85,7 @@ func (s *lazyJSONCacheShard) put(k lazyJSONCacheKey, valIndex int, dataRef []byt
 	s.mu.Unlock()
 }
 
-func (s *lazyJSONCacheShard) putIfAbsent(k lazyJSONCacheKey, valIndex int, dataRef []byte) {
+func (s *lazyJSONCacheShard) putIfAbsent(k lazyJSONCacheKey, valIndex int) {
 	s.mu.Lock()
 	if entry, ok := s.items[k]; ok {
 		s.moveToHead(entry)
@@ -97,7 +95,6 @@ func (s *lazyJSONCacheShard) putIfAbsent(k lazyJSONCacheKey, valIndex int, dataR
 
 	entry := &lazyJSONCacheEntry{
 		key:      k,
-		dataRef:  dataRef,
 		valIndex: valIndex,
 	}
 	s.items[k] = entry
@@ -156,7 +153,6 @@ func (s *lazyJSONCacheShard) removeTail() {
 		return
 	}
 	delete(s.items, s.tail.key)
-	s.tail.dataRef = nil
 	if s.tail.prev != nil {
 		s.tail.prev.next = nil
 		s.tail = s.tail.prev
@@ -173,6 +169,9 @@ type lazyJSONCache struct {
 }
 
 func newLazyJSONCache(shardCount, shardCap int) *lazyJSONCache {
+	if shardCount <= 0 || (shardCount&(shardCount-1)) != 0 {
+		panic("shardCount must be a power of two")
+	}
 	shards := make([]*lazyJSONCacheShard, shardCount)
 	for i := 0; i < shardCount; i++ {
 		shards[i] = newLazyJSONCacheShard(shardCap)
@@ -183,11 +182,11 @@ func newLazyJSONCache(shardCount, shardCap int) *lazyJSONCache {
 	}
 }
 
-func hashLazyJSONKey(ptr uintptr, index int, key string) uint64 {
+func hashLazyJSONKey(blockID uint32, absOffset uint32, key string) uint64 {
 	var h uint64 = 14695981039346656037
-	h ^= uint64(ptr)
+	h ^= uint64(blockID)
 	h *= 1099511628211
-	h ^= uint64(index)
+	h ^= uint64(absOffset)
 	h *= 1099511628211
 	for i := 0; i < len(key); i++ {
 		h ^= uint64(key[i])
@@ -196,22 +195,22 @@ func hashLazyJSONKey(ptr uintptr, index int, key string) uint64 {
 	return h
 }
 
-func (c *lazyJSONCache) get(ptr uintptr, index int, key string) (int, bool) {
-	k := lazyJSONCacheKey{ptr: ptr, index: index, key: key}
-	shardIdx := hashLazyJSONKey(ptr, index, key) & c.shardMask
+func (c *lazyJSONCache) get(blockID uint32, absOffset uint32, key string) (int, bool) {
+	k := lazyJSONCacheKey{blockID: blockID, absOffset: absOffset, key: key}
+	shardIdx := hashLazyJSONKey(blockID, absOffset, key) & c.shardMask
 	return c.shards[shardIdx].get(k)
 }
 
-func (c *lazyJSONCache) put(ptr uintptr, index int, key string, valIndex int, dataRef []byte) {
-	k := lazyJSONCacheKey{ptr: ptr, index: index, key: key}
-	shardIdx := hashLazyJSONKey(ptr, index, key) & c.shardMask
-	c.shards[shardIdx].put(k, valIndex, dataRef)
+func (c *lazyJSONCache) put(blockID uint32, absOffset uint32, key string, valIndex int) {
+	k := lazyJSONCacheKey{blockID: blockID, absOffset: absOffset, key: strings.Clone(key)}
+	shardIdx := hashLazyJSONKey(blockID, absOffset, key) & c.shardMask
+	c.shards[shardIdx].put(k, valIndex)
 }
 
-func (c *lazyJSONCache) putIfAbsent(ptr uintptr, index int, key string, valIndex int, dataRef []byte) {
-	k := lazyJSONCacheKey{ptr: ptr, index: index, key: key}
-	shardIdx := hashLazyJSONKey(ptr, index, key) & c.shardMask
-	c.shards[shardIdx].putIfAbsent(k, valIndex, dataRef)
+func (c *lazyJSONCache) putIfAbsent(blockID uint32, absOffset uint32, key string, valIndex int) {
+	k := lazyJSONCacheKey{blockID: blockID, absOffset: absOffset, key: strings.Clone(key)}
+	shardIdx := hashLazyJSONKey(blockID, absOffset, key) & c.shardMask
+	c.shards[shardIdx].putIfAbsent(k, valIndex)
 }
 
 func (c *lazyJSONCache) clear() {
@@ -224,10 +223,3 @@ const (
 	lazyJSONCacheShardCount = 64
 	lazyJSONCacheShardCap   = 512
 )
-
-var globalLazyJSONCache = newLazyJSONCache(lazyJSONCacheShardCount, lazyJSONCacheShardCap)
-
-// ResetGlobalLazyJSONCache clears all entries in the global LazyJSONNode LRU cache.
-func ResetGlobalLazyJSONCache() {
-	globalLazyJSONCache.clear()
-}

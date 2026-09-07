@@ -12,6 +12,7 @@ require (
 	connectrpc.com/connect v1.20.0
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.35.0
 	github.com/RoaringBitmap/roaring/v2 v2.25.0
+	github.com/golang/snappy v0.0.4
 	github.com/google/cel-go v0.24.1
 	github.com/googleapis/gax-go/v2 v2.23.0
 	github.com/shirou/gopsutil/v3 v3.24.5
@@ -68,6 +69,7 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20260805114148-88456608a4f6 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.61.0 // indirect
+	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
 	github.com/tklauser/go-sysconf v0.4.0 // indirect
 	github.com/tklauser/numcpus v0.12.0 // indirect
