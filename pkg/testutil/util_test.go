@@ -17,6 +17,7 @@ package testutil
 import (
 	"io"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -83,6 +84,68 @@ func TestResponseFromString(t *testing.T) {
 			gotBody, _ := io.ReadAll(got.Body)
 			if diff := cmp.Diff(string(gotBody), tt.wantBody); diff != "" {
 				t.Errorf("ResponseFromString() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestSkipCloudLogging(t *testing.T) {
+	testCases := []struct {
+		name     string
+		envValue string
+		setEnv   bool
+		want     bool
+	}{
+		{
+			name:     "env is true",
+			envValue: "true",
+			setEnv:   true,
+			want:     true,
+		},
+		{
+			name:     "env is 1",
+			envValue: "1",
+			setEnv:   true,
+			want:     true,
+		},
+		{
+			name:     "env is false",
+			envValue: "false",
+			setEnv:   true,
+			want:     false,
+		},
+		{
+			name:     "env is 0",
+			envValue: "0",
+			setEnv:   true,
+			want:     false,
+		},
+		{
+			name:     "env is empty string",
+			envValue: "",
+			setEnv:   true,
+			want:     false,
+		},
+		{
+			name:   "env is unset",
+			setEnv: false,
+			want:   false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.setEnv {
+				t.Setenv("KHI_SKIP_CLOUD_LOGGING", tc.envValue)
+			} else if prev, ok := os.LookupEnv("KHI_SKIP_CLOUD_LOGGING"); ok {
+				_ = os.Unsetenv("KHI_SKIP_CLOUD_LOGGING")
+				t.Cleanup(func() {
+					_ = os.Setenv("KHI_SKIP_CLOUD_LOGGING", prev)
+				})
+			}
+			got := SkipCloudLogging()
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Errorf("SkipCloudLogging() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
