@@ -183,7 +183,7 @@ func TestInternPool_SortedRefs(t *testing.T) {
 	pool.InternString("a")
 	pool.InternString("b")
 
-	var refs []*InternStringRef
+	var refs []InternStringRef
 	for ref := range pool.SortedStringRefs() {
 		refs = append(refs, ref)
 	}
@@ -281,7 +281,7 @@ func TestInternPool_FieldSetRefs(t *testing.T) {
 	pool.InternFieldSet([]string{"c"})
 	pool.InternFieldSet([]string{"a", "c"})
 
-	var refs []*FieldPathSetRef
+	var refs []FieldPathSetRef
 	for ref := range pool.FieldSetRefs() {
 		refs = append(refs, ref)
 	}
@@ -450,7 +450,7 @@ func TestInternPool_StructRefs(t *testing.T) {
 	orphanedID := idGen.New(id.Struct)
 	pool.FlatStructStore().Store(orphanedID, fsID, nil)
 
-	var refs []*InternStructRef
+	var refs []InternStructRef
 	for ref := range pool.StructRefs() {
 		refs = append(refs, ref)
 	}
