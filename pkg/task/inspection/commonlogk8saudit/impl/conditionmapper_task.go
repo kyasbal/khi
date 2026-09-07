@@ -23,7 +23,6 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/common"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
-	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	pb "github.com/GoogleCloudPlatform/khi/pkg/generated/khifile/v6"
 	"github.com/GoogleCloudPlatform/khi/pkg/model"
@@ -33,8 +32,14 @@ import (
 )
 
 var (
-	pathConditionStatusConditions = structured.CompileFieldPath("status.conditions")
-	pathConditionType             = structured.CompileFieldPath("type")
+	pathConditionStatusConditions   = structured.CompileFieldPath("status.conditions")
+	pathConditionType               = structured.CompileFieldPath("type")
+	pathConditionStatus             = structured.CompileFieldPath("status")
+	pathConditionLastTransitionTime = structured.CompileFieldPath("lastTransitionTime")
+	pathConditionReason             = structured.CompileFieldPath("reason")
+	pathConditionMessage            = structured.CompileFieldPath("message")
+	pathConditionLastProbeTime      = structured.CompileFieldPath("lastProbeTime")
+	pathConditionLastHeartbeatTime  = structured.CompileFieldPath("lastHeartbeatTime")
 )
 
 // ConditionLogToTimelineMapperTask is a ManifestLogToTimelineMapper task that tracks and records the history of Kubernetes resource conditions.
@@ -91,7 +96,7 @@ func (c *conditionLogToTimelineMapperTaskSetting) LogIngesterTask() taskid.TaskR
 }
 
 // TaskID implements commonlogk8saudit_contract.ManifestLogToTimelineMapper.
-func (c *conditionLogToTimelineMapperTaskSetting) TaskID() taskid.TaskImplementationID[inspectiontaskbase.TimelineMapperResult] {
+func (c *conditionLogToTimelineMapperTaskSetting) TaskID() taskid.TaskImplementationID[struct{}] {
 	return commonlogk8saudit_contract.ConditionLogToTimelineMapperTaskID
 }
 
@@ -194,18 +199,23 @@ func (c *conditionLogToTimelineMapperTaskSetting) ProcessLog(ctx context.Context
 
 	bodyReader, hasBody := event.GetLastBodyReader("target")
 
-	var resourceContainingStatus model.K8sResourceContainingStatus
-	if hasBody && bodyReader != nil {
-		err := structured.ReadReflect(bodyReader, structured.EmptyFieldPath, &resourceContainingStatus)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-
 	currentConditions := map[string]*model.K8sResourceStatusCondition{}
-	if resourceContainingStatus.Status != nil {
-		for _, condition := range resourceContainingStatus.Status.Conditions {
-			currentConditions[condition.Type] = condition
+	if hasBody && bodyReader != nil {
+		if conditionsReader, err := bodyReader.GetReader(pathConditionStatusConditions); err == nil && conditionsReader != nil {
+			conditionsReader.Children()(func(_ structured.NodeChildrenKey, child structured.NodeReader) bool {
+				cType := child.ReadStringOrDefault(pathConditionType, "")
+				cond := &model.K8sResourceStatusCondition{
+					Type:               cType,
+					Status:             child.ReadStringOrDefault(pathConditionStatus, ""),
+					LastTransitionTime: child.ReadStringOrDefault(pathConditionLastTransitionTime, ""),
+					Reason:             child.ReadStringOrDefault(pathConditionReason, ""),
+					Message:            child.ReadStringOrDefault(pathConditionMessage, ""),
+					LastProbeTime:      child.ReadStringOrDefault(pathConditionLastProbeTime, ""),
+					LastHeartbeatTime:  child.ReadStringOrDefault(pathConditionLastHeartbeatTime, ""),
+				}
+				currentConditions[cType] = cond
+				return true
+			})
 		}
 	}
 
