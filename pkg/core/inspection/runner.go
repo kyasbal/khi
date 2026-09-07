@@ -556,11 +556,15 @@ func (i *InspectionTaskRunner) GetCurrentMetadata() (*typedmap.ReadonlyTypedMap,
 
 // Cancel requests the cancellation of a running inspection.
 func (i *InspectionTaskRunner) Cancel() error {
-	if i.cancel == nil {
+	i.runnerLock.Lock()
+	defer i.runnerLock.Unlock()
+	if i.runner == nil {
 		return fmt.Errorf("this task is not yet started")
 	}
-	if _, err := i.Result(); err == nil {
+	select {
+	case <-i.runner.Wait():
 		return fmt.Errorf("task %s is already finished", i.ID)
+	default:
 	}
 	i.cancel()
 	return nil
