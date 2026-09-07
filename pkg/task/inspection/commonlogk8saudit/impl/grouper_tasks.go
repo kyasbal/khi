@@ -23,7 +23,6 @@ import (
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/model"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
@@ -54,7 +53,7 @@ var NonSuccessLogGrouperTask = inspectiontaskbase.NewLogGrouperTask(
 // 2. When a subresource is modified by the operation and its result contains its parent manifest, it uses the parent resource as the group key.
 var ChangeTargetGrouperTask = inspectiontaskbase.NewProgressReportableInspectionTask[commonlogk8saudit_contract.ResourceLogGroupMap](
 	commonlogk8saudit_contract.ChangeTargetGrouperTaskID,
-	[]taskid.UntypedTaskReference{commonlogk8saudit_contract.LogSorterTaskID.Ref()},
+	[]coretask.Dependency{commonlogk8saudit_contract.LogSorterTaskID.Ref()},
 	func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (commonlogk8saudit_contract.ResourceLogGroupMap, error) {
 		if taskMode != inspectioncore_contract.TaskModeRun {
 			return commonlogk8saudit_contract.ResourceLogGroupMap{}, nil

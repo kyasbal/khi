@@ -53,6 +53,8 @@ type TaskReference[TaskResult any] interface {
 	// This is used to maintain type safety by ensuring TaskReference[A] and TaskReference[B]
 	// are considered different types when A and B are different.
 	GetZeroValue() TaskResult
+	// Ref returns a new TaskReference with the specified dependency options applied.
+	Ref(opts ...ReferenceOption) TaskReference[TaskResult]
 }
 
 // UntypedTaskImplementationID defines the interface for task implementation IDs
@@ -121,6 +123,15 @@ func (t taskReferenceImpl[TaskResult]) String() string {
 func (t taskReferenceImpl[TaskResult]) GetZeroValue() TaskResult {
 	var zero TaskResult
 	return zero
+}
+
+// Ref returns a new TaskReference with the specified dependency options applied.
+func (t taskReferenceImpl[TaskResult]) Ref(opts ...ReferenceOption) TaskReference[TaskResult] {
+	cfg := t.config
+	for _, opt := range opts {
+		ApplyReferenceOption(&cfg, opt)
+	}
+	return taskReferenceImpl[TaskResult]{id: t.id, config: cfg}
 }
 
 // taskImplementationIDImpl implements the TaskImplementationID interface for a specific result type.
