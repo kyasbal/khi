@@ -142,8 +142,17 @@ func (g *GCPAuditLogFieldSet) ResponseString() (string, error) {
 	return "", fmt.Errorf("protoPayload.response field is absent: %w", khierrors.ErrNotFound)
 }
 
+// GCPAuditLogCacheKey identifies the cached GCPAuditLogFieldSet on a NodeReader.
+var GCPAuditLogCacheKey = structured.NewCacheKey[*GCPAuditLogFieldSet]()
+
+// GCPSeverityCacheKey identifies the cached severity on a NodeReader.
+var GCPSeverityCacheKey = structured.NewCacheKey[*pb.Severity]()
+
 // ExtractGCPAuditLog extracts GCP Audit Log fields from a NodeReader.
 func ExtractGCPAuditLog(reader *structured.NodeReader) (GCPAuditLogFieldSet, error) {
+	if cached, ok := structured.GetCache(reader, GCPAuditLogCacheKey); ok {
+		return *cached, nil
+	}
 	if mock, ok := structured.GetMock[GCPAuditLogFieldSet](reader); ok {
 		return mock, nil
 	}
@@ -162,6 +171,8 @@ func ExtractGCPAuditLog(reader *structured.NodeReader) (GCPAuditLogFieldSet, err
 	result.StatusMessage = reader.ReadStringOrDefault(pathStatusMessage, "")
 	result.Request, _ = reader.GetReader(pathRequest)
 	result.Response, _ = reader.GetReader(pathResponse)
+
+	structured.SetCache(reader, GCPAuditLogCacheKey, &result)
 	return result, nil
 }
 
@@ -214,6 +225,9 @@ func ExtractGCPAccessLog(reader *structured.NodeReader) (GCPAccessLogFieldSet, e
 
 // ExtractGCPSeverity extracts severity from a GCP Cloud Logging entry.
 func ExtractGCPSeverity(reader *structured.NodeReader) (*pb.Severity, error) {
+	if cached, ok := structured.GetCache(reader, GCPSeverityCacheKey); ok {
+		return cached, nil
+	}
 	if mock, ok := structured.GetMock[inspectioncore_contract.DefaultSeverityFieldSet](reader); ok {
 		return mock.Severity, nil
 	}
@@ -221,7 +235,9 @@ func ExtractGCPSeverity(reader *structured.NodeReader) (*pb.Severity, error) {
 		return mock, nil
 	}
 	severityStr := reader.ReadStringOrDefault(pathSeverity, "")
-	return ParseGCPSeverity(severityStr), nil
+	res := ParseGCPSeverity(severityStr)
+	structured.SetCache(reader, GCPSeverityCacheKey, res)
+	return res, nil
 }
 
 // GCPMainMessageFieldSet represents the main message parsed from a GCP log.
