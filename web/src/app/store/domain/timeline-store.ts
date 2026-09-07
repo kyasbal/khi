@@ -640,15 +640,25 @@ export class TimelineStore {
     id: number,
   ): ReadonlyDomainElement<Revision[]> {
     const revIds = this.timelineRevisionIds[this.getTimelineIndex(id)];
-    if (!revIds) {
+    if (!revIds || revIds.length === 0) {
       return [];
     }
 
+    const sortedRevIds = revIds.slice();
+    sortedRevIds.sort((a, b) => {
+      const logA = this._getRevisionLogId(a);
+      const logB = this._getRevisionLogId(b);
+      const logEntryA = this.logStore.getLog(logA);
+      const logEntryB = this.logStore.getLog(logB);
+      const indexA = logEntryA ? logEntryA.logIndex : 0;
+      const indexB = logEntryB ? logEntryB.logIndex : 0;
+      return indexA - indexB;
+    });
+
     const revisions: Revision[] = [];
-    for (let i = 0; i < revIds.length; i++) {
-      revisions.push(new Revision(revIds[i], id, this, i));
+    for (let i = 0; i < sortedRevIds.length; i++) {
+      revisions.push(new Revision(sortedRevIds[i], id, this, i));
     }
-    revisions.sort((r1, r2) => r1.logIndex - r2.logIndex);
     return revisions;
   }
 
@@ -658,15 +668,27 @@ export class TimelineStore {
    */
   public _getEventsForTimeline(id: number): ReadonlyDomainElement<Event[]> {
     const eventIds = this.timelineEventIds[this.getTimelineIndex(id)];
-    if (!eventIds) {
+    if (!eventIds || eventIds.length === 0) {
       return [];
     }
 
+    const sortedEvtIds = eventIds.slice();
+    sortedEvtIds.sort((a, b) => {
+      const idxA = this.eventIdToIndex[a];
+      const idxB = this.eventIdToIndex[b];
+      const logA = idxA !== undefined ? this.eventLogIds[idxA] : 0;
+      const logB = idxB !== undefined ? this.eventLogIds[idxB] : 0;
+      const logEntryA = this.logStore.getLog(logA);
+      const logEntryB = this.logStore.getLog(logB);
+      const indexA = logEntryA ? logEntryA.logIndex : 0;
+      const indexB = logEntryB ? logEntryB.logIndex : 0;
+      return indexA - indexB;
+    });
+
     const events: Event[] = [];
-    for (let i = 0; i < eventIds.length; i++) {
-      events.push(new Event(eventIds[i], id, this));
+    for (let i = 0; i < sortedEvtIds.length; i++) {
+      events.push(new Event(sortedEvtIds[i], id, this));
     }
-    events.sort((e1, e2) => e1.logIndex - e2.logIndex);
     return events;
   }
 
