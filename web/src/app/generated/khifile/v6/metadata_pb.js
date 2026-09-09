@@ -24,7 +24,7 @@ import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 export const file_khifile_v6_metadata =
   /*@__PURE__*/
   fileDesc(
-    "ChlraGlmaWxlL3Y2L21ldGFkYXRhLnByb3RvEgpraGlmaWxlLnY2IjsKDU1ldGFkYXRhQ2h1bmsSKgoIbWV0YWRhdGEYASADKAsyGC5raGlmaWxlLnY2Lk1ldGFkYXRhSXRlbSJzCgxNZXRhZGF0YUl0ZW0SLAoGaGVhZGVyGAEgASgLMhoua2hpZmlsZS52Ni5IZWFkZXJNZXRhZGF0YUgAEioKBXF1ZXJ5GAIgASgLMhkua2hpZmlsZS52Ni5RdWVyeU1ldGFkYXRhSABCCQoHcGF5bG9hZCL3AQoOSGVhZGVyTWV0YWRhdGESFwoPaW5zcGVjdGlvbl90eXBlGAEgASgJEhcKD2luc3BlY3Rpb25fbmFtZRgCIAEoCRIhChlpbnNwZWN0aW9uX3R5cGVfaWNvbl9wYXRoGAMgASgJEh8KF3N0YXJ0X3RpbWVfdW5peF9zZWNvbmRzGAQgASgDEh0KFWVuZF90aW1lX3VuaXhfc2Vjb25kcxgFIAEoAxIhChlpbnNwZWN0X3RpbWVfdW5peF9zZWNvbmRzGAYgASgDEhoKEnN1Z2dlc3RlZF9maWxlbmFtZRgHIAEoCRIRCglmaWxlX3NpemUYCCABKAMiNAoJUXVlcnlJdGVtEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDQoFcXVlcnkYAyABKAkiNwoNUXVlcnlNZXRhZGF0YRImCgdxdWVyaWVzGAEgAygLMhUua2hpZmlsZS52Ni5RdWVyeUl0ZW1CR1pFZ2l0aHViLmNvbS9Hb29nbGVDbG91ZFBsYXRmb3JtL2toaS9wa2cvZ2VuZXJhdGVkL2toaWZpbGUvdjY7a2hpZmlsZXY2YghlZGl0aW9uc3DoBw",
+    "ChlraGlmaWxlL3Y2L21ldGFkYXRhLnByb3RvEgpraGlmaWxlLnY2IjsKDU1ldGFkYXRhQ2h1bmsSKgoIbWV0YWRhdGEYASADKAsyGC5raGlmaWxlLnY2Lk1ldGFkYXRhSXRlbSKoAQoMTWV0YWRhdGFJdGVtEiwKBmhlYWRlchgBIAEoCzIaLmtoaWZpbGUudjYuSGVhZGVyTWV0YWRhdGFIABIqCgVxdWVyeRgCIAEoCzIZLmtoaWZpbGUudjYuUXVlcnlNZXRhZGF0YUgAEjMKCmFpX2NvbnRleHQYAyABKAsyHS5raGlmaWxlLnY2LkFJQ29udGV4dE1ldGFkYXRhSABCCQoHcGF5bG9hZCJDChFBSUNvbnRleHRNZXRhZGF0YRIuCghzZWN0aW9ucxgBIAMoCzIcLmtoaWZpbGUudjYuQUlDb250ZXh0U2VjdGlvbiLZAgoQQUlDb250ZXh0U2VjdGlvbhINCgV0aXRsZRgBIAEoCRIQCghwcmlvcml0eRgCIAEoBRJACgpwcm9wZXJ0aWVzGAMgAygLMiwua2hpZmlsZS52Ni5BSUNvbnRleHRTZWN0aW9uLlByb3BlcnRpZXNFbnRyeRJHCg5zZXRfcHJvcGVydGllcxgEIAMoCzIvLmtoaWZpbGUudjYuQUlDb250ZXh0U2VjdGlvbi5TZXRQcm9wZXJ0aWVzRW50cnkSGAoQc3VtbWFyeV9tYXJrZG93bhgFIAEoCRoxCg9Qcm9wZXJ0aWVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ARpMChJTZXRQcm9wZXJ0aWVzRW50cnkSCwoDa2V5GAEgASgJEiUKBXZhbHVlGAIgASgLMhYua2hpZmlsZS52Ni5TdHJpbmdMaXN0OgI4ASIcCgpTdHJpbmdMaXN0Eg4KBnZhbHVlcxgBIAMoCSL3AQoOSGVhZGVyTWV0YWRhdGESFwoPaW5zcGVjdGlvbl90eXBlGAEgASgJEhcKD2luc3BlY3Rpb25fbmFtZRgCIAEoCRIhChlpbnNwZWN0aW9uX3R5cGVfaWNvbl9wYXRoGAMgASgJEh8KF3N0YXJ0X3RpbWVfdW5peF9zZWNvbmRzGAQgASgDEh0KFWVuZF90aW1lX3VuaXhfc2Vjb25kcxgFIAEoAxIhChlpbnNwZWN0X3RpbWVfdW5peF9zZWNvbmRzGAYgASgDEhoKEnN1Z2dlc3RlZF9maWxlbmFtZRgHIAEoCRIRCglmaWxlX3NpemUYCCABKAMiNAoJUXVlcnlJdGVtEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDQoFcXVlcnkYAyABKAkiNwoNUXVlcnlNZXRhZGF0YRImCgdxdWVyaWVzGAEgAygLMhUua2hpZmlsZS52Ni5RdWVyeUl0ZW1CR1pFZ2l0aHViLmNvbS9Hb29nbGVDbG91ZFBsYXRmb3JtL2toaS9wa2cvZ2VuZXJhdGVkL2toaWZpbGUvdjY7a2hpZmlsZXY2YghlZGl0aW9uc3DoBw",
   );
 
 /**
@@ -44,12 +44,36 @@ export const MetadataItemSchema =
   messageDesc(file_khifile_v6_metadata, 1);
 
 /**
+ * Describes the message khifile.v6.AIContextMetadata.
+ * Use `create(AIContextMetadataSchema)` to create a new message.
+ */
+export const AIContextMetadataSchema =
+  /*@__PURE__*/
+  messageDesc(file_khifile_v6_metadata, 2);
+
+/**
+ * Describes the message khifile.v6.AIContextSection.
+ * Use `create(AIContextSectionSchema)` to create a new message.
+ */
+export const AIContextSectionSchema =
+  /*@__PURE__*/
+  messageDesc(file_khifile_v6_metadata, 3);
+
+/**
+ * Describes the message khifile.v6.StringList.
+ * Use `create(StringListSchema)` to create a new message.
+ */
+export const StringListSchema =
+  /*@__PURE__*/
+  messageDesc(file_khifile_v6_metadata, 4);
+
+/**
  * Describes the message khifile.v6.HeaderMetadata.
  * Use `create(HeaderMetadataSchema)` to create a new message.
  */
 export const HeaderMetadataSchema =
   /*@__PURE__*/
-  messageDesc(file_khifile_v6_metadata, 2);
+  messageDesc(file_khifile_v6_metadata, 5);
 
 /**
  * Describes the message khifile.v6.QueryItem.
@@ -57,7 +81,7 @@ export const HeaderMetadataSchema =
  */
 export const QueryItemSchema =
   /*@__PURE__*/
-  messageDesc(file_khifile_v6_metadata, 3);
+  messageDesc(file_khifile_v6_metadata, 6);
 
 /**
  * Describes the message khifile.v6.QueryMetadata.
@@ -65,4 +89,4 @@ export const QueryItemSchema =
  */
 export const QueryMetadataSchema =
   /*@__PURE__*/
-  messageDesc(file_khifile_v6_metadata, 4);
+  messageDesc(file_khifile_v6_metadata, 7);

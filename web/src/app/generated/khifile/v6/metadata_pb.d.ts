@@ -75,6 +75,15 @@ export declare type MetadataItem = Message<'khifile.v6.MetadataItem'> & {
         value: QueryMetadata;
         case: 'query';
       }
+    | {
+        /**
+         * Contextual information and summaries recorded by parsers for AI consumption.
+         *
+         * @generated from field: khifile.v6.AIContextMetadata ai_context = 3;
+         */
+        value: AIContextMetadata;
+        case: 'aiContext';
+      }
     | { case: undefined; value?: undefined };
 };
 
@@ -83,6 +92,96 @@ export declare type MetadataItem = Message<'khifile.v6.MetadataItem'> & {
  * Use `create(MetadataItemSchema)` to create a new message.
  */
 export declare const MetadataItemSchema: GenMessage<MetadataItem>;
+
+/**
+ * AIContextMetadata aggregates contextual intelligence gathered by parsers.
+ *
+ * @generated from message khifile.v6.AIContextMetadata
+ */
+export declare type AIContextMetadata =
+  Message<'khifile.v6.AIContextMetadata'> & {
+    /**
+     * Grouped summary sections collected during inspection parsing.
+     *
+     * @generated from field: repeated khifile.v6.AIContextSection sections = 1;
+     */
+    sections: AIContextSection[];
+  };
+
+/**
+ * Describes the message khifile.v6.AIContextMetadata.
+ * Use `create(AIContextMetadataSchema)` to create a new message.
+ */
+export declare const AIContextMetadataSchema: GenMessage<AIContextMetadata>;
+
+/**
+ * AIContextSection groups context under a logical topic or component.
+ *
+ * @generated from message khifile.v6.AIContextSection
+ */
+export declare type AIContextSection =
+  Message<'khifile.v6.AIContextSection'> & {
+    /**
+     * Human-readable title of this context section (e.g., "Kubernetes Resources").
+     *
+     * @generated from field: string title = 1;
+     */
+    title: string;
+
+    /**
+     * Display priority used when ordering sections in summaries (lower numbers render first).
+     *
+     * @generated from field: int32 priority = 2;
+     */
+    priority: number;
+
+    /**
+     * Scalar properties as key-value pairs (e.g., "Cluster Name" -> "my-cluster").
+     *
+     * @generated from field: map<string, string> properties = 3;
+     */
+    properties: { [key: string]: string };
+
+    /**
+     * Set properties as unique string lists (e.g., "Namespaces" -> ["default", "kube-system"]).
+     *
+     * @generated from field: map<string, khifile.v6.StringList> set_properties = 4;
+     */
+    setProperties: { [key: string]: StringList };
+
+    /**
+     * Optional markdown text block containing detailed analysis or findings.
+     *
+     * @generated from field: string summary_markdown = 5;
+     */
+    summaryMarkdown: string;
+  };
+
+/**
+ * Describes the message khifile.v6.AIContextSection.
+ * Use `create(AIContextSectionSchema)` to create a new message.
+ */
+export declare const AIContextSectionSchema: GenMessage<AIContextSection>;
+
+/**
+ * StringList represents an array of string values.
+ *
+ * @generated from message khifile.v6.StringList
+ */
+export declare type StringList = Message<'khifile.v6.StringList'> & {
+  /**
+   * The list of string values.
+   *
+   * @generated from field: repeated string values = 1;
+   */
+  values: string[];
+};
+
+/**
+ * Describes the message khifile.v6.StringList.
+ * Use `create(StringListSchema)` to create a new message.
+ */
+export declare const StringListSchema: GenMessage<StringList>;
 
 /**
  * HeaderMetadata holds high-level information about the inspection.
