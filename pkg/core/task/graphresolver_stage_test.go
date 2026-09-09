@@ -103,6 +103,18 @@ func TestResolveGraph_FanInCycle_DownstreamTaskPtPRouting(t *testing.T) {
 			if incoming[0].Kind != taskid.EdgeKindData {
 				t.Errorf("downstream incoming edge kind = %v, want %v", incoming[0].Kind, taskid.EdgeKindData)
 			}
+
+			incomingS2 := taskSet.IncomingEdges("consumer#default-stage-2")
+			hasInterStageOrderEdge := false
+			for _, e := range incomingS2 {
+				if e.SourceImplID == "consumer#default-stage-1" && e.Kind == taskid.EdgeKindOrderOnly {
+					hasInterStageOrderEdge = true
+					break
+				}
+			}
+			if !hasInterStageOrderEdge {
+				t.Errorf("expected inter-stage OrderOnly edge from stage-1 to stage-2, but not found")
+			}
 		})
 	}
 }
@@ -284,6 +296,11 @@ func TestResolveGraph_FanInCycle_SplitProducerFanInRouting(t *testing.T) {
 			}
 			if incoming[0].Kind != taskid.EdgeKindData {
 				t.Errorf("downstream incoming edge kind = %v, want %v", incoming[0].Kind, taskid.EdgeKindData)
+			}
+
+			gotBoundRefs := taskSet.BoundReferenceIDsForTaskWithTag("downstream#default", tagB.ID())
+			if diff := cmp.Diff([]string{"consumer"}, gotBoundRefs); diff != "" {
+				t.Errorf("BoundReferenceIDsForTaskWithTag mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

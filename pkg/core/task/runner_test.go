@@ -474,9 +474,7 @@ func TestLocalRunner_ResultCleanup(t *testing.T) {
 				if !foundDownstream {
 					t.Errorf("expected downstream result to be retained")
 				} else if valDownstream != "downstream_result" {
-					if diff := cmp.Diff("downstream_result", valDownstream); diff != "" {
-						t.Errorf("downstream result mismatch (-want +got):\n%s", diff)
-					}
+					t.Errorf("downstream result = %q, want %q", valDownstream, "downstream_result")
 				}
 			},
 		},
