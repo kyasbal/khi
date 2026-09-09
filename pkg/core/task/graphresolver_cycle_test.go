@@ -509,11 +509,109 @@ func TestResolveGraph_FanInCycle_DownstreamTaskPtPRouting(t *testing.T) {
 			}
 
 			incoming := taskSet.IncomingEdges("downstream#default")
-			if len(incoming) == 0 {
-				t.Fatalf("expected incoming edges for downstream task, got none")
+			if len(incoming) != 1 {
+				t.Fatalf("downstream incoming edges count = %d, want 1", len(incoming))
 			}
 			if gotSource := incoming[0].SourceID; gotSource != tc.wantDownstreamSource {
 				t.Errorf("downstream incoming edge source = %q, want %q", gotSource, tc.wantDownstreamSource)
+			}
+		})
+	}
+}
+
+func TestResolveGraph_FanInCycle_UpstreamTaskPtPRouting(t *testing.T) {
+	tagA := NewTag[any]("tag-a")
+
+	testCases := []struct {
+		name               string
+		initialTasks       []UntypedTask
+		availableTasks     []UntypedTask
+		wantTaskIDs        []string
+		wantUpstreamSource string
+	}{
+		// Mermaid task graph:
+		// ```mermaid
+		// graph TD
+		//   upstream["upstream"] -->|"PointToPoint"| consumer_s1["consumer#default-stage-1"]
+		//   upstream -->|"PointToPoint"| consumer_s2["consumer#default-stage-2"]
+		//   prod_high["prod-high (priority=10)"] -->|"FanIn (tag-a)"| consumer_s1
+		//   consumer_s1 -->|"PointToPoint"| prod_low["prod-low (priority=100)"]
+		//   prod_low -->|"FanIn (tag-a)"| consumer_s2
+		//   prod_high -->|"FanIn (tag-a)"| consumer_s2
+		//   consumer_s1 -.->|"OrderOnly"| consumer_s2
+		// ```
+		{
+			name: "upstream task depending on multi-stage consumer is routed to both stage-1 and stage-2",
+			initialTasks: []UntypedTask{
+				createMockTask("upstream", "default", nil),
+				createMockTask("prod-high", "default", nil, ProvidesTag(tagA, WithTagPriority(10))),
+				createMockTask("consumer", "default", []Dependency{
+					taskid.NewTaskReference[any]("upstream"),
+					tagA.Ref(),
+				}, AllowMultiStageExecution()),
+				createMockTask("prod-low", "default", []Dependency{
+					taskid.NewTaskReference[any]("consumer"),
+				}, ProvidesTag(tagA, WithTagPriority(100))),
+			},
+			availableTasks: []UntypedTask{
+				createMockTask("upstream", "default", nil),
+				createMockTask("prod-high", "default", nil, ProvidesTag(tagA, WithTagPriority(10))),
+				createMockTask("consumer", "default", []Dependency{
+					taskid.NewTaskReference[any]("upstream"),
+					tagA.Ref(),
+				}, AllowMultiStageExecution()),
+				createMockTask("prod-low", "default", []Dependency{
+					taskid.NewTaskReference[any]("consumer"),
+				}, ProvidesTag(tagA, WithTagPriority(100))),
+			},
+			wantTaskIDs: []string{
+				"prod-high#default",
+				"upstream#default",
+				"consumer#default-stage-1",
+				"prod-low#default",
+				"consumer#default-stage-2",
+			},
+			wantUpstreamSource: "upstream#default",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			taskSet, err := ResolveGraph(tc.initialTasks, tc.availableTasks, nil)
+			if err != nil {
+				t.Fatalf("ResolveGraph() error = %v, want nil", err)
+			}
+
+			var gotTaskIDs []string
+			for _, task := range taskSet.GetAll() {
+				gotTaskIDs = append(gotTaskIDs, task.UntypedID().String())
+			}
+			if diff := cmp.Diff(tc.wantTaskIDs, gotTaskIDs); diff != "" {
+				t.Errorf("task order mismatch (-want +got):\n%s", diff)
+			}
+
+			incomingS1 := taskSet.IncomingEdges("consumer#default-stage-1")
+			hasUpstreamS1 := false
+			for _, e := range incomingS1 {
+				if e.SourceID == tc.wantUpstreamSource {
+					hasUpstreamS1 = true
+					break
+				}
+			}
+			if !hasUpstreamS1 {
+				t.Errorf("expected incoming edge from %q to stage-1, but not found", tc.wantUpstreamSource)
+			}
+
+			incomingS2 := taskSet.IncomingEdges("consumer#default-stage-2")
+			hasUpstreamS2 := false
+			for _, e := range incomingS2 {
+				if e.SourceID == tc.wantUpstreamSource {
+					hasUpstreamS2 = true
+					break
+				}
+			}
+			if !hasUpstreamS2 {
+				t.Errorf("expected incoming edge from %q to stage-2, but not found", tc.wantUpstreamSource)
 			}
 		})
 	}
