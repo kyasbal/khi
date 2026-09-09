@@ -616,3 +616,78 @@ func TestResolveGraph_FanInCycle_UpstreamTaskPtPRouting(t *testing.T) {
 		})
 	}
 }
+
+func TestResolveGraph_FanInCycle_SplitProducerFanInRouting(t *testing.T) {
+	tagA := NewTag[any]("tag-a")
+	tagB := NewTag[any]("tag-b")
+
+	testCases := []struct {
+		name                 string
+		initialTasks         []UntypedTask
+		availableTasks       []UntypedTask
+		wantTaskIDs          []string
+		wantDownstreamSource string
+	}{
+		{
+			name: "downstream task consumes tag provided by split multi-stage consumer",
+			initialTasks: []UntypedTask{
+				createMockTask("prod-bootstrap", "default", nil, ProvidesTag(tagA, WithTagPriority(10))),
+				createMockTask("consumer", "default", []Dependency{
+					tagA.Ref(),
+				}, ProvidesTag(tagB), AllowMultiStageExecution()),
+				createMockTask("prod-feedback", "default", []Dependency{
+					taskid.NewTaskReference[any]("consumer"),
+				}, ProvidesTag(tagA, WithTagPriority(100))),
+				createMockTask("downstream", "default", []Dependency{
+					tagB.Ref(),
+				}),
+			},
+			availableTasks: []UntypedTask{
+				createMockTask("prod-bootstrap", "default", nil, ProvidesTag(tagA, WithTagPriority(10))),
+				createMockTask("consumer", "default", []Dependency{
+					tagA.Ref(),
+				}, ProvidesTag(tagB), AllowMultiStageExecution()),
+				createMockTask("prod-feedback", "default", []Dependency{
+					taskid.NewTaskReference[any]("consumer"),
+				}, ProvidesTag(tagA, WithTagPriority(100))),
+				createMockTask("downstream", "default", []Dependency{
+					tagB.Ref(),
+				}),
+			},
+			wantTaskIDs: []string{
+				"prod-bootstrap#default",
+				"consumer#default-stage-1",
+				"prod-feedback#default",
+				"consumer#default-stage-2",
+				"downstream#default",
+			},
+			wantDownstreamSource: "consumer#default-stage-2",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			taskSet, err := ResolveGraph(tc.initialTasks, tc.availableTasks, nil)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			var gotTaskIDs []string
+			for _, task := range taskSet.GetAll() {
+				gotTaskIDs = append(gotTaskIDs, task.UntypedID().String())
+			}
+
+			if diff := cmp.Diff(tc.wantTaskIDs, gotTaskIDs); diff != "" {
+				t.Errorf("task order mismatch (-want +got):\n%s", diff)
+			}
+
+			incoming := taskSet.IncomingEdges("downstream#default")
+			if len(incoming) != 1 {
+				t.Fatalf("downstream incoming edges count = %d, want 1", len(incoming))
+			}
+			if gotSource := incoming[0].SourceImplID; gotSource != tc.wantDownstreamSource {
+				t.Errorf("downstream incoming edge source = %q, want %q", gotSource, tc.wantDownstreamSource)
+			}
+		})
+	}
+}

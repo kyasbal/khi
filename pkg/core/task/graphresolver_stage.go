@@ -135,7 +135,14 @@ func reroutePointToPointEdges(
 		resolvedPointToPointEdges = append(resolvedPointToPointEdges, rerouteSinglePointToPointEdge(e, stageTasks, feedbackProducersByConsumer, pointToPointOutgoing)...)
 	}
 
-	for _, pair := range stageTasks {
+	splitConsumerIDs := make([]string, 0, len(stageTasks))
+	for id := range stageTasks {
+		splitConsumerIDs = append(splitConsumerIDs, id)
+	}
+	slices.Sort(splitConsumerIDs)
+
+	for _, id := range splitConsumerIDs {
+		pair := stageTasks[id]
 		resolvedPointToPointEdges = append(resolvedPointToPointEdges, taskid.TaskEdge{
 			SourceRefID:  pair.stage1.UntypedID().ReferenceIDString(),
 			SourceImplID: pair.stage1.UntypedID().String(),
@@ -226,7 +233,13 @@ func rerouteFanInEdges(
 
 		pair, isSplit := stageTasks[key.consumerImplID]
 		if !isSplit {
-			resolvedFanInEdges = append(resolvedFanInEdges, bootstrap...)
+			for _, be := range bootstrap {
+				rewritten := be
+				if sourcePair, sourceIsSplit := stageTasks[be.SourceImplID]; sourceIsSplit {
+					rewritten.SourceImplID = sourcePair.stage2.UntypedID().String()
+				}
+				resolvedFanInEdges = append(resolvedFanInEdges, rewritten)
+			}
 			continue
 		}
 
@@ -235,8 +248,12 @@ func rerouteFanInEdges(
 
 		for _, be := range bootstrap {
 			e1 := be
-			e1.TargetImplID = stage1ID
 			e2 := be
+			if sourcePair, sourceIsSplit := stageTasks[be.SourceImplID]; sourceIsSplit {
+				e1.SourceImplID = sourcePair.stage2.UntypedID().String()
+				e2.SourceImplID = sourcePair.stage2.UntypedID().String()
+			}
+			e1.TargetImplID = stage1ID
 			e2.TargetImplID = stage2ID
 			resolvedFanInEdges = append(resolvedFanInEdges, e1, e2)
 		}
@@ -245,6 +262,8 @@ func rerouteFanInEdges(
 			rewrittenEdge := fe
 			if fe.SourceImplID == key.consumerImplID {
 				rewrittenEdge.SourceImplID = stage1ID
+			} else if sourcePair, sourceIsSplit := stageTasks[fe.SourceImplID]; sourceIsSplit {
+				rewrittenEdge.SourceImplID = sourcePair.stage2.UntypedID().String()
 			}
 			rewrittenEdge.TargetImplID = stage2ID
 			resolvedFanInEdges = append(resolvedFanInEdges, rewrittenEdge)
