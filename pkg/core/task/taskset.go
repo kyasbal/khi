@@ -141,7 +141,6 @@ func (s *TaskSet) IsBound(refID string) bool {
 	return found
 }
 
-// BoundReferenceIDsWithTag returns the list of task reference IDs that provide the given tag across the graph.
 // BoundReferenceIDsForTaskWithTag returns the list of task reference IDs providing the tag bound specifically to the given task implementation ID.
 func (s *TaskSet) BoundReferenceIDsForTaskWithTag(taskImplID string, tag string) []string {
 	if byTag, ok := s.boundFanInRefIDsByTask[taskImplID]; ok {

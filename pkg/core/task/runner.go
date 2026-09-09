@@ -270,7 +270,7 @@ func (r *LocalRunner) isTaskResultRetained(task UntypedTask) bool {
 
 // cleanupCompletedTaskResults deletes task results whose dependent tasks have all finished and are not marked for retention.
 func (r *LocalRunner) cleanupCompletedTaskResults(completedTask UntypedTask) {
-	completedID := completedTask.UntypedID().String()
+	completedImplID := completedTask.UntypedID().String()
 	completedRefID := completedTask.UntypedID().ReferenceIDString()
 
 	r.remainingDependentsMu.Lock()
@@ -279,19 +279,19 @@ func (r *LocalRunner) cleanupCompletedTaskResults(completedTask UntypedTask) {
 	r.activeStagesByRefID[completedRefID]--
 
 	// Check if the completed task itself has no dependents and should be released immediately.
-	rem := r.remainingDependents[completedID]
+	rem := r.remainingDependents[completedImplID]
 	if rem == 0 && !r.isTaskResultRetained(completedTask) && r.activeStagesByRefID[completedRefID] == 0 {
 		typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](completedRefID))
 	}
 
 	// Decrement remaining dependents count for each incoming data edge.
 	for _, edge := range r.resolvedTaskSet.IncomingDataEdges(completedTask.UntypedID().String()) {
-		depID := edge.SourceID
-		r.remainingDependents[depID]--
-		remDep := r.remainingDependents[depID]
+		depImplID := edge.SourceID
+		r.remainingDependents[depImplID]--
+		remDep := r.remainingDependents[depImplID]
 
 		if remDep == 0 {
-			if depTask, found := r.taskByImplID[depID]; found {
+			if depTask, found := r.taskByImplID[depImplID]; found {
 				depRefID := depTask.UntypedID().ReferenceIDString()
 				if !r.isTaskResultRetained(depTask) && r.activeStagesByRefID[depRefID] == 0 {
 					typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](depRefID))
@@ -314,16 +314,16 @@ func (r *LocalRunner) wrapWithTaskError(err error, task UntypedTask) error {
 
 // waitForDependency blocks until a specified dependency task has completed.
 // It handles context cancellation, allowing the wait to be interrupted.
-func (r *LocalRunner) waitForDependency(ctx context.Context, taskID string) error {
+func (r *LocalRunner) waitForDependency(ctx context.Context, taskImplID string) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-func() chan struct{} {
 		ch := make(chan struct{})
 		go func() {
-			waiter, found := typedmap.Get(r.taskWaiters, waiterKeyForImplID(taskID))
+			waiter, found := typedmap.Get(r.taskWaiters, waiterKeyForImplID(taskImplID))
 			if !found {
-				slog.ErrorContext(ctx, fmt.Sprintf("unreachable error. Task waiter lock not found for the key `%s`", taskID))
+				slog.ErrorContext(ctx, fmt.Sprintf("unreachable error. Task waiter lock not found for the key `%s`", taskImplID))
 				close(ch)
 				return
 			}

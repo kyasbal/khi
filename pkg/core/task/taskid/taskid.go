@@ -220,9 +220,9 @@ func NewImplementationID[TaskResult any](baseReference TaskReference[TaskResult]
 }
 
 // NewStageImplementationID creates a new TaskImplementationID for a stage of a multi-stage task.
-func NewStageImplementationID(baseID UntypedTaskImplementationID, stageIndex int) UntypedTaskImplementationID {
+func NewStageImplementationID(baseID UntypedTaskImplementationID, stageNumber int) UntypedTaskImplementationID {
 	return taskImplementationIDImpl[any]{
 		referenceId:        baseID.ReferenceIDString(),
-		implementationHash: fmt.Sprintf("%s-stage-%d", baseID.GetTaskImplementationHash(), stageIndex),
+		implementationHash: fmt.Sprintf("%s-stage-%d", baseID.GetTaskImplementationHash(), stageNumber),
 	}
 }
