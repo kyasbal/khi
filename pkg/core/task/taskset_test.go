@@ -315,18 +315,18 @@ func TestTaskSet_MetadataQueries(t *testing.T) {
 			},
 		},
 		{
-			name: "BoundReferenceIDsForTaskWithTag returns task-specific bound ref IDs",
+			name: "BoundReferenceIDsForTaskImplWithTag returns task-specific bound ref IDs",
 			test: func(t *testing.T) {
-				got := resolved.BoundReferenceIDsForTaskWithTag("taskB#default", "tag-sample")
+				got := resolved.BoundReferenceIDsForTaskImplWithTag("taskB#default", "tag-sample")
 				want := []string{"taskA"}
 				if diff := cmp.Diff(want, got); diff != "" {
-					t.Errorf("BoundReferenceIDsForTaskWithTag mismatch (-want +got):\n%s", diff)
+					t.Errorf("BoundReferenceIDsForTaskImplWithTag mismatch (-want +got):\n%s", diff)
 				}
-				if diff := cmp.Diff([]string(nil), resolved.BoundReferenceIDsForTaskWithTag("taskUnknown#default", "tag-sample")); diff != "" {
-					t.Errorf("BoundReferenceIDsForTaskWithTag mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff([]string(nil), resolved.BoundReferenceIDsForTaskImplWithTag("taskUnknown#default", "tag-sample")); diff != "" {
+					t.Errorf("BoundReferenceIDsForTaskImplWithTag mismatch (-want +got):\n%s", diff)
 				}
-				if diff := cmp.Diff([]string(nil), resolved.BoundReferenceIDsForTaskWithTag("taskB#default", "non-existent-tag")); diff != "" {
-					t.Errorf("BoundReferenceIDsForTaskWithTag mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff([]string(nil), resolved.BoundReferenceIDsForTaskImplWithTag("taskB#default", "non-existent-tag")); diff != "" {
+					t.Errorf("BoundReferenceIDsForTaskImplWithTag mismatch (-want +got):\n%s", diff)
 				}
 			},
 		},

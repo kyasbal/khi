@@ -298,9 +298,9 @@ func TestResolveGraph_FanInCycle_SplitProducerFanInRouting(t *testing.T) {
 				t.Errorf("downstream incoming edge kind = %v, want %v", incoming[0].Kind, taskid.EdgeKindData)
 			}
 
-			gotBoundRefs := taskSet.BoundReferenceIDsForTaskWithTag("downstream#default", tagB.ID())
+			gotBoundRefs := taskSet.BoundReferenceIDsForTaskImplWithTag("downstream#default", tagB.ID())
 			if diff := cmp.Diff([]string{"consumer"}, gotBoundRefs); diff != "" {
-				t.Errorf("BoundReferenceIDsForTaskWithTag mismatch (-want +got):\n%s", diff)
+				t.Errorf("BoundReferenceIDsForTaskImplWithTag mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

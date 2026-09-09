@@ -158,9 +158,9 @@ func TestResolveGraph_FanInCycle_PriorityDifference(t *testing.T) {
 			}
 
 			for taskImplID, wantRefs := range tc.wantBoundRefIDsByTaskImpl {
-				gotRefs := taskSet.BoundReferenceIDsForTaskWithTag(taskImplID, tagA.ID())
+				gotRefs := taskSet.BoundReferenceIDsForTaskImplWithTag(taskImplID, tagA.ID())
 				if diff := cmp.Diff(wantRefs, gotRefs); diff != "" {
-					t.Errorf("BoundReferenceIDsForTaskWithTag(%q) mismatch (-want +got):\n%s", taskImplID, diff)
+					t.Errorf("BoundReferenceIDsForTaskImplWithTag(%q) mismatch (-want +got):\n%s", taskImplID, diff)
 				}
 			}
 		})

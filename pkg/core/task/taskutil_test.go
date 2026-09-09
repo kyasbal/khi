@@ -39,7 +39,7 @@ func (m *mockGraphMetadata) IsBound(referenceID string) bool {
 	return m.boundTasks[referenceID]
 }
 
-func (m *mockGraphMetadata) BoundReferenceIDsForTaskWithTag(taskImplementationID string, tag string) []string {
+func (m *mockGraphMetadata) BoundReferenceIDsForTaskImplWithTag(taskImplementationID string, tag string) []string {
 	if m.boundFanInRefIDsByTaskImpl != nil {
 		if byTag, ok := m.boundFanInRefIDsByTaskImpl[taskImplementationID]; ok {
 			if refIDs, ok := byTag[tag]; ok {

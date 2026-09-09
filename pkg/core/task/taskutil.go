@@ -109,7 +109,7 @@ func GetTaskResultsWithTag[T any](ctx context.Context, tagReference TagReference
 	taskResults := khictx.MustGetValue(ctx, core_contract.TaskResultMapContextKey)
 	taskImplementationID := khictx.MustGetValue(ctx, core_contract.TaskImplementationIDContextKey)
 
-	boundRefIDs := graphMetadata.BoundReferenceIDsForTaskWithTag(taskImplementationID.String(), tagReference.Tag())
+	boundRefIDs := graphMetadata.BoundReferenceIDsForTaskImplWithTag(taskImplementationID.String(), tagReference.Tag())
 	results := make([]T, 0, len(boundRefIDs))
 	for _, refID := range boundRefIDs {
 		res, found := typedmap.Get(taskResults, typedmap.NewTypedKey[T](refID))

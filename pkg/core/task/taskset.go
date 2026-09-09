@@ -141,8 +141,8 @@ func (s *TaskSet) IsBound(refID string) bool {
 	return found
 }
 
-// BoundReferenceIDsForTaskWithTag returns the list of task reference IDs providing the tag bound specifically to the given task implementation ID.
-func (s *TaskSet) BoundReferenceIDsForTaskWithTag(taskImplementationID string, tag string) []string {
+// BoundReferenceIDsForTaskImplWithTag returns the list of task reference IDs providing the tag bound specifically to the given task implementation ID.
+func (s *TaskSet) BoundReferenceIDsForTaskImplWithTag(taskImplementationID string, tag string) []string {
 	if byTag, ok := s.boundFanInRefIDsByTaskImpl[taskImplementationID]; ok {
 		if refIDs, ok := byTag[tag]; ok {
 			return slices.Clone(refIDs)
