@@ -126,7 +126,8 @@ func TestInventoryTask(t *testing.T) {
 			availableTasks: append(slices.Clone(defaultAvailableTasks), cyclicDiscoveryTask),
 			userTaskDeps:   []coretask.Dependency{mergerTaskID.Ref(), discovery1ParentTaskID.Ref(), cyclicDiscoveryTaskID.Ref()},
 			wantMap: map[string]struct{}{
-				"foo": {},
+				"foo":    {},
+				"cyclic": {},
 			},
 		},
 	}
