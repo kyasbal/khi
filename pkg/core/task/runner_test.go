@@ -17,6 +17,7 @@ package coretask
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -417,6 +418,65 @@ func TestLocalRunner_ResultCleanup(t *testing.T) {
 				_, found := GetTaskResultFromLocalRunner(runner, taskid.NewTaskReference[string]("consumer"))
 				if found {
 					t.Errorf("expected consumer result to be deleted after final stage completes")
+				}
+			},
+		},
+		{
+			name: "multi-stage self-loop task retains result for downstream consumer",
+			setupTasks: func() []UntypedTask {
+				tagA := NewTag[string]("tag-a")
+				consumerRef := taskid.NewTaskReference[string]("consumer")
+
+				prodHigh := NewTask(
+					taskid.NewDefaultImplementationID[string]("prod-high"),
+					nil,
+					func(ctx context.Context) (string, error) {
+						return "high_result", nil
+					},
+					ProvidesTag(tagA, WithTagPriority(10)),
+				)
+
+				consumer := NewTask(
+					taskid.NewDefaultImplementationID[string]("consumer"),
+					[]Dependency{tagA.Ref()},
+					func(ctx context.Context) (string, error) {
+						results := GetTaskResultsWithTag(ctx, tagA.Ref())
+						if len(results) == 1 {
+							return "stage1_result", nil
+						}
+						return "stage2_result", nil
+					},
+					ProvidesTag(tagA, WithTagPriority(100)),
+					AllowMultiStageExecution(),
+				)
+
+				downstream := NewTask(
+					taskid.NewDefaultImplementationID[string]("downstream"),
+					[]Dependency{consumerRef},
+					func(ctx context.Context) (string, error) {
+						val := GetTaskResult(ctx, consumerRef)
+						if val != "stage2_result" {
+							return "", fmt.Errorf("unexpected consumer result: got %q, want %q", val, "stage2_result")
+						}
+						return "downstream_result", nil
+					},
+					NewTaskResultRetentionLabel(true),
+				)
+
+				return []UntypedTask{prodHigh, consumer, downstream}
+			},
+			verify: func(t *testing.T, runner *LocalRunner) {
+				_, found := GetTaskResultFromLocalRunner(runner, taskid.NewTaskReference[string]("consumer"))
+				if found {
+					t.Errorf("expected consumer result to be deleted after downstream completes")
+				}
+				valDownstream, foundDownstream := GetTaskResultFromLocalRunner(runner, taskid.NewTaskReference[string]("downstream"))
+				if !foundDownstream {
+					t.Errorf("expected downstream result to be retained")
+				} else if valDownstream != "downstream_result" {
+					if diff := cmp.Diff("downstream_result", valDownstream); diff != "" {
+						t.Errorf("downstream result mismatch (-want +got):\n%s", diff)
+					}
 				}
 			},
 		},

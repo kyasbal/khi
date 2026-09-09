@@ -293,6 +293,9 @@ func (r *LocalRunner) cleanupCompletedTaskResults(completedTask UntypedTask) {
 		if remDep == 0 {
 			if depTask, found := r.taskByImplID[depImplID]; found {
 				depRefID := depTask.UntypedID().ReferenceIDString()
+				if depRefID == completedRefID {
+					continue
+				}
 				if !r.isTaskResultRetained(depTask) && r.activeStagesByRefID[depRefID] == 0 {
 					typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](depRefID))
 				}
