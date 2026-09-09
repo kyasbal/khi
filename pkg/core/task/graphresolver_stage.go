@@ -165,13 +165,13 @@ func reroutePointToPointEdges(
 		resolvedPointToPointEdges = append(resolvedPointToPointEdges, rerouteSinglePointToPointEdge(e, stageTasks, feedbackProducersByConsumer, pointToPointOutgoing)...)
 	}
 
-	splitConsumerIDs := make([]string, 0, len(stageTasks))
+	splitConsumerImplIDs := make([]string, 0, len(stageTasks))
 	for consumerImplID := range stageTasks {
-		splitConsumerIDs = append(splitConsumerIDs, consumerImplID)
+		splitConsumerImplIDs = append(splitConsumerImplIDs, consumerImplID)
 	}
-	slices.Sort(splitConsumerIDs)
+	slices.Sort(splitConsumerImplIDs)
 
-	for _, consumerImplID := range splitConsumerIDs {
+	for _, consumerImplID := range splitConsumerImplIDs {
 		pair := stageTasks[consumerImplID]
 		resolvedPointToPointEdges = append(resolvedPointToPointEdges, taskid.TaskEdge{
 			SourceRefID:  pair.stage1.UntypedID().ReferenceIDString(),

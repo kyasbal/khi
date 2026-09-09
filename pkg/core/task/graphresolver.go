@@ -222,7 +222,7 @@ func bindFanInDependencies(
 }
 
 // bindPointToPointDependencies creates point-to-point edges for all tasks in graphTaskMap
-// whose target exists in the graph (both required and optional).
+// whose source (upstream dependency) exists in the graph (both required and optional).
 func bindPointToPointDependencies(graphTaskMap map[string]UntypedTask) []taskid.TaskEdge {
 	var rawEdges []taskid.TaskEdge
 	for _, t := range graphTaskMap {

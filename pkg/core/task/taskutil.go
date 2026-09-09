@@ -102,7 +102,7 @@ func GetOptionalTaskResult[T any](ctx context.Context, reference taskid.TaskRefe
 // GetTaskResultsWithTag retrieves all results of tasks providing the given tag as a slice.
 // Producer task results are returned in deterministic order.
 // If no tasks match the tag, an empty slice is returned.
-// Panics if the dependency is undeclared, is order-only, or task graph metadata is not available.
+// Panics if the dependency is undeclared, is order-only, or task graph metadata or task implementation ID is not available in the context.
 func GetTaskResultsWithTag[T any](ctx context.Context, tagReference TagReference[T]) []T {
 	verifyDataDependencyDeclared(ctx, tagReference)
 	graphMetadata := khictx.MustGetValue(ctx, core_contract.TaskGraphMetadataContextKey)
