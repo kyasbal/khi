@@ -17,76 +17,27 @@ package coretask
 import (
 	"strings"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
 )
-
-func TestCloneOutgoingGraph(t *testing.T) {
-	testCases := []struct {
-		name          string
-		input         map[string][]string
-		want          map[string][]string
-		mutateKey     string
-		mutateVal     string
-		checkOrigKey  string
-		checkOrigWant string
-	}{
-		{
-			name:  "empty map",
-			input: map[string][]string{},
-			want:  map[string][]string{},
-		},
-		{
-			name: "multi-node map with deep copy verification",
-			input: map[string][]string{
-				"A": {"B", "C"},
-				"B": {"C"},
-			},
-			want: map[string][]string{
-				"A": {"B", "C"},
-				"B": {"C"},
-			},
-			mutateKey:     "A",
-			mutateVal:     "Z",
-			checkOrigKey:  "A",
-			checkOrigWant: "B",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			cloned := cloneOutgoingGraph(tc.input)
-			if diff := cmp.Diff(tc.want, cloned); diff != "" {
-				t.Errorf("cloneOutgoingGraph() mismatch (-want +got):\n%s", diff)
-			}
-			if tc.mutateKey != "" {
-				cloned[tc.mutateKey][0] = tc.mutateVal
-				if tc.input[tc.checkOrigKey][0] != tc.checkOrigWant {
-					t.Errorf("cloneOutgoingGraph() shallow copy detected, modifying cloned modified original: got %q, want %q", tc.input[tc.checkOrigKey][0], tc.checkOrigWant)
-				}
-			}
-		})
-	}
-}
 
 func TestVerifyAcyclic(t *testing.T) {
 	testCases := []struct {
-		name          string
-		outgoing      map[string][]string
-		inDegree      map[string]int
-		nodeCount     int
-		wantErr       bool
-		wantSubstring string
+		name            string
+		outgoingAdjList map[string][]string
+		inDegree        map[string]int
+		nodeCount       int
+		wantErr         bool
+		wantSubstring   string
 	}{
 		{
-			name:      "empty graph is acyclic",
-			outgoing:  map[string][]string{},
-			inDegree:  map[string]int{},
-			nodeCount: 0,
-			wantErr:   false,
+			name:            "empty graph is acyclic",
+			outgoingAdjList: map[string][]string{},
+			inDegree:        map[string]int{},
+			nodeCount:       0,
+			wantErr:         false,
 		},
 		{
 			name: "single node without edges is acyclic",
-			outgoing: map[string][]string{
+			outgoingAdjList: map[string][]string{
 				"A": nil,
 			},
 			inDegree: map[string]int{
@@ -97,7 +48,7 @@ func TestVerifyAcyclic(t *testing.T) {
 		},
 		{
 			name: "linear DAG A -> B -> C is acyclic",
-			outgoing: map[string][]string{
+			outgoingAdjList: map[string][]string{
 				"A": {"B"},
 				"B": {"C"},
 				"C": nil,
@@ -112,7 +63,7 @@ func TestVerifyAcyclic(t *testing.T) {
 		},
 		{
 			name: "diamond DAG is acyclic",
-			outgoing: map[string][]string{
+			outgoingAdjList: map[string][]string{
 				"A": {"B", "C"},
 				"B": {"D"},
 				"C": {"D"},
@@ -129,7 +80,7 @@ func TestVerifyAcyclic(t *testing.T) {
 		},
 		{
 			name: "self-loop cycle A -> A fails",
-			outgoing: map[string][]string{
+			outgoingAdjList: map[string][]string{
 				"A": {"A"},
 			},
 			inDegree: map[string]int{
@@ -141,7 +92,7 @@ func TestVerifyAcyclic(t *testing.T) {
 		},
 		{
 			name: "2-node cycle A -> B -> A fails",
-			outgoing: map[string][]string{
+			outgoingAdjList: map[string][]string{
 				"A": {"B"},
 				"B": {"A"},
 			},
@@ -155,7 +106,7 @@ func TestVerifyAcyclic(t *testing.T) {
 		},
 		{
 			name: "cycle with upstream entry S -> A -> B -> A fails",
-			outgoing: map[string][]string{
+			outgoingAdjList: map[string][]string{
 				"S": {"A"},
 				"A": {"B"},
 				"B": {"A"},
@@ -173,7 +124,7 @@ func TestVerifyAcyclic(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := verifyAcyclic(tc.outgoing, tc.inDegree, tc.nodeCount)
+			err := verifyAcyclic(tc.outgoingAdjList, tc.inDegree, tc.nodeCount)
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("verifyAcyclic() error = %v, wantErr %v", err, tc.wantErr)
 			}
@@ -187,7 +138,7 @@ func TestVerifyAcyclic(t *testing.T) {
 }
 
 func TestIsReachable(t *testing.T) {
-	outgoing := map[string][]string{
+	outgoingAdjList := map[string][]string{
 		"A": {"B", "C"},
 		"B": {"D"},
 		"C": {"E"},
@@ -250,7 +201,7 @@ func TestIsReachable(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := isReachable(tc.startNode, tc.targetNode, outgoing)
+			got := isReachable(tc.startNode, tc.targetNode, outgoingAdjList)
 			if got != tc.want {
 				t.Errorf("isReachable(%q, %q) = %v, want %v", tc.startNode, tc.targetNode, got, tc.want)
 			}
@@ -260,14 +211,14 @@ func TestIsReachable(t *testing.T) {
 
 func TestExtractCyclicDependencyPath(t *testing.T) {
 	testCases := []struct {
-		name          string
-		outgoing      map[string][]string
-		inDegree      map[string]int
-		wantSubstring string
+		name            string
+		outgoingAdjList map[string][]string
+		inDegree        map[string]int
+		wantSubstring   string
 	}{
 		{
 			name: "simple cycle A -> B -> A",
-			outgoing: map[string][]string{
+			outgoingAdjList: map[string][]string{
 				"A": {"B"},
 				"B": {"A"},
 			},
@@ -278,8 +229,8 @@ func TestExtractCyclicDependencyPath(t *testing.T) {
 			wantSubstring: "A -> B",
 		},
 		{
-			name:     "no unresolved nodes returns empty string",
-			outgoing: map[string][]string{},
+			name:            "no unresolved nodes returns empty string",
+			outgoingAdjList: map[string][]string{},
 			inDegree: map[string]int{
 				"A": 0,
 			},
@@ -289,7 +240,7 @@ func TestExtractCyclicDependencyPath(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := extractCyclicDependencyPath(tc.outgoing, tc.inDegree)
+			got := extractCyclicDependencyPath(tc.outgoingAdjList, tc.inDegree)
 			if tc.wantSubstring == "" {
 				if got != "" {
 					t.Errorf("extractCyclicDependencyPath() = %q, want empty string", got)

@@ -65,8 +65,6 @@ type UntypedTaskImplementationID interface {
 	String() string
 	// ReferenceIDString returns only the reference ID portion without the implementation hash.
 	ReferenceIDString() string
-	// GetTaskImplementationHash returns the implementation-specific hash part of the ID.
-	GetTaskImplementationHash() string
 	// GetUntypedReference returns the reference ID associated with this implementation ID.
 	GetUntypedReference() UntypedTaskReference
 }
@@ -88,16 +86,6 @@ type taskReferenceImpl[TaskResult any] struct {
 var _ TaskReference[any] = (*taskReferenceImpl[any])(nil)
 var _ PointToPointDescriptor = (*taskReferenceImpl[any])(nil)
 
-// DescriptorKind returns whether this dependency requires data or only order.
-func (t taskReferenceImpl[TaskResult]) DescriptorKind() EdgeKind {
-	return t.config.Kind
-}
-
-// DescriptorCondition returns whether this dependency is mandatory or optional.
-func (t taskReferenceImpl[TaskResult]) DescriptorCondition() EdgeCondition {
-	return t.config.Condition
-}
-
 // DescriptorCardinality returns whether this dependency is point-to-point or fan-in.
 func (t taskReferenceImpl[TaskResult]) DescriptorCardinality() EdgeCardinality {
 	return t.config.Cardinality
@@ -105,7 +93,7 @@ func (t taskReferenceImpl[TaskResult]) DescriptorCardinality() EdgeCardinality {
 
 // DescriptorScope returns the effective dependency resolution scope.
 func (t taskReferenceImpl[TaskResult]) DescriptorScope() DependencyScope {
-	return t.config.ResolvedScope()
+	return t.config.Scope
 }
 
 // ReferenceID returns the target task's reference ID without any implementation hash.
@@ -169,12 +157,6 @@ func (t taskImplementationIDImpl[TaskResult]) ReferenceIDString() string {
 	return t.referenceId
 }
 
-// GetTaskImplementationHash returns the implementation-specific hash part of the ID.
-// This distinguishes between different implementations of the same reference.
-func (t taskImplementationIDImpl[TaskResult]) GetTaskImplementationHash() string {
-	return t.implementationHash
-}
-
 // GetUntypedReference returns the reference ID associated with this implementation ID as an UntypedTaskReference.
 // This allows working with references without knowledge of their specific result types.
 func (t taskImplementationIDImpl[TaskResult]) GetUntypedReference() UntypedTaskReference {
@@ -217,12 +199,4 @@ func NewImplementationID[TaskResult any](baseReference TaskReference[TaskResult]
 		panic(fmt.Sprintf("implementation hash %s is invalid. It cannot contain '#' in NewImplementationID.\nThis is likely a bug in the KHI task implementation or an incorrect ID was provided in the taskid definition.\nPlease report a bug at https://github.com/GoogleCloudPlatform/khi/issues", implementationHash))
 	}
 	return taskImplementationIDImpl[TaskResult]{referenceId: baseReference.String(), implementationHash: implementationHash}
-}
-
-// NewStageImplementationID creates a new TaskImplementationID for a stage of a multi-stage task.
-func NewStageImplementationID(baseID UntypedTaskImplementationID, stageNumber int) UntypedTaskImplementationID {
-	return taskImplementationIDImpl[any]{
-		referenceId:        baseID.ReferenceIDString(),
-		implementationHash: fmt.Sprintf("%s-stage-%d", baseID.GetTaskImplementationHash(), stageNumber),
-	}
 }

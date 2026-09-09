@@ -47,7 +47,9 @@ type nonSuccessLogLogToTimelineMapperTaskSetting struct {
 
 // Dependencies implements inspectiontaskbase.LogToTimelineMapper.
 func (e *nonSuccessLogLogToTimelineMapperTaskSetting) Dependencies() []coretask.Dependency {
-	return []coretask.Dependency{}
+	return []coretask.Dependency{
+		commonlogk8saudit_contract.K8sAuditLogExtractorRef.Ref(coretask.FromActiveGraph),
+	}
 }
 
 // GroupedLogTask implements inspectiontaskbase.LogToTimelineMapper.

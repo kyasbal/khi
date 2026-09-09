@@ -43,7 +43,7 @@ func (i *k8sAuditLogIngester) RawLogTask() taskid.TaskReference[[]*log.Log] {
 // Dependencies implements inspectiontaskbase.LogIngester.
 func (i *k8sAuditLogIngester) Dependencies() []coretask.Dependency {
 	return []coretask.Dependency{
-		commonlogk8saudit_contract.K8sAuditLogExtractorRef.Ref(coretask.Optional),
+		commonlogk8saudit_contract.K8sAuditLogExtractorRef.Ref(coretask.FromActiveGraph),
 	}
 }
 

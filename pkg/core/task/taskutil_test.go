@@ -89,7 +89,6 @@ func TestWrapErrorWithTaskInformation(t *testing.T) {
 
 func TestGetTaskResult(t *testing.T) {
 	strRef := taskid.NewTaskReference[string]("test.string")
-	orderOnlyRef := taskid.NewTaskReference[string]("test.order_only", taskid.OrderOnly)
 	nonExistentRef := taskid.NewTaskReference[bool]("test.nonexistent")
 	taskID := taskid.NewDefaultImplementationID[any]("test.id")
 
@@ -133,18 +132,6 @@ func TestGetTaskResult(t *testing.T) {
 			},
 			targetRef:    strRef,
 			wantErrMatch: "undeclared task dependency access",
-		},
-		{
-			name: "panic when dependency is declared as order-only",
-			setupCtx: func(ctx context.Context) context.Context {
-				taskResults := typedmap.NewTypedMap()
-				typedmap.Set(taskResults, typedmap.NewTypedKey[string](orderOnlyRef.ReferenceIDString()), "test-value")
-				ctx = khictx.WithValue(ctx, core_contract.TaskResultMapContextKey, taskResults)
-				ctx = khictx.WithValue(ctx, core_contract.TaskDependenciesContextKey, []taskid.DependencyDescriptor{orderOnlyRef})
-				return ctx
-			},
-			targetRef:    orderOnlyRef,
-			wantErrMatch: "cannot get task result for order-only dependency",
 		},
 		{
 			name: "panic when result is missing in result map and lists available results",
@@ -198,8 +185,7 @@ func TestGetTaskResult(t *testing.T) {
 }
 
 func TestGetOptionalTaskResult(t *testing.T) {
-	strRef := taskid.NewTaskReference[string]("test.string", taskid.Optional)
-	orderOnlyRef := taskid.NewTaskReference[string]("test.order_only", taskid.OrderOnly, taskid.Optional)
+	strRef := taskid.NewTaskReference[string]("test.string", taskid.ScopeActiveGraph)
 	taskID := taskid.NewDefaultImplementationID[any]("test.id")
 
 	testCases := []struct {
@@ -284,21 +270,6 @@ func TestGetOptionalTaskResult(t *testing.T) {
 			targetRef:    strRef,
 			wantErrMatch: "undeclared task dependency access",
 		},
-		{
-			name: "panic when order-only dependency",
-			setupCtx: func(ctx context.Context) context.Context {
-				taskResults := typedmap.NewTypedMap()
-				meta := &mockGraphMetadata{
-					boundTasks: map[string]bool{orderOnlyRef.ReferenceIDString(): true},
-				}
-				ctx = khictx.WithValue(ctx, core_contract.TaskResultMapContextKey, taskResults)
-				ctx = khictx.WithValue[core_contract.TaskGraphMetadata](ctx, core_contract.TaskGraphMetadataContextKey, meta)
-				ctx = khictx.WithValue(ctx, core_contract.TaskDependenciesContextKey, []taskid.DependencyDescriptor{orderOnlyRef})
-				return ctx
-			},
-			targetRef:    orderOnlyRef,
-			wantErrMatch: "cannot get task result for order-only dependency",
-		},
 	}
 
 	for _, tc := range testCases {
@@ -344,7 +315,6 @@ func TestGetOptionalTaskResult(t *testing.T) {
 func TestGetTaskResultsWithTag(t *testing.T) {
 	tag := NewTag[string]("test/tag")
 	tagRef := tag.Ref()
-	orderOnlyTagRef := tag.Ref(taskid.OrderOnly)
 	taskID := taskid.NewDefaultImplementationID[any]("test.consumer")
 
 	testCases := []struct {
@@ -460,23 +430,6 @@ func TestGetTaskResultsWithTag(t *testing.T) {
 			wantErrMatch: "undeclared task dependency access",
 		},
 		{
-			name: "panic when tag reference is order-only",
-			setupCtx: func(ctx context.Context) context.Context {
-				taskResults := typedmap.NewTypedMap()
-				meta := &mockGraphMetadata{
-					boundFanInRefIDsByTaskImplID: map[string]map[string][]string{
-						taskID.String(): {tag.ID(): {}},
-					},
-				}
-				ctx = khictx.WithValue(ctx, core_contract.TaskResultMapContextKey, taskResults)
-				ctx = khictx.WithValue[core_contract.TaskGraphMetadata](ctx, core_contract.TaskGraphMetadataContextKey, meta)
-				ctx = khictx.WithValue(ctx, core_contract.TaskDependenciesContextKey, []taskid.DependencyDescriptor{orderOnlyTagRef})
-				return ctx
-			},
-			targetRef:    orderOnlyTagRef,
-			wantErrMatch: "cannot get task result for order-only dependency",
-		},
-		{
 			name: "panic when task graph metadata is missing",
 			setupCtx: func(ctx context.Context) context.Context {
 				taskResults := typedmap.NewTypedMap()
@@ -529,7 +482,7 @@ func TestGetTaskResultsWithTag(t *testing.T) {
 func TestNewTailTask(t *testing.T) {
 	tailID := taskid.NewDefaultImplementationID[struct{}]("tail.test")
 	depA := taskid.NewTaskReference[string]("task.a")
-	depB := taskid.NewTaskReference[string]("task.b", taskid.Optional)
+	depB := taskid.NewTaskReference[string]("task.b", taskid.ScopeActiveGraph)
 	tag := NewTag[int]("tag.test")
 	tailLabelKey := NewTaskLabelKey[string]("tail-label")
 
@@ -549,7 +502,7 @@ func TestNewTailTask(t *testing.T) {
 			wantDepCount: 0,
 		},
 		{
-			name:         "converts all dependencies to order-only and preserves attributes",
+			name:         "preserves all dependencies and attributes",
 			taskID:       tailID,
 			deps:         []Dependency{depA, depB, tag.Ref()},
 			wantDepCount: 3,
@@ -557,13 +510,8 @@ func TestNewTailTask(t *testing.T) {
 				if len(deps) != 3 {
 					t.Fatalf("expected 3 dependencies, got %d", len(deps))
 				}
-				for i, dep := range deps {
-					if got := dep.DescriptorKind(); got != taskid.EdgeKindOrderOnly {
-						t.Errorf("dep[%d].DescriptorKind() = %v, want %v", i, got, taskid.EdgeKindOrderOnly)
-					}
-				}
-				if got := deps[1].DescriptorCondition(); got != taskid.ConditionOptional {
-					t.Errorf("dep[1].DescriptorCondition() = %v, want %v", got, taskid.ConditionOptional)
+				if got := deps[1].DescriptorScope(); got != taskid.ScopeActiveGraph {
+					t.Errorf("dep[1].DescriptorScope() = %v, want %v", got, taskid.ScopeActiveGraph)
 				}
 				if fanIn, ok := deps[2].(taskid.FanInDescriptor); !ok || fanIn.Tag() != "tag.test" {
 					t.Errorf("dep[2] tag mismatch, want tag.test, got %v", deps[2])
@@ -578,9 +526,6 @@ func TestNewTailTask(t *testing.T) {
 			verifyDeps: func(t *testing.T, deps []Dependency) {
 				if len(deps) != 1 {
 					t.Fatalf("expected 1 dependency, got %d", len(deps))
-				}
-				if got := deps[0].DescriptorKind(); got != taskid.EdgeKindOrderOnly {
-					t.Errorf("dep[0].DescriptorKind() = %v, want %v", got, taskid.EdgeKindOrderOnly)
 				}
 			},
 		},

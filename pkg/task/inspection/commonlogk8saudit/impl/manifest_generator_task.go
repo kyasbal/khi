@@ -49,6 +49,7 @@ var (
 var ManifestGeneratorTask = inspectiontaskbase.NewProgressReportableInspectionTask(commonlogk8saudit_contract.ManifestGeneratorTaskID, []coretask.Dependency{
 	commonlogk8saudit_contract.ChangeTargetGrouperTaskID.Ref(),
 	commonlogk8saudit_contract.K8sResourceMergeConfigTaskID.Ref(),
+	commonlogk8saudit_contract.K8sAuditLogExtractorRef.Ref(coretask.FromActiveGraph),
 }, func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (commonlogk8saudit_contract.ResourceManifestLogGroupMap, error) {
 	if taskMode == inspectioncore_contract.TaskModeDryRun {
 		return map[string]*commonlogk8saudit_contract.ResourceManifestLogGroup{}, nil

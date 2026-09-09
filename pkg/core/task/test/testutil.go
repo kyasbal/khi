@@ -66,7 +66,11 @@ func RunTaskWithDependency[T any](baseContext context.Context, mainTask coretask
 	)
 	taskCtx := prepareTaskContext(baseContext, retainedMainTask)
 
-	resolvedTaskSet, err := coretask.ResolveGraph([]coretask.UntypedTask{retainedMainTask}, dependencies, nil)
+	availableTasks := make([]coretask.UntypedTask, 0, len(dependencies)+1)
+	availableTasks = append(availableTasks, retainedMainTask)
+	availableTasks = append(availableTasks, dependencies...)
+
+	resolvedTaskSet, err := coretask.ResolveGraph([]coretask.UntypedTask{retainedMainTask}, availableTasks, nil)
 	if err != nil {
 		return *new(T), err
 	}

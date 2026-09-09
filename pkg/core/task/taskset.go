@@ -33,7 +33,6 @@ type TaskSet struct {
 	edges                        []taskid.TaskEdge
 	runnable                     bool
 	incomingEdges                map[string][]taskid.TaskEdge   // key: target task implementation ID
-	incomingDataEdges            map[string][]taskid.TaskEdge   // key: target task implementation ID (EdgeKindData only)
 	boundRefIDs                  map[string]struct{}            // set of task reference IDs bound to the graph
 	boundFanInRefIDsByTaskImplID map[string]map[string][]string // targetImplID -> tag -> []sourceRefID
 }
@@ -55,7 +54,6 @@ func NewTaskSet(tasks []UntypedTask) (*TaskSet, error) {
 		tasks:                        slices.Clone(tasks),
 		runnable:                     false,
 		incomingEdges:                make(map[string][]taskid.TaskEdge),
-		incomingDataEdges:            make(map[string][]taskid.TaskEdge),
 		boundRefIDs:                  make(map[string]struct{}),
 		boundFanInRefIDsByTaskImplID: make(map[string]map[string][]string),
 	}, nil
@@ -68,7 +66,6 @@ func NewResolvedTaskSet(
 	boundFanInRefIDsByTaskImplID map[string]map[string][]string,
 ) *TaskSet {
 	incomingEdges := make(map[string][]taskid.TaskEdge)
-	incomingDataEdges := make(map[string][]taskid.TaskEdge)
 	boundRefIDs := make(map[string]struct{})
 
 	for _, t := range tasks {
@@ -77,9 +74,6 @@ func NewResolvedTaskSet(
 
 	for _, e := range edges {
 		incomingEdges[e.TargetImplID] = append(incomingEdges[e.TargetImplID], e)
-		if e.Kind == taskid.EdgeKindData {
-			incomingDataEdges[e.TargetImplID] = append(incomingDataEdges[e.TargetImplID], e)
-		}
 	}
 
 	copiedBoundFanInRefIDsByTaskImplID := make(map[string]map[string][]string)
@@ -95,7 +89,6 @@ func NewResolvedTaskSet(
 		edges:                        slices.Clone(edges),
 		runnable:                     true,
 		incomingEdges:                incomingEdges,
-		incomingDataEdges:            incomingDataEdges,
 		boundRefIDs:                  boundRefIDs,
 		boundFanInRefIDsByTaskImplID: copiedBoundFanInRefIDsByTaskImplID,
 	}
@@ -128,11 +121,6 @@ func (s *TaskSet) Edges() []taskid.TaskEdge {
 // IncomingEdges returns incoming edges for the given task implementation ID.
 func (s *TaskSet) IncomingEdges(taskImplID string) []taskid.TaskEdge {
 	return s.incomingEdges[taskImplID]
-}
-
-// IncomingDataEdges returns incoming data edges (Kind == EdgeKindData) for the given task implementation ID.
-func (s *TaskSet) IncomingDataEdges(taskImplID string) []taskid.TaskEdge {
-	return s.incomingDataEdges[taskImplID]
 }
 
 // IsBound returns true if the task reference was bound to the graph.

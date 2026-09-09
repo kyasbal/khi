@@ -42,8 +42,8 @@ var SerializeTask = inspectiontaskbase.NewProgressReportableInspectionTask(
 	inspectioncore_contract.SerializerTaskID,
 	[]coretask.Dependency{
 		JobModeCommandTaskID.Ref(),
-		inspectiontaskbase.TagLogIngester.Ref(coretask.OrderOnly),
-		inspectiontaskbase.TagTimelineMapper.Ref(coretask.OrderOnly),
+		inspectiontaskbase.TagLogIngester.Ref(),
+		inspectiontaskbase.TagTimelineMapper.Ref(),
 	},
 	func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (*inspectioncore_contract.FileSystemStore, error) {
 

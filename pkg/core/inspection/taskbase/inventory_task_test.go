@@ -122,12 +122,11 @@ func TestInventoryTask(t *testing.T) {
 			wantMap:        map[string]struct{}{},
 		},
 		{
-			name:           "resolves circular dependency created by selected cyclic task and runs twice",
+			name:           "prunes circular dependency created by selected cyclic task so merger only includes non-cyclic discovery tasks",
 			availableTasks: append(slices.Clone(defaultAvailableTasks), cyclicDiscoveryTask),
 			userTaskDeps:   []coretask.Dependency{mergerTaskID.Ref(), discovery1ParentTaskID.Ref(), cyclicDiscoveryTaskID.Ref()},
 			wantMap: map[string]struct{}{
-				"foo":    {},
-				"cyclic": {},
+				"foo": {},
 			},
 		},
 	}

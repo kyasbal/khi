@@ -20,17 +20,8 @@ import (
 	"strings"
 )
 
-// cloneOutgoingGraph creates a deep copy of an outgoing adjacency list.
-func cloneOutgoingGraph(outgoing map[string][]string) map[string][]string {
-	cloned := make(map[string][]string, len(outgoing))
-	for k, v := range outgoing {
-		cloned[k] = slices.Clone(v)
-	}
-	return cloned
-}
-
-// verifyAcyclic checks if the graph formed by outgoing contains any cycle.
-func verifyAcyclic(outgoing map[string][]string, inDegree map[string]int, nodeCount int) error {
+// verifyAcyclic checks if the graph formed by outgoingAdjList contains any cycle.
+func verifyAcyclic(outgoingAdjList map[string][]string, inDegree map[string]int, nodeCount int) error {
 	inDegreeCopy := make(map[string]int, len(inDegree))
 	for k, v := range inDegree {
 		inDegreeCopy[k] = v
@@ -46,7 +37,7 @@ func verifyAcyclic(outgoing map[string][]string, inDegree map[string]int, nodeCo
 		curr := queue[0]
 		queue = queue[1:]
 		visitedCount++
-		for _, target := range outgoing[curr] {
+		for _, target := range outgoingAdjList[curr] {
 			inDegreeCopy[target]--
 			if inDegreeCopy[target] == 0 {
 				queue = append(queue, target)
@@ -54,17 +45,17 @@ func verifyAcyclic(outgoing map[string][]string, inDegree map[string]int, nodeCo
 		}
 	}
 	if visitedCount < nodeCount {
-		cyclicPath := extractCyclicDependencyPath(outgoing, inDegreeCopy)
+		cyclicPath := extractCyclicDependencyPath(outgoingAdjList, inDegreeCopy)
 		return fmt.Errorf("failed to sort as a runnable task graph. \n The graph contains cyclic dependency\n%s", cyclicPath)
 	}
 	return nil
 }
 
 // isReachable checks if there is a directed path of length >= 1 from startImplID to targetImplID.
-func isReachable(startImplID, targetImplID string, outgoing map[string][]string) bool {
+func isReachable(startImplID, targetImplID string, outgoingAdjList map[string][]string) bool {
 	visited := make(map[string]bool)
-	queue := make([]string, 0, len(outgoing[startImplID]))
-	for _, next := range outgoing[startImplID] {
+	queue := make([]string, 0, len(outgoingAdjList[startImplID]))
+	for _, next := range outgoingAdjList[startImplID] {
 		if next == targetImplID {
 			return true
 		}
@@ -76,7 +67,7 @@ func isReachable(startImplID, targetImplID string, outgoing map[string][]string)
 		curr := queue[0]
 		queue = queue[1:]
 
-		for _, next := range outgoing[curr] {
+		for _, next := range outgoingAdjList[curr] {
 			if next == targetImplID {
 				return true
 			}
@@ -91,7 +82,7 @@ func isReachable(startImplID, targetImplID string, outgoing map[string][]string)
 
 // extractCyclicDependencyPath identifies and formats the cyclic path in the graph.
 func extractCyclicDependencyPath(
-	outgoing map[string][]string,
+	outgoingAdjList map[string][]string,
 	inDegree map[string]int,
 ) string {
 	unresolved := make([]string, 0)
@@ -105,7 +96,7 @@ func extractCyclicDependencyPath(
 		return ""
 	}
 
-	cycle := findCycle(outgoing, inDegree, unresolved)
+	cycle := findCycle(outgoingAdjList, inDegree, unresolved)
 	if len(cycle) == 0 {
 		return fmt.Sprintf("... -> %s -> ...", unresolved[0])
 	}
@@ -115,7 +106,7 @@ func extractCyclicDependencyPath(
 }
 
 // findCycle performs DFS over unresolved nodes to detect and return a cycle path.
-func findCycle(outgoing map[string][]string, inDegree map[string]int, unresolved []string) []string {
+func findCycle(outgoingAdjList map[string][]string, inDegree map[string]int, unresolved []string) []string {
 	visitState := make(map[string]int) // 0: unvisited, 1: visiting, 2: visited
 	parent := make(map[string]string)
 	var cycle []string
@@ -123,7 +114,7 @@ func findCycle(outgoing map[string][]string, inDegree map[string]int, unresolved
 	var dfs func(currImplID string) bool
 	dfs = func(currImplID string) bool {
 		visitState[currImplID] = 1
-		for _, nextImplID := range outgoing[currImplID] {
+		for _, nextImplID := range outgoingAdjList[currImplID] {
 			if inDegree[nextImplID] <= 0 {
 				continue
 			}

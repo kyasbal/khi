@@ -250,20 +250,19 @@ func TestTaskSet_Get(t *testing.T) {
 func TestTaskSet_MetadataQueries(t *testing.T) {
 	taskA := newDebugTask("taskA", nil)
 	taskB := newDebugTask("taskB", nil)
-	tasks := []UntypedTask{taskA, taskB}
+	taskC := newDebugTask("taskC", nil)
+	tasks := []UntypedTask{taskA, taskB, taskC}
 
 	edges := []taskid.TaskEdge{
 		{
 			SourceRefID:  "taskA",
 			SourceImplID: "taskA#default",
 			TargetImplID: "taskB#default",
-			Kind:         taskid.EdgeKindData,
 		},
 		{
-			SourceRefID:  "taskA",
-			SourceImplID: "taskA#default",
+			SourceRefID:  "taskC",
+			SourceImplID: "taskC#default",
 			TargetImplID: "taskB#default",
-			Kind:         taskid.EdgeKindOrderOnly,
 		},
 	}
 
@@ -285,18 +284,6 @@ func TestTaskSet_MetadataQueries(t *testing.T) {
 				got := resolved.IncomingEdges("taskB#default")
 				if len(got) != 2 {
 					t.Errorf("expected 2 incoming edges, got %d", len(got))
-				}
-			},
-		},
-		{
-			name: "IncomingDataEdges returns only data edges targeting task",
-			test: func(t *testing.T) {
-				got := resolved.IncomingDataEdges("taskB#default")
-				if len(got) != 1 {
-					t.Fatalf("expected 1 incoming data edge, got %d", len(got))
-				}
-				if got[0].Kind != taskid.EdgeKindData {
-					t.Errorf("expected EdgeKindData, got %v", got[0].Kind)
 				}
 			},
 		},
