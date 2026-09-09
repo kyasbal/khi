@@ -18,7 +18,7 @@ KHI のすべてのタスクには、その出力に関連付けられた「型�
 ```go
 var IntGeneratorTask = task.NewTask(
     IntGeneratorTaskID,
-    []taskid.UntypedTaskReference{},
+    []coretask.Dependency{},
     func(ctx context.Context) (int, error) {
         return 1, nil
     },
@@ -29,18 +29,19 @@ var IntGeneratorTask = task.NewTask(
 
 1. **`IntGeneratorTask` 型**: Go コンパイラはジェネリクス推論によりこのタスクの型を `task.Task[int]` と推論します。
 2. **第一引数 (`IntGeneratorTaskID`)**: タスクグラフにおけるそのタスク実装の ID を示します。これは `taskid.TaskImplementationID[int]` 型である必要があります。この ID を使用して、他のタスクからそのタスクへの参照を取得できます。
-3. **第二引数 (`[]taskid.UntypedTaskReference`)**: このタスクが依存するタスク参照のリストです。タスクグラフの順序付けや、タスクグラフ内の他のタスクから値を読み取る際に使用します。
+3. **第二引数 (`[]coretask.Dependency`)**: このタスクが依存する依存関係のリストです。ポイント・ツー・ポイントのタスク参照 (`TaskReference[T]`)、タグ参照 (`TagReference[T]`)、順序制御依存 (`OrderOnly`) などを指定できます。
 4. **第三引数 (実行関数)**: この関数の戻り値はタスクの型パラメータ（この場合は `int`）に準拠している必要があり、かつ戻り値の第二引数として常にエラーを返す必要があります。
 
 ## 3. タスク内部からの値の取得
 
-タスクから値を読み取るには、読み取り先のタスクへのタスク参照を依存関係リストに含める必要があります。
-これにより、タスク実行関数から `coretask.GetTaskResult(ctx, dependencyTaskRef)` を使用して依存タスクからの戻り値を安全に取得できます:
+### 3.1 ポイント・ツー・ポイントの依存関係 (`GetTaskResult`)
+
+先行タスクから値を読み取るには、そのタスクへの参照 (`taskID.Ref()`) を依存関係リストに含めます:
 
 ```go
 var DoubleIntTask = task.NewTask(
     DoubleIntTaskID,
-    []taskid.UntypedTaskReference{IntGeneratorTaskID.Ref()}, // 依存するタスク参照を指定
+    []coretask.Dependency{IntGeneratorTaskID.Ref()}, // 依存するタスク参照を指定
     func(ctx context.Context) (int, error) {
         // コンテキストと参照IDを渡して戻り値を取得
         value := coretask.GetTaskResult(ctx, IntGeneratorTaskID.Ref())
@@ -52,6 +53,108 @@ var DoubleIntTask = task.NewTask(
 > [!IMPORTANT]
 > **未宣言の依存関係へのアクセス禁止**
 > 依存関係リストに宣言していないタスクに対して `coretask.GetTaskResult` を呼び出すと、実行時パニック (`panic`) が発生します。必ず第二引数の依存関係リストにアクセス対象のタスク参照を含めてください。
+
+### 3.2 オプショナルな依存関係 (`GetOptionalTaskResult`)
+
+依存先タスクがタスクグラフに必ず含まれるとは限らない場合（例: ユーザーが無効化できるオプショナル機能に属するタスクなど）は、`taskid.Optional` を指定します:
+
+```go
+var SafeConsumerTask = task.NewTask(
+    SafeConsumerTaskID,
+    []coretask.Dependency{OptionalTaskID.Ref(taskid.Optional)},
+    func(ctx context.Context) (string, error) {
+        // 取得時はフラグ不要で通常の Ref() を渡せます
+        if val, ok := coretask.GetOptionalTaskResult(ctx, OptionalTaskID.Ref()); ok {
+            return val, nil
+        }
+        return "fallback", nil
+    },
+)
+```
+
+### 3.3 タグによるファンイン (Fan-In) 依存関係 (`GetTaskResultsWithTag`)
+
+複数のプロデューサが同一型のアイテムを生成する場合（例: 複数のログパーサーがログサマリーを生成する場合など）は、`Tag[T]` を使用します:
+
+```go
+// 1. contract でタグを宣言
+var LogItemTag = coretask.NewTag[*LogItem]("khi.google.com/log-items")
+
+// 2. プロデューサタスクが ProvidesTag でタグの提供を宣言。必要に応じて WithTagPriority で優先度を指定可能
+var ParserTaskA = task.NewTask(
+    ParserTaskAID,
+    []coretask.Dependency{SourceLogRef},
+    runParserA,
+    coretask.ProvidesTag(LogItemTag, coretask.WithTagPriority(10)),
+)
+
+// 3. コンシューマタスクが GetTaskResultsWithTag で全アクティブプロデューサの結果を集約取得
+// 純粋な集約タスクの場合は AllowMultiStageExecution() を指定してマルチステージ実行を許可可能
+var AggregatorTask = task.NewTask(
+    AggregatorTaskID,
+    []coretask.Dependency{LogItemTag.Ref()},
+    func(ctx context.Context) ([]*LogItem, error) {
+        items := coretask.GetTaskResultsWithTag(ctx, LogItemTag.Ref())
+        return items, nil
+    },
+    coretask.AllowMultiStageExecution(),
+)
+```
+
+#### ファンインにおける循環依存と Priority による安定したグラフの実現
+
+ファンイン集約を用いる際、以下のような前提条件が揃うとタスクグラフに循環参照が生じます:
+
+1. **クロスインベントリ依存による前提条件**:
+   監査ログパーサーやコンテナログパーサーのように複数の独立したログパーサーが存在し、それぞれが IP アドレス一覧やコンテナ ID 一覧といった異なるインベントリのプロデューサでありつつ、他方のインベントリをクエリ生成のために消費する構造を持つ場合です。単体では非循環な DAG であっても、ユーザーが両方の機能を同時に有効化した際、ファンイン集約 (`TagReference`) を介して相互依存ループが形成されます。
+2. **Priority による決定論的枝刈りと安定したグラフ**:
+   循環を解消するためにエッジを任意に選んで切り落とすと、実行環境やタスク登録順序によって実行順序やデータフローが変動し、再現性のない不安定なグラフになってしまいます。
+   - デフォルトで `DefaultTagPriority = 100` が設定される `coretask.WithTagPriority(priority)` により、プロデューサ側がデータの確度や寄与度を宣言します。数値が小さいほど高優先度として扱われます。
+   - グラフリゾルバはサイクル内の最も優先度の低いファンインエッジを決定論的に枝刈りし、常に一意で安定したグラフを導出します。サイクル内の優先度が同着で判断できない場合は推測せず Fail-Fast でエラーを返します。
+3. **マルチステージ実行 (`coretask.AllowMultiStageExecution`)**:
+   エッジを枝刈りしてもデータを欠落させないために、副作用のない純粋な集約タスクには `AllowMultiStageExecution()` を付与します。リゾルバはタスクを分割・複製し、確定的な高優先度プロデューサからの入力をパーサーに渡す早期ステージと、パーサー完了後のフィードバック結果を追加集約する後期ステージの 2 段階で安全に実行します。このラベルのないタスクがマルチステージ実行を要する循環に巻き込まれた場合は、実行時エラーとして検知されます。
+
+詳細なアーキテクチャ背景は、[概念ガイド: 6. ファンインにおける循環依存の前提条件と Priority によるグラフ安定化](../khi-task-system-concept.md#6-ファンインにおける循環依存の前提条件と-priority-によるグラフ安定化) を参照してください。
+
+### 3.4 順序制御依存 (Order-Only) とバリアタスク (`NewTailTask`)
+
+データの受け渡しを行わずに実行順序のみを制御したい場合は、`taskid.OrderOnly` を使用します:
+
+```go
+// CleanupTask が完了した後にのみ実行されるタスク
+var PostTask = task.NewTask(
+    PostTaskID,
+    []coretask.Dependency{CleanupTaskID.Ref(taskid.OrderOnly)},
+    runPostTask,
+)
+```
+
+複数のタスクの完了を待機するバリアタスクを作成する場合は、`coretask.NewTailTask` を使用します:
+
+```go
+var AllParsersTailTask = coretask.NewTailTask(
+    AllParsersTailTaskID,
+    []coretask.Dependency{ParserA.Ref(), ParserB.Ref(), TagRef},
+)
+```
+
+### 3.5 依存関係スコープの明示指定 (`taskid.Scope*`)
+
+デフォルトのスコープ解決（必須タスクは `ScopeAll`、タグやオプショナルは `ScopeActiveGraph`）を上書きしたい場合は、オプションとしてスコープ定数を渡します:
+
+```go
+var AdvancedConsumerTask = task.NewTask(
+    AdvancedConsumerTaskID,
+    []coretask.Dependency{
+        // タグ集約において、アクティブ機能の配下にあるプロデューサのみを対象にする
+        LogItemTag.Ref(taskid.ScopeActiveFeatures),
+
+        // オプショナル依存において、全タスクプールから探索して引き込む
+        OptionalTaskID.Ref(taskid.Optional, taskid.ScopeAll),
+    },
+    runAdvancedConsumer,
+)
+```
 
 ## 4. タスク内でのログ出力 (`slog`)
 
