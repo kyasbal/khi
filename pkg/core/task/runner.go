@@ -47,7 +47,8 @@ type LocalRunner struct {
 	interceptors          []Interceptor
 	remainingDependents   map[string]int
 	remainingDependentsMu sync.Mutex
-	taskByID              map[string]UntypedTask
+	activeStagesByRefID   map[string]int
+	taskByImplID          map[string]UntypedTask
 }
 
 // LocalRunner implements task_interface.TaskRunner
@@ -81,11 +82,13 @@ func NewLocalRunner(taskSet *TaskSet) (*LocalRunner, error) {
 	taskStatuses := []*LocalRunnerTaskStat{}
 	taskWaiters := typedmap.NewTypedMap()
 	remainingDependents := make(map[string]int)
-	taskByID := make(map[string]UntypedTask)
+	activeStagesByRefID := make(map[string]int)
+	taskByImplID := make(map[string]UntypedTask)
 	for _, t := range taskSet.tasks {
-		taskID := t.UntypedID().String()
-		taskByID[taskID] = t
-		remainingDependents[taskID] = 0
+		taskImplID := t.UntypedID().String()
+		taskByImplID[taskImplID] = t
+		remainingDependents[taskImplID] = 0
+		activeStagesByRefID[t.UntypedID().ReferenceIDString()]++
 	}
 	for _, t := range taskSet.tasks {
 		for _, edge := range taskSet.IncomingDataEdges(t.UntypedID().String()) {
@@ -100,7 +103,7 @@ func NewLocalRunner(taskSet *TaskSet) (*LocalRunner, error) {
 		// lock the task waiter until its task finished.
 		waiter := sync.RWMutex{}
 		waiter.Lock()
-		typedmap.Set(taskWaiters, waiterKeyForTaskID(taskSet.tasks[i].UntypedID().String()), &waiter)
+		typedmap.Set(taskWaiters, waiterKeyForImplID(taskSet.tasks[i].UntypedID().String()), &waiter)
 	}
 	return &LocalRunner{
 		resolvedTaskSet:     taskSet,
@@ -112,7 +115,8 @@ func NewLocalRunner(taskSet *TaskSet) (*LocalRunner, error) {
 		waiter:              make(chan interface{}),
 		taskStatuses:        taskStatuses,
 		remainingDependents: remainingDependents,
-		taskByID:            taskByID,
+		activeStagesByRefID: activeStagesByRefID,
+		taskByImplID:        taskByImplID,
 	}, nil
 }
 
@@ -272,9 +276,11 @@ func (r *LocalRunner) cleanupCompletedTaskResults(completedTask UntypedTask) {
 	r.remainingDependentsMu.Lock()
 	defer r.remainingDependentsMu.Unlock()
 
+	r.activeStagesByRefID[completedRefID]--
+
 	// Check if the completed task itself has no dependents and should be released immediately.
 	rem := r.remainingDependents[completedID]
-	if rem == 0 && !r.isTaskResultRetained(completedTask) && !r.isAnyStagePending(completedRefID) {
+	if rem == 0 && !r.isTaskResultRetained(completedTask) && r.activeStagesByRefID[completedRefID] == 0 {
 		typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](completedRefID))
 	}
 
@@ -285,25 +291,14 @@ func (r *LocalRunner) cleanupCompletedTaskResults(completedTask UntypedTask) {
 		remDep := r.remainingDependents[depID]
 
 		if remDep == 0 {
-			if depTask, found := r.taskByID[depID]; found {
-				if !r.isTaskResultRetained(depTask) && !r.isAnyStagePending(depTask.UntypedID().ReferenceIDString()) {
-					typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](depTask.UntypedID().ReferenceIDString()))
+			if depTask, found := r.taskByImplID[depID]; found {
+				depRefID := depTask.UntypedID().ReferenceIDString()
+				if !r.isTaskResultRetained(depTask) && r.activeStagesByRefID[depRefID] == 0 {
+					typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](depRefID))
 				}
 			}
 		}
 	}
-}
-
-// isAnyStagePending returns true if any stage with the given reference ID has not completed execution.
-func (r *LocalRunner) isAnyStagePending(refID string) bool {
-	for i, task := range r.resolvedTaskSet.tasks {
-		if task.UntypedID().ReferenceIDString() == refID {
-			if r.taskStatuses[i].Phase != LocalRunnerTaskStatPhaseStopped {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 func (r *LocalRunner) Tasks() []UntypedTask {
@@ -326,7 +321,7 @@ func (r *LocalRunner) waitForDependency(ctx context.Context, taskID string) erro
 	case <-func() chan struct{} {
 		ch := make(chan struct{})
 		go func() {
-			waiter, found := typedmap.Get(r.taskWaiters, waiterKeyForTaskID(taskID))
+			waiter, found := typedmap.Get(r.taskWaiters, waiterKeyForImplID(taskID))
 			if !found {
 				slog.ErrorContext(ctx, fmt.Sprintf("unreachable error. Task waiter lock not found for the key `%s`", taskID))
 				close(ch)
@@ -344,7 +339,7 @@ func (r *LocalRunner) waitForDependency(ctx context.Context, taskID string) erro
 // releaseTaskWaiter releases a waiter for a single task as complete by unlocking its corresponding
 // RWMutex. This allows any tasks that depend on it to proceed.
 func (r *LocalRunner) releaseTaskWaiter(taskImplID taskid.UntypedTaskImplementationID) error {
-	lock, found := typedmap.Get(r.taskWaiters, waiterKeyForTaskID(taskImplID.String()))
+	lock, found := typedmap.Get(r.taskWaiters, waiterKeyForImplID(taskImplID.String()))
 	if !found {
 		return fmt.Errorf("unreachable error. Task waiter lock not found for the key `%s`", taskImplID.String())
 	}
@@ -365,7 +360,7 @@ func (r *LocalRunner) finalizeExecution() {
 	}
 }
 
-// waiterKeyForTaskID creates a type-safe key for accessing the waiter RWMutex in the taskWaiters map.
-func waiterKeyForTaskID(taskID string) typedmap.TypedKey[*sync.RWMutex] {
-	return typedmap.NewTypedKey[*sync.RWMutex](taskID)
+// waiterKeyForImplID creates a type-safe key for accessing the waiter RWMutex in the taskWaiters map.
+func waiterKeyForImplID(taskImplID string) typedmap.TypedKey[*sync.RWMutex] {
+	return typedmap.NewTypedKey[*sync.RWMutex](taskImplID)
 }

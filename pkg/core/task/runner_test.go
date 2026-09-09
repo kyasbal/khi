@@ -374,6 +374,52 @@ func TestLocalRunner_ResultCleanup(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "multi-stage task keeps result until final stage completes",
+			setupTasks: func() []UntypedTask {
+				tagA := NewTag[string]("tag-a")
+				consumerRef := taskid.NewTaskReference[string]("consumer")
+
+				prodHigh := NewTask(
+					taskid.NewDefaultImplementationID[string]("prod-high"),
+					nil,
+					func(ctx context.Context) (string, error) {
+						return "high_result", nil
+					},
+					ProvidesTag(tagA, WithTagPriority(10)),
+				)
+
+				consumer := NewTask(
+					taskid.NewDefaultImplementationID[string]("consumer"),
+					[]Dependency{tagA.Ref()},
+					func(ctx context.Context) (string, error) {
+						return "consumer_result", nil
+					},
+					AllowMultiStageExecution(),
+				)
+
+				prodLow := NewTask(
+					taskid.NewDefaultImplementationID[string]("prod-low"),
+					[]Dependency{consumerRef},
+					func(ctx context.Context) (string, error) {
+						val := GetTaskResult(ctx, consumerRef)
+						if val != "consumer_result" {
+							return "", errors.New("unexpected consumer result in intermediate task")
+						}
+						return "low_result", nil
+					},
+					ProvidesTag(tagA, WithTagPriority(100)),
+				)
+
+				return []UntypedTask{prodHigh, consumer, prodLow}
+			},
+			verify: func(t *testing.T, runner *LocalRunner) {
+				_, found := GetTaskResultFromLocalRunner(runner, taskid.NewTaskReference[string]("consumer"))
+				if found {
+					t.Errorf("expected consumer result to be deleted after final stage completes")
+				}
+			},
+		},
 	}
 
 	for _, tc := range testCases {
