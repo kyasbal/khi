@@ -105,6 +105,16 @@ func TestTaskImplementationID(t *testing.T) {
 			},
 			expectPanic: true,
 		},
+		{
+			name: "NewStageImplementationID with valid stage number",
+			setup: func() (UntypedTaskImplementationID, error) {
+				baseID := NewDefaultImplementationID[string]("task.stageable")
+				return NewStageImplementationID(baseID, 2), nil
+			},
+			wantString:             "task.stageable#default-stage-2",
+			wantReferenceIDString:  "task.stageable",
+			wantImplementationHash: "default-stage-2",
+		},
 	}
 
 	for _, tc := range testCases {

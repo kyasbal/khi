@@ -90,8 +90,8 @@ func resolveFanInEdgesAndCycles(
 				feedbackProducersByConsumer[key.consumerImplID] = make(map[string]bool)
 			}
 			for _, fe := range feedback {
-				pImplID := refToImplID[fe.SourceRefID]
-				feedbackProducersByConsumer[key.consumerImplID][pImplID] = true
+				producerImplID := refToImplID[fe.SourceRefID]
+				feedbackProducersByConsumer[key.consumerImplID][producerImplID] = true
 			}
 		}
 	}
@@ -115,10 +115,6 @@ func resolveFanInEdgesAndCycles(
 		return tasks, dedupedEdges, boundFanInRefIDsByTask, nil
 	}
 
-	type stageTaskPair struct {
-		stage1 UntypedTask
-		stage2 UntypedTask
-	}
 	stageTasks := make(map[string]stageTaskPair, len(feedbackProducersByConsumer))
 	for consumerImplID := range feedbackProducersByConsumer {
 		consumerTask := implToTask[consumerImplID]
@@ -144,101 +140,20 @@ func resolveFanInEdgesAndCycles(
 	}
 	slices.SortFunc(allTasks, compareTaskByImplementationID)
 
-	var resolvedPtPEdges []taskid.TaskEdge
-	for _, e := range pointToPointEdges {
-		_, sourceIsConsumer := stageTasks[e.SourceID]
-		_, targetIsConsumer := stageTasks[e.TargetID]
+	resolvedPtPEdges := reroutePointToPointEdges(
+		pointToPointEdges,
+		stageTasks,
+		feedbackProducersByConsumer,
+		ptpOutgoing,
+		implToTask,
+	)
 
-		if !sourceIsConsumer && !targetIsConsumer {
-			resolvedPtPEdges = append(resolvedPtPEdges, e)
-			continue
-		}
-
-		if !sourceIsConsumer && targetIsConsumer {
-			targetPair := stageTasks[e.TargetID]
-			e1 := e
-			e1.TargetID = targetPair.stage1.UntypedID().String()
-			e2 := e
-			e2.TargetID = targetPair.stage2.UntypedID().String()
-			resolvedPtPEdges = append(resolvedPtPEdges, e1, e2)
-			continue
-		}
-
-		sourcePair := stageTasks[e.SourceID]
-		feedbackProducers := feedbackProducersByConsumer[e.SourceID]
-
-		leadsToFeedback := false
-		for fbProducerID := range feedbackProducers {
-			if e.TargetID == fbProducerID || isReachable(e.TargetID, fbProducerID, ptpOutgoing) {
-				leadsToFeedback = true
-				break
-			}
-		}
-
-		sourceID := sourcePair.stage2.UntypedID().String()
-		if leadsToFeedback {
-			sourceID = sourcePair.stage1.UntypedID().String()
-		}
-
-		if !targetIsConsumer {
-			eOut := e
-			eOut.SourceID = sourceID
-			resolvedPtPEdges = append(resolvedPtPEdges, eOut)
-		} else {
-			targetPair := stageTasks[e.TargetID]
-			e1 := e
-			e1.SourceID = sourceID
-			e1.TargetID = targetPair.stage1.UntypedID().String()
-			e2 := e
-			e2.SourceID = sourceID
-			e2.TargetID = targetPair.stage2.UntypedID().String()
-			resolvedPtPEdges = append(resolvedPtPEdges, e1, e2)
-		}
-	}
-
-	for consumerImplID, pair := range stageTasks {
-		consumerTask := implToTask[consumerImplID]
-		resolvedPtPEdges = append(resolvedPtPEdges, taskid.TaskEdge{
-			SourceRefID: consumerTask.UntypedID().ReferenceIDString(),
-			SourceID:    pair.stage1.UntypedID().String(),
-			TargetID:    pair.stage2.UntypedID().String(),
-			Kind:        taskid.EdgeKindOrderOnly,
-			Condition:   taskid.ConditionRequired,
-			Cardinality: taskid.CardinalityPointToPoint,
-		})
-	}
-
-	var resolvedFanInEdges []taskid.TaskEdge
-	for _, key := range sortedKeys {
-		bootstrap := bootstrapEdgesByKey[key]
-		feedback := feedbackEdgesByKey[key]
-
-		pair, isSplit := stageTasks[key.consumerImplID]
-		if !isSplit {
-			resolvedFanInEdges = append(resolvedFanInEdges, bootstrap...)
-			continue
-		}
-
-		stage1ID := pair.stage1.UntypedID().String()
-		stage2ID := pair.stage2.UntypedID().String()
-
-		for _, be := range bootstrap {
-			e1 := be
-			e1.TargetID = stage1ID
-			e2 := be
-			e2.TargetID = stage2ID
-			resolvedFanInEdges = append(resolvedFanInEdges, e1, e2)
-		}
-
-		for _, fe := range feedback {
-			e := fe
-			if fe.SourceID == key.consumerImplID {
-				e.SourceID = stage1ID
-			}
-			e.TargetID = stage2ID
-			resolvedFanInEdges = append(resolvedFanInEdges, e)
-		}
-	}
+	resolvedFanInEdges := rerouteFanInEdges(
+		sortedKeys,
+		bootstrapEdgesByKey,
+		feedbackEdgesByKey,
+		stageTasks,
+	)
 
 	allEdges := make([]taskid.TaskEdge, 0, len(resolvedPtPEdges)+len(resolvedFanInEdges))
 	allEdges = append(allEdges, resolvedPtPEdges...)
@@ -265,10 +180,131 @@ func resolveFanInEdgesAndCycles(
 	return allTasks, dedupedEdges, boundFanInRefIDsByTask, nil
 }
 
+type stageTaskPair struct {
+	stage1 UntypedTask
+	stage2 UntypedTask
+}
+
+// reroutePointToPointEdges rewrites Point-to-Point edges when consumer tasks are split into stages.
+func reroutePointToPointEdges(
+	pointToPointEdges []taskid.TaskEdge,
+	stageTasks map[string]stageTaskPair,
+	feedbackProducersByConsumer map[string]map[string]bool,
+	ptpOutgoing map[string][]string,
+	implToTask map[string]UntypedTask,
+) []taskid.TaskEdge {
+	var resolvedPtPEdges []taskid.TaskEdge
+	for _, e := range pointToPointEdges {
+		_, sourceIsSplit := stageTasks[e.SourceID]
+		_, targetIsSplit := stageTasks[e.TargetID]
+
+		if !sourceIsSplit && !targetIsSplit {
+			resolvedPtPEdges = append(resolvedPtPEdges, e)
+			continue
+		}
+
+		if !sourceIsSplit && targetIsSplit {
+			targetPair := stageTasks[e.TargetID]
+			e1 := e
+			e1.TargetID = targetPair.stage1.UntypedID().String()
+			e2 := e
+			e2.TargetID = targetPair.stage2.UntypedID().String()
+			resolvedPtPEdges = append(resolvedPtPEdges, e1, e2)
+			continue
+		}
+
+		sourcePair := stageTasks[e.SourceID]
+		feedbackProducers := feedbackProducersByConsumer[e.SourceID]
+
+		leadsToFeedback := false
+		for feedbackProducerID := range feedbackProducers {
+			if e.TargetID == feedbackProducerID || isReachable(e.TargetID, feedbackProducerID, ptpOutgoing) {
+				leadsToFeedback = true
+				break
+			}
+		}
+
+		sourceID := sourcePair.stage2.UntypedID().String()
+		if leadsToFeedback {
+			sourceID = sourcePair.stage1.UntypedID().String()
+		}
+
+		if !targetIsSplit {
+			rewrittenEdge := e
+			rewrittenEdge.SourceID = sourceID
+			resolvedPtPEdges = append(resolvedPtPEdges, rewrittenEdge)
+		} else {
+			targetPair := stageTasks[e.TargetID]
+			e1 := e
+			e1.SourceID = sourceID
+			e1.TargetID = targetPair.stage1.UntypedID().String()
+			e2 := e
+			e2.SourceID = sourceID
+			e2.TargetID = targetPair.stage2.UntypedID().String()
+			resolvedPtPEdges = append(resolvedPtPEdges, e1, e2)
+		}
+	}
+
+	for consumerImplID, pair := range stageTasks {
+		consumerTask := implToTask[consumerImplID]
+		resolvedPtPEdges = append(resolvedPtPEdges, taskid.TaskEdge{
+			SourceRefID: consumerTask.UntypedID().ReferenceIDString(),
+			SourceID:    pair.stage1.UntypedID().String(),
+			TargetID:    pair.stage2.UntypedID().String(),
+			Kind:        taskid.EdgeKindOrderOnly,
+			Condition:   taskid.ConditionRequired,
+			Cardinality: taskid.CardinalityPointToPoint,
+		})
+	}
+
+	return resolvedPtPEdges
+}
+
+// rerouteFanInEdges duplicates bootstrap FanIn edges across stages and routes feedback edges to stage-2.
+func rerouteFanInEdges(
+	sortedKeys []consumerTagKey,
+	bootstrapEdgesByKey map[consumerTagKey][]taskid.TaskEdge,
+	feedbackEdgesByKey map[consumerTagKey][]taskid.TaskEdge,
+	stageTasks map[string]stageTaskPair,
+) []taskid.TaskEdge {
+	var resolvedFanInEdges []taskid.TaskEdge
+	for _, key := range sortedKeys {
+		bootstrap := bootstrapEdgesByKey[key]
+		feedback := feedbackEdgesByKey[key]
+
+		pair, isSplit := stageTasks[key.consumerImplID]
+		if !isSplit {
+			resolvedFanInEdges = append(resolvedFanInEdges, bootstrap...)
+			continue
+		}
+
+		stage1ID := pair.stage1.UntypedID().String()
+		stage2ID := pair.stage2.UntypedID().String()
+
+		for _, be := range bootstrap {
+			e1 := be
+			e1.TargetID = stage1ID
+			e2 := be
+			e2.TargetID = stage2ID
+			resolvedFanInEdges = append(resolvedFanInEdges, e1, e2)
+		}
+
+		for _, fe := range feedback {
+			rewrittenEdge := fe
+			if fe.SourceID == key.consumerImplID {
+				rewrittenEdge.SourceID = stage1ID
+			}
+			rewrittenEdge.TargetID = stage2ID
+			resolvedFanInEdges = append(resolvedFanInEdges, rewrittenEdge)
+		}
+	}
+	return resolvedFanInEdges
+}
+
 // cloneOutgoingGraph creates a deep copy of an outgoing adjacency list.
-func cloneOutgoingGraph(original map[string][]string) map[string][]string {
-	cloned := make(map[string][]string, len(original))
-	for k, v := range original {
+func cloneOutgoingGraph(outgoing map[string][]string) map[string][]string {
+	cloned := make(map[string][]string, len(outgoing))
+	for k, v := range outgoing {
 		cloned[k] = slices.Clone(v)
 	}
 	return cloned
