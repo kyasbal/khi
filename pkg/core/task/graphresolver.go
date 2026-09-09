@@ -51,13 +51,13 @@ func ResolveGraph(
 	pointToPointEdges := bindPointToPointDependencies(graphTaskMap)
 
 	// --- Phase 3.5: Fan-In Cycle Resolution, Pruning & Edge Deduplication ---
-	resolvedEdges, boundFanInRefIDs, boundFanInRefIDsByTask, err := resolveFanInEdgesAndCycles(graphTaskMap, pointToPointEdges, candidateFanInEdges)
+	resolvedTasks, resolvedEdges, boundFanInRefIDs, boundFanInRefIDsByTask, err := resolveFanInEdgesAndCycles(graphTaskMap, pointToPointEdges, candidateFanInEdges)
 	if err != nil {
 		return nil, err
 	}
 
 	// --- Phase 4: Kahn's Algorithm on E = E_data U E_order ---
-	return buildAndSortTaskSet(graphTaskMap, resolvedEdges, boundFanInRefIDs, boundFanInRefIDsByTask), nil
+	return buildAndSortTaskSet(resolvedTasks, resolvedEdges, boundFanInRefIDs, boundFanInRefIDsByTask), nil
 }
 
 // createDisabledTaskMap creates a lookup set of reference IDs and implementation IDs for disabled tasks.
@@ -205,6 +205,7 @@ func bindFanInDependencies(
 					priority := typedmap.GetOrDefault(p.Labels(), LabelKeyProvidedTagPriority(tag), DefaultTagPriority)
 					rawEdges = append(rawEdges, taskid.TaskEdge{
 						SourceRefID: p.UntypedID().ReferenceIDString(),
+						SourceID:    p.UntypedID().String(),
 						TargetID:    t.UntypedID().String(),
 						Kind:        dep.DescriptorKind(),
 						Condition:   taskid.ConditionRequired,
@@ -232,9 +233,10 @@ func bindPointToPointDependencies(graphTaskMap map[string]UntypedTask) []taskid.
 					continue
 				}
 				refID := ptp.ReferenceID()
-				if _, exists := graphTaskMap[refID]; exists {
+				if sourceTask, exists := graphTaskMap[refID]; exists {
 					rawEdges = append(rawEdges, taskid.TaskEdge{
 						SourceRefID: refID,
+						SourceID:    sourceTask.UntypedID().String(),
 						TargetID:    t.UntypedID().String(),
 						Kind:        dep.DescriptorKind(),
 						Condition:   dep.DescriptorCondition(),
@@ -253,14 +255,14 @@ func bindPointToPointDependencies(graphTaskMap map[string]UntypedTask) []taskid.
 // Minimum Priority takes precedence.
 func deduplicateAndNormalizeEdges(rawEdges []taskid.TaskEdge) []taskid.TaskEdge {
 	type edgeKey struct {
-		sourceRefID string
-		targetID    string
+		sourceID string
+		targetID string
 	}
 	edgeMap := make(map[edgeKey]taskid.TaskEdge)
 	order := make([]edgeKey, 0, len(rawEdges))
 
 	for _, e := range rawEdges {
-		key := edgeKey{sourceRefID: e.SourceRefID, targetID: e.TargetID}
+		key := edgeKey{sourceID: e.SourceID, targetID: e.TargetID}
 		if existing, exists := edgeMap[key]; exists {
 			if e.Kind == taskid.EdgeKindData {
 				existing.Kind = taskid.EdgeKindData
@@ -276,6 +278,9 @@ func deduplicateAndNormalizeEdges(rawEdges []taskid.TaskEdge) []taskid.TaskEdge 
 			}
 			if existing.Cardinality == taskid.CardinalityPointToPoint || e.Cardinality == taskid.CardinalityPointToPoint {
 				existing.Cardinality = taskid.CardinalityPointToPoint
+			}
+			if existing.SourceRefID == "" && e.SourceRefID != "" {
+				existing.SourceRefID = e.SourceRefID
 			}
 			edgeMap[key] = existing
 		} else {
@@ -293,42 +298,36 @@ func deduplicateAndNormalizeEdges(rawEdges []taskid.TaskEdge) []taskid.TaskEdge 
 
 // buildAndSortTaskSet executes Kahn's algorithm with a min-heap for deterministic ordering.
 func buildAndSortTaskSet(
-	graphTaskMap map[string]UntypedTask,
+	tasks []UntypedTask,
 	edges []taskid.TaskEdge,
 	boundFanInRefIDs map[string][]string,
 	boundFanInRefIDsByTask map[string]map[string][]string,
 ) *TaskSet {
-	inDegree := make(map[string]int)
+	inDegree := make(map[string]int, len(tasks))
 	outgoing := make(map[string][]string) // key: source task ID string -> []target task ID string
 
-	// Map ReferenceID to ImplementationID and index tasks by ImplementationID for O(1) ready queue push.
-	refToImplID := make(map[string]string, len(graphTaskMap))
-	implToTask := make(map[string]UntypedTask, len(graphTaskMap))
-	for _, task := range graphTaskMap {
+	// Index tasks by ImplementationID for O(1) ready queue push.
+	implToTask := make(map[string]UntypedTask, len(tasks))
+	for _, task := range tasks {
 		implID := task.UntypedID().String()
 		inDegree[implID] = 0
-		refToImplID[task.UntypedID().ReferenceIDString()] = implID
 		implToTask[implID] = task
 	}
 
 	for _, e := range edges {
-		sourceImplID, ok := refToImplID[e.SourceRefID]
-		if !ok {
-			continue
-		}
-		outgoing[sourceImplID] = append(outgoing[sourceImplID], e.TargetID)
+		outgoing[e.SourceID] = append(outgoing[e.SourceID], e.TargetID)
 		inDegree[e.TargetID]++
 	}
 
 	h := &taskMinHeap{}
 	heap.Init(h)
-	for _, task := range graphTaskMap {
+	for _, task := range tasks {
 		if inDegree[task.UntypedID().String()] == 0 {
 			heap.Push(h, task)
 		}
 	}
 
-	sortedTasks := make([]UntypedTask, 0, len(graphTaskMap))
+	sortedTasks := make([]UntypedTask, 0, len(tasks))
 	for h.Len() > 0 {
 		curr := heap.Pop(h).(UntypedTask)
 		sortedTasks = append(sortedTasks, curr)

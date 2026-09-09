@@ -255,11 +255,13 @@ func TestTaskSet_MetadataQueries(t *testing.T) {
 	edges := []taskid.TaskEdge{
 		{
 			SourceRefID: "taskA",
+			SourceID:    "taskA#default",
 			TargetID:    "taskB#default",
 			Kind:        taskid.EdgeKindData,
 		},
 		{
 			SourceRefID: "taskA",
+			SourceID:    "taskA#default",
 			TargetID:    "taskB#default",
 			Kind:        taskid.EdgeKindOrderOnly,
 		},

@@ -406,6 +406,7 @@ func TestResolveGraph_EdgeDeduplication(t *testing.T) {
 			wantEdges: []taskid.TaskEdge{
 				{
 					SourceRefID: "task-a",
+					SourceID:    "task-a#default",
 					TargetID:    "task-b#default",
 					Kind:        taskid.EdgeKindData,
 					Condition:   taskid.ConditionRequired,
@@ -427,6 +428,7 @@ func TestResolveGraph_EdgeDeduplication(t *testing.T) {
 			wantEdges: []taskid.TaskEdge{
 				{
 					SourceRefID: "task-a",
+					SourceID:    "task-a#default",
 					TargetID:    "task-b#default",
 					Kind:        taskid.EdgeKindData,
 					Condition:   taskid.ConditionRequired,

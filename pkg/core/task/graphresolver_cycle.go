@@ -29,12 +29,13 @@ type consumerTagKey struct {
 }
 
 // resolveFanInEdgesAndCycles resolves candidate fan-in edges against the fixed DAG formed by pointToPointEdges.
-// It detects cycles caused by fan-in dependencies and applies priority-based pruning or returns descriptive fail-fast errors.
+// When a candidate fan-in edge creates a cycle on a consumer task annotated with AllowMultiStageExecution,
+// it splits the consumer task into multiple execution stages (stage-1 and stage-2) and re-routes edges.
 func resolveFanInEdgesAndCycles(
 	graphTaskMap map[string]UntypedTask,
 	pointToPointEdges []taskid.TaskEdge,
 	candidateFanInEdges []taskid.TaskEdge,
-) ([]taskid.TaskEdge, map[string][]string, map[string]map[string][]string, error) {
+) ([]UntypedTask, []taskid.TaskEdge, map[string][]string, map[string]map[string][]string, error) {
 	refToTask, refToImplID, implToTask := buildTaskMaps(graphTaskMap)
 
 	outgoing := make(map[string][]string, len(graphTaskMap))
@@ -54,18 +55,23 @@ func resolveFanInEdgesAndCycles(
 		inDegree[e.TargetID]++
 	}
 
-	if err := verifyAcyclic(outgoing, inDegree, graphTaskMap); err != nil {
-		return nil, nil, nil, err
+	if err := verifyAcyclic(outgoing, inDegree, len(graphTaskMap)); err != nil {
+		return nil, nil, nil, nil, err
 	}
 
+	// Keep a copy of the PtP outgoing graph for reachability checks during edge re-routing.
+	ptpOutgoing := cloneOutgoingGraph(outgoing)
+
 	sortedKeys, edgesByKey := groupCandidateFanInEdgesByConsumerTag(candidateFanInEdges)
-	var acceptedFanInEdges []taskid.TaskEdge
+	bootstrapEdgesByKey := make(map[consumerTagKey][]taskid.TaskEdge)
+	feedbackEdgesByKey := make(map[consumerTagKey][]taskid.TaskEdge)
+	feedbackProducersByConsumer := make(map[string]map[string]bool)
 
 	for _, key := range sortedKeys {
 		consumerTask := implToTask[key.consumerImplID]
 		candidates := edgesByKey[key]
 
-		accepted, err := resolveCandidateFanInForKey(
+		bootstrap, feedback, err := resolveCandidateFanInForKey(
 			consumerTask,
 			key,
 			candidates,
@@ -74,18 +80,198 @@ func resolveFanInEdgesAndCycles(
 			refToImplID,
 		)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, nil, nil, err
 		}
-		acceptedFanInEdges = append(acceptedFanInEdges, accepted...)
+		bootstrapEdgesByKey[key] = bootstrap
+		feedbackEdgesByKey[key] = feedback
+
+		if len(feedback) > 0 {
+			if feedbackProducersByConsumer[key.consumerImplID] == nil {
+				feedbackProducersByConsumer[key.consumerImplID] = make(map[string]bool)
+			}
+			for _, fe := range feedback {
+				pImplID := refToImplID[fe.SourceRefID]
+				feedbackProducersByConsumer[key.consumerImplID][pImplID] = true
+			}
+		}
 	}
 
-	allEdges := make([]taskid.TaskEdge, 0, len(pointToPointEdges)+len(acceptedFanInEdges))
-	allEdges = append(allEdges, pointToPointEdges...)
-	allEdges = append(allEdges, acceptedFanInEdges...)
+	if len(feedbackProducersByConsumer) == 0 {
+		var allFanInEdges []taskid.TaskEdge
+		for _, key := range sortedKeys {
+			allFanInEdges = append(allFanInEdges, bootstrapEdgesByKey[key]...)
+		}
+		allEdges := make([]taskid.TaskEdge, 0, len(pointToPointEdges)+len(allFanInEdges))
+		allEdges = append(allEdges, pointToPointEdges...)
+		allEdges = append(allEdges, allFanInEdges...)
+		dedupedEdges := deduplicateAndNormalizeEdges(allEdges)
+
+		boundFanInRefIDs, boundFanInRefIDsByTask := collectBoundFanInRefIDs(allFanInEdges)
+		tasks := make([]UntypedTask, 0, len(graphTaskMap))
+		for _, t := range graphTaskMap {
+			tasks = append(tasks, t)
+		}
+		slices.SortFunc(tasks, compareTaskByImplementationID)
+		return tasks, dedupedEdges, boundFanInRefIDs, boundFanInRefIDsByTask, nil
+	}
+
+	type stageTaskPair struct {
+		stage1 UntypedTask
+		stage2 UntypedTask
+	}
+	stageTasks := make(map[string]stageTaskPair, len(feedbackProducersByConsumer))
+	for consumerImplID := range feedbackProducersByConsumer {
+		consumerTask := implToTask[consumerImplID]
+		stage1 := &stageTask{
+			originalTask: consumerTask,
+			stageID:      taskid.NewStageImplementationID(consumerTask.UntypedID(), 1),
+		}
+		stage2 := &stageTask{
+			originalTask: consumerTask,
+			stageID:      taskid.NewStageImplementationID(consumerTask.UntypedID(), 2),
+		}
+		stageTasks[consumerImplID] = stageTaskPair{stage1: stage1, stage2: stage2}
+	}
+
+	allTasks := make([]UntypedTask, 0, len(graphTaskMap)+len(stageTasks))
+	for _, task := range graphTaskMap {
+		implID := task.UntypedID().String()
+		if pair, ok := stageTasks[implID]; ok {
+			allTasks = append(allTasks, pair.stage1, pair.stage2)
+		} else {
+			allTasks = append(allTasks, task)
+		}
+	}
+	slices.SortFunc(allTasks, compareTaskByImplementationID)
+
+	var resolvedPtPEdges []taskid.TaskEdge
+	for _, e := range pointToPointEdges {
+		_, sourceIsConsumer := stageTasks[e.SourceID]
+		_, targetIsConsumer := stageTasks[e.TargetID]
+
+		if !sourceIsConsumer && !targetIsConsumer {
+			resolvedPtPEdges = append(resolvedPtPEdges, e)
+			continue
+		}
+
+		if !sourceIsConsumer && targetIsConsumer {
+			targetPair := stageTasks[e.TargetID]
+			e1 := e
+			e1.TargetID = targetPair.stage1.UntypedID().String()
+			e2 := e
+			e2.TargetID = targetPair.stage2.UntypedID().String()
+			resolvedPtPEdges = append(resolvedPtPEdges, e1, e2)
+			continue
+		}
+
+		sourcePair := stageTasks[e.SourceID]
+		feedbackProducers := feedbackProducersByConsumer[e.SourceID]
+
+		leadsToFeedback := false
+		for fbProducerID := range feedbackProducers {
+			if e.TargetID == fbProducerID || isReachable(e.TargetID, fbProducerID, ptpOutgoing) {
+				leadsToFeedback = true
+				break
+			}
+		}
+
+		sourceID := sourcePair.stage2.UntypedID().String()
+		if leadsToFeedback {
+			sourceID = sourcePair.stage1.UntypedID().String()
+		}
+
+		if !targetIsConsumer {
+			eOut := e
+			eOut.SourceID = sourceID
+			resolvedPtPEdges = append(resolvedPtPEdges, eOut)
+		} else {
+			targetPair := stageTasks[e.TargetID]
+			e1 := e
+			e1.SourceID = sourceID
+			e1.TargetID = targetPair.stage1.UntypedID().String()
+			e2 := e
+			e2.SourceID = sourceID
+			e2.TargetID = targetPair.stage2.UntypedID().String()
+			resolvedPtPEdges = append(resolvedPtPEdges, e1, e2)
+		}
+	}
+
+	for consumerImplID, pair := range stageTasks {
+		consumerTask := implToTask[consumerImplID]
+		resolvedPtPEdges = append(resolvedPtPEdges, taskid.TaskEdge{
+			SourceRefID: consumerTask.UntypedID().ReferenceIDString(),
+			SourceID:    pair.stage1.UntypedID().String(),
+			TargetID:    pair.stage2.UntypedID().String(),
+			Kind:        taskid.EdgeKindOrderOnly,
+			Condition:   taskid.ConditionRequired,
+			Cardinality: taskid.CardinalityPointToPoint,
+		})
+	}
+
+	var resolvedFanInEdges []taskid.TaskEdge
+	for _, key := range sortedKeys {
+		bootstrap := bootstrapEdgesByKey[key]
+		feedback := feedbackEdgesByKey[key]
+
+		pair, isSplit := stageTasks[key.consumerImplID]
+		if !isSplit {
+			resolvedFanInEdges = append(resolvedFanInEdges, bootstrap...)
+			continue
+		}
+
+		stage1ID := pair.stage1.UntypedID().String()
+		stage2ID := pair.stage2.UntypedID().String()
+
+		for _, be := range bootstrap {
+			e1 := be
+			e1.TargetID = stage1ID
+			e2 := be
+			e2.TargetID = stage2ID
+			resolvedFanInEdges = append(resolvedFanInEdges, e1, e2)
+		}
+
+		for _, fe := range feedback {
+			e := fe
+			if fe.SourceID == key.consumerImplID {
+				e.SourceID = stage1ID
+			}
+			e.TargetID = stage2ID
+			resolvedFanInEdges = append(resolvedFanInEdges, e)
+		}
+	}
+
+	allEdges := make([]taskid.TaskEdge, 0, len(resolvedPtPEdges)+len(resolvedFanInEdges))
+	allEdges = append(allEdges, resolvedPtPEdges...)
+	allEdges = append(allEdges, resolvedFanInEdges...)
 	dedupedEdges := deduplicateAndNormalizeEdges(allEdges)
 
-	boundFanInRefIDs, boundFanInRefIDsByTask := collectBoundFanInRefIDs(acceptedFanInEdges)
-	return dedupedEdges, boundFanInRefIDs, boundFanInRefIDsByTask, nil
+	boundFanInRefIDs, boundFanInRefIDsByTask := collectBoundFanInRefIDs(resolvedFanInEdges)
+
+	finalOutgoing := make(map[string][]string, len(allTasks))
+	finalInDegree := make(map[string]int, len(allTasks))
+	for _, t := range allTasks {
+		implID := t.UntypedID().String()
+		finalOutgoing[implID] = nil
+		finalInDegree[implID] = 0
+	}
+	for _, e := range dedupedEdges {
+		finalOutgoing[e.SourceID] = append(finalOutgoing[e.SourceID], e.TargetID)
+		finalInDegree[e.TargetID]++
+	}
+	if err := verifyAcyclic(finalOutgoing, finalInDegree, len(allTasks)); err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	return allTasks, dedupedEdges, boundFanInRefIDs, boundFanInRefIDsByTask, nil
+}
+
+// cloneOutgoingGraph creates a deep copy of an outgoing adjacency list.
+func cloneOutgoingGraph(original map[string][]string) map[string][]string {
+	cloned := make(map[string][]string, len(original))
+	for k, v := range original {
+		cloned[k] = slices.Clone(v)
+	}
+	return cloned
 }
 
 // buildTaskMaps constructs lookup maps for tasks and their identifiers.
@@ -127,7 +313,8 @@ func groupCandidateFanInEdgesByConsumerTag(candidateFanInEdges []taskid.TaskEdge
 	return keys, edgesByKey
 }
 
-// resolveCandidateFanInForKey resolves candidate fan-in edges for a specific consumer and tag key.
+// resolveCandidateFanInForKey resolves candidate fan-in edges for a specific consumer and tag key,
+// partitioning them into bootstrap edges (acyclic) and feedback edges (cyclic with AllowMultiStageExecution).
 func resolveCandidateFanInForKey(
 	consumerTask UntypedTask,
 	key consumerTagKey,
@@ -135,7 +322,7 @@ func resolveCandidateFanInForKey(
 	outgoing map[string][]string,
 	refToTask map[string]UntypedTask,
 	refToImplID map[string]string,
-) ([]taskid.TaskEdge, error) {
+) ([]taskid.TaskEdge, []taskid.TaskEdge, error) {
 	candidatesByPriority := make(map[int][]taskid.TaskEdge)
 	for _, e := range candidates {
 		candidatesByPriority[e.Priority] = append(candidatesByPriority[e.Priority], e)
@@ -147,7 +334,8 @@ func resolveCandidateFanInForKey(
 	}
 	slices.Sort(priorities)
 
-	var acceptedEdges []taskid.TaskEdge
+	var bootstrapEdges []taskid.TaskEdge
+	var feedbackEdges []taskid.TaskEdge
 
 	for _, priority := range priorities {
 		candidateEdgesAtPriority := deduplicateCandidateEdgesAtPriority(candidatesByPriority[priority])
@@ -158,26 +346,26 @@ func resolveCandidateFanInForKey(
 
 			if !createsCycle {
 				outgoing[producerImplID] = append(outgoing[producerImplID], key.consumerImplID)
-				acceptedEdges = append(acceptedEdges, candidateEdge)
+				bootstrapEdges = append(bootstrapEdges, candidateEdge)
 				continue
 			}
 
 			hasAllowMultiStage := typedmap.GetOrDefault(consumerTask.Labels(), LabelKeyAllowMultiStageExecution, false)
 			if !hasAllowMultiStage {
-				return nil, fmt.Errorf("task %s requires multi-stage execution but lacks AllowMultiStageExecution label", consumerTask.UntypedID())
+				return nil, nil, fmt.Errorf("task %s requires multi-stage execution but lacks AllowMultiStageExecution label", consumerTask.UntypedID())
 			}
 
 			if len(candidateEdgesAtPriority) > 1 {
-				return nil, buildAmbiguousPriorityError(candidateEdge, candidateEdgesAtPriority, refToTask, key.tag)
+				return nil, nil, buildAmbiguousPriorityError(candidateEdge, candidateEdgesAtPriority, refToTask, key.tag)
 			}
 
-			if len(acceptedEdges) == 0 {
-				return nil, fmt.Errorf("task %s has circular fan-in dependency on tag %s with no higher-priority producer to bootstrap execution", consumerTask.UntypedID(), key.tag)
+			if len(bootstrapEdges) == 0 {
+				return nil, nil, fmt.Errorf("task %s has circular fan-in dependency on tag %s with no higher-priority producer to bootstrap execution", consumerTask.UntypedID(), key.tag)
 			}
-			// Strictly lower priority producer with AllowMultiStageExecution and bootstrap producer: prune edge.
+			feedbackEdges = append(feedbackEdges, candidateEdge)
 		}
 	}
-	return acceptedEdges, nil
+	return bootstrapEdges, feedbackEdges, nil
 }
 
 // deduplicateCandidateEdgesAtPriority sorts and deduplicates candidate edges by SourceRefID within the same priority.
@@ -252,12 +440,12 @@ func collectBoundFanInRefIDs(acceptedFanInEdges []taskid.TaskEdge) (map[string][
 }
 
 // verifyAcyclic checks if the graph formed by outgoing contains any cycle.
-func verifyAcyclic(outgoing map[string][]string, inDegree map[string]int, graphTaskMap map[string]UntypedTask) error {
+func verifyAcyclic(outgoing map[string][]string, inDegree map[string]int, nodeCount int) error {
 	inDegreeCopy := make(map[string]int, len(inDegree))
 	for k, v := range inDegree {
 		inDegreeCopy[k] = v
 	}
-	queue := make([]string, 0, len(graphTaskMap))
+	queue := make([]string, 0, nodeCount)
 	for implID, deg := range inDegreeCopy {
 		if deg == 0 {
 			queue = append(queue, implID)
@@ -275,7 +463,7 @@ func verifyAcyclic(outgoing map[string][]string, inDegree map[string]int, graphT
 			}
 		}
 	}
-	if visitedCount < len(graphTaskMap) {
+	if visitedCount < nodeCount {
 		cyclicPath := extractCyclicDependencyPath(outgoing, inDegreeCopy)
 		return fmt.Errorf("failed to sort as a runnable task graph. \n The graph contains cyclic dependency\n%s", cyclicPath)
 	}

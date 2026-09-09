@@ -28,21 +28,24 @@ func TestResolveGraph_FanInCycle_PriorityDifference(t *testing.T) {
 	tagA := NewTag[any]("tag-a")
 
 	testCases := []struct {
-		name            string
-		initialTasks    []UntypedTask
-		availableTasks  []UntypedTask
-		wantTaskIDs     []string
-		wantBoundRefIDs []string
+		name                  string
+		initialTasks          []UntypedTask
+		availableTasks        []UntypedTask
+		wantTaskIDs           []string
+		wantBoundRefIDs       []string
+		wantBoundRefIDsByTask map[string][]string
 	}{
 		// Mermaid task graph:
 		// ```mermaid
 		// graph TD
-		//   prod_high["prod-high (priority=10)"] -->|"FanIn (tag-a)"| consumer["consumer"]
-		//   consumer -->|"PointToPoint"| prod_low["prod-low (priority=100)"]
-		//   prod_low -.->|"FanIn (tag-a, cycle pruned)"| consumer
+		//   prod_high["prod-high (priority=10)"] -->|"FanIn (tag-a)"| consumer_s1["consumer#stage-1"]
+		//   consumer_s1 -->|"PointToPoint"| prod_low["prod-low (priority=100)"]
+		//   prod_low -->|"FanIn (tag-a)"| consumer_s2["consumer#stage-2"]
+		//   prod_high -->|"FanIn (tag-a)"| consumer_s2
+		//   consumer_s1 -.->|"OrderOnly"| consumer_s2
 		// ```
 		{
-			name: "higher priority fan-in edge is kept and lower priority edge creating cycle is pruned",
+			name: "higher priority fan-in edge boots stage-1 and cyclic lower priority edge is resolved in stage-2",
 			initialTasks: []UntypedTask{
 				createMockTask("prod-high", "default", nil, ProvidesTag(tagA, WithTagPriority(10))),
 				createMockTask("consumer", "default", []Dependency{
@@ -61,17 +64,23 @@ func TestResolveGraph_FanInCycle_PriorityDifference(t *testing.T) {
 					taskid.NewTaskReference[any]("consumer"),
 				}, ProvidesTag(tagA, WithTagPriority(100))),
 			},
-			wantTaskIDs:     []string{"prod-high#default", "consumer#default", "prod-low#default"},
-			wantBoundRefIDs: []string{"prod-high"},
+			wantTaskIDs:     []string{"prod-high#default", "consumer#default-stage-1", "prod-low#default", "consumer#default-stage-2"},
+			wantBoundRefIDs: []string{"prod-high", "prod-low"},
+			wantBoundRefIDsByTask: map[string][]string{
+				"consumer#default-stage-1": {"prod-high"},
+				"consumer#default-stage-2": {"prod-high", "prod-low"},
+			},
 		},
 		// Mermaid task graph:
 		// ```mermaid
 		// graph TD
-		//   prod_high["prod-high (priority=10)"] -->|"FanIn (tag-a)"| consumer["consumer"]
-		//   consumer -.->|"FanIn (tag-a, self-loop cycle pruned)"| consumer
+		//   prod_high["prod-high (priority=10)"] -->|"FanIn (tag-a)"| consumer_s1["consumer#stage-1"]
+		//   prod_high -->|"FanIn (tag-a)"| consumer_s2["consumer#stage-2"]
+		//   consumer_s1 -->|"FanIn (tag-a, self-loop)"| consumer_s2
+		//   consumer_s1 -.->|"OrderOnly"| consumer_s2
 		// ```
 		{
-			name: "higher priority external producer is kept and lower priority self-loop edge is pruned",
+			name: "higher priority external producer boots stage-1 and lower priority self-loop edge is resolved in stage-2",
 			initialTasks: []UntypedTask{
 				createMockTask("prod-high", "default", nil, ProvidesTag(tagA, WithTagPriority(10))),
 				createMockTask("consumer", "default", []Dependency{
@@ -84,19 +93,25 @@ func TestResolveGraph_FanInCycle_PriorityDifference(t *testing.T) {
 					tagA.Ref(),
 				}, AllowMultiStageExecution(), ProvidesTag(tagA, WithTagPriority(100))),
 			},
-			wantTaskIDs:     []string{"prod-high#default", "consumer#default"},
-			wantBoundRefIDs: []string{"prod-high"},
+			wantTaskIDs:     []string{"prod-high#default", "consumer#default-stage-1", "consumer#default-stage-2"},
+			wantBoundRefIDs: []string{"consumer", "prod-high"},
+			wantBoundRefIDsByTask: map[string][]string{
+				"consumer#default-stage-1": {"prod-high"},
+				"consumer#default-stage-2": {"consumer", "prod-high"},
+			},
 		},
 		// Mermaid task graph:
 		// ```mermaid
 		// graph TD
-		//   prod_high["prod-high (priority=10)"] -->|"FanIn (tag-a)"| consumer["consumer"]
-		//   consumer -->|"PointToPoint"| task_mid["task-mid"]
+		//   prod_high["prod-high (priority=10)"] -->|"FanIn (tag-a)"| consumer_s1["consumer#stage-1"]
+		//   consumer_s1 -->|"PointToPoint"| task_mid["task-mid"]
 		//   task_mid -->|"PointToPoint"| prod_low["prod-low (priority=100)"]
-		//   prod_low -.->|"FanIn (tag-a, cycle pruned)"| consumer
+		//   prod_low -->|"FanIn (tag-a)"| consumer_s2["consumer#stage-2"]
+		//   prod_high -->|"FanIn (tag-a)"| consumer_s2
+		//   consumer_s1 -.->|"OrderOnly"| consumer_s2
 		// ```
 		{
-			name: "multi-hop transitive cycle with lower priority producer is pruned",
+			name: "multi-hop transitive cycle with lower priority producer is resolved across stage-1 and stage-2",
 			initialTasks: []UntypedTask{
 				createMockTask("prod-high", "default", nil, ProvidesTag(tagA, WithTagPriority(10))),
 				createMockTask("consumer", "default", []Dependency{
@@ -121,8 +136,12 @@ func TestResolveGraph_FanInCycle_PriorityDifference(t *testing.T) {
 					taskid.NewTaskReference[any]("task-mid"),
 				}, ProvidesTag(tagA, WithTagPriority(100))),
 			},
-			wantTaskIDs:     []string{"prod-high#default", "consumer#default", "task-mid#default", "prod-low#default"},
-			wantBoundRefIDs: []string{"prod-high"},
+			wantTaskIDs:     []string{"prod-high#default", "consumer#default-stage-1", "task-mid#default", "prod-low#default", "consumer#default-stage-2"},
+			wantBoundRefIDs: []string{"prod-high", "prod-low"},
+			wantBoundRefIDsByTask: map[string][]string{
+				"consumer#default-stage-1": {"prod-high"},
+				"consumer#default-stage-2": {"prod-high", "prod-low"},
+			},
 		},
 	}
 
@@ -145,6 +164,13 @@ func TestResolveGraph_FanInCycle_PriorityDifference(t *testing.T) {
 			gotBoundRefIDs := taskSet.BoundReferenceIDsWithTag(tagA.ID())
 			if diff := cmp.Diff(tc.wantBoundRefIDs, gotBoundRefIDs); diff != "" {
 				t.Errorf("BoundReferenceIDsWithTag() mismatch (-want +got):\n%s", diff)
+			}
+
+			for taskImplID, wantRefs := range tc.wantBoundRefIDsByTask {
+				gotRefs := taskSet.BoundReferenceIDsForTask(taskImplID, tagA.ID())
+				if diff := cmp.Diff(wantRefs, gotRefs); diff != "" {
+					t.Errorf("BoundReferenceIDsForTask(%q) mismatch (-want +got):\n%s", taskImplID, diff)
+				}
 			}
 		})
 	}

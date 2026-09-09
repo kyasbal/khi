@@ -215,6 +215,8 @@ func ApplyFanInOption(c *DependencyConfig, opt FanInOption) {
 type TaskEdge struct {
 	// SourceRefID is the reference ID of the upstream producer task.
 	SourceRefID string
+	// SourceID is the implementation ID of the upstream producer task.
+	SourceID string
 	// TargetID is the implementation ID of the downstream consumer task.
 	TargetID string
 	// Kind indicates whether this edge transfers data or only execution order.

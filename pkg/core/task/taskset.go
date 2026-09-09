@@ -29,13 +29,13 @@ type LabelPredicate[T any] = func(v T) bool
 // TaskSet is a collection of tasks and resolved dependency edges.
 // It implements core_contract.TaskGraphMetadata and provides querying for execution order and edges.
 type TaskSet struct {
-	tasks             []UntypedTask
-	edges             []taskid.TaskEdge
-	runnable          bool
-	incomingEdges     map[string][]taskid.TaskEdge // key: target task implementation ID
-	incomingDataEdges map[string][]taskid.TaskEdge // key: target task implementation ID (EdgeKindData only)
-	boundRefIDs            map[string]struct{}          // set of task reference IDs bound to the graph
-	boundFanInRefIDs       map[string][]string          // tag -> []sourceRefID
+	tasks                  []UntypedTask
+	edges                  []taskid.TaskEdge
+	runnable               bool
+	incomingEdges          map[string][]taskid.TaskEdge   // key: target task implementation ID
+	incomingDataEdges      map[string][]taskid.TaskEdge   // key: target task implementation ID (EdgeKindData only)
+	boundRefIDs            map[string]struct{}            // set of task reference IDs bound to the graph
+	boundFanInRefIDs       map[string][]string            // tag -> []sourceRefID
 	boundFanInRefIDsByTask map[string]map[string][]string // targetImplID -> tag -> []sourceRefID
 }
 
@@ -99,11 +99,11 @@ func NewResolvedTaskSet(
 	}
 
 	return &TaskSet{
-		tasks:             slices.Clone(tasks),
-		edges:             slices.Clone(edges),
-		runnable:          true,
-		incomingEdges:     incomingEdges,
-		incomingDataEdges: incomingDataEdges,
+		tasks:                  slices.Clone(tasks),
+		edges:                  slices.Clone(edges),
+		runnable:               true,
+		incomingEdges:          incomingEdges,
+		incomingDataEdges:      incomingDataEdges,
 		boundRefIDs:            boundRefIDs,
 		boundFanInRefIDs:       copiedBoundFanInRefIDs,
 		boundFanInRefIDsByTask: copiedBoundFanInRefIDsByTask,
@@ -223,8 +223,15 @@ func (s *TaskSet) DumpGraphviz() (string, error) {
 	for _, task := range s.tasks {
 		sources := s.IncomingEdges(task.UntypedID().String())
 		for _, edge := range sources {
-			sourceTask := sourceRelation[edge.SourceRefID]
-			result += fmt.Sprintf("%s -> %s\n", graphVizValidId(sourceTask.UntypedID().String()), graphVizValidId(task.UntypedID().String()))
+			sourceID := edge.SourceID
+			if sourceID == "" {
+				if sourceTask, ok := sourceRelation[edge.SourceRefID]; ok {
+					sourceID = sourceTask.UntypedID().String()
+				}
+			}
+			if sourceID != "" {
+				result += fmt.Sprintf("%s -> %s\n", graphVizValidId(sourceID), graphVizValidId(task.UntypedID().String()))
+			}
 		}
 		sourceRelation[task.UntypedID().ReferenceIDString()] = task
 	}
