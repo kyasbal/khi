@@ -288,18 +288,20 @@ func (r *LocalRunner) cleanupCompletedTaskResults(completedTask UntypedTask) {
 	for _, edge := range r.resolvedTaskSet.IncomingDataEdges(completedTask.UntypedID().String()) {
 		depImplID := edge.SourceImplID
 		r.remainingDependentsByImplID[depImplID]--
-		remainingDependents := r.remainingDependentsByImplID[depImplID]
+		if r.remainingDependentsByImplID[depImplID] > 0 {
+			continue
+		}
 
-		if remainingDependents == 0 {
-			if depTask, found := r.taskByImplID[depImplID]; found {
-				depRefID := depTask.UntypedID().ReferenceIDString()
-				if depRefID == completedRefID {
-					continue
-				}
-				if !r.isTaskResultRetained(depTask) && r.remainingStagesByRefID[depRefID] == 0 {
-					typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](depRefID))
-				}
-			}
+		depTask, found := r.taskByImplID[depImplID]
+		if !found {
+			continue
+		}
+		depRefID := depTask.UntypedID().ReferenceIDString()
+		if depRefID == completedRefID {
+			continue
+		}
+		if !r.isTaskResultRetained(depTask) && r.remainingStagesByRefID[depRefID] == 0 {
+			typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](depRefID))
 		}
 	}
 }
