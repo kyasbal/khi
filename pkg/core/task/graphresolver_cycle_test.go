@@ -541,7 +541,7 @@ func TestResolveGraph_FanInCycle_UpstreamTaskPtPRouting(t *testing.T) {
 		//   consumer_s1 -.->|"OrderOnly"| consumer_s2
 		// ```
 		{
-			name: "upstream task depending on multi-stage consumer is routed to both stage-1 and stage-2",
+			name: "upstream task required by multi-stage consumer is routed to both stage-1 and stage-2",
 			initialTasks: []UntypedTask{
 				createMockTask("upstream", "default", nil),
 				createMockTask("prod-high", "default", nil, ProvidesTag(tagA, WithTagPriority(10))),

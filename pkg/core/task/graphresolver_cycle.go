@@ -38,13 +38,13 @@ func resolveFanInEdgesAndCycles(
 ) ([]UntypedTask, []taskid.TaskEdge, map[string]map[string][]string, error) {
 	implToTask := buildImplToTaskMap(graphTaskMap)
 
-	outgoing, err := buildPtPOutgoingGraph(graphTaskMap, pointToPointEdges)
+	outgoing, err := buildPointToPointOutgoingGraph(graphTaskMap, pointToPointEdges)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	// Keep a copy of the PtP outgoing graph for reachability checks during edge re-routing.
-	ptpOutgoing := cloneOutgoingGraph(outgoing)
+	pointToPointOutgoing := cloneOutgoingGraph(outgoing)
 
 	sortedKeys, edgesByKey := groupCandidateFanInEdgesByConsumerTag(candidateFanInEdges)
 	bootstrapEdgesByKey, feedbackEdgesByKey, feedbackProducersByConsumer, err := partitionCandidateFanInEdges(
@@ -68,13 +68,13 @@ func resolveFanInEdgesAndCycles(
 		bootstrapEdgesByKey,
 		feedbackEdgesByKey,
 		feedbackProducersByConsumer,
-		ptpOutgoing,
+		pointToPointOutgoing,
 		implToTask,
 	)
 }
 
-// buildPtPOutgoingGraph constructs the adjacency and in-degree maps from point-to-point edges and validates acyclicity.
-func buildPtPOutgoingGraph(
+// buildPointToPointOutgoingGraph constructs the adjacency and in-degree maps from point-to-point edges and validates acyclicity.
+func buildPointToPointOutgoingGraph(
 	graphTaskMap map[string]UntypedTask,
 	pointToPointEdges []taskid.TaskEdge,
 ) (map[string][]string, error) {
@@ -176,17 +176,17 @@ func expandMultiStageResult(
 	bootstrapEdgesByKey map[consumerTagKey][]taskid.TaskEdge,
 	feedbackEdgesByKey map[consumerTagKey][]taskid.TaskEdge,
 	feedbackProducersByConsumer map[string]map[string]bool,
-	ptpOutgoing map[string][]string,
+	pointToPointOutgoing map[string][]string,
 	implToTask map[string]UntypedTask,
 ) ([]UntypedTask, []taskid.TaskEdge, map[string]map[string][]string, error) {
 	stageTasks := createStageTasks(feedbackProducersByConsumer, implToTask)
 	allTasks := expandTasksWithStages(graphTaskMap, stageTasks)
 
-	resolvedPtPEdges := reroutePointToPointEdges(
+	resolvedPointToPointEdges := reroutePointToPointEdges(
 		pointToPointEdges,
 		stageTasks,
 		feedbackProducersByConsumer,
-		ptpOutgoing,
+		pointToPointOutgoing,
 	)
 
 	resolvedFanInEdges := rerouteFanInEdges(
@@ -196,8 +196,8 @@ func expandMultiStageResult(
 		stageTasks,
 	)
 
-	allEdges := make([]taskid.TaskEdge, 0, len(resolvedPtPEdges)+len(resolvedFanInEdges))
-	allEdges = append(allEdges, resolvedPtPEdges...)
+	allEdges := make([]taskid.TaskEdge, 0, len(resolvedPointToPointEdges)+len(resolvedFanInEdges))
+	allEdges = append(allEdges, resolvedPointToPointEdges...)
 	allEdges = append(allEdges, resolvedFanInEdges...)
 	dedupedEdges := deduplicateAndNormalizeEdges(allEdges)
 
@@ -275,15 +275,15 @@ func reroutePointToPointEdges(
 	pointToPointEdges []taskid.TaskEdge,
 	stageTasks map[string]stageTaskPair,
 	feedbackProducersByConsumer map[string]map[string]bool,
-	ptpOutgoing map[string][]string,
+	pointToPointOutgoing map[string][]string,
 ) []taskid.TaskEdge {
-	var resolvedPtPEdges []taskid.TaskEdge
+	var resolvedPointToPointEdges []taskid.TaskEdge
 	for _, e := range pointToPointEdges {
-		resolvedPtPEdges = append(resolvedPtPEdges, rerouteSinglePtPEdge(e, stageTasks, feedbackProducersByConsumer, ptpOutgoing)...)
+		resolvedPointToPointEdges = append(resolvedPointToPointEdges, rerouteSinglePointToPointEdge(e, stageTasks, feedbackProducersByConsumer, pointToPointOutgoing)...)
 	}
 
 	for _, pair := range stageTasks {
-		resolvedPtPEdges = append(resolvedPtPEdges, taskid.TaskEdge{
+		resolvedPointToPointEdges = append(resolvedPointToPointEdges, taskid.TaskEdge{
 			SourceRefID: pair.stage1.UntypedID().ReferenceIDString(),
 			SourceID:    pair.stage1.UntypedID().String(),
 			TargetID:    pair.stage2.UntypedID().String(),
@@ -293,15 +293,15 @@ func reroutePointToPointEdges(
 		})
 	}
 
-	return resolvedPtPEdges
+	return resolvedPointToPointEdges
 }
 
-// rerouteSinglePtPEdge reroutes a point-to-point edge based on whether its source and target are split into stages.
-func rerouteSinglePtPEdge(
+// rerouteSinglePointToPointEdge reroutes a point-to-point edge based on whether its source and target are split into stages.
+func rerouteSinglePointToPointEdge(
 	e taskid.TaskEdge,
 	stageTasks map[string]stageTaskPair,
 	feedbackProducersByConsumer map[string]map[string]bool,
-	ptpOutgoing map[string][]string,
+	pointToPointOutgoing map[string][]string,
 ) []taskid.TaskEdge {
 	_, sourceIsSplit := stageTasks[e.SourceID]
 	_, targetIsSplit := stageTasks[e.TargetID]
@@ -322,7 +322,7 @@ func rerouteSinglePtPEdge(
 	sourcePair := stageTasks[e.SourceID]
 	feedbackProducers := feedbackProducersByConsumer[e.SourceID]
 
-	leadsToFeedback := leadsToFeedbackProducer(e.TargetID, feedbackProducers, ptpOutgoing)
+	leadsToFeedback := leadsToFeedbackProducer(e.TargetID, feedbackProducers, pointToPointOutgoing)
 
 	sourceID := sourcePair.stage2.UntypedID().String()
 	if leadsToFeedback {
@@ -349,10 +349,10 @@ func rerouteSinglePtPEdge(
 func leadsToFeedbackProducer(
 	targetID string,
 	feedbackProducers map[string]bool,
-	ptpOutgoing map[string][]string,
+	pointToPointOutgoing map[string][]string,
 ) bool {
 	for feedbackProducerID := range feedbackProducers {
-		if targetID == feedbackProducerID || isReachable(targetID, feedbackProducerID, ptpOutgoing) {
+		if targetID == feedbackProducerID || isReachable(targetID, feedbackProducerID, pointToPointOutgoing) {
 			return true
 		}
 	}
