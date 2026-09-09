@@ -299,10 +299,10 @@ func collectBoundFanInRefIDsByTask(acceptedFanInEdges []taskid.TaskEdge) map[str
 		}
 		boundFanInRefIDsByTask[e.TargetImplID][e.Tag] = append(boundFanInRefIDsByTask[e.TargetImplID][e.Tag], e.SourceRefID)
 	}
-	for targetID, byTag := range boundFanInRefIDsByTask {
+	for targetImplID, byTag := range boundFanInRefIDsByTask {
 		for tag, refIDs := range byTag {
 			slices.Sort(refIDs)
-			boundFanInRefIDsByTask[targetID][tag] = slices.Compact(refIDs)
+			boundFanInRefIDsByTask[targetImplID][tag] = slices.Compact(refIDs)
 		}
 	}
 	return boundFanInRefIDsByTask

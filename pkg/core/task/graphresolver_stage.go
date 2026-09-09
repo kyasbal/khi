@@ -184,35 +184,35 @@ func rerouteSinglePointToPointEdge(
 
 	leadsToFeedback := leadsToFeedbackProducer(e.TargetImplID, feedbackProducers, pointToPointOutgoing)
 
-	sourceID := sourcePair.stage2.UntypedID().String()
+	sourceImplID := sourcePair.stage2.UntypedID().String()
 	if leadsToFeedback {
-		sourceID = sourcePair.stage1.UntypedID().String()
+		sourceImplID = sourcePair.stage1.UntypedID().String()
 	}
 
 	if !targetIsSplit {
 		rewrittenEdge := e
-		rewrittenEdge.SourceImplID = sourceID
+		rewrittenEdge.SourceImplID = sourceImplID
 		return []taskid.TaskEdge{rewrittenEdge}
 	}
 
 	targetPair := stageTasks[e.TargetImplID]
 	e1 := e
-	e1.SourceImplID = sourceID
+	e1.SourceImplID = sourceImplID
 	e1.TargetImplID = targetPair.stage1.UntypedID().String()
 	e2 := e
-	e2.SourceImplID = sourceID
+	e2.SourceImplID = sourceImplID
 	e2.TargetImplID = targetPair.stage2.UntypedID().String()
 	return []taskid.TaskEdge{e1, e2}
 }
 
-// leadsToFeedbackProducer checks if targetID is a feedback producer or has a directed path leading to one.
+// leadsToFeedbackProducer checks if targetImplID is a feedback producer or has a directed path leading to one.
 func leadsToFeedbackProducer(
-	targetID string,
+	targetImplID string,
 	feedbackProducers map[string]bool,
 	pointToPointOutgoing map[string][]string,
 ) bool {
-	for feedbackProducerID := range feedbackProducers {
-		if targetID == feedbackProducerID || isReachable(targetID, feedbackProducerID, pointToPointOutgoing) {
+	for feedbackProducerImplID := range feedbackProducers {
+		if targetImplID == feedbackProducerImplID || isReachable(targetImplID, feedbackProducerImplID, pointToPointOutgoing) {
 			return true
 		}
 	}
@@ -243,8 +243,8 @@ func rerouteFanInEdges(
 			continue
 		}
 
-		stage1ID := pair.stage1.UntypedID().String()
-		stage2ID := pair.stage2.UntypedID().String()
+		stage1ImplID := pair.stage1.UntypedID().String()
+		stage2ImplID := pair.stage2.UntypedID().String()
 
 		for _, be := range bootstrap {
 			e1 := be
@@ -253,19 +253,19 @@ func rerouteFanInEdges(
 				e1.SourceImplID = sourcePair.stage2.UntypedID().String()
 				e2.SourceImplID = sourcePair.stage2.UntypedID().String()
 			}
-			e1.TargetImplID = stage1ID
-			e2.TargetImplID = stage2ID
+			e1.TargetImplID = stage1ImplID
+			e2.TargetImplID = stage2ImplID
 			resolvedFanInEdges = append(resolvedFanInEdges, e1, e2)
 		}
 
 		for _, fe := range feedback {
 			rewrittenEdge := fe
 			if fe.SourceImplID == key.consumerImplID {
-				rewrittenEdge.SourceImplID = stage1ID
+				rewrittenEdge.SourceImplID = stage1ImplID
 			} else if sourcePair, sourceIsSplit := stageTasks[fe.SourceImplID]; sourceIsSplit {
 				rewrittenEdge.SourceImplID = sourcePair.stage2.UntypedID().String()
 			}
-			rewrittenEdge.TargetImplID = stage2ID
+			rewrittenEdge.TargetImplID = stage2ImplID
 			resolvedFanInEdges = append(resolvedFanInEdges, rewrittenEdge)
 		}
 	}

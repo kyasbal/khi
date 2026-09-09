@@ -83,10 +83,10 @@ func NewResolvedTaskSet(
 	}
 
 	copiedBoundFanInRefIDsByTask := make(map[string]map[string][]string)
-	for targetID, byTag := range boundFanInRefIDsByTask {
-		copiedBoundFanInRefIDsByTask[targetID] = make(map[string][]string)
+	for targetImplID, byTag := range boundFanInRefIDsByTask {
+		copiedBoundFanInRefIDsByTask[targetImplID] = make(map[string][]string)
 		for tag, refIDs := range byTag {
-			copiedBoundFanInRefIDsByTask[targetID][tag] = slices.Clone(refIDs)
+			copiedBoundFanInRefIDsByTask[targetImplID][tag] = slices.Clone(refIDs)
 		}
 	}
 

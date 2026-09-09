@@ -29,7 +29,7 @@ import (
 
 type mockGraphMetadata struct {
 	boundTasks        map[string]bool
-	boundTasksForTask map[string]map[string][]string
+	boundRefIDsByTask map[string]map[string][]string
 }
 
 func (m *mockGraphMetadata) IsBound(referenceID string) bool {
@@ -40,8 +40,8 @@ func (m *mockGraphMetadata) IsBound(referenceID string) bool {
 }
 
 func (m *mockGraphMetadata) BoundReferenceIDsForTaskWithTag(taskImplID string, tag string) []string {
-	if m.boundTasksForTask != nil {
-		if byTag, ok := m.boundTasksForTask[taskImplID]; ok {
+	if m.boundRefIDsByTask != nil {
+		if byTag, ok := m.boundRefIDsByTask[taskImplID]; ok {
 			if refIDs, ok := byTag[tag]; ok {
 				return refIDs
 			}
@@ -361,7 +361,7 @@ func TestGetTaskResultsWithTag(t *testing.T) {
 				typedmap.Set(taskResults, typedmap.NewTypedKey[string]("p1"), "apple")
 				typedmap.Set(taskResults, typedmap.NewTypedKey[string]("p2"), "banana")
 				meta := &mockGraphMetadata{
-					boundTasksForTask: map[string]map[string][]string{
+					boundRefIDsByTask: map[string]map[string][]string{
 						taskID.String(): {tag.ID(): {"p1", "p2"}},
 					},
 				}
@@ -380,7 +380,7 @@ func TestGetTaskResultsWithTag(t *testing.T) {
 				typedmap.Set(taskResults, typedmap.NewTypedKey[string]("p1"), "apple")
 				typedmap.Set(taskResults, typedmap.NewTypedKey[string]("p2"), "banana")
 				meta := &mockGraphMetadata{
-					boundTasksForTask: map[string]map[string][]string{
+					boundRefIDsByTask: map[string]map[string][]string{
 						taskID.String():      {tag.ID(): {"p1"}},
 						"other.task#stage-2": {tag.ID(): {"p1", "p2"}},
 					},
@@ -398,7 +398,7 @@ func TestGetTaskResultsWithTag(t *testing.T) {
 			setupCtx: func(ctx context.Context) context.Context {
 				taskResults := typedmap.NewTypedMap()
 				meta := &mockGraphMetadata{
-					boundTasksForTask: map[string]map[string][]string{
+					boundRefIDsByTask: map[string]map[string][]string{
 						taskID.String(): {tag.ID(): {}},
 					},
 				}
@@ -415,7 +415,7 @@ func TestGetTaskResultsWithTag(t *testing.T) {
 			setupCtx: func(ctx context.Context) context.Context {
 				taskResults := typedmap.NewTypedMap()
 				meta := &mockGraphMetadata{
-					boundTasksForTask: nil,
+					boundRefIDsByTask: nil,
 				}
 				ctx = khictx.WithValue(ctx, core_contract.TaskResultMapContextKey, taskResults)
 				ctx = khictx.WithValue[core_contract.TaskGraphMetadata](ctx, core_contract.TaskGraphMetadataContextKey, meta)
@@ -430,7 +430,7 @@ func TestGetTaskResultsWithTag(t *testing.T) {
 			setupCtx: func(ctx context.Context) context.Context {
 				taskResults := typedmap.NewTypedMap()
 				meta := &mockGraphMetadata{
-					boundTasksForTask: map[string]map[string][]string{
+					boundRefIDsByTask: map[string]map[string][]string{
 						taskID.String(): {tag.ID(): {"missing-p"}},
 					},
 				}
@@ -447,7 +447,7 @@ func TestGetTaskResultsWithTag(t *testing.T) {
 			setupCtx: func(ctx context.Context) context.Context {
 				taskResults := typedmap.NewTypedMap()
 				meta := &mockGraphMetadata{
-					boundTasksForTask: map[string]map[string][]string{
+					boundRefIDsByTask: map[string]map[string][]string{
 						taskID.String(): {tag.ID(): {}},
 					},
 				}
@@ -464,7 +464,7 @@ func TestGetTaskResultsWithTag(t *testing.T) {
 			setupCtx: func(ctx context.Context) context.Context {
 				taskResults := typedmap.NewTypedMap()
 				meta := &mockGraphMetadata{
-					boundTasksForTask: map[string]map[string][]string{
+					boundRefIDsByTask: map[string]map[string][]string{
 						taskID.String(): {tag.ID(): {}},
 					},
 				}
