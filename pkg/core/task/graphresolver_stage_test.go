@@ -311,12 +311,12 @@ func TestResolveGraph_FanInCycle_ChainedSplitConsumersPtPRouting(t *testing.T) {
 	tagB := NewTag[any]("tag-b")
 
 	testCases := []struct {
-		name                  string
-		initialTasks          []UntypedTask
-		availableTasks        []UntypedTask
-		wantTaskIDs           []string
-		wantConsumerBS1Source string
-		wantConsumerBS2Source string
+		name                      string
+		initialTasks              []UntypedTask
+		availableTasks            []UntypedTask
+		wantTaskIDs               []string
+		wantConsumerBStage1Source string
+		wantConsumerBStage2Source string
 	}{
 		// Mermaid task graph:
 		// ```mermaid
@@ -380,8 +380,8 @@ func TestResolveGraph_FanInCycle_ChainedSplitConsumersPtPRouting(t *testing.T) {
 				"prod-low-b#default",
 				"consumer-b#default-stage-2",
 			},
-			wantConsumerBS1Source: "consumer-a#default-stage-2",
-			wantConsumerBS2Source: "consumer-a#default-stage-2",
+			wantConsumerBStage1Source: "consumer-a#default-stage-2",
+			wantConsumerBStage2Source: "consumer-a#default-stage-2",
 		},
 	}
 
@@ -404,7 +404,7 @@ func TestResolveGraph_FanInCycle_ChainedSplitConsumersPtPRouting(t *testing.T) {
 			incomingS1 := taskSet.IncomingEdges("consumer-b#default-stage-1")
 			hasS1Edge := false
 			for _, e := range incomingS1 {
-				if e.SourceImplID == tc.wantConsumerBS1Source {
+				if e.SourceImplID == tc.wantConsumerBStage1Source {
 					hasS1Edge = true
 					if e.Kind != taskid.EdgeKindData {
 						t.Errorf("consumer-b stage-1 incoming edge kind = %v, want %v", e.Kind, taskid.EdgeKindData)
@@ -413,13 +413,13 @@ func TestResolveGraph_FanInCycle_ChainedSplitConsumersPtPRouting(t *testing.T) {
 				}
 			}
 			if !hasS1Edge {
-				t.Errorf("expected incoming edge from %q to consumer-b stage-1, but not found", tc.wantConsumerBS1Source)
+				t.Errorf("expected incoming edge from %q to consumer-b stage-1, but not found", tc.wantConsumerBStage1Source)
 			}
 
 			incomingS2 := taskSet.IncomingEdges("consumer-b#default-stage-2")
 			hasS2Edge := false
 			for _, e := range incomingS2 {
-				if e.SourceImplID == tc.wantConsumerBS2Source {
+				if e.SourceImplID == tc.wantConsumerBStage2Source {
 					hasS2Edge = true
 					if e.Kind != taskid.EdgeKindData {
 						t.Errorf("consumer-b stage-2 incoming edge kind = %v, want %v", e.Kind, taskid.EdgeKindData)
@@ -428,7 +428,7 @@ func TestResolveGraph_FanInCycle_ChainedSplitConsumersPtPRouting(t *testing.T) {
 				}
 			}
 			if !hasS2Edge {
-				t.Errorf("expected incoming edge from %q to consumer-b stage-2, but not found", tc.wantConsumerBS2Source)
+				t.Errorf("expected incoming edge from %q to consumer-b stage-2, but not found", tc.wantConsumerBStage2Source)
 			}
 		})
 	}

@@ -300,7 +300,7 @@ func buildAndSortTaskSet(
 	boundFanInRefIDsByTaskImpl map[string]map[string][]string,
 ) *TaskSet {
 	inDegree := make(map[string]int, len(tasks))
-	outgoing := make(map[string][]string) // key: source task ID string -> []target task ID string
+	outgoing := make(map[string][]string) // key: source task implementation ID -> []target task implementation ID
 
 	// Index tasks by ImplementationID for O(1) ready queue push.
 	implToTask := make(map[string]UntypedTask, len(tasks))
@@ -328,10 +328,10 @@ func buildAndSortTaskSet(
 		curr := heap.Pop(h).(UntypedTask)
 		sortedTasks = append(sortedTasks, curr)
 
-		for _, targetID := range outgoing[curr.UntypedID().String()] {
-			inDegree[targetID]--
-			if inDegree[targetID] == 0 {
-				if task, ok := implToTask[targetID]; ok {
+		for _, targetImplID := range outgoing[curr.UntypedID().String()] {
+			inDegree[targetImplID]--
+			if inDegree[targetImplID] == 0 {
+				if task, ok := implToTask[targetImplID]; ok {
 					heap.Push(h, task)
 				}
 			}
