@@ -127,34 +127,6 @@ func AllowMultiStageExecution() LabelOpt {
 	return &allowMultiStageExecutionLabelOpt{}
 }
 
-// stageTask wraps an UntypedTask to provide a distinct stage implementation ID for multi-stage execution.
-type stageTask struct {
-	originalTask UntypedTask
-	stageID      taskid.UntypedTaskImplementationID
-}
-
-var _ UntypedTask = (*stageTask)(nil)
-
-// UntypedID implements UntypedTask.
-func (s *stageTask) UntypedID() taskid.UntypedTaskImplementationID {
-	return s.stageID
-}
-
-// Labels implements UntypedTask.
-func (s *stageTask) Labels() *typedmap.ReadonlyTypedMap {
-	return s.originalTask.Labels()
-}
-
-// Dependencies implements UntypedTask.
-func (s *stageTask) Dependencies() []Dependency {
-	return s.originalTask.Dependencies()
-}
-
-// UntypedRun implements UntypedTask.
-func (s *stageTask) UntypedRun(ctx context.Context) (any, error) {
-	return s.originalTask.UntypedRun(ctx)
-}
-
 // NewTask constructs a new Task with the given implementation ID, dependencies, execution function, and label options.
 func NewTask[TaskResult any](taskID taskid.TaskImplementationID[TaskResult], dependencies []Dependency, runFunc func(ctx context.Context) (TaskResult, error), labelOpts ...LabelOpt) *TaskImpl[TaskResult] {
 	verifyTaskID(taskID)
