@@ -16,6 +16,7 @@ package inspectiontaskbase
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
@@ -46,7 +47,7 @@ func TestInventoryTask(t *testing.T) {
 		func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (map[string]struct{}, error) {
 			return map[string]struct{}{"foo": {}}, nil
 		},
-		coretask.ProvidesTag(inventoryTag),
+		coretask.ProvidesTag(inventoryTag, coretask.WithTagPriority(10)),
 	)
 
 	discovery2ID := taskid.NewDefaultImplementationID[map[string]struct{}]("discovery-2")
@@ -73,7 +74,17 @@ func TestInventoryTask(t *testing.T) {
 		},
 	)
 
-	availableTasks := []coretask.UntypedTask{
+	cyclicDiscoveryTaskID := taskid.NewDefaultImplementationID[map[string]struct{}]("cyclic-discovery")
+	cyclicDiscoveryTask := NewInspectionTask(
+		cyclicDiscoveryTaskID,
+		[]coretask.Dependency{mergerTaskID.Ref()},
+		func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (map[string]struct{}, error) {
+			return map[string]struct{}{"cyclic": {}}, nil
+		},
+		coretask.ProvidesTag(inventoryTag, coretask.WithTagPriority(100)),
+	)
+
+	defaultAvailableTasks := []coretask.UntypedTask{
 		mergerTask,
 		discovery1,
 		discovery2,
@@ -82,29 +93,41 @@ func TestInventoryTask(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name         string
-		userTaskDeps []coretask.Dependency
-		wantMap      map[string]struct{}
+		name           string
+		availableTasks []coretask.UntypedTask
+		userTaskDeps   []coretask.Dependency
+		wantMap        map[string]struct{}
 	}{
 		{
-			name:         "provided from single discovery task when only parent 1 is active",
-			userTaskDeps: []coretask.Dependency{mergerTaskID.Ref(), discovery1ParentTaskID.Ref()},
+			name:           "provided from single discovery task when only parent 1 is active",
+			availableTasks: defaultAvailableTasks,
+			userTaskDeps:   []coretask.Dependency{mergerTaskID.Ref(), discovery1ParentTaskID.Ref()},
 			wantMap: map[string]struct{}{
 				"foo": {},
 			},
 		},
 		{
-			name:         "provided from multiple discovery tasks when both parent 1 and 2 are active",
-			userTaskDeps: []coretask.Dependency{mergerTaskID.Ref(), discovery1ParentTaskID.Ref(), discovery2ParentTaskID.Ref()},
+			name:           "provided from multiple discovery tasks when both parent 1 and 2 are active",
+			availableTasks: defaultAvailableTasks,
+			userTaskDeps:   []coretask.Dependency{mergerTaskID.Ref(), discovery1ParentTaskID.Ref(), discovery2ParentTaskID.Ref()},
 			wantMap: map[string]struct{}{
 				"foo": {},
 				"bar": {},
 			},
 		},
 		{
-			name:         "provided from no discovery tasks when neither parent is active",
-			userTaskDeps: []coretask.Dependency{mergerTaskID.Ref()},
-			wantMap:      map[string]struct{}{},
+			name:           "provided from no discovery tasks when neither parent is active",
+			availableTasks: defaultAvailableTasks,
+			userTaskDeps:   []coretask.Dependency{mergerTaskID.Ref()},
+			wantMap:        map[string]struct{}{},
+		},
+		{
+			name:           "resolves circular dependency created by selected cyclic task and runs twice",
+			availableTasks: append(slices.Clone(defaultAvailableTasks), cyclicDiscoveryTask),
+			userTaskDeps:   []coretask.Dependency{mergerTaskID.Ref(), discovery1ParentTaskID.Ref(), cyclicDiscoveryTaskID.Ref()},
+			wantMap: map[string]struct{}{
+				"foo": {},
+			},
 		},
 	}
 
@@ -119,16 +142,31 @@ func TestInventoryTask(t *testing.T) {
 				},
 			)
 
-			ctx := inspectiontest.WithDefaultTestInspectionTaskContext(t.Context())
-			gotMap, _, err := inspectiontest.RunInspectionTaskWithDependency(
-				ctx,
+			dryRunCtx := inspectiontest.WithDefaultTestInspectionTaskContext(t.Context())
+			gotDryRunMap, _, err := inspectiontest.RunInspectionTaskWithDependency(
+				dryRunCtx,
 				userTask,
-				availableTasks,
+				tc.availableTasks,
+				inspectioncore_contract.TaskModeDryRun,
+				map[string]any{},
+			)
+			if err != nil {
+				t.Fatalf("RunInspectionTaskWithDependency() dry run error: %v", err)
+			}
+			if diff := cmp.Diff(map[string]struct{}(nil), gotDryRunMap); diff != "" {
+				t.Errorf("merger task dry run result mismatch (-want +got):\n%s", diff)
+			}
+
+			runCtx := inspectiontest.NextRunTaskContext(t.Context(), dryRunCtx)
+			gotMap, _, err := inspectiontest.RunInspectionTaskWithDependency(
+				runCtx,
+				userTask,
+				tc.availableTasks,
 				inspectioncore_contract.TaskModeRun,
 				map[string]any{},
 			)
 			if err != nil {
-				t.Fatalf("RunInspectionTaskWithDependency() unexpected error: %v", err)
+				t.Fatalf("RunInspectionTaskWithDependency() run error: %v", err)
 			}
 			if diff := cmp.Diff(tc.wantMap, gotMap); diff != "" {
 				t.Errorf("merger task result mismatch (-want +got):\n%s", diff)

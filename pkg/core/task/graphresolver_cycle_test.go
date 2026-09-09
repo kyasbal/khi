@@ -34,6 +34,13 @@ func TestResolveGraph_FanInCycle_PriorityDifference(t *testing.T) {
 		wantTaskIDs     []string
 		wantBoundRefIDs []string
 	}{
+		// Mermaid task graph:
+		// ```mermaid
+		// graph TD
+		//   prod_high["prod-high (priority=10)"] -->|"FanIn (tag-a)"| consumer["consumer"]
+		//   consumer -->|"PointToPoint"| prod_low["prod-low (priority=100)"]
+		//   prod_low -.->|"FanIn (tag-a, cycle pruned)"| consumer
+		// ```
 		{
 			name: "higher priority fan-in edge is kept and lower priority edge creating cycle is pruned",
 			initialTasks: []UntypedTask{
@@ -57,6 +64,12 @@ func TestResolveGraph_FanInCycle_PriorityDifference(t *testing.T) {
 			wantTaskIDs:     []string{"prod-high#default", "consumer#default", "prod-low#default"},
 			wantBoundRefIDs: []string{"prod-high"},
 		},
+		// Mermaid task graph:
+		// ```mermaid
+		// graph TD
+		//   prod_high["prod-high (priority=10)"] -->|"FanIn (tag-a)"| consumer["consumer"]
+		//   consumer -.->|"FanIn (tag-a, self-loop cycle pruned)"| consumer
+		// ```
 		{
 			name: "higher priority external producer is kept and lower priority self-loop edge is pruned",
 			initialTasks: []UntypedTask{
@@ -74,6 +87,14 @@ func TestResolveGraph_FanInCycle_PriorityDifference(t *testing.T) {
 			wantTaskIDs:     []string{"prod-high#default", "consumer#default"},
 			wantBoundRefIDs: []string{"prod-high"},
 		},
+		// Mermaid task graph:
+		// ```mermaid
+		// graph TD
+		//   prod_high["prod-high (priority=10)"] -->|"FanIn (tag-a)"| consumer["consumer"]
+		//   consumer -->|"PointToPoint"| task_mid["task-mid"]
+		//   task_mid -->|"PointToPoint"| prod_low["prod-low (priority=100)"]
+		//   prod_low -.->|"FanIn (tag-a, cycle pruned)"| consumer
+		// ```
 		{
 			name: "multi-hop transitive cycle with lower priority producer is pruned",
 			initialTasks: []UntypedTask{
@@ -138,6 +159,13 @@ func TestResolveGraph_FanInCycle_AmbiguousPriorityTie(t *testing.T) {
 		availableTasks []UntypedTask
 		wantErrMsg     string
 	}{
+		// Mermaid task graph:
+		// ```mermaid
+		// graph TD
+		//   prod_a["prod-a (priority=100)"] -->|"FanIn (tag-a)"| consumer["consumer"]
+		//   consumer -->|"PointToPoint"| prod_b["prod-b (priority=100)"]
+		//   prod_b -.->|"FanIn (tag-a, ambiguous tie)"| consumer
+		// ```
 		{
 			name: "equal priorities in cycle reject resolution with ambiguous priority tie error",
 			initialTasks: []UntypedTask{
@@ -184,6 +212,13 @@ func TestResolveGraph_FanInCycle_MissingAllowMultiStageExecution(t *testing.T) {
 		availableTasks []UntypedTask
 		wantErrMsg     string
 	}{
+		// Mermaid task graph:
+		// ```mermaid
+		// graph TD
+		//   prod_high["prod-high (priority=10)"] -->|"FanIn (tag-a)"| consumer["consumer (no AllowMultiStageExecution)"]
+		//   consumer -->|"PointToPoint"| prod_low["prod-low (priority=100)"]
+		//   prod_low -.->|"FanIn (tag-a, cycle rejected)"| consumer
+		// ```
 		{
 			name: "cycle involving consumer without AllowMultiStageExecution rejects resolution",
 			initialTasks: []UntypedTask{
@@ -230,6 +265,12 @@ func TestResolveGraph_FanInCycle_SoleProducerNoBootstrap(t *testing.T) {
 		availableTasks []UntypedTask
 		wantErrMsg     string
 	}{
+		// Mermaid task graph:
+		// ```mermaid
+		// graph TD
+		//   consumer["consumer"] -->|"PointToPoint"| prod_low["prod-low (priority=100)"]
+		//   prod_low -.->|"FanIn (tag-a, cycle with no bootstrap)"| consumer
+		// ```
 		{
 			name: "sole cyclic producer with AllowMultiStageExecution rejects resolution because no higher priority producer exists",
 			initialTasks: []UntypedTask{
@@ -250,6 +291,11 @@ func TestResolveGraph_FanInCycle_SoleProducerNoBootstrap(t *testing.T) {
 			},
 			wantErrMsg: "task consumer#default has circular fan-in dependency on tag tag-a with no higher-priority producer to bootstrap execution",
 		},
+		// Mermaid task graph:
+		// ```mermaid
+		// graph TD
+		//   consumer["consumer"] -.->|"FanIn (tag-a, self-loop with no bootstrap)"| consumer
+		// ```
 		{
 			name: "self-loop sole producer with AllowMultiStageExecution rejects resolution because no higher priority producer exists",
 			initialTasks: []UntypedTask{
@@ -264,6 +310,13 @@ func TestResolveGraph_FanInCycle_SoleProducerNoBootstrap(t *testing.T) {
 			},
 			wantErrMsg: "task consumer#default has circular fan-in dependency on tag tag-a with no higher-priority producer to bootstrap execution",
 		},
+		// Mermaid task graph:
+		// ```mermaid
+		// graph TD
+		//   consumer["consumer"] -->|"PointToPoint"| prod_cyclic_high["prod-cyclic-high (priority=10)"]
+		//   prod_cyclic_high -.->|"FanIn (tag-a, higher priority cyclic)"| consumer
+		//   prod_acyclic_low["prod-acyclic-low (priority=100)"] -->|"FanIn (tag-a, lower priority acyclic)"| consumer
+		// ```
 		{
 			name: "cyclic producer having higher priority than acyclic producer rejects resolution because bootstrap must be higher priority",
 			initialTasks: []UntypedTask{
