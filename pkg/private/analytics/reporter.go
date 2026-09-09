@@ -22,6 +22,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/common/constants"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/idgenerator"
 	"github.com/GoogleCloudPlatform/khi/pkg/private/analytics/types"
 	"github.com/GoogleCloudPlatform/khi/pkg/private/parameters"
@@ -46,6 +47,7 @@ func NewAnalyticsReporter() *AnalyticsReporter {
 		metadata = parameters.Private.GetMapOfGALabels()
 	}
 	metadata["session-id"] = sessionID
+	metadata["backendVersion"] = constants.VERSION
 	return &AnalyticsReporter{
 		debug:          debug,
 		GlobalMetadata: metadata,

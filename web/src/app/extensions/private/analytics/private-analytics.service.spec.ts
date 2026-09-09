@@ -30,6 +30,7 @@ import {
   PrivateAnalyticsService as PrivateAnalyticsConnectService,
   ReportActivityResponse,
 } from 'src/app/generated/api/v1/private_analytics_pb';
+import { VERSION } from 'src/environments/version';
 
 describe('PrivateAnalyticsService', () => {
   let service: PrivateAnalyticsService;
@@ -72,9 +73,18 @@ describe('PrivateAnalyticsService', () => {
         case: 'init',
         value: {
           pageType: String(PageType.Main),
+          frontendVersion: VERSION,
         },
       },
     });
+  });
+
+  it('should not send unrecognized activity types to backend via Connect-RPC but still call ga.report()', () => {
+    const unknownEvent = 'UNKNOWN_EVENT' as KHIAnalyticsActivityType;
+    service.report(unknownEvent, { key: 'val' });
+
+    expect(mockGA.report).toHaveBeenCalledWith(unknownEvent, { key: 'val' });
+    expect(mockClient.reportActivity).not.toHaveBeenCalled();
   });
 
   it('should send INSPECT event to backend via Connect-RPC and call ga.report() on report()', () => {
@@ -127,14 +137,34 @@ describe('PrivateAnalyticsService', () => {
     });
   });
 
-  it('should handle Connect-RPC failure gracefully without throwing', async () => {
+  it('should handle Connect-RPC failure gracefully without throwing and log a warning on report()', async () => {
+    const warnSpy = spyOn(console, 'warn');
     mockClient.reportActivity.and.returnValue(
       Promise.reject(new Error('Network error')),
     );
 
-    expect(() => {
-      service.report(KHIAnalyticsActivityType.Inspect, {});
-    }).not.toThrow();
+    service.report(KHIAnalyticsActivityType.Inspect, {});
+    await Promise.resolve();
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[PrivateAnalyticsService] Failed to report inspect activity to backend:',
+      jasmine.any(Error),
+    );
+  });
+
+  it('should handle Connect-RPC failure gracefully without throwing and log a warning on init()', async () => {
+    const warnSpy = spyOn(console, 'warn');
+    mockClient.reportActivity.and.returnValue(
+      Promise.reject(new Error('Network error on init')),
+    );
+
+    service.init(PageType.Main);
+    await Promise.resolve();
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[PrivateAnalyticsService] Failed to report init activity to backend:',
+      jasmine.any(Error),
+    );
   });
 
   it('should share globalMetadata reference with gaAnalytics', () => {

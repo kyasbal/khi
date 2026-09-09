@@ -23,25 +23,53 @@ import (
 	"connectrpc.com/connect"
 	apiv1 "github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1"
 	"github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1/apiv1connect"
-	"github.com/GoogleCloudPlatform/khi/pkg/private/analytics"
-	"github.com/GoogleCloudPlatform/khi/pkg/private/parameters"
+	"github.com/GoogleCloudPlatform/khi/pkg/private/analytics/types"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 )
 
-func TestPrivateAnalyticsServer_ReportActivity(t *testing.T) {
-	disableAnalytics := true
-	parameters.Private.DisableAnalytics = &disableAnalytics
+type mockEventReporter struct {
+	reportedEvents   []types.AnalyticsEvent
+	reportedMetadata []map[string]any
+}
 
+var _ EventReporter = (*mockEventReporter)(nil)
+
+func (m *mockEventReporter) ReportEvent(event types.AnalyticsEvent, metadata map[string]any) {
+	m.reportedEvents = append(m.reportedEvents, event)
+	m.reportedMetadata = append(m.reportedMetadata, metadata)
+}
+
+func TestPrivateAnalyticsServer_ReportActivity(t *testing.T) {
 	testCases := []struct {
-		name    string
-		request *apiv1.ReportActivityRequest
-		wantRes *apiv1.ReportActivityResponse
-		wantErr bool
+		name         string
+		request      *apiv1.ReportActivityRequest
+		wantRes      *apiv1.ReportActivityResponse
+		wantEvent    types.AnalyticsEvent
+		wantMetadata map[string]any
+		wantErr      bool
 	}{
 		{
-			name: "Init activity payload",
+			name: "Init activity payload with frontend version",
+			request: &apiv1.ReportActivityRequest{
+				Payload: &apiv1.ReportActivityRequest_Init{
+					Init: &apiv1.InitActivityPayload{
+						PageType:        proto.String("MAIN"),
+						FrontendVersion: proto.String("1.0.0"),
+					},
+				},
+			},
+			wantRes:   &apiv1.ReportActivityResponse{},
+			wantEvent: types.AnalyticsEventFrontendInit,
+			wantMetadata: map[string]any{
+				"pageType":        "MAIN",
+				"frontendVersion": "1.0.0",
+			},
+			wantErr: false,
+		},
+		{
+			name: "Init activity payload without frontend version",
 			request: &apiv1.ReportActivityRequest{
 				Payload: &apiv1.ReportActivityRequest_Init{
 					Init: &apiv1.InitActivityPayload{
@@ -49,7 +77,28 @@ func TestPrivateAnalyticsServer_ReportActivity(t *testing.T) {
 					},
 				},
 			},
-			wantRes: &apiv1.ReportActivityResponse{},
+			wantRes:   &apiv1.ReportActivityResponse{},
+			wantEvent: types.AnalyticsEventFrontendInit,
+			wantMetadata: map[string]any{
+				"pageType": "MAIN",
+			},
+			wantErr: false,
+		},
+		{
+			name: "Init activity payload with empty string frontend version",
+			request: &apiv1.ReportActivityRequest{
+				Payload: &apiv1.ReportActivityRequest_Init{
+					Init: &apiv1.InitActivityPayload{
+						PageType:        proto.String("MAIN"),
+						FrontendVersion: proto.String(""),
+					},
+				},
+			},
+			wantRes:   &apiv1.ReportActivityResponse{},
+			wantEvent: types.AnalyticsEventFrontendInit,
+			wantMetadata: map[string]any{
+				"pageType": "MAIN",
+			},
 			wantErr: false,
 		},
 		{
@@ -59,8 +108,10 @@ func TestPrivateAnalyticsServer_ReportActivity(t *testing.T) {
 					Inspect: &apiv1.InspectActivityPayload{},
 				},
 			},
-			wantRes: &apiv1.ReportActivityResponse{},
-			wantErr: false,
+			wantRes:      &apiv1.ReportActivityResponse{},
+			wantEvent:    types.AnalyticsEventFrontendInspect,
+			wantMetadata: map[string]any{},
+			wantErr:      false,
 		},
 		{
 			name: "OpenInspectionData activity payload",
@@ -76,20 +127,31 @@ func TestPrivateAnalyticsServer_ReportActivity(t *testing.T) {
 					},
 				},
 			},
-			wantRes: &apiv1.ReportActivityResponse{},
+			wantRes:   &apiv1.ReportActivityResponse{},
+			wantEvent: types.AnalyticsEventFrontendOpenInspectionData,
+			wantMetadata: map[string]any{
+				"inspectionDataHash":           "hash-123",
+				"openId":                       "open-456",
+				"logLength":                    int64(1000),
+				"decompressedTextBufferLength": int64(50000),
+				"revisionCount":                int64(10),
+				"eventCount":                   int64(25),
+			},
 			wantErr: false,
 		},
 		{
-			name:    "Nil payload",
-			request: &apiv1.ReportActivityRequest{},
-			wantRes: &apiv1.ReportActivityResponse{},
-			wantErr: false,
+			name:      "Nil payload",
+			request:   &apiv1.ReportActivityRequest{},
+			wantRes:   &apiv1.ReportActivityResponse{},
+			wantEvent: "",
+			wantErr:   false,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			server := NewPrivateAnalyticsServer(analytics.NewAnalyticsReporter())
+			reporter := &mockEventReporter{}
+			server := NewPrivateAnalyticsServer(reporter)
 			path, handler := apiv1connect.NewPrivateAnalyticsServiceHandler(server)
 
 			mux := http.NewServeMux()
@@ -106,6 +168,21 @@ func TestPrivateAnalyticsServer_ReportActivity(t *testing.T) {
 			if !tc.wantErr {
 				if diff := cmp.Diff(tc.wantRes, res.Msg, protocmp.Transform()); diff != "" {
 					t.Errorf("ReportActivity() response mismatch (-want +got):\n%s", diff)
+				}
+				if tc.wantEvent == "" {
+					if len(reporter.reportedEvents) != 0 {
+						t.Errorf("ReportActivity() reported unexpected events: %v", reporter.reportedEvents)
+					}
+				} else {
+					if len(reporter.reportedEvents) != 1 {
+						t.Fatalf("ReportActivity() reported events count = %d, want 1", len(reporter.reportedEvents))
+					}
+					if reporter.reportedEvents[0] != tc.wantEvent {
+						t.Errorf("ReportActivity() event = %v, want %v", reporter.reportedEvents[0], tc.wantEvent)
+					}
+					if diff := cmp.Diff(tc.wantMetadata, reporter.reportedMetadata[0]); diff != "" {
+						t.Errorf("ReportActivity() metadata mismatch (-want +got):\n%s", diff)
+					}
 				}
 			}
 		})

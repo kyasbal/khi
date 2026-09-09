@@ -39,9 +39,11 @@ const (
 type InitActivityPayload struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Type of the loaded page.
-	PageType      *string `protobuf:"bytes,1,opt,name=page_type,json=pageType" json:"page_type,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	PageType *string `protobuf:"bytes,1,opt,name=page_type,json=pageType" json:"page_type,omitempty"`
+	// Version of the frontend application.
+	FrontendVersion *string `protobuf:"bytes,2,opt,name=frontend_version,json=frontendVersion" json:"frontend_version,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *InitActivityPayload) Reset() {
@@ -77,6 +79,13 @@ func (*InitActivityPayload) Descriptor() ([]byte, []int) {
 func (x *InitActivityPayload) GetPageType() string {
 	if x != nil && x.PageType != nil {
 		return *x.PageType
+	}
+	return ""
+}
+
+func (x *InitActivityPayload) GetFrontendVersion() string {
+	if x != nil && x.FrontendVersion != nil {
+		return *x.FrontendVersion
 	}
 	return ""
 }
@@ -351,9 +360,10 @@ var File_api_v1_private_analytics_proto protoreflect.FileDescriptor
 
 const file_api_v1_private_analytics_proto_rawDesc = "" +
 	"\n" +
-	"\x1eapi/v1/private_analytics.proto\x12\x06api.v1\"2\n" +
+	"\x1eapi/v1/private_analytics.proto\x12\x06api.v1\"]\n" +
 	"\x13InitActivityPayload\x12\x1b\n" +
-	"\tpage_type\x18\x01 \x01(\tR\bpageType\"\x18\n" +
+	"\tpage_type\x18\x01 \x01(\tR\bpageType\x12)\n" +
+	"\x10frontend_version\x18\x02 \x01(\tR\x0ffrontendVersion\"\x18\n" +
 	"\x16InspectActivityPayload\"\x9c\x02\n" +
 	"!OpenInspectionDataActivityPayload\x120\n" +
 	"\x14inspection_data_hash\x18\x01 \x01(\tR\x12inspectionDataHash\x12\x17\n" +

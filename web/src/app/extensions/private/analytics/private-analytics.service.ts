@@ -26,6 +26,7 @@ import {
 } from 'src/app/extensions/private/analytics/types';
 import { PrivateAnalyticsService as PrivateAnalyticsConnectService } from 'src/app/generated/api/v1/private_analytics_pb';
 import { ApiPathUtil } from 'src/app/services/api/api-path-util';
+import { VERSION } from 'src/environments/version';
 
 /**
  * Injection token for providing a custom or mock Connect-RPC client for PrivateAnalyticsService.
@@ -93,6 +94,7 @@ export class PrivateAnalyticsService implements FrontendAnalytics {
           case: 'init',
           value: {
             pageType: String(pageType),
+            frontendVersion: VERSION,
           },
         },
       })

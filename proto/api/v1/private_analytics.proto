@@ -22,6 +22,9 @@ option go_package = "github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1;api
 message InitActivityPayload {
   // Type of the loaded page.
   string page_type = 1;
+
+  // Version of the frontend application.
+  string frontend_version = 2;
 }
 
 // InspectActivityPayload describes an inspection start event.

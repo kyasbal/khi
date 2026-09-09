@@ -41,6 +41,13 @@ export declare type InitActivityPayload =
      * @generated from field: string page_type = 1;
      */
     pageType: string;
+
+    /**
+     * Version of the frontend application.
+     *
+     * @generated from field: string frontend_version = 2;
+     */
+    frontendVersion: string;
   };
 
 /**

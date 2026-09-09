@@ -20,22 +20,23 @@ import (
 	"connectrpc.com/connect"
 	apiv1 "github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1"
 	"github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1/apiv1connect"
-	"github.com/GoogleCloudPlatform/khi/pkg/private/analytics"
 	"github.com/GoogleCloudPlatform/khi/pkg/private/analytics/types"
 )
 
+// EventReporter defines the interface for reporting analytics events.
+type EventReporter interface {
+	ReportEvent(event types.AnalyticsEvent, metadata map[string]any)
+}
+
 // PrivateAnalyticsServer implements the PrivateAnalyticsService Connect-RPC handler.
 type PrivateAnalyticsServer struct {
-	reporter *analytics.AnalyticsReporter
+	reporter EventReporter
 }
 
 var _ apiv1connect.PrivateAnalyticsServiceHandler = (*PrivateAnalyticsServer)(nil)
 
 // NewPrivateAnalyticsServer returns a new instance of PrivateAnalyticsServer.
-func NewPrivateAnalyticsServer(reporter *analytics.AnalyticsReporter) *PrivateAnalyticsServer {
-	if reporter == nil {
-		reporter = analytics.NewAnalyticsReporter()
-	}
+func NewPrivateAnalyticsServer(reporter EventReporter) *PrivateAnalyticsServer {
 	return &PrivateAnalyticsServer{
 		reporter: reporter,
 	}
@@ -54,6 +55,9 @@ func (s *PrivateAnalyticsServer) ReportActivity(
 	case *apiv1.ReportActivityRequest_Init:
 		event = types.AnalyticsEventFrontendInit
 		metadata["pageType"] = payload.Init.GetPageType()
+		if frontendVersion := payload.Init.GetFrontendVersion(); frontendVersion != "" {
+			metadata["frontendVersion"] = frontendVersion
+		}
 	case *apiv1.ReportActivityRequest_Inspect:
 		event = types.AnalyticsEventFrontendInspect
 	case *apiv1.ReportActivityRequest_OpenInspectionData:
