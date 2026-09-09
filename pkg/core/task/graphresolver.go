@@ -50,7 +50,7 @@ func ResolveGraph(
 	// --- Phase 3: Optional Binding & Mandatory 1:1 Edges ---
 	pointToPointEdges := bindPointToPointDependencies(graphTaskMap)
 
-	// --- Phase 3.5: Fan-In Cycle Resolution, Pruning & Edge Deduplication ---
+	// --- Phase 3.5: Fan-In Cycle Resolution, Multi-Stage Expansion & Edge Deduplication ---
 	resolvedTasks, resolvedEdges, boundFanInRefIDsByTaskImpl, err := resolveFanInEdgesAndCycles(graphTaskMap, pointToPointEdges, candidateFanInEdges)
 	if err != nil {
 		return nil, err
