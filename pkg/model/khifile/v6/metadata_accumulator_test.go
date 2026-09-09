@@ -99,6 +99,29 @@ func TestMetadataAccumulator(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "ai context metadata is mapped to AIContextMetadata proto",
+			setupInput: func() inspectionmetadata.Metadata {
+				m := inspectionmetadata.NewAIContextMetadata()
+				m.SetProperty("Overview", "Version", "1.0")
+				return m
+			},
+			wantResult: &pb.MetadataItem{
+				Payload: &pb.MetadataItem_AiContext{
+					AiContext: &pb.AIContextMetadata{
+						Sections: []*pb.AIContextSection{
+							{
+								Title:           proto.String("Overview"),
+								Priority:        proto.Int32(inspectionmetadata.DefaultSectionPriority),
+								Properties:      map[string]string{"Version": "1.0"},
+								SetProperties:   map[string]*pb.StringList{},
+								SummaryMarkdown: proto.String(""),
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
