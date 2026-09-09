@@ -41,8 +41,8 @@ func ResolveGraph(
 		return nil, err
 	}
 
-	// --- Phase 2: Fan-In Binding & Constraint Validation ---
-	fanInEdges, boundFanInRefIDs, err := bindFanInDependencies(graphTaskMap, availableTasks, disabledTaskMap)
+	// --- Phase 2: Fan-In Candidate Binding ---
+	candidateFanInEdges, err := bindFanInDependencies(graphTaskMap, availableTasks, disabledTaskMap)
 	if err != nil {
 		return nil, err
 	}
@@ -50,11 +50,14 @@ func ResolveGraph(
 	// --- Phase 3: Optional Binding & Mandatory 1:1 Edges ---
 	pointToPointEdges := bindPointToPointDependencies(graphTaskMap)
 
-	// --- Phase 3.5: Edge Deduplication & Attribute Normalization ---
-	dedupedEdges := deduplicateAndNormalizeEdges(append(fanInEdges, pointToPointEdges...))
+	// --- Phase 3.5: Fan-In Cycle Resolution, Pruning & Edge Deduplication ---
+	resolvedEdges, boundFanInRefIDs, err := resolveFanInEdgesAndCycles(graphTaskMap, pointToPointEdges, candidateFanInEdges)
+	if err != nil {
+		return nil, err
+	}
 
 	// --- Phase 4: Kahn's Algorithm on E = E_data U E_order ---
-	return buildAndSortTaskSet(graphTaskMap, dedupedEdges, boundFanInRefIDs)
+	return buildAndSortTaskSet(graphTaskMap, resolvedEdges, boundFanInRefIDs), nil
 }
 
 // createDisabledTaskMap creates a lookup set of reference IDs and implementation IDs for disabled tasks.
@@ -154,13 +157,13 @@ func expandMandatoryDependencies(
 	return nil
 }
 
-// bindFanInDependencies resolves fan-in dependencies for all tasks in graphTaskMap,
+// bindFanInDependencies resolves candidate fan-in edges for all tasks in graphTaskMap,
 // expanding candidate producers according to their DependencyScope.
 func bindFanInDependencies(
 	graphTaskMap map[string]UntypedTask,
 	availableTasks []UntypedTask,
 	disabledTaskMap map[string]struct{},
-) ([]taskid.TaskEdge, map[string][]string, error) {
+) ([]taskid.TaskEdge, error) {
 	tagToGraphTasks := make(map[string][]UntypedTask)
 	for _, t := range graphTaskMap {
 		for _, tag := range getProvidedTags(t) {
@@ -172,7 +175,6 @@ func bindFanInDependencies(
 	}
 
 	var rawEdges []taskid.TaskEdge
-	boundFanInRefIDs := make(map[string][]string)
 
 	for _, t := range graphTaskMap {
 		for _, dep := range t.Dependencies() {
@@ -189,17 +191,18 @@ func bindFanInDependencies(
 					var err error
 					matchingProducers, err = findAndExpandAllTasksByTag(tag, availableTasks, graphTaskMap, disabledTaskMap)
 					if err != nil {
-						return nil, nil, err
+						return nil, err
 					}
 				case taskid.ScopeActiveFeatures:
 					matchingProducers = findAndConditionallyExpandActiveFeatureTasks(tag, availableTasks, graphTaskMap, disabledTaskMap)
 				case taskid.ScopeActiveGraph:
 					matchingProducers = tagToGraphTasks[tag]
 				default:
-					return nil, nil, fmt.Errorf("unknown or unsupported dependency scope: %v", fanInDep.DescriptorScope())
+					return nil, fmt.Errorf("unknown or unsupported dependency scope: %v", fanInDep.DescriptorScope())
 				}
 
 				for _, p := range matchingProducers {
+					priority := typedmap.GetOrDefault(p.Labels(), LabelKeyProvidedTagPriority(tag), DefaultTagPriority)
 					rawEdges = append(rawEdges, taskid.TaskEdge{
 						SourceRefID: p.UntypedID().ReferenceIDString(),
 						TargetID:    t.UntypedID().String(),
@@ -207,20 +210,14 @@ func bindFanInDependencies(
 						Condition:   taskid.ConditionRequired,
 						Cardinality: taskid.CardinalityFanIn,
 						Tag:         tag,
+						Priority:    priority,
 					})
-					boundFanInRefIDs[tag] = append(boundFanInRefIDs[tag], p.UntypedID().ReferenceIDString())
 				}
 			}
 		}
 	}
 
-	// Deduplicate boundFanInRefIDs
-	for tag, taskIDs := range boundFanInRefIDs {
-		slices.Sort(taskIDs)
-		boundFanInRefIDs[tag] = slices.Compact(taskIDs)
-	}
-
-	return rawEdges, boundFanInRefIDs, nil
+	return rawEdges, nil
 }
 
 // bindPointToPointDependencies creates point-to-point edges for all tasks in graphTaskMap
@@ -253,6 +250,7 @@ func bindPointToPointDependencies(graphTaskMap map[string]UntypedTask) []taskid.
 // deduplicateAndNormalizeEdges merges duplicate edges between the same source and target.
 // EdgeKindData takes precedence over EdgeKindOrderOnly.
 // ConditionRequired takes precedence over ConditionOptional.
+// Minimum Priority takes precedence.
 func deduplicateAndNormalizeEdges(rawEdges []taskid.TaskEdge) []taskid.TaskEdge {
 	type edgeKey struct {
 		sourceRefID string
@@ -269,6 +267,15 @@ func deduplicateAndNormalizeEdges(rawEdges []taskid.TaskEdge) []taskid.TaskEdge 
 			}
 			if e.Condition == taskid.ConditionRequired {
 				existing.Condition = taskid.ConditionRequired
+			}
+			if existing.Priority == 0 || (e.Priority > 0 && e.Priority < existing.Priority) {
+				existing.Priority = e.Priority
+			}
+			if existing.Tag == "" && e.Tag != "" {
+				existing.Tag = e.Tag
+			}
+			if existing.Cardinality == taskid.CardinalityPointToPoint || e.Cardinality == taskid.CardinalityPointToPoint {
+				existing.Cardinality = taskid.CardinalityPointToPoint
 			}
 			edgeMap[key] = existing
 		} else {
@@ -288,27 +295,27 @@ func deduplicateAndNormalizeEdges(rawEdges []taskid.TaskEdge) []taskid.TaskEdge 
 func buildAndSortTaskSet(
 	graphTaskMap map[string]UntypedTask,
 	edges []taskid.TaskEdge,
-	boundFanInTasks map[string][]string,
-) (*TaskSet, error) {
+	boundFanInRefIDs map[string][]string,
+) *TaskSet {
 	inDegree := make(map[string]int)
 	outgoing := make(map[string][]string) // key: source task ID string -> []target task ID string
 
 	// Map ReferenceID to ImplementationID and index tasks by ImplementationID for O(1) ready queue push.
-	refToTaskID := make(map[string]string, len(graphTaskMap))
-	taskByImplID := make(map[string]UntypedTask, len(graphTaskMap))
+	refToImplID := make(map[string]string, len(graphTaskMap))
+	implToTask := make(map[string]UntypedTask, len(graphTaskMap))
 	for _, task := range graphTaskMap {
 		implID := task.UntypedID().String()
 		inDegree[implID] = 0
-		refToTaskID[task.UntypedID().ReferenceIDString()] = implID
-		taskByImplID[implID] = task
+		refToImplID[task.UntypedID().ReferenceIDString()] = implID
+		implToTask[implID] = task
 	}
 
 	for _, e := range edges {
-		sourceTaskID, ok := refToTaskID[e.SourceRefID]
+		sourceImplID, ok := refToImplID[e.SourceRefID]
 		if !ok {
 			continue
 		}
-		outgoing[sourceTaskID] = append(outgoing[sourceTaskID], e.TargetID)
+		outgoing[sourceImplID] = append(outgoing[sourceImplID], e.TargetID)
 		inDegree[e.TargetID]++
 	}
 
@@ -328,87 +335,14 @@ func buildAndSortTaskSet(
 		for _, targetID := range outgoing[curr.UntypedID().String()] {
 			inDegree[targetID]--
 			if inDegree[targetID] == 0 {
-				if task, ok := taskByImplID[targetID]; ok {
+				if task, ok := implToTask[targetID]; ok {
 					heap.Push(h, task)
 				}
 			}
 		}
 	}
 
-	if len(sortedTasks) < len(graphTaskMap) {
-		cyclicPath := extractCyclicDependencyPath(outgoing, inDegree)
-		return nil, fmt.Errorf("failed to sort as a runnable task graph. \n The graph contains cyclic dependency\n%s", cyclicPath)
-	}
-
-	return NewResolvedTaskSet(sortedTasks, edges, boundFanInTasks), nil
-}
-
-// extractCyclicDependencyPath identifies and formats the cyclic path in the graph.
-func extractCyclicDependencyPath(
-	outgoing map[string][]string,
-	inDegree map[string]int,
-) string {
-	var cycleStart string
-	unresolved := make([]string, 0)
-	for taskID, deg := range inDegree {
-		if deg > 0 {
-			unresolved = append(unresolved, taskID)
-		}
-	}
-	slices.Sort(unresolved)
-	if len(unresolved) == 0 {
-		return ""
-	}
-	cycleStart = unresolved[0]
-
-	// Find cycle via DFS
-	visited := make(map[string]int) // 0: unvisited, 1: visiting, 2: visited
-	parent := make(map[string]string)
-	var cycle []string
-
-	var dfs func(u string) bool
-	dfs = func(u string) bool {
-		visited[u] = 1
-		for _, v := range outgoing[u] {
-			if inDegree[v] <= 0 {
-				continue
-			}
-			if visited[v] == 1 {
-				// Found cycle
-				curr := u
-				cycle = append(cycle, v)
-				for curr != v && curr != "" {
-					cycle = append(cycle, curr)
-					curr = parent[curr]
-				}
-				slices.Reverse(cycle)
-				return true
-			}
-			if visited[v] == 0 {
-				parent[v] = u
-				if dfs(v) {
-					return true
-				}
-			}
-		}
-		visited[u] = 2
-		return false
-	}
-
-	for _, start := range unresolved {
-		if visited[start] == 0 {
-			if dfs(start) {
-				break
-			}
-		}
-	}
-
-	if len(cycle) == 0 {
-		return fmt.Sprintf("... -> %s -> ...", cycleStart)
-	}
-
-	// Format matching: "... -> tail] -> [cycle -> ...] -> [head -> ..."
-	return fmt.Sprintf("... -> %s] -> [%s] -> [%s -> ...", cycle[len(cycle)-1], strings.Join(cycle, " -> "), cycle[0])
+	return NewResolvedTaskSet(sortedTasks, edges, boundFanInRefIDs)
 }
 
 // findBestTaskImplementation finds the task implementation for a reference ID with highest priority.

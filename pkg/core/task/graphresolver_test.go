@@ -248,7 +248,7 @@ func TestResolveGraph_OptionalDependencies(t *testing.T) {
 				t.Errorf("ResolveGraph() task IDs mismatch (-want +got):\n%s", diff)
 			}
 			if len(taskSet.Edges()) != tc.wantEdgeCount {
-				t.Errorf("expected %d edges, got %d", tc.wantEdgeCount, len(taskSet.Edges()))
+				t.Errorf("got %d edges, want %d", len(taskSet.Edges()), tc.wantEdgeCount)
 			}
 		})
 	}
@@ -390,13 +390,12 @@ func TestResolveGraph_EdgeDeduplication(t *testing.T) {
 	tagA := NewTag[any]("tag-a")
 
 	testCases := []struct {
-		name          string
-		initialTasks  []UntypedTask
-		wantEdgeCount int
-		wantEdgeKind  taskid.EdgeKind
+		name         string
+		initialTasks []UntypedTask
+		wantEdges    []taskid.TaskEdge
 	}{
 		{
-			name: "point-to-point data dependency and fan-in order-only deduplicate to data edge",
+			name: "point-to-point data dependency and fan-in order-only deduplicate to data edge with tag preserved",
 			initialTasks: []UntypedTask{
 				createMockTask("task-a", "default", nil, ProvidesTag(tagA)),
 				createMockTask("task-b", "default", []Dependency{
@@ -404,8 +403,38 @@ func TestResolveGraph_EdgeDeduplication(t *testing.T) {
 					tagA.Ref(taskid.OrderOnly),
 				}),
 			},
-			wantEdgeCount: 1,
-			wantEdgeKind:  taskid.EdgeKindData,
+			wantEdges: []taskid.TaskEdge{
+				{
+					SourceRefID: "task-a",
+					TargetID:    "task-b#default",
+					Kind:        taskid.EdgeKindData,
+					Condition:   taskid.ConditionRequired,
+					Cardinality: taskid.CardinalityPointToPoint,
+					Tag:         "tag-a",
+					Priority:    100,
+				},
+			},
+		},
+		{
+			name: "order-only upgraded to data edge with priority and condition merging",
+			initialTasks: []UntypedTask{
+				createMockTask("task-a", "default", nil, ProvidesTag(tagA, WithTagPriority(20))),
+				createMockTask("task-b", "default", []Dependency{
+					taskid.NewTaskReference[any]("task-a", taskid.OrderOnly, taskid.Optional),
+					tagA.Ref(),
+				}),
+			},
+			wantEdges: []taskid.TaskEdge{
+				{
+					SourceRefID: "task-a",
+					TargetID:    "task-b#default",
+					Kind:        taskid.EdgeKindData,
+					Condition:   taskid.ConditionRequired,
+					Cardinality: taskid.CardinalityPointToPoint,
+					Tag:         "tag-a",
+					Priority:    20,
+				},
+			},
 		},
 	}
 
@@ -413,17 +442,12 @@ func TestResolveGraph_EdgeDeduplication(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			taskSet, err := ResolveGraph(tc.initialTasks, tc.initialTasks, nil)
 			if err != nil {
-				t.Fatalf("failed to resolve graph: %v", err)
+				t.Fatalf("ResolveGraph() unexpected error = %v", err)
 			}
 
 			edges := taskSet.Edges()
-			if len(edges) != tc.wantEdgeCount {
-				t.Fatalf("expected %d edges, got %d", tc.wantEdgeCount, len(edges))
-			}
-			if edges[0].Kind != tc.wantEdgeKind {
-				if diff := cmp.Diff(tc.wantEdgeKind, edges[0].Kind); diff != "" {
-					t.Errorf("edge kind mismatch (-want +got):\n%s", diff)
-				}
+			if diff := cmp.Diff(tc.wantEdges, edges); diff != "" {
+				t.Errorf("Edges() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -459,7 +483,7 @@ func TestResolveGraph_CyclicDependency(t *testing.T) {
 				t.Fatal("expected error for cyclic dependency, got nil")
 			}
 			if !strings.Contains(err.Error(), tc.wantErrMsg) {
-				t.Errorf("expected error message containing '%s', got '%v'", tc.wantErrMsg, err)
+				t.Errorf("error = %q, want substring %q", err.Error(), tc.wantErrMsg)
 			}
 		})
 	}
@@ -596,7 +620,7 @@ func TestResolveGraph_UnknownScope(t *testing.T) {
 				t.Fatal("expected error for unknown DependencyScope, got nil")
 			}
 			if !strings.Contains(err.Error(), tc.wantErrMsg) {
-				t.Errorf("expected error message containing '%s', got '%v'", tc.wantErrMsg, err)
+				t.Errorf("error = %q, want substring %q", err.Error(), tc.wantErrMsg)
 			}
 		})
 	}
