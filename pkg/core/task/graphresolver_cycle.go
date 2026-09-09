@@ -87,8 +87,8 @@ func buildPointToPointOutgoingGraph(
 	}
 
 	for _, e := range pointToPointEdges {
-		outgoing[e.SourceID] = append(outgoing[e.SourceID], e.TargetID)
-		inDegree[e.TargetID]++
+		outgoing[e.SourceImplID] = append(outgoing[e.SourceImplID], e.TargetImplID)
+		inDegree[e.TargetImplID]++
 	}
 
 	if err := verifyAcyclic(outgoing, inDegree, len(graphTaskMap)); err != nil {
@@ -134,7 +134,7 @@ func partitionCandidateFanInEdges(
 				feedbackProducersByConsumer[key.consumerImplID] = make(map[string]bool)
 			}
 			for _, fe := range feedback {
-				feedbackProducersByConsumer[key.consumerImplID][fe.SourceID] = true
+				feedbackProducersByConsumer[key.consumerImplID][fe.SourceImplID] = true
 			}
 		}
 	}
@@ -259,8 +259,8 @@ func verifyFinalDAG(allTasks []UntypedTask, dedupedEdges []taskid.TaskEdge) erro
 		finalInDegree[implID] = 0
 	}
 	for _, e := range dedupedEdges {
-		finalOutgoing[e.SourceID] = append(finalOutgoing[e.SourceID], e.TargetID)
-		finalInDegree[e.TargetID]++
+		finalOutgoing[e.SourceImplID] = append(finalOutgoing[e.SourceImplID], e.TargetImplID)
+		finalInDegree[e.TargetImplID]++
 	}
 	return verifyAcyclic(finalOutgoing, finalInDegree, len(allTasks))
 }
@@ -284,12 +284,12 @@ func reroutePointToPointEdges(
 
 	for _, pair := range stageTasks {
 		resolvedPointToPointEdges = append(resolvedPointToPointEdges, taskid.TaskEdge{
-			SourceRefID: pair.stage1.UntypedID().ReferenceIDString(),
-			SourceID:    pair.stage1.UntypedID().String(),
-			TargetID:    pair.stage2.UntypedID().String(),
-			Kind:        taskid.EdgeKindOrderOnly,
-			Condition:   taskid.ConditionRequired,
-			Cardinality: taskid.CardinalityPointToPoint,
+			SourceRefID:  pair.stage1.UntypedID().ReferenceIDString(),
+			SourceImplID: pair.stage1.UntypedID().String(),
+			TargetImplID: pair.stage2.UntypedID().String(),
+			Kind:         taskid.EdgeKindOrderOnly,
+			Condition:    taskid.ConditionRequired,
+			Cardinality:  taskid.CardinalityPointToPoint,
 		})
 	}
 
@@ -303,26 +303,26 @@ func rerouteSinglePointToPointEdge(
 	feedbackProducersByConsumer map[string]map[string]bool,
 	pointToPointOutgoing map[string][]string,
 ) []taskid.TaskEdge {
-	_, sourceIsSplit := stageTasks[e.SourceID]
-	_, targetIsSplit := stageTasks[e.TargetID]
+	_, sourceIsSplit := stageTasks[e.SourceImplID]
+	_, targetIsSplit := stageTasks[e.TargetImplID]
 
 	if !sourceIsSplit && !targetIsSplit {
 		return []taskid.TaskEdge{e}
 	}
 
 	if !sourceIsSplit && targetIsSplit {
-		targetPair := stageTasks[e.TargetID]
+		targetPair := stageTasks[e.TargetImplID]
 		e1 := e
-		e1.TargetID = targetPair.stage1.UntypedID().String()
+		e1.TargetImplID = targetPair.stage1.UntypedID().String()
 		e2 := e
-		e2.TargetID = targetPair.stage2.UntypedID().String()
+		e2.TargetImplID = targetPair.stage2.UntypedID().String()
 		return []taskid.TaskEdge{e1, e2}
 	}
 
-	sourcePair := stageTasks[e.SourceID]
-	feedbackProducers := feedbackProducersByConsumer[e.SourceID]
+	sourcePair := stageTasks[e.SourceImplID]
+	feedbackProducers := feedbackProducersByConsumer[e.SourceImplID]
 
-	leadsToFeedback := leadsToFeedbackProducer(e.TargetID, feedbackProducers, pointToPointOutgoing)
+	leadsToFeedback := leadsToFeedbackProducer(e.TargetImplID, feedbackProducers, pointToPointOutgoing)
 
 	sourceID := sourcePair.stage2.UntypedID().String()
 	if leadsToFeedback {
@@ -331,17 +331,17 @@ func rerouteSinglePointToPointEdge(
 
 	if !targetIsSplit {
 		rewrittenEdge := e
-		rewrittenEdge.SourceID = sourceID
+		rewrittenEdge.SourceImplID = sourceID
 		return []taskid.TaskEdge{rewrittenEdge}
 	}
 
-	targetPair := stageTasks[e.TargetID]
+	targetPair := stageTasks[e.TargetImplID]
 	e1 := e
-	e1.SourceID = sourceID
-	e1.TargetID = targetPair.stage1.UntypedID().String()
+	e1.SourceImplID = sourceID
+	e1.TargetImplID = targetPair.stage1.UntypedID().String()
 	e2 := e
-	e2.SourceID = sourceID
-	e2.TargetID = targetPair.stage2.UntypedID().String()
+	e2.SourceImplID = sourceID
+	e2.TargetImplID = targetPair.stage2.UntypedID().String()
 	return []taskid.TaskEdge{e1, e2}
 }
 
@@ -382,18 +382,18 @@ func rerouteFanInEdges(
 
 		for _, be := range bootstrap {
 			e1 := be
-			e1.TargetID = stage1ID
+			e1.TargetImplID = stage1ID
 			e2 := be
-			e2.TargetID = stage2ID
+			e2.TargetImplID = stage2ID
 			resolvedFanInEdges = append(resolvedFanInEdges, e1, e2)
 		}
 
 		for _, fe := range feedback {
 			rewrittenEdge := fe
-			if fe.SourceID == key.consumerImplID {
-				rewrittenEdge.SourceID = stage1ID
+			if fe.SourceImplID == key.consumerImplID {
+				rewrittenEdge.SourceImplID = stage1ID
 			}
-			rewrittenEdge.TargetID = stage2ID
+			rewrittenEdge.TargetImplID = stage2ID
 			resolvedFanInEdges = append(resolvedFanInEdges, rewrittenEdge)
 		}
 	}
@@ -414,7 +414,7 @@ func groupCandidateFanInEdgesByConsumerTag(candidateFanInEdges []taskid.TaskEdge
 	edgesByKey := make(map[consumerTagKey][]taskid.TaskEdge)
 	for _, e := range candidateFanInEdges {
 		key := consumerTagKey{
-			consumerImplID: e.TargetID,
+			consumerImplID: e.TargetImplID,
 			tag:            e.Tag,
 		}
 		edgesByKey[key] = append(edgesByKey[key], e)
@@ -456,7 +456,7 @@ func resolveCandidateFanInForKey(
 		candidateEdgesAtPriority := deduplicateCandidateEdgesAtPriority(candidatesByPriority[priority])
 
 		for _, candidateEdge := range candidateEdgesAtPriority {
-			producerImplID := candidateEdge.SourceID
+			producerImplID := candidateEdge.SourceImplID
 			createsCycle := (producerImplID == key.consumerImplID) || isReachable(key.consumerImplID, producerImplID, outgoing)
 
 			if !createsCycle {
@@ -512,8 +512,8 @@ func buildAmbiguousPriorityError(
 			break
 		}
 	}
-	producerImplIDA := candidateEdge.SourceID
-	producerImplIDB := otherEdge.SourceID
+	producerImplIDA := candidateEdge.SourceImplID
+	producerImplIDB := otherEdge.SourceImplID
 	if producerImplIDA > producerImplIDB {
 		producerImplIDA, producerImplIDB = producerImplIDB, producerImplIDA
 	}
@@ -527,10 +527,10 @@ func collectBoundFanInRefIDsByTask(acceptedFanInEdges []taskid.TaskEdge) map[str
 		if e.Tag == "" {
 			continue
 		}
-		if boundFanInRefIDsByTask[e.TargetID] == nil {
-			boundFanInRefIDsByTask[e.TargetID] = make(map[string][]string)
+		if boundFanInRefIDsByTask[e.TargetImplID] == nil {
+			boundFanInRefIDsByTask[e.TargetImplID] = make(map[string][]string)
 		}
-		boundFanInRefIDsByTask[e.TargetID][e.Tag] = append(boundFanInRefIDsByTask[e.TargetID][e.Tag], e.SourceRefID)
+		boundFanInRefIDsByTask[e.TargetImplID][e.Tag] = append(boundFanInRefIDsByTask[e.TargetImplID][e.Tag], e.SourceRefID)
 	}
 	for targetID, byTag := range boundFanInRefIDsByTask {
 		for tag, refIDs := range byTag {

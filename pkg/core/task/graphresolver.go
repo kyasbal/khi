@@ -204,14 +204,14 @@ func bindFanInDependencies(
 				for _, p := range matchingProducers {
 					priority := typedmap.GetOrDefault(p.Labels(), LabelKeyProvidedTagPriority(tag), DefaultTagPriority)
 					rawEdges = append(rawEdges, taskid.TaskEdge{
-						SourceRefID: p.UntypedID().ReferenceIDString(),
-						SourceID:    p.UntypedID().String(),
-						TargetID:    t.UntypedID().String(),
-						Kind:        dep.DescriptorKind(),
-						Condition:   taskid.ConditionRequired,
-						Cardinality: taskid.CardinalityFanIn,
-						Tag:         tag,
-						Priority:    priority,
+						SourceRefID:  p.UntypedID().ReferenceIDString(),
+						SourceImplID: p.UntypedID().String(),
+						TargetImplID: t.UntypedID().String(),
+						Kind:         dep.DescriptorKind(),
+						Condition:    taskid.ConditionRequired,
+						Cardinality:  taskid.CardinalityFanIn,
+						Tag:          tag,
+						Priority:     priority,
 					})
 				}
 			}
@@ -235,12 +235,12 @@ func bindPointToPointDependencies(graphTaskMap map[string]UntypedTask) []taskid.
 				refID := ptp.ReferenceID()
 				if sourceTask, exists := graphTaskMap[refID]; exists {
 					rawEdges = append(rawEdges, taskid.TaskEdge{
-						SourceRefID: refID,
-						SourceID:    sourceTask.UntypedID().String(),
-						TargetID:    t.UntypedID().String(),
-						Kind:        dep.DescriptorKind(),
-						Condition:   dep.DescriptorCondition(),
-						Cardinality: taskid.CardinalityPointToPoint,
+						SourceRefID:  refID,
+						SourceImplID: sourceTask.UntypedID().String(),
+						TargetImplID: t.UntypedID().String(),
+						Kind:         dep.DescriptorKind(),
+						Condition:    dep.DescriptorCondition(),
+						Cardinality:  taskid.CardinalityPointToPoint,
 					})
 				}
 			}
@@ -255,14 +255,14 @@ func bindPointToPointDependencies(graphTaskMap map[string]UntypedTask) []taskid.
 // Minimum Priority takes precedence.
 func deduplicateAndNormalizeEdges(rawEdges []taskid.TaskEdge) []taskid.TaskEdge {
 	type edgeKey struct {
-		sourceID string
-		targetID string
+		sourceImplID string
+		targetImplID string
 	}
 	edgeMap := make(map[edgeKey]taskid.TaskEdge)
 	order := make([]edgeKey, 0, len(rawEdges))
 
 	for _, e := range rawEdges {
-		key := edgeKey{sourceID: e.SourceID, targetID: e.TargetID}
+		key := edgeKey{sourceImplID: e.SourceImplID, targetImplID: e.TargetImplID}
 		if existing, exists := edgeMap[key]; exists {
 			if e.Kind == taskid.EdgeKindData {
 				existing.Kind = taskid.EdgeKindData
@@ -311,8 +311,8 @@ func buildAndSortTaskSet(
 	}
 
 	for _, e := range edges {
-		outgoing[e.SourceID] = append(outgoing[e.SourceID], e.TargetID)
-		inDegree[e.TargetID]++
+		outgoing[e.SourceImplID] = append(outgoing[e.SourceImplID], e.TargetImplID)
+		inDegree[e.TargetImplID]++
 	}
 
 	h := &taskMinHeap{}

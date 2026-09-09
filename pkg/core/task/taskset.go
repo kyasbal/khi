@@ -76,9 +76,9 @@ func NewResolvedTaskSet(
 	}
 
 	for _, e := range edges {
-		incomingEdges[e.TargetID] = append(incomingEdges[e.TargetID], e)
+		incomingEdges[e.TargetImplID] = append(incomingEdges[e.TargetImplID], e)
 		if e.Kind == taskid.EdgeKindData {
-			incomingDataEdges[e.TargetID] = append(incomingDataEdges[e.TargetID], e)
+			incomingDataEdges[e.TargetImplID] = append(incomingDataEdges[e.TargetImplID], e)
 		}
 	}
 
@@ -207,7 +207,7 @@ func (s *TaskSet) DumpGraphviz() (string, error) {
 	for _, task := range s.tasks {
 		sources := s.IncomingEdges(task.UntypedID().String())
 		for _, edge := range sources {
-			result += fmt.Sprintf("%s -> %s\n", graphVizValidId(edge.SourceID), graphVizValidId(task.UntypedID().String()))
+			result += fmt.Sprintf("%s -> %s\n", graphVizValidId(edge.SourceImplID), graphVizValidId(task.UntypedID().String()))
 		}
 	}
 	result += "}"

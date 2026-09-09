@@ -512,7 +512,7 @@ func TestResolveGraph_FanInCycle_DownstreamTaskPtPRouting(t *testing.T) {
 			if len(incoming) != 1 {
 				t.Fatalf("downstream incoming edges count = %d, want 1", len(incoming))
 			}
-			if gotSource := incoming[0].SourceID; gotSource != tc.wantDownstreamSource {
+			if gotSource := incoming[0].SourceImplID; gotSource != tc.wantDownstreamSource {
 				t.Errorf("downstream incoming edge source = %q, want %q", gotSource, tc.wantDownstreamSource)
 			}
 		})
@@ -593,7 +593,7 @@ func TestResolveGraph_FanInCycle_UpstreamTaskPtPRouting(t *testing.T) {
 			incomingS1 := taskSet.IncomingEdges("consumer#default-stage-1")
 			hasUpstreamS1 := false
 			for _, e := range incomingS1 {
-				if e.SourceID == tc.wantUpstreamSource {
+				if e.SourceImplID == tc.wantUpstreamSource {
 					hasUpstreamS1 = true
 					break
 				}
@@ -605,7 +605,7 @@ func TestResolveGraph_FanInCycle_UpstreamTaskPtPRouting(t *testing.T) {
 			incomingS2 := taskSet.IncomingEdges("consumer#default-stage-2")
 			hasUpstreamS2 := false
 			for _, e := range incomingS2 {
-				if e.SourceID == tc.wantUpstreamSource {
+				if e.SourceImplID == tc.wantUpstreamSource {
 					hasUpstreamS2 = true
 					break
 				}

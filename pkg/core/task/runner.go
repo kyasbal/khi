@@ -92,7 +92,7 @@ func NewLocalRunner(taskSet *TaskSet) (*LocalRunner, error) {
 	}
 	for _, t := range taskSet.tasks {
 		for _, edge := range taskSet.IncomingDataEdges(t.UntypedID().String()) {
-			remainingDependents[edge.SourceID]++
+			remainingDependents[edge.SourceImplID]++
 		}
 	}
 	for i := 0; i < len(taskSet.tasks); i++ {
@@ -211,7 +211,7 @@ func (r *LocalRunner) runTask(graphCtx context.Context, taskDefIndex int) error 
 
 	// Wait for completions of all concrete incoming edges.
 	for _, edge := range r.resolvedTaskSet.IncomingEdges(task.UntypedID().String()) {
-		err := r.waitForDependency(taskCtx, edge.SourceID)
+		err := r.waitForDependency(taskCtx, edge.SourceImplID)
 		if err != nil {
 			return err
 		}
@@ -286,7 +286,7 @@ func (r *LocalRunner) cleanupCompletedTaskResults(completedTask UntypedTask) {
 
 	// Decrement remaining dependents count for each incoming data edge.
 	for _, edge := range r.resolvedTaskSet.IncomingDataEdges(completedTask.UntypedID().String()) {
-		depImplID := edge.SourceID
+		depImplID := edge.SourceImplID
 		r.remainingDependents[depImplID]--
 		remDep := r.remainingDependents[depImplID]
 
