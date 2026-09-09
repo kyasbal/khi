@@ -279,8 +279,8 @@ func (r *LocalRunner) cleanupCompletedTaskResults(completedTask UntypedTask) {
 	r.remainingStagesByRefID[completedRefID]--
 
 	// Check if the completed task itself has no dependents and should be released immediately.
-	rem := r.remainingDependentsByImplID[completedImplID]
-	if rem == 0 && !r.isTaskResultRetained(completedTask) && r.remainingStagesByRefID[completedRefID] == 0 {
+	remainingDependents := r.remainingDependentsByImplID[completedImplID]
+	if remainingDependents == 0 && !r.isTaskResultRetained(completedTask) && r.remainingStagesByRefID[completedRefID] == 0 {
 		typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](completedRefID))
 	}
 
@@ -288,9 +288,9 @@ func (r *LocalRunner) cleanupCompletedTaskResults(completedTask UntypedTask) {
 	for _, edge := range r.resolvedTaskSet.IncomingDataEdges(completedTask.UntypedID().String()) {
 		depImplID := edge.SourceImplID
 		r.remainingDependentsByImplID[depImplID]--
-		remDep := r.remainingDependentsByImplID[depImplID]
+		remainingDependents := r.remainingDependentsByImplID[depImplID]
 
-		if remDep == 0 {
+		if remainingDependents == 0 {
 			if depTask, found := r.taskByImplID[depImplID]; found {
 				depRefID := depTask.UntypedID().ReferenceIDString()
 				if depRefID == completedRefID {
