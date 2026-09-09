@@ -33,7 +33,35 @@ message MetadataItem {
     HeaderMetadata header = 1;
     // Queries that were executed to generate the inspection data.
     QueryMetadata query = 2;
+    // Contextual information and summaries recorded by parsers for AI consumption.
+    AIContextMetadata ai_context = 3;
   }
+}
+
+// AIContextMetadata aggregates contextual intelligence gathered by parsers.
+message AIContextMetadata {
+  // Grouped summary sections collected during inspection parsing.
+  repeated AIContextSection sections = 1;
+}
+
+// AIContextSection groups context under a logical topic or component.
+message AIContextSection {
+  // Human-readable title of this context section (e.g., "Kubernetes Resources").
+  string title = 1;
+  // Display priority used when ordering sections in summaries (lower numbers render first).
+  int32 priority = 2;
+  // Scalar properties as key-value pairs (e.g., "Cluster Name" -> "my-cluster").
+  map<string, string> properties = 3;
+  // Set properties as unique string lists (e.g., "Namespaces" -> ["default", "kube-system"]).
+  map<string, StringList> set_properties = 4;
+  // Optional markdown text block containing detailed analysis or findings.
+  string summary_markdown = 5;
+}
+
+// StringList represents an array of string values.
+message StringList {
+  // The list of string values.
+  repeated string values = 1;
 }
 
 // HeaderMetadata holds high-level information about the inspection.

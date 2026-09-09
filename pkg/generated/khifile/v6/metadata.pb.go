@@ -91,6 +91,7 @@ type MetadataItem struct {
 	//
 	//	*MetadataItem_Header
 	//	*MetadataItem_Query
+	//	*MetadataItem_AiContext
 	Payload       isMetadataItem_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -151,6 +152,15 @@ func (x *MetadataItem) GetQuery() *QueryMetadata {
 	return nil
 }
 
+func (x *MetadataItem) GetAiContext() *AIContextMetadata {
+	if x != nil {
+		if x, ok := x.Payload.(*MetadataItem_AiContext); ok {
+			return x.AiContext
+		}
+	}
+	return nil
+}
+
 type isMetadataItem_Payload interface {
 	isMetadataItem_Payload()
 }
@@ -165,9 +175,190 @@ type MetadataItem_Query struct {
 	Query *QueryMetadata `protobuf:"bytes,2,opt,name=query,oneof"`
 }
 
+type MetadataItem_AiContext struct {
+	// Contextual information and summaries recorded by parsers for AI consumption.
+	AiContext *AIContextMetadata `protobuf:"bytes,3,opt,name=ai_context,json=aiContext,oneof"`
+}
+
 func (*MetadataItem_Header) isMetadataItem_Payload() {}
 
 func (*MetadataItem_Query) isMetadataItem_Payload() {}
+
+func (*MetadataItem_AiContext) isMetadataItem_Payload() {}
+
+// AIContextMetadata aggregates contextual intelligence gathered by parsers.
+type AIContextMetadata struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Grouped summary sections collected during inspection parsing.
+	Sections      []*AIContextSection `protobuf:"bytes,1,rep,name=sections" json:"sections,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AIContextMetadata) Reset() {
+	*x = AIContextMetadata{}
+	mi := &file_khifile_v6_metadata_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AIContextMetadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AIContextMetadata) ProtoMessage() {}
+
+func (x *AIContextMetadata) ProtoReflect() protoreflect.Message {
+	mi := &file_khifile_v6_metadata_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AIContextMetadata.ProtoReflect.Descriptor instead.
+func (*AIContextMetadata) Descriptor() ([]byte, []int) {
+	return file_khifile_v6_metadata_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *AIContextMetadata) GetSections() []*AIContextSection {
+	if x != nil {
+		return x.Sections
+	}
+	return nil
+}
+
+// AIContextSection groups context under a logical topic or component.
+type AIContextSection struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Human-readable title of this context section (e.g., "Kubernetes Resources").
+	Title *string `protobuf:"bytes,1,opt,name=title" json:"title,omitempty"`
+	// Display priority used when ordering sections in summaries (lower numbers render first).
+	Priority *int32 `protobuf:"varint,2,opt,name=priority" json:"priority,omitempty"`
+	// Scalar properties as key-value pairs (e.g., "Cluster Name" -> "my-cluster").
+	Properties map[string]string `protobuf:"bytes,3,rep,name=properties" json:"properties,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Set properties as unique string lists (e.g., "Namespaces" -> ["default", "kube-system"]).
+	SetProperties map[string]*StringList `protobuf:"bytes,4,rep,name=set_properties,json=setProperties" json:"set_properties,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Optional markdown text block containing detailed analysis or findings.
+	SummaryMarkdown *string `protobuf:"bytes,5,opt,name=summary_markdown,json=summaryMarkdown" json:"summary_markdown,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *AIContextSection) Reset() {
+	*x = AIContextSection{}
+	mi := &file_khifile_v6_metadata_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AIContextSection) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AIContextSection) ProtoMessage() {}
+
+func (x *AIContextSection) ProtoReflect() protoreflect.Message {
+	mi := &file_khifile_v6_metadata_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AIContextSection.ProtoReflect.Descriptor instead.
+func (*AIContextSection) Descriptor() ([]byte, []int) {
+	return file_khifile_v6_metadata_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AIContextSection) GetTitle() string {
+	if x != nil && x.Title != nil {
+		return *x.Title
+	}
+	return ""
+}
+
+func (x *AIContextSection) GetPriority() int32 {
+	if x != nil && x.Priority != nil {
+		return *x.Priority
+	}
+	return 0
+}
+
+func (x *AIContextSection) GetProperties() map[string]string {
+	if x != nil {
+		return x.Properties
+	}
+	return nil
+}
+
+func (x *AIContextSection) GetSetProperties() map[string]*StringList {
+	if x != nil {
+		return x.SetProperties
+	}
+	return nil
+}
+
+func (x *AIContextSection) GetSummaryMarkdown() string {
+	if x != nil && x.SummaryMarkdown != nil {
+		return *x.SummaryMarkdown
+	}
+	return ""
+}
+
+// StringList represents an array of string values.
+type StringList struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The list of string values.
+	Values        []string `protobuf:"bytes,1,rep,name=values" json:"values,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StringList) Reset() {
+	*x = StringList{}
+	mi := &file_khifile_v6_metadata_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StringList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StringList) ProtoMessage() {}
+
+func (x *StringList) ProtoReflect() protoreflect.Message {
+	mi := &file_khifile_v6_metadata_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StringList.ProtoReflect.Descriptor instead.
+func (*StringList) Descriptor() ([]byte, []int) {
+	return file_khifile_v6_metadata_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *StringList) GetValues() []string {
+	if x != nil {
+		return x.Values
+	}
+	return nil
+}
 
 // HeaderMetadata holds high-level information about the inspection.
 type HeaderMetadata struct {
@@ -194,7 +385,7 @@ type HeaderMetadata struct {
 
 func (x *HeaderMetadata) Reset() {
 	*x = HeaderMetadata{}
-	mi := &file_khifile_v6_metadata_proto_msgTypes[2]
+	mi := &file_khifile_v6_metadata_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -206,7 +397,7 @@ func (x *HeaderMetadata) String() string {
 func (*HeaderMetadata) ProtoMessage() {}
 
 func (x *HeaderMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_khifile_v6_metadata_proto_msgTypes[2]
+	mi := &file_khifile_v6_metadata_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -219,7 +410,7 @@ func (x *HeaderMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HeaderMetadata.ProtoReflect.Descriptor instead.
 func (*HeaderMetadata) Descriptor() ([]byte, []int) {
-	return file_khifile_v6_metadata_proto_rawDescGZIP(), []int{2}
+	return file_khifile_v6_metadata_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *HeaderMetadata) GetInspectionType() string {
@@ -293,7 +484,7 @@ type QueryItem struct {
 
 func (x *QueryItem) Reset() {
 	*x = QueryItem{}
-	mi := &file_khifile_v6_metadata_proto_msgTypes[3]
+	mi := &file_khifile_v6_metadata_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -305,7 +496,7 @@ func (x *QueryItem) String() string {
 func (*QueryItem) ProtoMessage() {}
 
 func (x *QueryItem) ProtoReflect() protoreflect.Message {
-	mi := &file_khifile_v6_metadata_proto_msgTypes[3]
+	mi := &file_khifile_v6_metadata_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -318,7 +509,7 @@ func (x *QueryItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryItem.ProtoReflect.Descriptor instead.
 func (*QueryItem) Descriptor() ([]byte, []int) {
-	return file_khifile_v6_metadata_proto_rawDescGZIP(), []int{3}
+	return file_khifile_v6_metadata_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *QueryItem) GetId() string {
@@ -353,7 +544,7 @@ type QueryMetadata struct {
 
 func (x *QueryMetadata) Reset() {
 	*x = QueryMetadata{}
-	mi := &file_khifile_v6_metadata_proto_msgTypes[4]
+	mi := &file_khifile_v6_metadata_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -365,7 +556,7 @@ func (x *QueryMetadata) String() string {
 func (*QueryMetadata) ProtoMessage() {}
 
 func (x *QueryMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_khifile_v6_metadata_proto_msgTypes[4]
+	mi := &file_khifile_v6_metadata_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -378,7 +569,7 @@ func (x *QueryMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryMetadata.ProtoReflect.Descriptor instead.
 func (*QueryMetadata) Descriptor() ([]byte, []int) {
-	return file_khifile_v6_metadata_proto_rawDescGZIP(), []int{4}
+	return file_khifile_v6_metadata_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *QueryMetadata) GetQueries() []*QueryItem {
@@ -395,11 +586,32 @@ const file_khifile_v6_metadata_proto_rawDesc = "" +
 	"\x19khifile/v6/metadata.proto\x12\n" +
 	"khifile.v6\"E\n" +
 	"\rMetadataChunk\x124\n" +
-	"\bmetadata\x18\x01 \x03(\v2\x18.khifile.v6.MetadataItemR\bmetadata\"\x82\x01\n" +
+	"\bmetadata\x18\x01 \x03(\v2\x18.khifile.v6.MetadataItemR\bmetadata\"\xc2\x01\n" +
 	"\fMetadataItem\x124\n" +
 	"\x06header\x18\x01 \x01(\v2\x1a.khifile.v6.HeaderMetadataH\x00R\x06header\x121\n" +
-	"\x05query\x18\x02 \x01(\v2\x19.khifile.v6.QueryMetadataH\x00R\x05queryB\t\n" +
-	"\apayload\"\x8e\x03\n" +
+	"\x05query\x18\x02 \x01(\v2\x19.khifile.v6.QueryMetadataH\x00R\x05query\x12>\n" +
+	"\n" +
+	"ai_context\x18\x03 \x01(\v2\x1d.khifile.v6.AIContextMetadataH\x00R\taiContextB\t\n" +
+	"\apayload\"M\n" +
+	"\x11AIContextMetadata\x128\n" +
+	"\bsections\x18\x01 \x03(\v2\x1c.khifile.v6.AIContextSectionR\bsections\"\xae\x03\n" +
+	"\x10AIContextSection\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1a\n" +
+	"\bpriority\x18\x02 \x01(\x05R\bpriority\x12L\n" +
+	"\n" +
+	"properties\x18\x03 \x03(\v2,.khifile.v6.AIContextSection.PropertiesEntryR\n" +
+	"properties\x12V\n" +
+	"\x0eset_properties\x18\x04 \x03(\v2/.khifile.v6.AIContextSection.SetPropertiesEntryR\rsetProperties\x12)\n" +
+	"\x10summary_markdown\x18\x05 \x01(\tR\x0fsummaryMarkdown\x1a=\n" +
+	"\x0fPropertiesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aX\n" +
+	"\x12SetPropertiesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12,\n" +
+	"\x05value\x18\x02 \x01(\v2\x16.khifile.v6.StringListR\x05value:\x028\x01\"$\n" +
+	"\n" +
+	"StringList\x12\x16\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values\"\x8e\x03\n" +
 	"\x0eHeaderMetadata\x12'\n" +
 	"\x0finspection_type\x18\x01 \x01(\tR\x0einspectionType\x12'\n" +
 	"\x0finspection_name\x18\x02 \x01(\tR\x0einspectionName\x129\n" +
@@ -428,24 +640,34 @@ func file_khifile_v6_metadata_proto_rawDescGZIP() []byte {
 	return file_khifile_v6_metadata_proto_rawDescData
 }
 
-var file_khifile_v6_metadata_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_khifile_v6_metadata_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_khifile_v6_metadata_proto_goTypes = []any{
-	(*MetadataChunk)(nil),  // 0: khifile.v6.MetadataChunk
-	(*MetadataItem)(nil),   // 1: khifile.v6.MetadataItem
-	(*HeaderMetadata)(nil), // 2: khifile.v6.HeaderMetadata
-	(*QueryItem)(nil),      // 3: khifile.v6.QueryItem
-	(*QueryMetadata)(nil),  // 4: khifile.v6.QueryMetadata
+	(*MetadataChunk)(nil),     // 0: khifile.v6.MetadataChunk
+	(*MetadataItem)(nil),      // 1: khifile.v6.MetadataItem
+	(*AIContextMetadata)(nil), // 2: khifile.v6.AIContextMetadata
+	(*AIContextSection)(nil),  // 3: khifile.v6.AIContextSection
+	(*StringList)(nil),        // 4: khifile.v6.StringList
+	(*HeaderMetadata)(nil),    // 5: khifile.v6.HeaderMetadata
+	(*QueryItem)(nil),         // 6: khifile.v6.QueryItem
+	(*QueryMetadata)(nil),     // 7: khifile.v6.QueryMetadata
+	nil,                       // 8: khifile.v6.AIContextSection.PropertiesEntry
+	nil,                       // 9: khifile.v6.AIContextSection.SetPropertiesEntry
 }
 var file_khifile_v6_metadata_proto_depIdxs = []int32{
 	1, // 0: khifile.v6.MetadataChunk.metadata:type_name -> khifile.v6.MetadataItem
-	2, // 1: khifile.v6.MetadataItem.header:type_name -> khifile.v6.HeaderMetadata
-	4, // 2: khifile.v6.MetadataItem.query:type_name -> khifile.v6.QueryMetadata
-	3, // 3: khifile.v6.QueryMetadata.queries:type_name -> khifile.v6.QueryItem
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	5, // 1: khifile.v6.MetadataItem.header:type_name -> khifile.v6.HeaderMetadata
+	7, // 2: khifile.v6.MetadataItem.query:type_name -> khifile.v6.QueryMetadata
+	2, // 3: khifile.v6.MetadataItem.ai_context:type_name -> khifile.v6.AIContextMetadata
+	3, // 4: khifile.v6.AIContextMetadata.sections:type_name -> khifile.v6.AIContextSection
+	8, // 5: khifile.v6.AIContextSection.properties:type_name -> khifile.v6.AIContextSection.PropertiesEntry
+	9, // 6: khifile.v6.AIContextSection.set_properties:type_name -> khifile.v6.AIContextSection.SetPropertiesEntry
+	6, // 7: khifile.v6.QueryMetadata.queries:type_name -> khifile.v6.QueryItem
+	4, // 8: khifile.v6.AIContextSection.SetPropertiesEntry.value:type_name -> khifile.v6.StringList
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	9, // [9:9] is the sub-list for extension type_name
+	9, // [9:9] is the sub-list for extension extendee
+	0, // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_khifile_v6_metadata_proto_init() }
@@ -456,6 +678,7 @@ func file_khifile_v6_metadata_proto_init() {
 	file_khifile_v6_metadata_proto_msgTypes[1].OneofWrappers = []any{
 		(*MetadataItem_Header)(nil),
 		(*MetadataItem_Query)(nil),
+		(*MetadataItem_AiContext)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -463,7 +686,7 @@ func file_khifile_v6_metadata_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_khifile_v6_metadata_proto_rawDesc), len(file_khifile_v6_metadata_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
