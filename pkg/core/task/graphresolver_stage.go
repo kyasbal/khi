@@ -258,46 +258,81 @@ func rerouteFanInEdges(
 ) []taskid.TaskEdge {
 	var resolvedFanInEdges []taskid.TaskEdge
 	for _, key := range sortedKeys {
-		bootstrap := bootstrapEdgesByKey[key]
-		feedback := feedbackEdgesByKey[key]
-
-		pair, isSplit := stageTasks[key.consumerImplID]
-		if !isSplit {
-			for _, be := range bootstrap {
-				rewritten := be
-				if sourcePair, sourceIsSplit := stageTasks[be.SourceImplID]; sourceIsSplit {
-					rewritten.SourceImplID = sourcePair.stage2.UntypedID().String()
-				}
-				resolvedFanInEdges = append(resolvedFanInEdges, rewritten)
-			}
-			continue
-		}
-
-		stage1ImplID := pair.stage1.UntypedID().String()
-		stage2ImplID := pair.stage2.UntypedID().String()
-
-		for _, be := range bootstrap {
-			e1 := be
-			e2 := be
-			if sourcePair, sourceIsSplit := stageTasks[be.SourceImplID]; sourceIsSplit {
-				e1.SourceImplID = sourcePair.stage2.UntypedID().String()
-				e2.SourceImplID = sourcePair.stage2.UntypedID().String()
-			}
-			e1.TargetImplID = stage1ImplID
-			e2.TargetImplID = stage2ImplID
-			resolvedFanInEdges = append(resolvedFanInEdges, e1, e2)
-		}
-
-		for _, fe := range feedback {
-			rewrittenEdge := fe
-			if fe.SourceImplID == key.consumerImplID {
-				rewrittenEdge.SourceImplID = stage1ImplID
-			} else if sourcePair, sourceIsSplit := stageTasks[fe.SourceImplID]; sourceIsSplit {
-				rewrittenEdge.SourceImplID = sourcePair.stage2.UntypedID().String()
-			}
-			rewrittenEdge.TargetImplID = stage2ImplID
-			resolvedFanInEdges = append(resolvedFanInEdges, rewrittenEdge)
-		}
+		edges := rerouteFanInEdgesForConsumer(
+			key,
+			bootstrapEdgesByKey[key],
+			feedbackEdgesByKey[key],
+			stageTasks,
+		)
+		resolvedFanInEdges = append(resolvedFanInEdges, edges...)
 	}
 	return resolvedFanInEdges
+}
+
+// rerouteFanInEdgesForConsumer reroutes fan-in edges for a single consumer key based on whether it is split into stages.
+func rerouteFanInEdgesForConsumer(
+	key consumerTagKey,
+	bootstrap []taskid.TaskEdge,
+	feedback []taskid.TaskEdge,
+	stageTasks map[string]stageTaskPair,
+) []taskid.TaskEdge {
+	pair, isSplit := stageTasks[key.consumerImplID]
+	if !isSplit {
+		return rerouteUnsplitFanInEdges(bootstrap, stageTasks)
+	}
+
+	return rerouteSplitFanInEdges(key.consumerImplID, pair, bootstrap, feedback, stageTasks)
+}
+
+// rerouteUnsplitFanInEdges routes bootstrap edges for a non-split consumer, rewiring split producers to stage-2.
+func rerouteUnsplitFanInEdges(
+	bootstrap []taskid.TaskEdge,
+	stageTasks map[string]stageTaskPair,
+) []taskid.TaskEdge {
+	var result []taskid.TaskEdge
+	for _, be := range bootstrap {
+		rewritten := be
+		if sourcePair, sourceIsSplit := stageTasks[be.SourceImplID]; sourceIsSplit {
+			rewritten.SourceImplID = sourcePair.stage2.UntypedID().String()
+		}
+		result = append(result, rewritten)
+	}
+	return result
+}
+
+// rerouteSplitFanInEdges duplicates bootstrap edges to stage-1/stage-2 and routes feedback edges to stage-2.
+func rerouteSplitFanInEdges(
+	consumerImplID string,
+	pair stageTaskPair,
+	bootstrap []taskid.TaskEdge,
+	feedback []taskid.TaskEdge,
+	stageTasks map[string]stageTaskPair,
+) []taskid.TaskEdge {
+	stage1ImplID := pair.stage1.UntypedID().String()
+	stage2ImplID := pair.stage2.UntypedID().String()
+
+	var result []taskid.TaskEdge
+	for _, be := range bootstrap {
+		e1 := be
+		e2 := be
+		if sourcePair, sourceIsSplit := stageTasks[be.SourceImplID]; sourceIsSplit {
+			e1.SourceImplID = sourcePair.stage2.UntypedID().String()
+			e2.SourceImplID = sourcePair.stage2.UntypedID().String()
+		}
+		e1.TargetImplID = stage1ImplID
+		e2.TargetImplID = stage2ImplID
+		result = append(result, e1, e2)
+	}
+
+	for _, fe := range feedback {
+		rewrittenEdge := fe
+		if fe.SourceImplID == consumerImplID {
+			rewrittenEdge.SourceImplID = stage1ImplID
+		} else if sourcePair, sourceIsSplit := stageTasks[fe.SourceImplID]; sourceIsSplit {
+			rewrittenEdge.SourceImplID = sourcePair.stage2.UntypedID().String()
+		}
+		rewrittenEdge.TargetImplID = stage2ImplID
+		result = append(result, rewrittenEdge)
+	}
+	return result
 }
