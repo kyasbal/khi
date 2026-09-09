@@ -25,14 +25,14 @@ import (
 // stageTask wraps an UntypedTask to provide a distinct stage implementation ID for multi-stage execution.
 type stageTask struct {
 	originalTask UntypedTask
-	stageID      taskid.UntypedTaskImplementationID
+	stageImplID  taskid.UntypedTaskImplementationID
 }
 
 var _ UntypedTask = (*stageTask)(nil)
 
 // UntypedID implements UntypedTask.
 func (s *stageTask) UntypedID() taskid.UntypedTaskImplementationID {
-	return s.stageID
+	return s.stageImplID
 }
 
 // Labels implements UntypedTask.
@@ -67,12 +67,12 @@ func expandMultiStageResult(
 	pointToPointOutgoing map[string][]string,
 	implToTask map[string]UntypedTask,
 ) ([]UntypedTask, []taskid.TaskEdge, map[string]map[string][]string, error) {
-	stageTasks := createStageTasks(feedbackProducersByConsumer, implToTask)
-	allTasks := expandTasksWithStages(graphTaskMap, stageTasks)
+	stageTaskPairs := createStageTaskPairs(feedbackProducersByConsumer, implToTask)
+	allTasks := expandTasksWithStages(graphTaskMap, stageTaskPairs)
 
 	resolvedPointToPointEdges := reroutePointToPointEdges(
 		pointToPointEdges,
-		stageTasks,
+		stageTaskPairs,
 		feedbackProducersByConsumer,
 		pointToPointOutgoing,
 	)
@@ -81,7 +81,7 @@ func expandMultiStageResult(
 		sortedKeys,
 		bootstrapEdgesByKey,
 		feedbackEdgesByKey,
-		stageTasks,
+		stageTaskPairs,
 	)
 
 	allEdges := make([]taskid.TaskEdge, 0, len(resolvedPointToPointEdges)+len(resolvedFanInEdges))
@@ -89,45 +89,45 @@ func expandMultiStageResult(
 	allEdges = append(allEdges, resolvedFanInEdges...)
 	dedupedEdges := deduplicateAndNormalizeEdges(allEdges)
 
-	boundFanInRefIDsByTaskImpl := collectBoundFanInRefIDsByTaskImpl(resolvedFanInEdges)
+	boundFanInRefIDsByTaskImplID := collectBoundFanInRefIDsByTaskImplID(resolvedFanInEdges)
 
 	if err := verifyFinalDAG(allTasks, dedupedEdges); err != nil {
 		return nil, nil, nil, err
 	}
 
-	return allTasks, dedupedEdges, boundFanInRefIDsByTaskImpl, nil
+	return allTasks, dedupedEdges, boundFanInRefIDsByTaskImplID, nil
 }
 
-// createStageTasks creates stage-1 and stage-2 task pairs for each cyclic consumer.
-func createStageTasks(
+// createStageTaskPairs creates stage-1 and stage-2 task pairs for each cyclic consumer.
+func createStageTaskPairs(
 	feedbackProducersByConsumer map[string]map[string]bool,
 	implToTask map[string]UntypedTask,
 ) map[string]stageTaskPair {
-	stageTasks := make(map[string]stageTaskPair, len(feedbackProducersByConsumer))
+	stageTaskPairs := make(map[string]stageTaskPair, len(feedbackProducersByConsumer))
 	for consumerImplID := range feedbackProducersByConsumer {
 		consumerTask := implToTask[consumerImplID]
 		stage1 := &stageTask{
 			originalTask: consumerTask,
-			stageID:      taskid.NewStageImplementationID(consumerTask.UntypedID(), 1),
+			stageImplID:  taskid.NewStageImplementationID(consumerTask.UntypedID(), 1),
 		}
 		stage2 := &stageTask{
 			originalTask: consumerTask,
-			stageID:      taskid.NewStageImplementationID(consumerTask.UntypedID(), 2),
+			stageImplID:  taskid.NewStageImplementationID(consumerTask.UntypedID(), 2),
 		}
-		stageTasks[consumerImplID] = stageTaskPair{stage1: stage1, stage2: stage2}
+		stageTaskPairs[consumerImplID] = stageTaskPair{stage1: stage1, stage2: stage2}
 	}
-	return stageTasks
+	return stageTaskPairs
 }
 
 // expandTasksWithStages replaces split consumers with their stage-1 and stage-2 pairs, returning a sorted task list.
 func expandTasksWithStages(
 	graphTaskMap map[string]UntypedTask,
-	stageTasks map[string]stageTaskPair,
+	stageTaskPairs map[string]stageTaskPair,
 ) []UntypedTask {
-	allTasks := make([]UntypedTask, 0, len(graphTaskMap)+len(stageTasks))
+	allTasks := make([]UntypedTask, 0, len(graphTaskMap)+len(stageTaskPairs))
 	for _, task := range graphTaskMap {
 		implID := task.UntypedID().String()
-		if pair, ok := stageTasks[implID]; ok {
+		if pair, ok := stageTaskPairs[implID]; ok {
 			allTasks = append(allTasks, pair.stage1, pair.stage2)
 		} else {
 			allTasks = append(allTasks, task)
@@ -156,23 +156,23 @@ func verifyFinalDAG(allTasks []UntypedTask, dedupedEdges []taskid.TaskEdge) erro
 // reroutePointToPointEdges rewrites Point-to-Point edges when consumer tasks are split into stages.
 func reroutePointToPointEdges(
 	pointToPointEdges []taskid.TaskEdge,
-	stageTasks map[string]stageTaskPair,
+	stageTaskPairs map[string]stageTaskPair,
 	feedbackProducersByConsumer map[string]map[string]bool,
 	pointToPointOutgoing map[string][]string,
 ) []taskid.TaskEdge {
 	var resolvedPointToPointEdges []taskid.TaskEdge
 	for _, e := range pointToPointEdges {
-		resolvedPointToPointEdges = append(resolvedPointToPointEdges, rerouteSinglePointToPointEdge(e, stageTasks, feedbackProducersByConsumer, pointToPointOutgoing)...)
+		resolvedPointToPointEdges = append(resolvedPointToPointEdges, rerouteSinglePointToPointEdge(e, stageTaskPairs, feedbackProducersByConsumer, pointToPointOutgoing)...)
 	}
 
-	splitConsumerImplIDs := make([]string, 0, len(stageTasks))
-	for consumerImplID := range stageTasks {
+	splitConsumerImplIDs := make([]string, 0, len(stageTaskPairs))
+	for consumerImplID := range stageTaskPairs {
 		splitConsumerImplIDs = append(splitConsumerImplIDs, consumerImplID)
 	}
 	slices.Sort(splitConsumerImplIDs)
 
 	for _, consumerImplID := range splitConsumerImplIDs {
-		pair := stageTasks[consumerImplID]
+		pair := stageTaskPairs[consumerImplID]
 		resolvedPointToPointEdges = append(resolvedPointToPointEdges, taskid.TaskEdge{
 			SourceRefID:  pair.stage1.UntypedID().ReferenceIDString(),
 			SourceImplID: pair.stage1.UntypedID().String(),
@@ -189,19 +189,19 @@ func reroutePointToPointEdges(
 // rerouteSinglePointToPointEdge reroutes a point-to-point edge based on whether its source and target are split into stages.
 func rerouteSinglePointToPointEdge(
 	e taskid.TaskEdge,
-	stageTasks map[string]stageTaskPair,
+	stageTaskPairs map[string]stageTaskPair,
 	feedbackProducersByConsumer map[string]map[string]bool,
 	pointToPointOutgoing map[string][]string,
 ) []taskid.TaskEdge {
-	_, sourceIsSplit := stageTasks[e.SourceImplID]
-	_, targetIsSplit := stageTasks[e.TargetImplID]
+	_, sourceIsSplit := stageTaskPairs[e.SourceImplID]
+	_, targetIsSplit := stageTaskPairs[e.TargetImplID]
 
 	if !sourceIsSplit && !targetIsSplit {
 		return []taskid.TaskEdge{e}
 	}
 
 	if !sourceIsSplit && targetIsSplit {
-		targetPair := stageTasks[e.TargetImplID]
+		targetPair := stageTaskPairs[e.TargetImplID]
 		stage1Edge := e
 		stage1Edge.TargetImplID = targetPair.stage1.UntypedID().String()
 		stage2Edge := e
@@ -209,7 +209,7 @@ func rerouteSinglePointToPointEdge(
 		return []taskid.TaskEdge{stage1Edge, stage2Edge}
 	}
 
-	sourcePair := stageTasks[e.SourceImplID]
+	sourcePair := stageTaskPairs[e.SourceImplID]
 	feedbackProducers := feedbackProducersByConsumer[e.SourceImplID]
 
 	leadsToFeedback := leadsToFeedbackProducer(e.TargetImplID, feedbackProducers, pointToPointOutgoing)
@@ -225,7 +225,7 @@ func rerouteSinglePointToPointEdge(
 		return []taskid.TaskEdge{rewrittenEdge}
 	}
 
-	targetPair := stageTasks[e.TargetImplID]
+	targetPair := stageTaskPairs[e.TargetImplID]
 	stage1Edge := e
 	stage1Edge.SourceImplID = sourceImplID
 	stage1Edge.TargetImplID = targetPair.stage1.UntypedID().String()
@@ -254,7 +254,7 @@ func rerouteFanInEdges(
 	sortedKeys []consumerTagKey,
 	bootstrapEdgesByKey map[consumerTagKey][]taskid.TaskEdge,
 	feedbackEdgesByKey map[consumerTagKey][]taskid.TaskEdge,
-	stageTasks map[string]stageTaskPair,
+	stageTaskPairs map[string]stageTaskPair,
 ) []taskid.TaskEdge {
 	var resolvedFanInEdges []taskid.TaskEdge
 	for _, key := range sortedKeys {
@@ -262,7 +262,7 @@ func rerouteFanInEdges(
 			key,
 			bootstrapEdgesByKey[key],
 			feedbackEdgesByKey[key],
-			stageTasks,
+			stageTaskPairs,
 		)
 		resolvedFanInEdges = append(resolvedFanInEdges, edges...)
 	}
@@ -274,25 +274,25 @@ func rerouteFanInEdgesForConsumer(
 	key consumerTagKey,
 	bootstrapEdges []taskid.TaskEdge,
 	feedbackEdges []taskid.TaskEdge,
-	stageTasks map[string]stageTaskPair,
+	stageTaskPairs map[string]stageTaskPair,
 ) []taskid.TaskEdge {
-	pair, isSplit := stageTasks[key.consumerImplID]
+	pair, isSplit := stageTaskPairs[key.consumerImplID]
 	if !isSplit {
-		return rerouteNonSplitFanInEdges(bootstrapEdges, stageTasks)
+		return rerouteNonSplitFanInEdges(bootstrapEdges, stageTaskPairs)
 	}
 
-	return rerouteSplitFanInEdges(key.consumerImplID, pair, bootstrapEdges, feedbackEdges, stageTasks)
+	return rerouteSplitFanInEdges(key.consumerImplID, pair, bootstrapEdges, feedbackEdges, stageTaskPairs)
 }
 
 // rerouteNonSplitFanInEdges routes bootstrap edges for a non-split consumer, rewiring split producers to stage-2.
 func rerouteNonSplitFanInEdges(
 	bootstrapEdges []taskid.TaskEdge,
-	stageTasks map[string]stageTaskPair,
+	stageTaskPairs map[string]stageTaskPair,
 ) []taskid.TaskEdge {
 	var result []taskid.TaskEdge
 	for _, bootstrapEdge := range bootstrapEdges {
 		rewritten := bootstrapEdge
-		if sourcePair, sourceIsSplit := stageTasks[bootstrapEdge.SourceImplID]; sourceIsSplit {
+		if sourcePair, sourceIsSplit := stageTaskPairs[bootstrapEdge.SourceImplID]; sourceIsSplit {
 			rewritten.SourceImplID = sourcePair.stage2.UntypedID().String()
 		}
 		result = append(result, rewritten)
@@ -306,7 +306,7 @@ func rerouteSplitFanInEdges(
 	pair stageTaskPair,
 	bootstrapEdges []taskid.TaskEdge,
 	feedbackEdges []taskid.TaskEdge,
-	stageTasks map[string]stageTaskPair,
+	stageTaskPairs map[string]stageTaskPair,
 ) []taskid.TaskEdge {
 	stage1ImplID := pair.stage1.UntypedID().String()
 	stage2ImplID := pair.stage2.UntypedID().String()
@@ -315,7 +315,7 @@ func rerouteSplitFanInEdges(
 	for _, bootstrapEdge := range bootstrapEdges {
 		stage1Edge := bootstrapEdge
 		stage2Edge := bootstrapEdge
-		if sourcePair, sourceIsSplit := stageTasks[bootstrapEdge.SourceImplID]; sourceIsSplit {
+		if sourcePair, sourceIsSplit := stageTaskPairs[bootstrapEdge.SourceImplID]; sourceIsSplit {
 			stage1Edge.SourceImplID = sourcePair.stage2.UntypedID().String()
 			stage2Edge.SourceImplID = sourcePair.stage2.UntypedID().String()
 		}
@@ -328,7 +328,7 @@ func rerouteSplitFanInEdges(
 		rewrittenEdge := feedbackEdge
 		if feedbackEdge.SourceImplID == consumerImplID {
 			rewrittenEdge.SourceImplID = stage1ImplID
-		} else if sourcePair, sourceIsSplit := stageTasks[feedbackEdge.SourceImplID]; sourceIsSplit {
+		} else if sourcePair, sourceIsSplit := stageTaskPairs[feedbackEdge.SourceImplID]; sourceIsSplit {
 			rewrittenEdge.SourceImplID = sourcePair.stage2.UntypedID().String()
 		}
 		rewrittenEdge.TargetImplID = stage2ImplID

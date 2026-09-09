@@ -286,22 +286,22 @@ func (r *LocalRunner) cleanupCompletedTaskResults(completedTask UntypedTask) {
 
 	// Decrement remaining dependents count for each incoming data edge.
 	for _, edge := range r.resolvedTaskSet.IncomingDataEdges(completedTask.UntypedID().String()) {
-		depImplID := edge.SourceImplID
-		r.remainingDependentsByImplID[depImplID]--
-		if r.remainingDependentsByImplID[depImplID] > 0 {
+		producerImplID := edge.SourceImplID
+		r.remainingDependentsByImplID[producerImplID]--
+		if r.remainingDependentsByImplID[producerImplID] > 0 {
 			continue
 		}
 
-		depTask, found := r.taskByImplID[depImplID]
+		producerTask, found := r.taskByImplID[producerImplID]
 		if !found {
 			continue
 		}
-		depRefID := depTask.UntypedID().ReferenceIDString()
-		if depRefID == completedRefID {
+		producerRefID := producerTask.UntypedID().ReferenceIDString()
+		if producerRefID == completedRefID {
 			continue
 		}
-		if !r.isTaskResultRetained(depTask) && r.remainingStagesByRefID[depRefID] == 0 {
-			typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](depRefID))
+		if !r.isTaskResultRetained(producerTask) && r.remainingStagesByRefID[producerRefID] == 0 {
+			typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](producerRefID))
 		}
 	}
 }

@@ -267,13 +267,13 @@ func TestTaskSet_MetadataQueries(t *testing.T) {
 		},
 	}
 
-	boundFanInRefIDsByTaskImpl := map[string]map[string][]string{
+	boundFanInRefIDsByTaskImplID := map[string]map[string][]string{
 		"taskB#default": {
 			"tag-sample": {"taskA"},
 		},
 	}
 
-	resolved := NewResolvedTaskSet(tasks, edges, boundFanInRefIDsByTaskImpl)
+	resolved := NewResolvedTaskSet(tasks, edges, boundFanInRefIDsByTaskImplID)
 
 	testCases := []struct {
 		name string

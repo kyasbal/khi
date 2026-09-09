@@ -22,20 +22,49 @@ import (
 )
 
 func TestCloneOutgoingGraph(t *testing.T) {
-	orig := map[string][]string{
-		"A": {"B", "C"},
-		"B": {"C"},
+	testCases := []struct {
+		name          string
+		input         map[string][]string
+		want          map[string][]string
+		mutateKey     string
+		mutateVal     string
+		checkOrigKey  string
+		checkOrigWant string
+	}{
+		{
+			name:  "empty map",
+			input: map[string][]string{},
+			want:  map[string][]string{},
+		},
+		{
+			name: "multi-node map with deep copy verification",
+			input: map[string][]string{
+				"A": {"B", "C"},
+				"B": {"C"},
+			},
+			want: map[string][]string{
+				"A": {"B", "C"},
+				"B": {"C"},
+			},
+			mutateKey:     "A",
+			mutateVal:     "Z",
+			checkOrigKey:  "A",
+			checkOrigWant: "B",
+		},
 	}
-	cloned := cloneOutgoingGraph(orig)
-
-	if diff := cmp.Diff(orig, cloned); diff != "" {
-		t.Errorf("cloneOutgoingGraph() mismatch (-want +got):\n%s", diff)
-	}
-
-	// Mutating cloned slice should not mutate original.
-	cloned["A"][0] = "Z"
-	if orig["A"][0] != "B" {
-		t.Errorf("cloneOutgoingGraph() shallow copy detected, modifying cloned modified original: got %q, want %q", orig["A"][0], "B")
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cloned := cloneOutgoingGraph(tc.input)
+			if diff := cmp.Diff(tc.want, cloned); diff != "" {
+				t.Errorf("cloneOutgoingGraph() mismatch (-want +got):\n%s", diff)
+			}
+			if tc.mutateKey != "" {
+				cloned[tc.mutateKey][0] = tc.mutateVal
+				if tc.input[tc.checkOrigKey][0] != tc.checkOrigWant {
+					t.Errorf("cloneOutgoingGraph() shallow copy detected, modifying cloned modified original: got %q, want %q", tc.input[tc.checkOrigKey][0], tc.checkOrigWant)
+				}
+			}
+		})
 	}
 }
 

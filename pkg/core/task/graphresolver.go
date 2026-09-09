@@ -51,13 +51,13 @@ func ResolveGraph(
 	pointToPointEdges := bindPointToPointDependencies(graphTaskMap)
 
 	// --- Phase 3.5: Fan-In Cycle Resolution, Multi-Stage Expansion & Edge Deduplication ---
-	resolvedTasks, resolvedEdges, boundFanInRefIDsByTaskImpl, err := resolveFanInEdgesAndCycles(graphTaskMap, pointToPointEdges, candidateFanInEdges)
+	resolvedTasks, resolvedEdges, boundFanInRefIDsByTaskImplID, err := resolveFanInEdgesAndCycles(graphTaskMap, pointToPointEdges, candidateFanInEdges)
 	if err != nil {
 		return nil, err
 	}
 
 	// --- Phase 4: Kahn's Algorithm on E = E_data U E_order ---
-	return buildAndSortTaskSet(resolvedTasks, resolvedEdges, boundFanInRefIDsByTaskImpl), nil
+	return buildAndSortTaskSet(resolvedTasks, resolvedEdges, boundFanInRefIDsByTaskImplID), nil
 }
 
 // createDisabledTaskMap creates a lookup set of reference IDs and implementation IDs for disabled tasks.
@@ -297,7 +297,7 @@ func deduplicateAndNormalizeEdges(rawEdges []taskid.TaskEdge) []taskid.TaskEdge 
 func buildAndSortTaskSet(
 	tasks []UntypedTask,
 	edges []taskid.TaskEdge,
-	boundFanInRefIDsByTaskImpl map[string]map[string][]string,
+	boundFanInRefIDsByTaskImplID map[string]map[string][]string,
 ) *TaskSet {
 	inDegree := make(map[string]int, len(tasks))
 	outgoing := make(map[string][]string) // key: source task implementation ID -> []target task implementation ID
@@ -338,7 +338,7 @@ func buildAndSortTaskSet(
 		}
 	}
 
-	return NewResolvedTaskSet(sortedTasks, edges, boundFanInRefIDsByTaskImpl)
+	return NewResolvedTaskSet(sortedTasks, edges, boundFanInRefIDsByTaskImplID)
 }
 
 // findBestTaskImplementation finds the task implementation for a reference ID with highest priority.
