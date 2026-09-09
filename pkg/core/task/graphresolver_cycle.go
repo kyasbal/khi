@@ -158,13 +158,13 @@ func assembleSingleStageResult(
 	allEdges = append(allEdges, allFanInEdges...)
 	dedupedEdges := deduplicateAndNormalizeEdges(allEdges)
 
-	boundFanInRefIDsByTask := collectBoundFanInRefIDsByTask(allFanInEdges)
+	boundFanInRefIDsByTaskImpl := collectBoundFanInRefIDsByTaskImpl(allFanInEdges)
 	tasks := make([]UntypedTask, 0, len(graphTaskMap))
 	for _, t := range graphTaskMap {
 		tasks = append(tasks, t)
 	}
 	slices.SortFunc(tasks, compareTaskByImplementationID)
-	return tasks, dedupedEdges, boundFanInRefIDsByTask, nil
+	return tasks, dedupedEdges, boundFanInRefIDsByTaskImpl, nil
 }
 
 // buildImplToTaskMap constructs a lookup map from task implementation ID to task.
@@ -287,23 +287,23 @@ func buildAmbiguousPriorityError(
 	return fmt.Errorf("ambiguous FanIn priority between %s and %s for tag %s", producerImplIDA, producerImplIDB, tag)
 }
 
-// collectBoundFanInRefIDsByTask aggregates unique source reference IDs for accepted fan-in edges per consumer task implementation ID.
-func collectBoundFanInRefIDsByTask(acceptedFanInEdges []taskid.TaskEdge) map[string]map[string][]string {
-	boundFanInRefIDsByTask := make(map[string]map[string][]string)
+// collectBoundFanInRefIDsByTaskImpl aggregates unique source reference IDs for accepted fan-in edges per consumer task implementation ID.
+func collectBoundFanInRefIDsByTaskImpl(acceptedFanInEdges []taskid.TaskEdge) map[string]map[string][]string {
+	boundFanInRefIDsByTaskImpl := make(map[string]map[string][]string)
 	for _, e := range acceptedFanInEdges {
 		if e.Tag == "" {
 			continue
 		}
-		if boundFanInRefIDsByTask[e.TargetImplID] == nil {
-			boundFanInRefIDsByTask[e.TargetImplID] = make(map[string][]string)
+		if boundFanInRefIDsByTaskImpl[e.TargetImplID] == nil {
+			boundFanInRefIDsByTaskImpl[e.TargetImplID] = make(map[string][]string)
 		}
-		boundFanInRefIDsByTask[e.TargetImplID][e.Tag] = append(boundFanInRefIDsByTask[e.TargetImplID][e.Tag], e.SourceRefID)
+		boundFanInRefIDsByTaskImpl[e.TargetImplID][e.Tag] = append(boundFanInRefIDsByTaskImpl[e.TargetImplID][e.Tag], e.SourceRefID)
 	}
-	for targetImplID, byTag := range boundFanInRefIDsByTask {
+	for targetImplID, byTag := range boundFanInRefIDsByTaskImpl {
 		for tag, refIDs := range byTag {
 			slices.Sort(refIDs)
-			boundFanInRefIDsByTask[targetImplID][tag] = slices.Compact(refIDs)
+			boundFanInRefIDsByTaskImpl[targetImplID][tag] = slices.Compact(refIDs)
 		}
 	}
-	return boundFanInRefIDsByTask
+	return boundFanInRefIDsByTaskImpl
 }

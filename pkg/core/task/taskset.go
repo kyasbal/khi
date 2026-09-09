@@ -29,13 +29,13 @@ type LabelPredicate[T any] = func(v T) bool
 // TaskSet is a collection of tasks and resolved dependency edges.
 // It implements core_contract.TaskGraphMetadata and provides querying for execution order and edges.
 type TaskSet struct {
-	tasks                  []UntypedTask
-	edges                  []taskid.TaskEdge
-	runnable               bool
-	incomingEdges          map[string][]taskid.TaskEdge   // key: target task implementation ID
-	incomingDataEdges      map[string][]taskid.TaskEdge   // key: target task implementation ID (EdgeKindData only)
-	boundRefIDs            map[string]struct{}            // set of task reference IDs bound to the graph
-	boundFanInRefIDsByTask map[string]map[string][]string // targetImplID -> tag -> []sourceRefID
+	tasks                      []UntypedTask
+	edges                      []taskid.TaskEdge
+	runnable                   bool
+	incomingEdges              map[string][]taskid.TaskEdge   // key: target task implementation ID
+	incomingDataEdges          map[string][]taskid.TaskEdge   // key: target task implementation ID (EdgeKindData only)
+	boundRefIDs                map[string]struct{}            // set of task reference IDs bound to the graph
+	boundFanInRefIDsByTaskImpl map[string]map[string][]string // targetImplID -> tag -> []sourceRefID
 }
 
 var _ core_contract.TaskGraphMetadata = (*TaskSet)(nil)
@@ -52,12 +52,12 @@ func NewTaskSet(tasks []UntypedTask) (*TaskSet, error) {
 		taskIDs[id.String()] = struct{}{}
 	}
 	return &TaskSet{
-		tasks:                  slices.Clone(tasks),
-		runnable:               false,
-		incomingEdges:          make(map[string][]taskid.TaskEdge),
-		incomingDataEdges:      make(map[string][]taskid.TaskEdge),
-		boundRefIDs:            make(map[string]struct{}),
-		boundFanInRefIDsByTask: make(map[string]map[string][]string),
+		tasks:                      slices.Clone(tasks),
+		runnable:                   false,
+		incomingEdges:              make(map[string][]taskid.TaskEdge),
+		incomingDataEdges:          make(map[string][]taskid.TaskEdge),
+		boundRefIDs:                make(map[string]struct{}),
+		boundFanInRefIDsByTaskImpl: make(map[string]map[string][]string),
 	}, nil
 }
 
@@ -65,7 +65,7 @@ func NewTaskSet(tasks []UntypedTask) (*TaskSet, error) {
 func NewResolvedTaskSet(
 	tasks []UntypedTask,
 	edges []taskid.TaskEdge,
-	boundFanInRefIDsByTask map[string]map[string][]string,
+	boundFanInRefIDsByTaskImpl map[string]map[string][]string,
 ) *TaskSet {
 	incomingEdges := make(map[string][]taskid.TaskEdge)
 	incomingDataEdges := make(map[string][]taskid.TaskEdge)
@@ -82,22 +82,22 @@ func NewResolvedTaskSet(
 		}
 	}
 
-	copiedBoundFanInRefIDsByTask := make(map[string]map[string][]string)
-	for targetImplID, byTag := range boundFanInRefIDsByTask {
-		copiedBoundFanInRefIDsByTask[targetImplID] = make(map[string][]string)
+	copiedBoundFanInRefIDsByTaskImpl := make(map[string]map[string][]string)
+	for targetImplID, byTag := range boundFanInRefIDsByTaskImpl {
+		copiedBoundFanInRefIDsByTaskImpl[targetImplID] = make(map[string][]string)
 		for tag, refIDs := range byTag {
-			copiedBoundFanInRefIDsByTask[targetImplID][tag] = slices.Clone(refIDs)
+			copiedBoundFanInRefIDsByTaskImpl[targetImplID][tag] = slices.Clone(refIDs)
 		}
 	}
 
 	return &TaskSet{
-		tasks:                  slices.Clone(tasks),
-		edges:                  slices.Clone(edges),
-		runnable:               true,
-		incomingEdges:          incomingEdges,
-		incomingDataEdges:      incomingDataEdges,
-		boundRefIDs:            boundRefIDs,
-		boundFanInRefIDsByTask: copiedBoundFanInRefIDsByTask,
+		tasks:                      slices.Clone(tasks),
+		edges:                      slices.Clone(edges),
+		runnable:                   true,
+		incomingEdges:              incomingEdges,
+		incomingDataEdges:          incomingDataEdges,
+		boundRefIDs:                boundRefIDs,
+		boundFanInRefIDsByTaskImpl: copiedBoundFanInRefIDsByTaskImpl,
 	}
 }
 
@@ -142,8 +142,8 @@ func (s *TaskSet) IsBound(refID string) bool {
 }
 
 // BoundReferenceIDsForTaskWithTag returns the list of task reference IDs providing the tag bound specifically to the given task implementation ID.
-func (s *TaskSet) BoundReferenceIDsForTaskWithTag(taskImplID string, tag string) []string {
-	if byTag, ok := s.boundFanInRefIDsByTask[taskImplID]; ok {
+func (s *TaskSet) BoundReferenceIDsForTaskWithTag(taskImplementationID string, tag string) []string {
+	if byTag, ok := s.boundFanInRefIDsByTaskImpl[taskImplementationID]; ok {
 		if refIDs, ok := byTag[tag]; ok {
 			return slices.Clone(refIDs)
 		}

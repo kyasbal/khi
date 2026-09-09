@@ -322,11 +322,11 @@ func TestTaskSet_MetadataQueries(t *testing.T) {
 				if diff := cmp.Diff(want, got); diff != "" {
 					t.Errorf("BoundReferenceIDsForTaskWithTag mismatch (-want +got):\n%s", diff)
 				}
-				if len(resolved.BoundReferenceIDsForTaskWithTag("taskUnknown#default", "tag-sample")) != 0 {
-					t.Errorf("expected empty slice for unknown task")
+				if diff := cmp.Diff([]string(nil), resolved.BoundReferenceIDsForTaskWithTag("taskUnknown#default", "tag-sample")); diff != "" {
+					t.Errorf("BoundReferenceIDsForTaskWithTag mismatch (-want +got):\n%s", diff)
 				}
-				if len(resolved.BoundReferenceIDsForTaskWithTag("taskB#default", "non-existent-tag")) != 0 {
-					t.Errorf("expected empty slice for non-existent tag")
+				if diff := cmp.Diff([]string(nil), resolved.BoundReferenceIDsForTaskWithTag("taskB#default", "non-existent-tag")); diff != "" {
+					t.Errorf("BoundReferenceIDsForTaskWithTag mismatch (-want +got):\n%s", diff)
 				}
 			},
 		},

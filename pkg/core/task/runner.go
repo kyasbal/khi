@@ -36,19 +36,19 @@ type Interceptor func(ctx context.Context, task UntypedTask, next func(context.C
 // LocalRunner executes a task graph defined by a TaskSet on the local machine.
 // It manages task dependencies, concurrent execution, and result aggregation.
 type LocalRunner struct {
-	resolvedTaskSet       *TaskSet
-	resultVariable        *typedmap.TypedMap
-	resultError           error
-	started               bool
-	stopped               bool
-	taskWaiters           *typedmap.ReadonlyTypedMap
-	waiter                chan interface{}
-	taskStatuses          []*LocalRunnerTaskStat
-	interceptors          []Interceptor
-	remainingDependents   map[string]int
-	remainingDependentsMu sync.Mutex
-	activeStagesByRefID   map[string]int
-	taskByImplID          map[string]UntypedTask
+	resolvedTaskSet             *TaskSet
+	resultVariable              *typedmap.TypedMap
+	resultError                 error
+	started                     bool
+	stopped                     bool
+	taskWaiters                 *typedmap.ReadonlyTypedMap
+	waiter                      chan interface{}
+	taskStatuses                []*LocalRunnerTaskStat
+	interceptors                []Interceptor
+	remainingDependentsByImplID map[string]int
+	remainingDependentsMu       sync.Mutex
+	remainingStagesByRefID      map[string]int
+	taskByImplID                map[string]UntypedTask
 }
 
 // LocalRunner implements task_interface.TaskRunner
@@ -81,18 +81,18 @@ func NewLocalRunner(taskSet *TaskSet) (*LocalRunner, error) {
 	}
 	taskStatuses := []*LocalRunnerTaskStat{}
 	taskWaiters := typedmap.NewTypedMap()
-	remainingDependents := make(map[string]int)
-	activeStagesByRefID := make(map[string]int)
+	remainingDependentsByImplID := make(map[string]int)
+	remainingStagesByRefID := make(map[string]int)
 	taskByImplID := make(map[string]UntypedTask)
 	for _, t := range taskSet.tasks {
 		taskImplID := t.UntypedID().String()
 		taskByImplID[taskImplID] = t
-		remainingDependents[taskImplID] = 0
-		activeStagesByRefID[t.UntypedID().ReferenceIDString()]++
+		remainingDependentsByImplID[taskImplID] = 0
+		remainingStagesByRefID[t.UntypedID().ReferenceIDString()]++
 	}
 	for _, t := range taskSet.tasks {
 		for _, edge := range taskSet.IncomingDataEdges(t.UntypedID().String()) {
-			remainingDependents[edge.SourceImplID]++
+			remainingDependentsByImplID[edge.SourceImplID]++
 		}
 	}
 	for i := 0; i < len(taskSet.tasks); i++ {
@@ -106,17 +106,17 @@ func NewLocalRunner(taskSet *TaskSet) (*LocalRunner, error) {
 		typedmap.Set(taskWaiters, waiterKeyForImplID(taskSet.tasks[i].UntypedID().String()), &waiter)
 	}
 	return &LocalRunner{
-		resolvedTaskSet:     taskSet,
-		started:             false,
-		resultVariable:      nil,
-		resultError:         nil,
-		stopped:             false,
-		taskWaiters:         taskWaiters.AsReadonly(),
-		waiter:              make(chan interface{}),
-		taskStatuses:        taskStatuses,
-		remainingDependents: remainingDependents,
-		activeStagesByRefID: activeStagesByRefID,
-		taskByImplID:        taskByImplID,
+		resolvedTaskSet:             taskSet,
+		started:                     false,
+		resultVariable:              nil,
+		resultError:                 nil,
+		stopped:                     false,
+		taskWaiters:                 taskWaiters.AsReadonly(),
+		waiter:                      make(chan interface{}),
+		taskStatuses:                taskStatuses,
+		remainingDependentsByImplID: remainingDependentsByImplID,
+		remainingStagesByRefID:      remainingStagesByRefID,
+		taskByImplID:                taskByImplID,
 	}, nil
 }
 
@@ -276,19 +276,19 @@ func (r *LocalRunner) cleanupCompletedTaskResults(completedTask UntypedTask) {
 	r.remainingDependentsMu.Lock()
 	defer r.remainingDependentsMu.Unlock()
 
-	r.activeStagesByRefID[completedRefID]--
+	r.remainingStagesByRefID[completedRefID]--
 
 	// Check if the completed task itself has no dependents and should be released immediately.
-	rem := r.remainingDependents[completedImplID]
-	if rem == 0 && !r.isTaskResultRetained(completedTask) && r.activeStagesByRefID[completedRefID] == 0 {
+	rem := r.remainingDependentsByImplID[completedImplID]
+	if rem == 0 && !r.isTaskResultRetained(completedTask) && r.remainingStagesByRefID[completedRefID] == 0 {
 		typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](completedRefID))
 	}
 
 	// Decrement remaining dependents count for each incoming data edge.
 	for _, edge := range r.resolvedTaskSet.IncomingDataEdges(completedTask.UntypedID().String()) {
 		depImplID := edge.SourceImplID
-		r.remainingDependents[depImplID]--
-		remDep := r.remainingDependents[depImplID]
+		r.remainingDependentsByImplID[depImplID]--
+		remDep := r.remainingDependentsByImplID[depImplID]
 
 		if remDep == 0 {
 			if depTask, found := r.taskByImplID[depImplID]; found {
@@ -296,7 +296,7 @@ func (r *LocalRunner) cleanupCompletedTaskResults(completedTask UntypedTask) {
 				if depRefID == completedRefID {
 					continue
 				}
-				if !r.isTaskResultRetained(depTask) && r.activeStagesByRefID[depRefID] == 0 {
+				if !r.isTaskResultRetained(depTask) && r.remainingStagesByRefID[depRefID] == 0 {
 					typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](depRefID))
 				}
 			}

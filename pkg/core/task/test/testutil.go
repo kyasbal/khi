@@ -104,7 +104,7 @@ func (m *testGraphMetadata) IsBound(referenceID string) bool {
 	return slices.Contains(m.resultMap.Keys(), referenceID)
 }
 
-func (m *testGraphMetadata) BoundReferenceIDsForTaskWithTag(taskImplID string, tag string) []string {
+func (m *testGraphMetadata) BoundReferenceIDsForTaskWithTag(taskImplementationID string, tag string) []string {
 	return nil
 }
 

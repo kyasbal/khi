@@ -89,13 +89,13 @@ func expandMultiStageResult(
 	allEdges = append(allEdges, resolvedFanInEdges...)
 	dedupedEdges := deduplicateAndNormalizeEdges(allEdges)
 
-	boundFanInRefIDsByTask := collectBoundFanInRefIDsByTask(resolvedFanInEdges)
+	boundFanInRefIDsByTaskImpl := collectBoundFanInRefIDsByTaskImpl(resolvedFanInEdges)
 
 	if err := verifyFinalDAG(allTasks, dedupedEdges); err != nil {
 		return nil, nil, nil, err
 	}
 
-	return allTasks, dedupedEdges, boundFanInRefIDsByTask, nil
+	return allTasks, dedupedEdges, boundFanInRefIDsByTaskImpl, nil
 }
 
 // createStageTasks creates stage-1 and stage-2 task pairs for each cyclic consumer.
