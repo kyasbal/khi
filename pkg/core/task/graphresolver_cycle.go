@@ -38,6 +38,46 @@ func resolveFanInEdgesAndCycles(
 ) ([]UntypedTask, []taskid.TaskEdge, map[string]map[string][]string, error) {
 	implToTask := buildImplToTaskMap(graphTaskMap)
 
+	outgoing, err := buildPtPOutgoingGraph(graphTaskMap, pointToPointEdges)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Keep a copy of the PtP outgoing graph for reachability checks during edge re-routing.
+	ptpOutgoing := cloneOutgoingGraph(outgoing)
+
+	sortedKeys, edgesByKey := groupCandidateFanInEdgesByConsumerTag(candidateFanInEdges)
+	bootstrapEdgesByKey, feedbackEdgesByKey, feedbackProducersByConsumer, err := partitionCandidateFanInEdges(
+		sortedKeys,
+		edgesByKey,
+		implToTask,
+		outgoing,
+	)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	if len(feedbackProducersByConsumer) == 0 {
+		return assembleSingleStageResult(graphTaskMap, pointToPointEdges, sortedKeys, bootstrapEdgesByKey)
+	}
+
+	return expandMultiStageResult(
+		graphTaskMap,
+		pointToPointEdges,
+		sortedKeys,
+		bootstrapEdgesByKey,
+		feedbackEdgesByKey,
+		feedbackProducersByConsumer,
+		ptpOutgoing,
+		implToTask,
+	)
+}
+
+// buildPtPOutgoingGraph constructs the adjacency and in-degree maps from point-to-point edges and validates acyclicity.
+func buildPtPOutgoingGraph(
+	graphTaskMap map[string]UntypedTask,
+	pointToPointEdges []taskid.TaskEdge,
+) (map[string][]string, error) {
 	outgoing := make(map[string][]string, len(graphTaskMap))
 	inDegree := make(map[string]int, len(graphTaskMap))
 	for _, task := range graphTaskMap {
@@ -52,16 +92,26 @@ func resolveFanInEdgesAndCycles(
 	}
 
 	if err := verifyAcyclic(outgoing, inDegree, len(graphTaskMap)); err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
+	return outgoing, nil
+}
 
-	// Keep a copy of the PtP outgoing graph for reachability checks during edge re-routing.
-	ptpOutgoing := cloneOutgoingGraph(outgoing)
-
-	sortedKeys, edgesByKey := groupCandidateFanInEdgesByConsumerTag(candidateFanInEdges)
-	bootstrapEdgesByKey := make(map[consumerTagKey][]taskid.TaskEdge)
-	feedbackEdgesByKey := make(map[consumerTagKey][]taskid.TaskEdge)
-	feedbackProducersByConsumer := make(map[string]map[string]bool)
+// partitionCandidateFanInEdges partitions candidate fan-in edges into bootstrap edges and feedback edges per consumer and tag.
+func partitionCandidateFanInEdges(
+	sortedKeys []consumerTagKey,
+	edgesByKey map[consumerTagKey][]taskid.TaskEdge,
+	implToTask map[string]UntypedTask,
+	outgoing map[string][]string,
+) (
+	bootstrapEdgesByKey map[consumerTagKey][]taskid.TaskEdge,
+	feedbackEdgesByKey map[consumerTagKey][]taskid.TaskEdge,
+	feedbackProducersByConsumer map[string]map[string]bool,
+	err error,
+) {
+	bootstrapEdgesByKey = make(map[consumerTagKey][]taskid.TaskEdge)
+	feedbackEdgesByKey = make(map[consumerTagKey][]taskid.TaskEdge)
+	feedbackProducersByConsumer = make(map[string]map[string]bool)
 
 	for _, key := range sortedKeys {
 		consumerTask := implToTask[key.consumerImplID]
@@ -88,21 +138,7 @@ func resolveFanInEdgesAndCycles(
 			}
 		}
 	}
-
-	if len(feedbackProducersByConsumer) == 0 {
-		return assembleSingleStageResult(graphTaskMap, pointToPointEdges, sortedKeys, bootstrapEdgesByKey)
-	}
-
-	return expandMultiStageResult(
-		graphTaskMap,
-		pointToPointEdges,
-		sortedKeys,
-		bootstrapEdgesByKey,
-		feedbackEdgesByKey,
-		feedbackProducersByConsumer,
-		ptpOutgoing,
-		implToTask,
-	)
+	return bootstrapEdgesByKey, feedbackEdgesByKey, feedbackProducersByConsumer, nil
 }
 
 // assembleSingleStageResult builds the resolved tasks, deduplicated edges, and bound fan-in refs
@@ -143,30 +179,8 @@ func expandMultiStageResult(
 	ptpOutgoing map[string][]string,
 	implToTask map[string]UntypedTask,
 ) ([]UntypedTask, []taskid.TaskEdge, map[string]map[string][]string, error) {
-	stageTasks := make(map[string]stageTaskPair, len(feedbackProducersByConsumer))
-	for consumerImplID := range feedbackProducersByConsumer {
-		consumerTask := implToTask[consumerImplID]
-		stage1 := &stageTask{
-			originalTask: consumerTask,
-			stageID:      taskid.NewStageImplementationID(consumerTask.UntypedID(), 1),
-		}
-		stage2 := &stageTask{
-			originalTask: consumerTask,
-			stageID:      taskid.NewStageImplementationID(consumerTask.UntypedID(), 2),
-		}
-		stageTasks[consumerImplID] = stageTaskPair{stage1: stage1, stage2: stage2}
-	}
-
-	allTasks := make([]UntypedTask, 0, len(graphTaskMap)+len(stageTasks))
-	for _, task := range graphTaskMap {
-		implID := task.UntypedID().String()
-		if pair, ok := stageTasks[implID]; ok {
-			allTasks = append(allTasks, pair.stage1, pair.stage2)
-		} else {
-			allTasks = append(allTasks, task)
-		}
-	}
-	slices.SortFunc(allTasks, compareTaskByImplementationID)
+	stageTasks := createStageTasks(feedbackProducersByConsumer, implToTask)
+	allTasks := expandTasksWithStages(graphTaskMap, stageTasks)
 
 	resolvedPtPEdges := reroutePointToPointEdges(
 		pointToPointEdges,
@@ -189,6 +203,54 @@ func expandMultiStageResult(
 
 	boundFanInRefIDsByTask := collectBoundFanInRefIDsByTask(resolvedFanInEdges)
 
+	if err := verifyFinalDAG(allTasks, dedupedEdges); err != nil {
+		return nil, nil, nil, err
+	}
+
+	return allTasks, dedupedEdges, boundFanInRefIDsByTask, nil
+}
+
+// createStageTasks creates stage-1 and stage-2 task pairs for each cyclic consumer.
+func createStageTasks(
+	feedbackProducersByConsumer map[string]map[string]bool,
+	implToTask map[string]UntypedTask,
+) map[string]stageTaskPair {
+	stageTasks := make(map[string]stageTaskPair, len(feedbackProducersByConsumer))
+	for consumerImplID := range feedbackProducersByConsumer {
+		consumerTask := implToTask[consumerImplID]
+		stage1 := &stageTask{
+			originalTask: consumerTask,
+			stageID:      taskid.NewStageImplementationID(consumerTask.UntypedID(), 1),
+		}
+		stage2 := &stageTask{
+			originalTask: consumerTask,
+			stageID:      taskid.NewStageImplementationID(consumerTask.UntypedID(), 2),
+		}
+		stageTasks[consumerImplID] = stageTaskPair{stage1: stage1, stage2: stage2}
+	}
+	return stageTasks
+}
+
+// expandTasksWithStages replaces split consumers with their stage-1 and stage-2 pairs, returning a sorted task list.
+func expandTasksWithStages(
+	graphTaskMap map[string]UntypedTask,
+	stageTasks map[string]stageTaskPair,
+) []UntypedTask {
+	allTasks := make([]UntypedTask, 0, len(graphTaskMap)+len(stageTasks))
+	for _, task := range graphTaskMap {
+		implID := task.UntypedID().String()
+		if pair, ok := stageTasks[implID]; ok {
+			allTasks = append(allTasks, pair.stage1, pair.stage2)
+		} else {
+			allTasks = append(allTasks, task)
+		}
+	}
+	slices.SortFunc(allTasks, compareTaskByImplementationID)
+	return allTasks
+}
+
+// verifyFinalDAG builds the final adjacency graph and validates acyclicity.
+func verifyFinalDAG(allTasks []UntypedTask, dedupedEdges []taskid.TaskEdge) error {
 	finalOutgoing := make(map[string][]string, len(allTasks))
 	finalInDegree := make(map[string]int, len(allTasks))
 	for _, t := range allTasks {
@@ -200,11 +262,7 @@ func expandMultiStageResult(
 		finalOutgoing[e.SourceID] = append(finalOutgoing[e.SourceID], e.TargetID)
 		finalInDegree[e.TargetID]++
 	}
-	if err := verifyAcyclic(finalOutgoing, finalInDegree, len(allTasks)); err != nil {
-		return nil, nil, nil, err
-	}
-
-	return allTasks, dedupedEdges, boundFanInRefIDsByTask, nil
+	return verifyAcyclic(finalOutgoing, finalInDegree, len(allTasks))
 }
 
 type stageTaskPair struct {
@@ -221,48 +279,7 @@ func reroutePointToPointEdges(
 ) []taskid.TaskEdge {
 	var resolvedPtPEdges []taskid.TaskEdge
 	for _, e := range pointToPointEdges {
-		_, sourceIsSplit := stageTasks[e.SourceID]
-		_, targetIsSplit := stageTasks[e.TargetID]
-
-		if !sourceIsSplit && !targetIsSplit {
-			resolvedPtPEdges = append(resolvedPtPEdges, e)
-			continue
-		}
-
-		if !sourceIsSplit && targetIsSplit {
-			targetPair := stageTasks[e.TargetID]
-			e1 := e
-			e1.TargetID = targetPair.stage1.UntypedID().String()
-			e2 := e
-			e2.TargetID = targetPair.stage2.UntypedID().String()
-			resolvedPtPEdges = append(resolvedPtPEdges, e1, e2)
-			continue
-		}
-
-		sourcePair := stageTasks[e.SourceID]
-		feedbackProducers := feedbackProducersByConsumer[e.SourceID]
-
-		leadsToFeedback := leadsToFeedbackProducer(e.TargetID, feedbackProducers, ptpOutgoing)
-
-		sourceID := sourcePair.stage2.UntypedID().String()
-		if leadsToFeedback {
-			sourceID = sourcePair.stage1.UntypedID().String()
-		}
-
-		if !targetIsSplit {
-			rewrittenEdge := e
-			rewrittenEdge.SourceID = sourceID
-			resolvedPtPEdges = append(resolvedPtPEdges, rewrittenEdge)
-		} else {
-			targetPair := stageTasks[e.TargetID]
-			e1 := e
-			e1.SourceID = sourceID
-			e1.TargetID = targetPair.stage1.UntypedID().String()
-			e2 := e
-			e2.SourceID = sourceID
-			e2.TargetID = targetPair.stage2.UntypedID().String()
-			resolvedPtPEdges = append(resolvedPtPEdges, e1, e2)
-		}
+		resolvedPtPEdges = append(resolvedPtPEdges, rerouteSinglePtPEdge(e, stageTasks, feedbackProducersByConsumer, ptpOutgoing)...)
 	}
 
 	for _, pair := range stageTasks {
@@ -277,6 +294,55 @@ func reroutePointToPointEdges(
 	}
 
 	return resolvedPtPEdges
+}
+
+// rerouteSinglePtPEdge reroutes a point-to-point edge based on whether its source and target are split into stages.
+func rerouteSinglePtPEdge(
+	e taskid.TaskEdge,
+	stageTasks map[string]stageTaskPair,
+	feedbackProducersByConsumer map[string]map[string]bool,
+	ptpOutgoing map[string][]string,
+) []taskid.TaskEdge {
+	_, sourceIsSplit := stageTasks[e.SourceID]
+	_, targetIsSplit := stageTasks[e.TargetID]
+
+	if !sourceIsSplit && !targetIsSplit {
+		return []taskid.TaskEdge{e}
+	}
+
+	if !sourceIsSplit && targetIsSplit {
+		targetPair := stageTasks[e.TargetID]
+		e1 := e
+		e1.TargetID = targetPair.stage1.UntypedID().String()
+		e2 := e
+		e2.TargetID = targetPair.stage2.UntypedID().String()
+		return []taskid.TaskEdge{e1, e2}
+	}
+
+	sourcePair := stageTasks[e.SourceID]
+	feedbackProducers := feedbackProducersByConsumer[e.SourceID]
+
+	leadsToFeedback := leadsToFeedbackProducer(e.TargetID, feedbackProducers, ptpOutgoing)
+
+	sourceID := sourcePair.stage2.UntypedID().String()
+	if leadsToFeedback {
+		sourceID = sourcePair.stage1.UntypedID().String()
+	}
+
+	if !targetIsSplit {
+		rewrittenEdge := e
+		rewrittenEdge.SourceID = sourceID
+		return []taskid.TaskEdge{rewrittenEdge}
+	}
+
+	targetPair := stageTasks[e.TargetID]
+	e1 := e
+	e1.SourceID = sourceID
+	e1.TargetID = targetPair.stage1.UntypedID().String()
+	e2 := e
+	e2.SourceID = sourceID
+	e2.TargetID = targetPair.stage2.UntypedID().String()
+	return []taskid.TaskEdge{e1, e2}
 }
 
 // leadsToFeedbackProducer checks if targetID is a feedback producer or has a directed path leading to one.
