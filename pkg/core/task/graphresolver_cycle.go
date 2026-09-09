@@ -35,7 +35,7 @@ func resolveFanInEdgesAndCycles(
 	graphTaskMap map[string]UntypedTask,
 	pointToPointEdges []taskid.TaskEdge,
 	candidateFanInEdges []taskid.TaskEdge,
-) ([]UntypedTask, []taskid.TaskEdge, map[string][]string, map[string]map[string][]string, error) {
+) ([]UntypedTask, []taskid.TaskEdge, map[string]map[string][]string, error) {
 	refToTask, refToImplID, implToTask := buildTaskMaps(graphTaskMap)
 
 	outgoing := make(map[string][]string, len(graphTaskMap))
@@ -56,7 +56,7 @@ func resolveFanInEdgesAndCycles(
 	}
 
 	if err := verifyAcyclic(outgoing, inDegree, len(graphTaskMap)); err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Keep a copy of the PtP outgoing graph for reachability checks during edge re-routing.
@@ -80,7 +80,7 @@ func resolveFanInEdgesAndCycles(
 			refToImplID,
 		)
 		if err != nil {
-			return nil, nil, nil, nil, err
+			return nil, nil, nil, err
 		}
 		bootstrapEdgesByKey[key] = bootstrap
 		feedbackEdgesByKey[key] = feedback
@@ -106,13 +106,13 @@ func resolveFanInEdgesAndCycles(
 		allEdges = append(allEdges, allFanInEdges...)
 		dedupedEdges := deduplicateAndNormalizeEdges(allEdges)
 
-		boundFanInRefIDs, boundFanInRefIDsByTask := collectBoundFanInRefIDs(allFanInEdges)
+		boundFanInRefIDsByTask := collectBoundFanInRefIDs(allFanInEdges)
 		tasks := make([]UntypedTask, 0, len(graphTaskMap))
 		for _, t := range graphTaskMap {
 			tasks = append(tasks, t)
 		}
 		slices.SortFunc(tasks, compareTaskByImplementationID)
-		return tasks, dedupedEdges, boundFanInRefIDs, boundFanInRefIDsByTask, nil
+		return tasks, dedupedEdges, boundFanInRefIDsByTask, nil
 	}
 
 	type stageTaskPair struct {
@@ -245,7 +245,7 @@ func resolveFanInEdgesAndCycles(
 	allEdges = append(allEdges, resolvedFanInEdges...)
 	dedupedEdges := deduplicateAndNormalizeEdges(allEdges)
 
-	boundFanInRefIDs, boundFanInRefIDsByTask := collectBoundFanInRefIDs(resolvedFanInEdges)
+	boundFanInRefIDsByTask := collectBoundFanInRefIDs(resolvedFanInEdges)
 
 	finalOutgoing := make(map[string][]string, len(allTasks))
 	finalInDegree := make(map[string]int, len(allTasks))
@@ -259,10 +259,10 @@ func resolveFanInEdgesAndCycles(
 		finalInDegree[e.TargetID]++
 	}
 	if err := verifyAcyclic(finalOutgoing, finalInDegree, len(allTasks)); err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return allTasks, dedupedEdges, boundFanInRefIDs, boundFanInRefIDsByTask, nil
+	return allTasks, dedupedEdges, boundFanInRefIDsByTask, nil
 }
 
 // cloneOutgoingGraph creates a deep copy of an outgoing adjacency list.
@@ -412,23 +412,17 @@ func buildAmbiguousPriorityError(
 	return fmt.Errorf("ambiguous FanIn priority between %s and %s for tag %s", producerImplIDA, producerImplIDB, tag)
 }
 
-// collectBoundFanInRefIDs aggregates unique source reference IDs for accepted fan-in edges globally and per consumer task.
-func collectBoundFanInRefIDs(acceptedFanInEdges []taskid.TaskEdge) (map[string][]string, map[string]map[string][]string) {
-	boundFanInRefIDs := make(map[string][]string)
+// collectBoundFanInRefIDs aggregates unique source reference IDs for accepted fan-in edges per consumer task implementation ID.
+func collectBoundFanInRefIDs(acceptedFanInEdges []taskid.TaskEdge) map[string]map[string][]string {
 	boundFanInRefIDsByTask := make(map[string]map[string][]string)
 	for _, e := range acceptedFanInEdges {
 		if e.Tag == "" {
 			continue
 		}
-		boundFanInRefIDs[e.Tag] = append(boundFanInRefIDs[e.Tag], e.SourceRefID)
 		if boundFanInRefIDsByTask[e.TargetID] == nil {
 			boundFanInRefIDsByTask[e.TargetID] = make(map[string][]string)
 		}
 		boundFanInRefIDsByTask[e.TargetID][e.Tag] = append(boundFanInRefIDsByTask[e.TargetID][e.Tag], e.SourceRefID)
-	}
-	for tag, refIDs := range boundFanInRefIDs {
-		slices.Sort(refIDs)
-		boundFanInRefIDs[tag] = slices.Compact(refIDs)
 	}
 	for targetID, byTag := range boundFanInRefIDsByTask {
 		for tag, refIDs := range byTag {
@@ -436,7 +430,7 @@ func collectBoundFanInRefIDs(acceptedFanInEdges []taskid.TaskEdge) (map[string][
 			boundFanInRefIDsByTask[targetID][tag] = slices.Compact(refIDs)
 		}
 	}
-	return boundFanInRefIDs, boundFanInRefIDsByTask
+	return boundFanInRefIDsByTask
 }
 
 // verifyAcyclic checks if the graph formed by outgoing contains any cycle.

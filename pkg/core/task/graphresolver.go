@@ -51,13 +51,13 @@ func ResolveGraph(
 	pointToPointEdges := bindPointToPointDependencies(graphTaskMap)
 
 	// --- Phase 3.5: Fan-In Cycle Resolution, Pruning & Edge Deduplication ---
-	resolvedTasks, resolvedEdges, boundFanInRefIDs, boundFanInRefIDsByTask, err := resolveFanInEdgesAndCycles(graphTaskMap, pointToPointEdges, candidateFanInEdges)
+	resolvedTasks, resolvedEdges, boundFanInRefIDsByTask, err := resolveFanInEdgesAndCycles(graphTaskMap, pointToPointEdges, candidateFanInEdges)
 	if err != nil {
 		return nil, err
 	}
 
 	// --- Phase 4: Kahn's Algorithm on E = E_data U E_order ---
-	return buildAndSortTaskSet(resolvedTasks, resolvedEdges, boundFanInRefIDs, boundFanInRefIDsByTask), nil
+	return buildAndSortTaskSet(resolvedTasks, resolvedEdges, boundFanInRefIDsByTask), nil
 }
 
 // createDisabledTaskMap creates a lookup set of reference IDs and implementation IDs for disabled tasks.
@@ -279,9 +279,6 @@ func deduplicateAndNormalizeEdges(rawEdges []taskid.TaskEdge) []taskid.TaskEdge 
 			if existing.Cardinality == taskid.CardinalityPointToPoint || e.Cardinality == taskid.CardinalityPointToPoint {
 				existing.Cardinality = taskid.CardinalityPointToPoint
 			}
-			if existing.SourceRefID == "" && e.SourceRefID != "" {
-				existing.SourceRefID = e.SourceRefID
-			}
 			edgeMap[key] = existing
 		} else {
 			edgeMap[key] = e
@@ -300,7 +297,6 @@ func deduplicateAndNormalizeEdges(rawEdges []taskid.TaskEdge) []taskid.TaskEdge 
 func buildAndSortTaskSet(
 	tasks []UntypedTask,
 	edges []taskid.TaskEdge,
-	boundFanInRefIDs map[string][]string,
 	boundFanInRefIDsByTask map[string]map[string][]string,
 ) *TaskSet {
 	inDegree := make(map[string]int, len(tasks))
@@ -342,7 +338,7 @@ func buildAndSortTaskSet(
 		}
 	}
 
-	return NewResolvedTaskSet(sortedTasks, edges, boundFanInRefIDs, boundFanInRefIDsByTask)
+	return NewResolvedTaskSet(sortedTasks, edges, boundFanInRefIDsByTask)
 }
 
 // findBestTaskImplementation finds the task implementation for a reference ID with highest priority.

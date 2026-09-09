@@ -32,7 +32,6 @@ func TestResolveGraph_FanInCycle_PriorityDifference(t *testing.T) {
 		initialTasks          []UntypedTask
 		availableTasks        []UntypedTask
 		wantTaskIDs           []string
-		wantBoundRefIDs       []string
 		wantBoundRefIDsByTask map[string][]string
 	}{
 		// Mermaid task graph:
@@ -64,8 +63,7 @@ func TestResolveGraph_FanInCycle_PriorityDifference(t *testing.T) {
 					taskid.NewTaskReference[any]("consumer"),
 				}, ProvidesTag(tagA, WithTagPriority(100))),
 			},
-			wantTaskIDs:     []string{"prod-high#default", "consumer#default-stage-1", "prod-low#default", "consumer#default-stage-2"},
-			wantBoundRefIDs: []string{"prod-high", "prod-low"},
+			wantTaskIDs: []string{"prod-high#default", "consumer#default-stage-1", "prod-low#default", "consumer#default-stage-2"},
 			wantBoundRefIDsByTask: map[string][]string{
 				"consumer#default-stage-1": {"prod-high"},
 				"consumer#default-stage-2": {"prod-high", "prod-low"},
@@ -93,8 +91,7 @@ func TestResolveGraph_FanInCycle_PriorityDifference(t *testing.T) {
 					tagA.Ref(),
 				}, AllowMultiStageExecution(), ProvidesTag(tagA, WithTagPriority(100))),
 			},
-			wantTaskIDs:     []string{"prod-high#default", "consumer#default-stage-1", "consumer#default-stage-2"},
-			wantBoundRefIDs: []string{"consumer", "prod-high"},
+			wantTaskIDs: []string{"prod-high#default", "consumer#default-stage-1", "consumer#default-stage-2"},
 			wantBoundRefIDsByTask: map[string][]string{
 				"consumer#default-stage-1": {"prod-high"},
 				"consumer#default-stage-2": {"consumer", "prod-high"},
@@ -136,8 +133,7 @@ func TestResolveGraph_FanInCycle_PriorityDifference(t *testing.T) {
 					taskid.NewTaskReference[any]("task-mid"),
 				}, ProvidesTag(tagA, WithTagPriority(100))),
 			},
-			wantTaskIDs:     []string{"prod-high#default", "consumer#default-stage-1", "task-mid#default", "prod-low#default", "consumer#default-stage-2"},
-			wantBoundRefIDs: []string{"prod-high", "prod-low"},
+			wantTaskIDs: []string{"prod-high#default", "consumer#default-stage-1", "task-mid#default", "prod-low#default", "consumer#default-stage-2"},
 			wantBoundRefIDsByTask: map[string][]string{
 				"consumer#default-stage-1": {"prod-high"},
 				"consumer#default-stage-2": {"prod-high", "prod-low"},
@@ -161,15 +157,10 @@ func TestResolveGraph_FanInCycle_PriorityDifference(t *testing.T) {
 				t.Errorf("ResolveGraph() task IDs mismatch (-want +got):\n%s", diff)
 			}
 
-			gotBoundRefIDs := taskSet.BoundReferenceIDsWithTag(tagA.ID())
-			if diff := cmp.Diff(tc.wantBoundRefIDs, gotBoundRefIDs); diff != "" {
-				t.Errorf("BoundReferenceIDsWithTag() mismatch (-want +got):\n%s", diff)
-			}
-
 			for taskImplID, wantRefs := range tc.wantBoundRefIDsByTask {
-				gotRefs := taskSet.BoundReferenceIDsForTask(taskImplID, tagA.ID())
+				gotRefs := taskSet.BoundReferenceIDsForTaskWithTag(taskImplID, tagA.ID())
 				if diff := cmp.Diff(wantRefs, gotRefs); diff != "" {
-					t.Errorf("BoundReferenceIDsForTask(%q) mismatch (-want +got):\n%s", taskImplID, diff)
+					t.Errorf("BoundReferenceIDsForTaskWithTag(%q) mismatch (-want +got):\n%s", taskImplID, diff)
 				}
 			}
 		})

@@ -35,7 +35,6 @@ type TaskSet struct {
 	incomingEdges          map[string][]taskid.TaskEdge   // key: target task implementation ID
 	incomingDataEdges      map[string][]taskid.TaskEdge   // key: target task implementation ID (EdgeKindData only)
 	boundRefIDs            map[string]struct{}            // set of task reference IDs bound to the graph
-	boundFanInRefIDs       map[string][]string            // tag -> []sourceRefID
 	boundFanInRefIDsByTask map[string]map[string][]string // targetImplID -> tag -> []sourceRefID
 }
 
@@ -58,7 +57,6 @@ func NewTaskSet(tasks []UntypedTask) (*TaskSet, error) {
 		incomingEdges:          make(map[string][]taskid.TaskEdge),
 		incomingDataEdges:      make(map[string][]taskid.TaskEdge),
 		boundRefIDs:            make(map[string]struct{}),
-		boundFanInRefIDs:       make(map[string][]string),
 		boundFanInRefIDsByTask: make(map[string]map[string][]string),
 	}, nil
 }
@@ -67,7 +65,6 @@ func NewTaskSet(tasks []UntypedTask) (*TaskSet, error) {
 func NewResolvedTaskSet(
 	tasks []UntypedTask,
 	edges []taskid.TaskEdge,
-	boundFanInRefIDs map[string][]string,
 	boundFanInRefIDsByTask map[string]map[string][]string,
 ) *TaskSet {
 	incomingEdges := make(map[string][]taskid.TaskEdge)
@@ -85,11 +82,6 @@ func NewResolvedTaskSet(
 		}
 	}
 
-	copiedBoundFanInRefIDs := make(map[string][]string)
-	for tag, taskIDs := range boundFanInRefIDs {
-		copiedBoundFanInRefIDs[tag] = slices.Clone(taskIDs)
-	}
-
 	copiedBoundFanInRefIDsByTask := make(map[string]map[string][]string)
 	for targetID, byTag := range boundFanInRefIDsByTask {
 		copiedBoundFanInRefIDsByTask[targetID] = make(map[string][]string)
@@ -105,7 +97,6 @@ func NewResolvedTaskSet(
 		incomingEdges:          incomingEdges,
 		incomingDataEdges:      incomingDataEdges,
 		boundRefIDs:            boundRefIDs,
-		boundFanInRefIDs:       copiedBoundFanInRefIDs,
 		boundFanInRefIDsByTask: copiedBoundFanInRefIDsByTask,
 	}
 }
@@ -151,19 +142,14 @@ func (s *TaskSet) IsBound(refID string) bool {
 }
 
 // BoundReferenceIDsWithTag returns the list of task reference IDs that provide the given tag across the graph.
-func (s *TaskSet) BoundReferenceIDsWithTag(tag string) []string {
-	return slices.Clone(s.boundFanInRefIDs[tag])
-}
-
-// BoundReferenceIDsForTask returns the list of task reference IDs providing the tag bound specifically to the given task implementation ID.
-// If no task-specific binding exists, it falls back to BoundReferenceIDsWithTag.
-func (s *TaskSet) BoundReferenceIDsForTask(taskImplID string, tag string) []string {
+// BoundReferenceIDsForTaskWithTag returns the list of task reference IDs providing the tag bound specifically to the given task implementation ID.
+func (s *TaskSet) BoundReferenceIDsForTaskWithTag(taskImplID string, tag string) []string {
 	if byTag, ok := s.boundFanInRefIDsByTask[taskImplID]; ok {
 		if refIDs, ok := byTag[tag]; ok {
 			return slices.Clone(refIDs)
 		}
 	}
-	return s.BoundReferenceIDsWithTag(tag)
+	return nil
 }
 
 // Remove a task definition from current DefinitionSet.
@@ -219,21 +205,11 @@ func (s *TaskSet) DumpGraphviz() (string, error) {
 			result += fmt.Sprintf("start -> %s\n", graphVizValidId(task.UntypedID().String()))
 		}
 	}
-	sourceRelation := map[string]UntypedTask{}
 	for _, task := range s.tasks {
 		sources := s.IncomingEdges(task.UntypedID().String())
 		for _, edge := range sources {
-			sourceID := edge.SourceID
-			if sourceID == "" {
-				if sourceTask, ok := sourceRelation[edge.SourceRefID]; ok {
-					sourceID = sourceTask.UntypedID().String()
-				}
-			}
-			if sourceID != "" {
-				result += fmt.Sprintf("%s -> %s\n", graphVizValidId(sourceID), graphVizValidId(task.UntypedID().String()))
-			}
+			result += fmt.Sprintf("%s -> %s\n", graphVizValidId(edge.SourceID), graphVizValidId(task.UntypedID().String()))
 		}
-		sourceRelation[task.UntypedID().ReferenceIDString()] = task
 	}
 	result += "}"
 	return result, nil

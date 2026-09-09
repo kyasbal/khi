@@ -267,16 +267,13 @@ func TestTaskSet_MetadataQueries(t *testing.T) {
 		},
 	}
 
-	boundFanIn := map[string][]string{
-		"tag-sample": {"taskA"},
-	}
 	boundFanInByTask := map[string]map[string][]string{
 		"taskB#default": {
 			"tag-sample": {"taskA"},
 		},
 	}
 
-	resolved := NewResolvedTaskSet(tasks, edges, boundFanIn, boundFanInByTask)
+	resolved := NewResolvedTaskSet(tasks, edges, boundFanInByTask)
 
 	testCases := []struct {
 		name string
@@ -318,32 +315,17 @@ func TestTaskSet_MetadataQueries(t *testing.T) {
 			},
 		},
 		{
-			name: "BoundReferenceIDsWithTag returns ref IDs for tag",
+			name: "BoundReferenceIDsForTaskWithTag returns task-specific bound ref IDs",
 			test: func(t *testing.T) {
-				got := resolved.BoundReferenceIDsWithTag("tag-sample")
+				got := resolved.BoundReferenceIDsForTaskWithTag("taskB#default", "tag-sample")
 				want := []string{"taskA"}
 				if diff := cmp.Diff(want, got); diff != "" {
-					t.Errorf("BoundReferenceIDsWithTag mismatch (-want +got):\n%s", diff)
+					t.Errorf("BoundReferenceIDsForTaskWithTag mismatch (-want +got):\n%s", diff)
 				}
-				if len(resolved.BoundReferenceIDsWithTag("non-existent-tag")) != 0 {
-					t.Errorf("expected empty slice for non-existent tag")
+				if len(resolved.BoundReferenceIDsForTaskWithTag("taskUnknown#default", "tag-sample")) != 0 {
+					t.Errorf("expected empty slice for unknown task")
 				}
-			},
-		},
-		{
-			name: "BoundReferenceIDsForTask returns task-specific bound ref IDs",
-			test: func(t *testing.T) {
-				got := resolved.BoundReferenceIDsForTask("taskB#default", "tag-sample")
-				want := []string{"taskA"}
-				if diff := cmp.Diff(want, got); diff != "" {
-					t.Errorf("BoundReferenceIDsForTask mismatch (-want +got):\n%s", diff)
-				}
-				// Falls back to global tag list when task has no specific entry.
-				gotFallback := resolved.BoundReferenceIDsForTask("taskUnknown#default", "tag-sample")
-				if diff := cmp.Diff(want, gotFallback); diff != "" {
-					t.Errorf("BoundReferenceIDsForTask fallback mismatch (-want +got):\n%s", diff)
-				}
-				if len(resolved.BoundReferenceIDsForTask("taskB#default", "non-existent-tag")) != 0 {
+				if len(resolved.BoundReferenceIDsForTaskWithTag("taskB#default", "non-existent-tag")) != 0 {
 					t.Errorf("expected empty slice for non-existent tag")
 				}
 			},
