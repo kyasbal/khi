@@ -611,6 +611,7 @@ func (i *InspectionTaskRunner) addCommonMetadata(ctx context.Context, writableMe
 	typedmap.Set(writableMetadata, inspectionmetadata.QueryMetadataKey, inspectionmetadata.NewQueryMetadata())
 	typedmap.Set(writableMetadata, inspectionmetadata.LogMetadataKey, inspectionmetadata.NewLogMetadata())
 	typedmap.Set(writableMetadata, inspectionmetadata.JobModeCommandMetadataKey, inspectionmetadata.NewJobModeCommandMetadata(""))
+	typedmap.Set(writableMetadata, inspectionmetadata.AIContextMetadataKey, inspectionmetadata.NewAIContextMetadata())
 
 	progressMeta := inspectionmetadata.NewProgress()
 	progressMeta.SetTotalTaskCount(len(coretask.Subset(taskGraph, filter.NewEnabledFilter(inspectioncore_contract.LabelKeyProgressReportable, false)).GetAll()))

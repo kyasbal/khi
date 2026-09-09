@@ -59,6 +59,8 @@ func (a *MetadataAccumulator) AddMetadata(m inspectionmetadata.Metadata) error {
 		item = toHeaderMetadataItem(v)
 	case []*inspectionmetadata.QueryItem:
 		item = toQueryMetadataItem(v)
+	case *pb.AIContextMetadata:
+		item = toAIContextMetadataItem(v)
 	default:
 		return fmt.Errorf("unknown metadata type: %T", v)
 	}
@@ -68,6 +70,14 @@ func (a *MetadataAccumulator) AddMetadata(m inspectionmetadata.Metadata) error {
 	a.mu.Unlock()
 
 	return nil
+}
+
+func toAIContextMetadataItem(v *pb.AIContextMetadata) *pb.MetadataItem {
+	return &pb.MetadataItem{
+		Payload: &pb.MetadataItem_AiContext{
+			AiContext: v,
+		},
+	}
 }
 
 func toHeaderMetadataItem(v *inspectionmetadata.HeaderMetadata) *pb.MetadataItem {

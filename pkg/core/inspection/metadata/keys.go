@@ -27,3 +27,6 @@ var InspectionPlanMetadataKey = NewMetadataKey[*InspectionPlanMetadata]("plan")
 var ProgressMetadataKey = NewMetadataKey[*Progress]("progress")
 var QueryMetadataKey = NewMetadataKey[*QueryMetadata]("query")
 var JobModeCommandMetadataKey = NewMetadataKey[*JobModeCommandMetadata]("jobCommand")
+
+// AIContextMetadataKey is the metadata key to store and retrieve AIContextMetadata.
+var AIContextMetadataKey = NewMetadataKey[*AIContextMetadata]("aiContext")
