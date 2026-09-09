@@ -34,8 +34,9 @@ type TaskSet struct {
 	runnable          bool
 	incomingEdges     map[string][]taskid.TaskEdge // key: target task implementation ID
 	incomingDataEdges map[string][]taskid.TaskEdge // key: target task implementation ID (EdgeKindData only)
-	boundRefIDs       map[string]struct{}          // set of task reference IDs bound to the graph
-	boundFanInRefIDs  map[string][]string          // tag -> []sourceRefID
+	boundRefIDs            map[string]struct{}          // set of task reference IDs bound to the graph
+	boundFanInRefIDs       map[string][]string          // tag -> []sourceRefID
+	boundFanInRefIDsByTask map[string]map[string][]string // targetImplID -> tag -> []sourceRefID
 }
 
 var _ core_contract.TaskGraphMetadata = (*TaskSet)(nil)
@@ -52,17 +53,23 @@ func NewTaskSet(tasks []UntypedTask) (*TaskSet, error) {
 		taskIDs[id.String()] = struct{}{}
 	}
 	return &TaskSet{
-		tasks:             slices.Clone(tasks),
-		runnable:          false,
-		incomingEdges:     make(map[string][]taskid.TaskEdge),
-		incomingDataEdges: make(map[string][]taskid.TaskEdge),
-		boundRefIDs:       make(map[string]struct{}),
-		boundFanInRefIDs:  make(map[string][]string),
+		tasks:                  slices.Clone(tasks),
+		runnable:               false,
+		incomingEdges:          make(map[string][]taskid.TaskEdge),
+		incomingDataEdges:      make(map[string][]taskid.TaskEdge),
+		boundRefIDs:            make(map[string]struct{}),
+		boundFanInRefIDs:       make(map[string][]string),
+		boundFanInRefIDsByTask: make(map[string]map[string][]string),
 	}, nil
 }
 
 // NewResolvedTaskSet creates a new runnable TaskSet with resolved tasks, edges, and metadata.
-func NewResolvedTaskSet(tasks []UntypedTask, edges []taskid.TaskEdge, boundFanInRefIDs map[string][]string) *TaskSet {
+func NewResolvedTaskSet(
+	tasks []UntypedTask,
+	edges []taskid.TaskEdge,
+	boundFanInRefIDs map[string][]string,
+	boundFanInRefIDsByTask map[string]map[string][]string,
+) *TaskSet {
 	incomingEdges := make(map[string][]taskid.TaskEdge)
 	incomingDataEdges := make(map[string][]taskid.TaskEdge)
 	boundRefIDs := make(map[string]struct{})
@@ -83,14 +90,23 @@ func NewResolvedTaskSet(tasks []UntypedTask, edges []taskid.TaskEdge, boundFanIn
 		copiedBoundFanInRefIDs[tag] = slices.Clone(taskIDs)
 	}
 
+	copiedBoundFanInRefIDsByTask := make(map[string]map[string][]string)
+	for targetID, byTag := range boundFanInRefIDsByTask {
+		copiedBoundFanInRefIDsByTask[targetID] = make(map[string][]string)
+		for tag, refIDs := range byTag {
+			copiedBoundFanInRefIDsByTask[targetID][tag] = slices.Clone(refIDs)
+		}
+	}
+
 	return &TaskSet{
 		tasks:             slices.Clone(tasks),
 		edges:             slices.Clone(edges),
 		runnable:          true,
 		incomingEdges:     incomingEdges,
 		incomingDataEdges: incomingDataEdges,
-		boundRefIDs:       boundRefIDs,
-		boundFanInRefIDs:  copiedBoundFanInRefIDs,
+		boundRefIDs:            boundRefIDs,
+		boundFanInRefIDs:       copiedBoundFanInRefIDs,
+		boundFanInRefIDsByTask: copiedBoundFanInRefIDsByTask,
 	}
 }
 
@@ -134,9 +150,20 @@ func (s *TaskSet) IsBound(refID string) bool {
 	return found
 }
 
-// BoundReferenceIDsWithTag returns the list of task reference IDs that provide the given tag.
+// BoundReferenceIDsWithTag returns the list of task reference IDs that provide the given tag across the graph.
 func (s *TaskSet) BoundReferenceIDsWithTag(tag string) []string {
 	return slices.Clone(s.boundFanInRefIDs[tag])
+}
+
+// BoundReferenceIDsForTask returns the list of task reference IDs providing the tag bound specifically to the given task implementation ID.
+// If no task-specific binding exists, it falls back to BoundReferenceIDsWithTag.
+func (s *TaskSet) BoundReferenceIDsForTask(taskImplID string, tag string) []string {
+	if byTag, ok := s.boundFanInRefIDsByTask[taskImplID]; ok {
+		if refIDs, ok := byTag[tag]; ok {
+			return slices.Clone(refIDs)
+		}
+	}
+	return s.BoundReferenceIDsWithTag(tag)
 }
 
 // Remove a task definition from current DefinitionSet.

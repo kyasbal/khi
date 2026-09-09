@@ -34,7 +34,7 @@ func resolveFanInEdgesAndCycles(
 	graphTaskMap map[string]UntypedTask,
 	pointToPointEdges []taskid.TaskEdge,
 	candidateFanInEdges []taskid.TaskEdge,
-) ([]taskid.TaskEdge, map[string][]string, error) {
+) ([]taskid.TaskEdge, map[string][]string, map[string]map[string][]string, error) {
 	refToTask, refToImplID, implToTask := buildTaskMaps(graphTaskMap)
 
 	outgoing := make(map[string][]string, len(graphTaskMap))
@@ -55,7 +55,7 @@ func resolveFanInEdgesAndCycles(
 	}
 
 	if err := verifyAcyclic(outgoing, inDegree, graphTaskMap); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	sortedKeys, edgesByKey := groupCandidateFanInEdgesByConsumerTag(candidateFanInEdges)
@@ -74,7 +74,7 @@ func resolveFanInEdgesAndCycles(
 			refToImplID,
 		)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		acceptedFanInEdges = append(acceptedFanInEdges, accepted...)
 	}
@@ -84,8 +84,8 @@ func resolveFanInEdgesAndCycles(
 	allEdges = append(allEdges, acceptedFanInEdges...)
 	dedupedEdges := deduplicateAndNormalizeEdges(allEdges)
 
-	boundFanInRefIDs := collectBoundFanInRefIDs(acceptedFanInEdges)
-	return dedupedEdges, boundFanInRefIDs, nil
+	boundFanInRefIDs, boundFanInRefIDsByTask := collectBoundFanInRefIDs(acceptedFanInEdges)
+	return dedupedEdges, boundFanInRefIDs, boundFanInRefIDsByTask, nil
 }
 
 // buildTaskMaps constructs lookup maps for tasks and their identifiers.
@@ -224,17 +224,31 @@ func buildAmbiguousPriorityError(
 	return fmt.Errorf("ambiguous FanIn priority between %s and %s for tag %s", producerImplIDA, producerImplIDB, tag)
 }
 
-// collectBoundFanInRefIDs aggregates unique source reference IDs for accepted fan-in edges per tag.
-func collectBoundFanInRefIDs(acceptedFanInEdges []taskid.TaskEdge) map[string][]string {
+// collectBoundFanInRefIDs aggregates unique source reference IDs for accepted fan-in edges globally and per consumer task.
+func collectBoundFanInRefIDs(acceptedFanInEdges []taskid.TaskEdge) (map[string][]string, map[string]map[string][]string) {
 	boundFanInRefIDs := make(map[string][]string)
+	boundFanInRefIDsByTask := make(map[string]map[string][]string)
 	for _, e := range acceptedFanInEdges {
+		if e.Tag == "" {
+			continue
+		}
 		boundFanInRefIDs[e.Tag] = append(boundFanInRefIDs[e.Tag], e.SourceRefID)
+		if boundFanInRefIDsByTask[e.TargetID] == nil {
+			boundFanInRefIDsByTask[e.TargetID] = make(map[string][]string)
+		}
+		boundFanInRefIDsByTask[e.TargetID][e.Tag] = append(boundFanInRefIDsByTask[e.TargetID][e.Tag], e.SourceRefID)
 	}
 	for tag, refIDs := range boundFanInRefIDs {
 		slices.Sort(refIDs)
 		boundFanInRefIDs[tag] = slices.Compact(refIDs)
 	}
-	return boundFanInRefIDs
+	for targetID, byTag := range boundFanInRefIDsByTask {
+		for tag, refIDs := range byTag {
+			slices.Sort(refIDs)
+			boundFanInRefIDsByTask[targetID][tag] = slices.Compact(refIDs)
+		}
+	}
+	return boundFanInRefIDs, boundFanInRefIDsByTask
 }
 
 // verifyAcyclic checks if the graph formed by outgoing contains any cycle.

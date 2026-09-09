@@ -108,6 +108,10 @@ func (m *testGraphMetadata) BoundReferenceIDsWithTag(tag string) []string {
 	return nil
 }
 
+func (m *testGraphMetadata) BoundReferenceIDsForTask(taskImplID string, tag string) []string {
+	return nil
+}
+
 var _ core_contract.TaskGraphMetadata = (*testGraphMetadata)(nil)
 
 func prepareTaskContext(baseContext context.Context, task coretask.UntypedTask, taskDependencyValues ...TaskDependencyValues) context.Context {

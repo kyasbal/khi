@@ -30,6 +30,7 @@ import (
 type mockGraphMetadata struct {
 	boundTasks        map[string]bool
 	boundTasksWithTag map[string][]string
+	boundTasksForTask map[string]map[string][]string
 }
 
 func (m *mockGraphMetadata) IsBound(referenceID string) bool {
@@ -44,6 +45,17 @@ func (m *mockGraphMetadata) BoundReferenceIDsWithTag(tag string) []string {
 		return nil
 	}
 	return m.boundTasksWithTag[tag]
+}
+
+func (m *mockGraphMetadata) BoundReferenceIDsForTask(taskImplID string, tag string) []string {
+	if m.boundTasksForTask != nil {
+		if byTag, ok := m.boundTasksForTask[taskImplID]; ok {
+			if refIDs, ok := byTag[tag]; ok {
+				return refIDs
+			}
+		}
+	}
+	return m.BoundReferenceIDsWithTag(tag)
 }
 
 var _ core_contract.TaskGraphMetadata = (*mockGraphMetadata)(nil)
