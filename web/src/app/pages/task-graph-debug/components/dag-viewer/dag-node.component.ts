@@ -14,18 +14,31 @@
  * limitations under the License.
  */
 
-import { Component, computed, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  output,
+} from '@angular/core';
 import { DagPositionedNode } from 'src/app/pages/task-graph-debug/components/dag-viewer/dag-viewer.model';
+
+const CHAR_WIDTH_ESTIMATE_PX = 7.5;
+const NODE_HORIZONTAL_PADDING_PX = 28;
+const FEATURE_BADGE_OFFSET_X = 62;
+const INIT_BADGE_OFFSET_X = 42;
 
 /**
  * Renders an individual task node card inside the SVG DAG canvas.
  */
 @Component({
+  // eslint-disable-next-line @angular-eslint/component-selector
   selector: 'g[khi-dag-node]',
   templateUrl: './dag-node.component.html',
   styleUrls: ['./dag-node.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    'class': 'dag-node-group',
+    class: 'dag-node-group',
     '[class.selected]': 'isSelected()',
     '[class.highlighted]': 'isHighlighted()',
     '[class.dimmed]': 'isDimmed()',
@@ -69,15 +82,42 @@ export class DagNodeComponent {
   );
 
   /**
-   * Truncated or formatted reference ID for the card header.
+   * Domain prefix extracted from the reference ID, such as "khi.google.com/".
+   * Returns empty string if the reference ID does not contain a slash.
    */
-  readonly displayReferenceId = computed(() => {
+  readonly displayDomain = computed(() => {
     const ref = this.node().referenceId;
-    if (ref.length > 28) {
-      return `...${ref.slice(-25)}`;
+    const slashIndex = ref.indexOf('/');
+    if (slashIndex === -1) {
+      return '';
     }
-    return ref;
+    return ref.slice(0, slashIndex + 1);
   });
+
+  /**
+   * Main task identifier after the domain prefix.
+   */
+  readonly displayTaskName = computed(() => {
+    const ref = this.node().referenceId;
+    const slashIndex = ref.indexOf('/');
+    const name = slashIndex === -1 ? ref : ref.slice(slashIndex + 1);
+    const maxChars = Math.max(
+      10,
+      Math.floor(
+        (this.node().width - NODE_HORIZONTAL_PADDING_PX) /
+          CHAR_WIDTH_ESTIMATE_PX,
+      ),
+    );
+    if (name.length > maxChars) {
+      return `${name.slice(0, maxChars - 3)}...`;
+    }
+    return name;
+  });
+
+  /**
+   * Vertical coordinate (Y) for the task name SVG text element.
+   */
+  readonly taskTextY = computed(() => (this.displayDomain() ? 35 : 26));
 
   /**
    * Implementation hash identifier for the secondary label.
@@ -95,7 +135,7 @@ export class DagNodeComponent {
    * SVG transform for the Init badge.
    */
   readonly initBadgeTransform = computed(() => {
-    const offsetX = this.node().isFeature ? 62 : 0;
+    const offsetX = this.node().isFeature ? FEATURE_BADGE_OFFSET_X : 0;
     return `translate(${offsetX}, 0)`;
   });
 
@@ -105,10 +145,10 @@ export class DagNodeComponent {
   readonly prioBadgeTransform = computed(() => {
     let offsetX = 0;
     if (this.node().isFeature) {
-      offsetX += 62;
+      offsetX += FEATURE_BADGE_OFFSET_X;
     }
     if (this.node().isInitialTask) {
-      offsetX += 42;
+      offsetX += INIT_BADGE_OFFSET_X;
     }
     return `translate(${offsetX}, 0)`;
   });

@@ -101,6 +101,9 @@ describe('DagEdgeComponent', () => {
     const tagText = fixture.nativeElement.querySelector('.tag-badge-text');
     expect(tagText).toBeTruthy();
     expect(tagText.textContent.trim()).toBe('#logs');
+
+    const tagRect = fixture.nativeElement.querySelector('.tag-badge-bg');
+    expect(Number(tagRect.getAttribute('width'))).toBeGreaterThan(0);
   });
 
   it('applies highlighted class and highlighted marker URL', () => {

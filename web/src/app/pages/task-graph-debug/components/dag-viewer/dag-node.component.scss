@@ -32,7 +32,8 @@ $node-highlighted-stroke: mat.m2-get-color-from-palette(
   500
 );
 
-$ref-text-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 900);
+$domain-text-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 600);
+$task-text-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 900);
 $impl-text-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 600);
 
 $feature-badge-bg: mat.m2-get-color-from-palette(mat.$m2-teal-palette, 50);
@@ -99,11 +100,17 @@ $prio-badge-text: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 700);
     opacity: 0.2;
   }
 
-  .node-ref-text {
+  .node-domain-text {
+    font-family: var(--font-family-code, monospace);
+    font-size: 10px;
+    fill: $domain-text-color;
+  }
+
+  .node-task-text {
     font-family: var(--font-family-code, monospace);
     font-size: 13px;
     font-weight: 600;
-    fill: $ref-text-color;
+    fill: $task-text-color;
   }
 
   .node-impl-text {

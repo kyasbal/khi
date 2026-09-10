@@ -48,8 +48,8 @@ class TestHostComponent {
 }
 
 const mockNode: DagPositionedNode = {
-  id: 'khi.test.task#1a2b3c',
-  referenceId: 'khi.test.task',
+  id: 'khi.google.com/test-task#1a2b3c',
+  referenceId: 'khi.google.com/test-task',
   isFeature: false,
   isInitialTask: false,
   topologicalOrder: 2,
@@ -57,8 +57,8 @@ const mockNode: DagPositionedNode = {
   labels: {},
   x: 120,
   y: 80,
-  width: 260,
-  height: 84,
+  width: 280,
+  height: 88,
   layer: 1,
 };
 
@@ -83,8 +83,15 @@ describe('DagNodeComponent', () => {
     expect(group).toBeTruthy();
     expect(group.getAttribute('transform')).toBe('translate(120, 80)');
 
-    const refText = fixture.nativeElement.querySelector('.node-ref-text');
-    expect(refText.textContent.trim()).toBe('khi.test.task');
+    const titleEl = fixture.nativeElement.querySelector('title');
+    expect(titleEl.textContent.trim()).toBe('khi.google.com/test-task');
+
+    const domainText = fixture.nativeElement.querySelector('.node-domain-text');
+    expect(domainText.textContent.trim()).toBe('khi.google.com/');
+
+    const taskText = fixture.nativeElement.querySelector('.node-task-text');
+    expect(taskText.textContent.trim()).toBe('test-task');
+    expect(taskText.getAttribute('y')).toBe('35');
 
     const implText = fixture.nativeElement.querySelector('.node-impl-text');
     expect(implText.textContent.trim()).toBe('#1a2b3c');
@@ -95,6 +102,22 @@ describe('DagNodeComponent', () => {
     expect(prioText.textContent.trim()).toBe('P100');
   });
 
+  it('renders task without domain correctly', () => {
+    hostComponent.node = {
+      ...mockNode,
+      id: 'simple-task#abc',
+      referenceId: 'simple-task',
+    };
+    fixture.detectChanges();
+
+    const domainText = fixture.nativeElement.querySelector('.node-domain-text');
+    expect(domainText).toBeNull();
+
+    const taskText = fixture.nativeElement.querySelector('.node-task-text');
+    expect(taskText.textContent.trim()).toBe('simple-task');
+    expect(taskText.getAttribute('y')).toBe('26');
+  });
+
   it('renders feature and initial task badges when enabled', () => {
     hostComponent.node = {
       ...mockNode,
@@ -103,11 +126,52 @@ describe('DagNodeComponent', () => {
     };
     fixture.detectChanges();
 
+    const group = fixture.nativeElement.querySelector('.dag-node-group');
+    expect(group.classList.contains('feature')).toBeTrue();
+    expect(group.classList.contains('initial-task')).toBeTrue();
+
     const featureBadge = fixture.nativeElement.querySelector('.feature-badge');
     expect(featureBadge).toBeTruthy();
 
     const initBadge = fixture.nativeElement.querySelector('.init-badge');
     expect(initBadge).toBeTruthy();
+    expect(initBadge.getAttribute('transform')).toBe('translate(62, 0)');
+
+    const prioBadge = fixture.nativeElement.querySelector('.prio-badge');
+    expect(prioBadge.getAttribute('transform')).toBe('translate(104, 0)');
+  });
+
+  it('positions init and priority badges correctly when node is initial task but not a feature', () => {
+    hostComponent.node = {
+      ...mockNode,
+      isFeature: false,
+      isInitialTask: true,
+    };
+    fixture.detectChanges();
+
+    const featureBadge = fixture.nativeElement.querySelector('.feature-badge');
+    expect(featureBadge).toBeNull();
+
+    const initBadge = fixture.nativeElement.querySelector('.init-badge');
+    expect(initBadge).toBeTruthy();
+    expect(initBadge.getAttribute('transform')).toBe('translate(0, 0)');
+
+    const prioBadge = fixture.nativeElement.querySelector('.prio-badge');
+    expect(prioBadge.getAttribute('transform')).toBe('translate(42, 0)');
+  });
+
+  it('truncates long task names with ellipsis based on node width', () => {
+    hostComponent.node = {
+      ...mockNode,
+      referenceId:
+        'khi.google.com/a-very-long-task-name-exceeding-card-width-limit',
+    };
+    fixture.detectChanges();
+
+    const taskText = fixture.nativeElement.querySelector('.node-task-text');
+    expect(taskText.textContent.trim()).toBe(
+      'a-very-long-task-name-exceedin...',
+    );
   });
 
   it('emits selectNode when clicked', () => {
@@ -122,14 +186,16 @@ describe('DagNodeComponent', () => {
     expect(hostComponent.emittedNode).toEqual(mockNode);
   });
 
-  it('applies selected and dimmed CSS classes based on inputs', () => {
+  it('applies selected, highlighted, and dimmed CSS classes based on inputs', () => {
     hostComponent.node = mockNode;
     hostComponent.isSelected = true;
+    hostComponent.isHighlighted = true;
     hostComponent.isDimmed = true;
     fixture.detectChanges();
 
     const group = fixture.nativeElement.querySelector('.dag-node-group');
     expect(group.classList.contains('selected')).toBeTrue();
+    expect(group.classList.contains('highlighted')).toBeTrue();
     expect(group.classList.contains('dimmed')).toBeTrue();
   });
 });

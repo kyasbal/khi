@@ -19,8 +19,8 @@ import { DagNodeComponent } from 'src/app/pages/task-graph-debug/components/dag-
 import { DagPositionedNode } from 'src/app/pages/task-graph-debug/components/dag-viewer/dag-viewer.model';
 
 const mockNode: DagPositionedNode = {
-  id: 'khi.k8s.pod-parser#d9a4f2',
-  referenceId: 'khi.k8s.pod-parser',
+  id: 'khi.google.com/k8s/pod-parser#d9a4f2',
+  referenceId: 'khi.google.com/k8s/pod-parser',
   isFeature: false,
   isInitialTask: false,
   topologicalOrder: 3,
@@ -30,8 +30,8 @@ const mockNode: DagPositionedNode = {
   },
   x: 20,
   y: 20,
-  width: 260,
-  height: 84,
+  width: 280,
+  height: 88,
   layer: 1,
 };
 
@@ -98,8 +98,8 @@ export const FeatureTask: Story = {
     node: {
       ...mockNode,
       isFeature: true,
-      referenceId: 'khi.feature.audit-timeline',
-      id: 'khi.feature.audit-timeline#8f3c1a',
+      referenceId: 'khi.google.com/feature/audit-timeline',
+      id: 'khi.google.com/feature/audit-timeline#8f3c1a',
     },
   },
 };
@@ -109,8 +109,8 @@ export const InitialTask: Story = {
     node: {
       ...mockNode,
       isInitialTask: true,
-      referenceId: 'khi.source.log-reader',
-      id: 'khi.source.log-reader#0b4e2d',
+      referenceId: 'khi.google.com/source/log-reader',
+      id: 'khi.google.com/source/log-reader#0b4e2d',
     },
   },
 };

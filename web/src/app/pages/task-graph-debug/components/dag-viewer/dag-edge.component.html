@@ -23,9 +23,9 @@
   <svg:g class="edge-tag-group" [attr.transform]="tagTransform()">
     <svg:rect
       class="tag-badge-bg"
-      x="-36"
+      [attr.x]="tagBadgeX()"
       y="-11"
-      width="72"
+      [attr.width]="tagBadgeWidth()"
       height="22"
       rx="11"
     />
@@ -34,7 +34,7 @@
       text-anchor="middle"
       dominant-baseline="central"
     >
-      {{ "#" + edge().tag }}
+      {{ tagText() }}
     </svg:text>
   </svg:g>
 }

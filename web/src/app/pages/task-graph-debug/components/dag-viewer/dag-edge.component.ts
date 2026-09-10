@@ -22,11 +22,12 @@ import { DagPositionedEdge } from 'src/app/pages/task-graph-debug/components/dag
  * Renders an individual directed dependency edge with arrow head and optional tag chip in SVG.
  */
 @Component({
+  // eslint-disable-next-line @angular-eslint/component-selector
   selector: 'g[khi-dag-edge]',
   templateUrl: './dag-edge.component.html',
   styleUrls: ['./dag-edge.component.scss'],
   host: {
-    'class': 'dag-edge-group',
+    class: 'dag-edge-group',
     '[class.highlighted]': 'isHighlighted()',
     '[class.dimmed]': 'isDimmed()',
     '[class.fan-in]': 'isFanIn()',
@@ -79,4 +80,27 @@ export class DagEdgeComponent {
   readonly tagTransform = computed(
     () => `translate(${this.edge().labelX}, ${this.edge().labelY})`,
   );
+
+  /**
+   * Formatted tag label string with hashtag prefix.
+   */
+  readonly tagText = computed(() =>
+    this.edge().tag ? `#${this.edge().tag}` : '',
+  );
+
+  /**
+   * Computed width of the tag badge background based on text length.
+   */
+  readonly tagBadgeWidth = computed(() => {
+    const text = this.tagText();
+    if (!text) {
+      return 0;
+    }
+    return Math.max(48, Math.ceil(text.length * 7.2 + 20));
+  });
+
+  /**
+   * X offset for the centered tag badge background rectangle.
+   */
+  readonly tagBadgeX = computed(() => -this.tagBadgeWidth() / 2);
 }

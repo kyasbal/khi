@@ -27,12 +27,12 @@ import {
  */
 export interface DagLayoutOptions {
   /**
-   * Width of each node card in pixels. Defaults to 260.
+   * Width of each node card in pixels. Defaults to 280.
    */
   readonly nodeWidth?: number;
 
   /**
-   * Height of each node card in pixels. Defaults to 84.
+   * Height of each node card in pixels. Defaults to 88.
    */
   readonly nodeHeight?: number;
 
@@ -57,8 +57,8 @@ export interface DagLayoutOptions {
   readonly paddingY?: number;
 }
 
-const DEFAULT_NODE_WIDTH = 260;
-const DEFAULT_NODE_HEIGHT = 84;
+const DEFAULT_NODE_WIDTH = 280;
+const DEFAULT_NODE_HEIGHT = 88;
 const DEFAULT_HORIZONTAL_SPACING = 80;
 const DEFAULT_VERTICAL_SPACING = 28;
 const DEFAULT_PADDING_X = 48;
