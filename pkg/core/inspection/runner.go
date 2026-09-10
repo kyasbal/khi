@@ -206,24 +206,8 @@ func (i *InspectionTaskRunner) SetInspectionType(inspectionType string) error {
 }
 
 func (i *InspectionTaskRunner) isTaskCompatible(task coretask.UntypedTask, currentType *InspectionType) bool {
-	labels := task.Labels()
-
-	// 1. Evaluate with new Label Selector if present
-	if selector, ok := typedmap.Get(labels, inspectioncore_contract.LabelKeyInspectionTypeLabelSelector); ok {
-		return selector.Match(currentType.Labels)
-	}
-
-	// 2. Fallback to legacy list
-	if legacyList, ok := typedmap.Get(labels, inspectioncore_contract.LabelKeyInspectionTypes); ok {
-		if slices.Contains(legacyList, currentType.Id) {
-			slog.Warn("Legacy inspection type list is used for task. Please migrate to label-selector approach.", "taskID", task.UntypedID().String())
-			return true
-		}
-		return false
-	}
-
-	// 3. Defaults to true if neither is defined (global tasks)
-	return true
+	compatible, _ := EvaluateTaskCompatibility(task, currentType)
+	return compatible
 }
 
 // deduplicateTasksByPriority retains only the task with the highest LabelKeyTaskSelectionPriority for each TaskRef, sorted by reference name.
