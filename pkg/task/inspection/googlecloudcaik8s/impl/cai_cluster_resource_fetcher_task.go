@@ -26,7 +26,6 @@ import (
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	googlecloudcaik8s_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcaik8s/contract"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
 	googlecloudk8scommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudk8scommon/contract"
@@ -67,7 +66,7 @@ var defaultSupportedKindsToAssetTypes = map[string]string{
 // ClusterResourceFetcherTask queries CAI for existing Kubernetes resources in a GKE cluster.
 var ClusterResourceFetcherTask = inspectiontaskbase.NewProgressReportableInspectionTask(
 	googlecloudcaik8s_contract.ClusterResourceFetcherTaskID,
-	[]taskid.UntypedTaskReference{
+	[]coretask.Dependency{
 		googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(),
 		googlecloudcommon_contract.APIClientFactoryTaskID.Ref(),
 		googlecloudcommon_contract.APIClientCallOptionsInjectorTaskID.Ref(),
@@ -79,7 +78,7 @@ var ClusterResourceFetcherTask = inspectiontaskbase.NewProgressReportableInspect
 	func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) ([]*googlecloudcaik8s_contract.ClusterResourceSnapshot, error) {
 		cluster := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref())
 		factory := coretask.GetTaskResult(ctx, googlecloudcommon_contract.APIClientFactoryTaskID.Ref())
-		injector, _ := coretask.GetTaskResultOptional(ctx, googlecloudcommon_contract.APIClientCallOptionsInjectorTaskID.Ref())
+		injector, _ := coretask.GetOptionalTaskResult(ctx, googlecloudcommon_contract.APIClientCallOptionsInjectorTaskID.Ref())
 		startTime := coretask.GetTaskResult(ctx, googlecloudcommon_contract.InputStartTimeTaskID.Ref())
 		endTime := coretask.GetTaskResult(ctx, googlecloudcommon_contract.InputEndTimeTaskID.Ref())
 		kindFilter := coretask.GetTaskResult(ctx, googlecloudk8scommon_contract.InputKindFilterTaskID.Ref())

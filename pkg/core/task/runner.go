@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"maps"
 	"sync"
 	"time"
 
@@ -36,40 +37,61 @@ type Interceptor func(ctx context.Context, task UntypedTask, next func(context.C
 // LocalRunner executes a task graph defined by a TaskSet on the local machine.
 // It manages task dependencies, concurrent execution, and result aggregation.
 type LocalRunner struct {
-	resolvedTaskSet       *TaskSet
-	resultVariable        *typedmap.TypedMap
-	resultError           error
-	started               bool
-	stopped               bool
-	taskWaiters           *typedmap.ReadonlyTypedMap
-	waiter                chan interface{}
-	taskStatuses          []*LocalRunnerTaskStat
-	interceptors          []Interceptor
-	remainingDependents   map[string]int
-	remainingDependentsMu sync.Mutex
-	taskByRefID           map[string]UntypedTask
+	resolvedTaskSet             *TaskSet
+	resultVariable              *typedmap.TypedMap
+	resultError                 error
+	started                     bool
+	stopped                     bool
+	taskWaiters                 *typedmap.ReadonlyTypedMap
+	waiter                      chan interface{}
+	taskRunStatuses             map[string]TaskRunStatus
+	taskRunStatusesMu           sync.RWMutex
+	interceptors                []Interceptor
+	remainingDependentsByImplID map[string]int
+	remainingDependentsMu       sync.Mutex
+	taskByImplID                map[string]UntypedTask
 }
 
 // LocalRunner implements task_interface.TaskRunner
 var _ TaskRunner = (*LocalRunner)(nil)
 
-// LocalRunnerTaskStat holds the status and metrics for a single task
-// executed by the LocalRunner.
-type LocalRunnerTaskStat struct {
-	Phase     string
-	Error     error
+// TaskRunPhase represents the execution phase of a single task in a task graph.
+type TaskRunPhase int
+
+const (
+	// TaskRunPhaseWaiting indicates that the task is waiting for its dependencies to complete.
+	TaskRunPhaseWaiting TaskRunPhase = iota
+	// TaskRunPhaseRunning indicates that the task is currently running.
+	TaskRunPhaseRunning
+	// TaskRunPhaseDone indicates that the task finished successfully.
+	TaskRunPhaseDone
+	// TaskRunPhaseError indicates that the task finished with an error.
+	TaskRunPhaseError
+)
+
+// String returns the human-readable name of the task run phase.
+func (p TaskRunPhase) String() string {
+	switch p {
+	case TaskRunPhaseWaiting:
+		return "Waiting"
+	case TaskRunPhaseRunning:
+		return "Running"
+	case TaskRunPhaseDone:
+		return "Done"
+	case TaskRunPhaseError:
+		return "Error"
+	default:
+		return fmt.Sprintf("TaskRunPhase(%d)", int(p))
+	}
+}
+
+// TaskRunStatus is an immutable snapshot of the execution state of a single task.
+// StartTime is zero while the task is waiting, and EndTime is zero until the task finishes.
+type TaskRunStatus struct {
+	Phase     TaskRunPhase
 	StartTime time.Time
 	EndTime   time.Time
 }
-
-const (
-	// LocalRunnerTaskStatPhaseWaiting indicates that the task is waiting for its dependencies to complete.
-	LocalRunnerTaskStatPhaseWaiting = "WAITING"
-	// LocalRunnerTaskStatPhaseRunning indicates that the task is currently running.
-	LocalRunnerTaskStatPhaseRunning = "RUNNING"
-	// LocalRunnerTaskStatPhaseStopped indicates that the task has finished its execution (either completed or failed).
-	LocalRunnerTaskStatPhaseStopped = "STOPPED"
-)
 
 // NewLocalRunner creates and initializes a new LocalRunner for a given TaskSet.
 // The TaskSet must be runnable (i.e., topologically sorted with all dependencies met).
@@ -78,41 +100,39 @@ func NewLocalRunner(taskSet *TaskSet) (*LocalRunner, error) {
 	if !taskSet.runnable {
 		return nil, fmt.Errorf("given taskset must be runnable")
 	}
-	taskStatuses := []*LocalRunnerTaskStat{}
+	taskRunStatuses := make(map[string]TaskRunStatus, len(taskSet.tasks))
 	taskWaiters := typedmap.NewTypedMap()
-	remainingDependents := make(map[string]int)
-	taskByRefID := make(map[string]UntypedTask)
+	remainingDependentsByImplID := make(map[string]int)
+	taskByImplID := make(map[string]UntypedTask)
 	for _, t := range taskSet.tasks {
-		refID := t.UntypedID().GetUntypedReference().ReferenceIDString()
-		taskByRefID[refID] = t
-		remainingDependents[refID] = 0
+		taskImplID := t.UntypedID().String()
+		taskByImplID[taskImplID] = t
+		remainingDependentsByImplID[taskImplID] = 0
 	}
 	for _, t := range taskSet.tasks {
-		for _, dep := range dedupeTaskReferences(t.Dependencies()) {
-			remainingDependents[dep.ReferenceIDString()]++
+		for _, edge := range taskSet.IncomingEdges(t.UntypedID().String()) {
+			remainingDependentsByImplID[edge.SourceImplID]++
 		}
 	}
-	for i := 0; i < len(taskSet.tasks); i++ {
-		taskStatuses = append(taskStatuses, &LocalRunnerTaskStat{
-			Phase: LocalRunnerTaskStatPhaseWaiting,
-		})
+	for _, t := range taskSet.tasks {
+		taskRunStatuses[t.UntypedID().String()] = TaskRunStatus{Phase: TaskRunPhaseWaiting}
 
 		// lock the task waiter until its task finished.
 		waiter := sync.RWMutex{}
 		waiter.Lock()
-		typedmap.Set(taskWaiters, waiterKeyForTask(taskSet.tasks[i].UntypedID().GetUntypedReference()), &waiter)
+		typedmap.Set(taskWaiters, waiterKeyForImplID(t.UntypedID().String()), &waiter)
 	}
 	return &LocalRunner{
-		resolvedTaskSet:     taskSet,
-		started:             false,
-		resultVariable:      nil,
-		resultError:         nil,
-		stopped:             false,
-		taskWaiters:         taskWaiters.AsReadonly(),
-		waiter:              make(chan interface{}),
-		taskStatuses:        taskStatuses,
-		remainingDependents: remainingDependents,
-		taskByRefID:         taskByRefID,
+		resolvedTaskSet:             taskSet,
+		started:                     false,
+		resultVariable:              nil,
+		resultError:                 nil,
+		stopped:                     false,
+		taskWaiters:                 taskWaiters.AsReadonly(),
+		waiter:                      make(chan interface{}),
+		taskRunStatuses:             taskRunStatuses,
+		remainingDependentsByImplID: remainingDependentsByImplID,
+		taskByImplID:                taskByImplID,
 	}, nil
 }
 
@@ -188,11 +208,40 @@ func (r *LocalRunner) Result() (*typedmap.ReadonlyTypedMap, error) {
 	return r.resultVariable.AsReadonly(), nil
 }
 
-// TaskStatuses returns a slice of LocalRunnerTaskStat, providing the status
-// and execution details for each task in the runner's task set.
-// The order of statuses corresponds to the order of tasks in the resolved TaskSet.
-func (r *LocalRunner) TaskStatuses() []*LocalRunnerTaskStat {
-	return r.taskStatuses
+// TaskRunStatuses returns a snapshot of the execution state of every task in the runner's task set,
+// keyed by the task implementation ID. The returned map and its values are detached from the
+// runner, so they are safe to read while the task graph keeps running.
+func (r *LocalRunner) TaskRunStatuses() map[string]TaskRunStatus {
+	r.taskRunStatusesMu.RLock()
+	defer r.taskRunStatusesMu.RUnlock()
+	return maps.Clone(r.taskRunStatuses)
+}
+
+// markTaskRunning records that a task started its execution.
+func (r *LocalRunner) markTaskRunning(taskImplID string, startTime time.Time) {
+	r.taskRunStatusesMu.Lock()
+	defer r.taskRunStatusesMu.Unlock()
+	r.taskRunStatuses[taskImplID] = TaskRunStatus{
+		Phase:     TaskRunPhaseRunning,
+		StartTime: startTime,
+	}
+}
+
+// markTaskFinished records that a task finished its execution. The resulting phase is derived
+// from whether the task returned an error.
+func (r *LocalRunner) markTaskFinished(taskImplID string, endTime time.Time, taskErr error) {
+	r.taskRunStatusesMu.Lock()
+	defer r.taskRunStatusesMu.Unlock()
+	phase := TaskRunPhaseDone
+	if taskErr != nil {
+		phase = TaskRunPhaseError
+	}
+	previous := r.taskRunStatuses[taskImplID]
+	r.taskRunStatuses[taskImplID] = TaskRunStatus{
+		Phase:     phase,
+		StartTime: previous.StartTime,
+		EndTime:   endTime,
+	}
 }
 
 // runTask manages the entire lifecycle of a single task within the graph.
@@ -200,19 +249,21 @@ func (r *LocalRunner) TaskStatuses() []*LocalRunnerTaskStat {
 // records its status, and stores its result or handles any errors.
 func (r *LocalRunner) runTask(graphCtx context.Context, taskDefIndex int) error {
 	task := r.resolvedTaskSet.GetAll()[taskDefIndex]
-	taskStatus := r.taskStatuses[taskDefIndex]
+	taskImplID := task.UntypedID().String()
 	taskCtx := khictx.WithValue(graphCtx, core_contract.TaskImplementationIDContextKey, task.UntypedID())
+	taskCtx = khictx.WithValue(taskCtx, core_contract.TaskDependenciesContextKey, task.Dependencies())
+	taskCtx = khictx.WithValue(taskCtx, core_contract.TaskGraphMetadataContextKey, core_contract.TaskGraphMetadata(r.resolvedTaskSet))
 
-	// Wait for completions of all dependencies.
-	for _, dependency := range task.Dependencies() {
-		err := r.waitForDependency(taskCtx, dependency)
+	// Wait for completions of all concrete incoming edges.
+	for _, edge := range r.resolvedTaskSet.IncomingEdges(task.UntypedID().String()) {
+		err := r.waitForDependency(taskCtx, edge.SourceImplID)
 		if err != nil {
 			return err
 		}
 	}
 
-	taskStatus.StartTime = time.Now()
-	taskStatus.Phase = LocalRunnerTaskStatPhaseRunning
+	startTime := time.Now()
+	r.markTaskRunning(taskImplID, startTime)
 	slog.DebugContext(taskCtx, fmt.Sprintf("task %s started", task.UntypedID()))
 
 	// Run the task with interceptors
@@ -231,10 +282,9 @@ func (r *LocalRunner) runTask(graphCtx context.Context, taskDefIndex int) error 
 
 	result, err := runFunc(taskCtx)
 
-	taskStatus.Phase = LocalRunnerTaskStatPhaseStopped
-	taskStatus.EndTime = time.Now()
-	slog.DebugContext(taskCtx, fmt.Sprintf("task %s stopped after %f sec", task.UntypedID(), taskStatus.EndTime.Sub(taskStatus.StartTime).Seconds()))
-	taskStatus.Error = err
+	endTime := time.Now()
+	r.markTaskFinished(taskImplID, endTime, err)
+	slog.DebugContext(taskCtx, fmt.Sprintf("task %s stopped after %f sec", task.UntypedID(), endTime.Sub(startTime).Seconds()))
 	if taskCtx.Err() == context.Canceled {
 		return context.Canceled
 	}
@@ -245,12 +295,13 @@ func (r *LocalRunner) runTask(graphCtx context.Context, taskDefIndex int) error 
 		return detailedErr
 	}
 
-	// store the task result to result map
-	typedmap.Set(r.resultVariable, typedmap.NewTypedKey[any](task.UntypedID().GetUntypedReference().ReferenceIDString()), result)
+	refID := task.UntypedID().ReferenceIDString()
+	typedmap.Set(r.resultVariable, typedmap.NewTypedKey[any](refID), result)
+
+	// Inverted cleanup order: clean up intermediate results BEFORE releasing waiter locks to prevent peak heap bloat.
+	r.cleanupCompletedTaskResults(task)
 
 	r.releaseTaskWaiter(task.UntypedID())
-
-	r.cleanupCompletedTaskResults(task)
 
 	return nil
 }
@@ -263,30 +314,33 @@ func (r *LocalRunner) isTaskResultRetained(task UntypedTask) bool {
 
 // cleanupCompletedTaskResults deletes task results whose dependent tasks have all finished and are not marked for retention.
 func (r *LocalRunner) cleanupCompletedTaskResults(completedTask UntypedTask) {
-	completedRefID := completedTask.UntypedID().GetUntypedReference().ReferenceIDString()
+	completedImplID := completedTask.UntypedID().String()
+	completedRefID := completedTask.UntypedID().ReferenceIDString()
 
 	r.remainingDependentsMu.Lock()
 	defer r.remainingDependentsMu.Unlock()
 
 	// Check if the completed task itself has no dependents and should be released immediately.
-	rem := r.remainingDependents[completedRefID]
-	if rem == 0 && !r.isTaskResultRetained(completedTask) {
+	remainingDependents := r.remainingDependentsByImplID[completedImplID]
+	if remainingDependents == 0 && !r.isTaskResultRetained(completedTask) {
 		typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](completedRefID))
 	}
 
-	// Decrement remaining dependents count for each dependency.
-	deps := dedupeTaskReferences(completedTask.Dependencies())
-	for _, dep := range deps {
-		depRefID := dep.ReferenceIDString()
-		r.remainingDependents[depRefID]--
-		remDep := r.remainingDependents[depRefID]
+	// Decrement remaining dependents count for each incoming edge.
+	for _, edge := range r.resolvedTaskSet.IncomingEdges(completedTask.UntypedID().String()) {
+		producerImplID := edge.SourceImplID
+		r.remainingDependentsByImplID[producerImplID]--
+		if r.remainingDependentsByImplID[producerImplID] > 0 {
+			continue
+		}
 
-		if remDep == 0 {
-			if depTask, found := r.taskByRefID[depRefID]; found {
-				if !r.isTaskResultRetained(depTask) {
-					typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](depRefID))
-				}
-			}
+		producerTask, found := r.taskByImplID[producerImplID]
+		if !found {
+			continue
+		}
+		producerRefID := producerTask.UntypedID().ReferenceIDString()
+		if !r.isTaskResultRetained(producerTask) {
+			typedmap.Delete(r.resultVariable, typedmap.NewTypedKey[any](producerRefID))
 		}
 	}
 }
@@ -304,16 +358,16 @@ func (r *LocalRunner) wrapWithTaskError(err error, task UntypedTask) error {
 
 // waitForDependency blocks until a specified dependency task has completed.
 // It handles context cancellation, allowing the wait to be interrupted.
-func (r *LocalRunner) waitForDependency(ctx context.Context, task taskid.UntypedTaskReference) error {
+func (r *LocalRunner) waitForDependency(ctx context.Context, taskImplID string) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-func() chan struct{} {
 		ch := make(chan struct{})
 		go func() {
-			waiter, found := typedmap.Get(r.taskWaiters, waiterKeyForTask(task))
+			waiter, found := typedmap.Get(r.taskWaiters, waiterKeyForImplID(taskImplID))
 			if !found {
-				slog.ErrorContext(ctx, fmt.Sprintf("unreachable error. Task waiter lock not found for the key `%s`", task.String()))
+				slog.ErrorContext(ctx, fmt.Sprintf("unreachable error. Task waiter lock not found for the key `%s`", taskImplID))
 				close(ch)
 				return
 			}
@@ -328,10 +382,10 @@ func (r *LocalRunner) waitForDependency(ctx context.Context, task taskid.Untyped
 
 // releaseTaskWaiter releases a waiter for a single task as complete by unlocking its corresponding
 // RWMutex. This allows any tasks that depend on it to proceed.
-func (r *LocalRunner) releaseTaskWaiter(task taskid.UntypedTaskImplementationID) error {
-	lock, found := typedmap.Get(r.taskWaiters, waiterKeyForTask(task.GetUntypedReference()))
+func (r *LocalRunner) releaseTaskWaiter(taskImplID taskid.UntypedTaskImplementationID) error {
+	lock, found := typedmap.Get(r.taskWaiters, waiterKeyForImplID(taskImplID.String()))
 	if !found {
-		return fmt.Errorf("unreachable error. Task waiter lock not found for the key `%s`", task.GetUntypedReference().String())
+		return fmt.Errorf("unreachable error. Task waiter lock not found for the key `%s`", taskImplID.String())
 	}
 	if !lock.TryRLock() {
 		lock.Unlock()
@@ -350,8 +404,7 @@ func (r *LocalRunner) finalizeExecution() {
 	}
 }
 
-// waiterKeyForTask is a helper function that creates a type-safe
-// key for accessing the waiter RWMutex in the taskWaiters map.
-func waiterKeyForTask(taskID taskid.UntypedTaskReference) typedmap.TypedKey[*sync.RWMutex] {
-	return typedmap.NewTypedKey[*sync.RWMutex](taskID.ReferenceIDString())
+// waiterKeyForImplID creates a type-safe key for accessing the waiter RWMutex in the taskWaiters map.
+func waiterKeyForImplID(taskImplID string) typedmap.TypedKey[*sync.RWMutex] {
+	return typedmap.NewTypedKey[*sync.RWMutex](taskImplID)
 }

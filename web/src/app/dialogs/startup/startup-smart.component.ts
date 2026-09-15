@@ -23,6 +23,7 @@ import {
 import { interval, startWith, firstValueFrom, Observable } from 'rxjs';
 import { InspectionDataLoaderService } from 'src/app/services/data-loader.service';
 import { openInspectionMetadataDialog } from '../inspection-metadata/inspection-metadata.component';
+import { openInspectionRunTaskGraphDialog } from 'src/app/dialogs/inspection-run-task-graph/inspection-run-task-graph-smart.component';
 import {
   openNewInspectionDialog,
   hasDryRunErrors,
@@ -224,6 +225,14 @@ export class StartupDialogSmartComponent {
   protected showMetadata(id: string) {
     this.backendAPI.getInspectionMetadata(id).subscribe((metadata) => {
       openInspectionMetadataDialog(this.dialog, metadata);
+    });
+  }
+
+  protected showRunTaskGraph(id: string) {
+    const item = this.vmTasks().find((task) => task.id === id);
+    openInspectionRunTaskGraphDialog(this.dialog, {
+      inspectionId: id,
+      inspectionName: item?.label ?? id,
     });
   }
 

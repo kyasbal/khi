@@ -16,6 +16,7 @@ package tracing
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
@@ -102,7 +103,13 @@ type mockTaskRunner struct {
 	interceptors []coretask.Interceptor
 }
 
+var _ coretask.TaskRunner = (*mockTaskRunner)(nil)
+
 func (m *mockTaskRunner) Run(ctx context.Context) error {
+	return nil
+}
+
+func (m *mockTaskRunner) TaskRunStatuses() map[string]coretask.TaskRunStatus {
 	return nil
 }
 
@@ -126,11 +133,17 @@ type mockTask struct {
 	id taskid.UntypedTaskImplementationID
 }
 
+var _ coretask.UntypedTask = (*mockTask)(nil)
+
+func (m *mockTask) ResultType() reflect.Type {
+	return reflect.TypeFor[any]()
+}
+
 func (m *mockTask) UntypedID() taskid.UntypedTaskImplementationID {
 	return m.id
 }
 
-func (m *mockTask) Dependencies() []taskid.UntypedTaskReference {
+func (m *mockTask) Dependencies() []coretask.Dependency {
 	return nil
 }
 

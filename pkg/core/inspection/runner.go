@@ -35,6 +35,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logger"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	apiv1 "github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1"
 	"github.com/GoogleCloudPlatform/khi/pkg/lifecycle"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/id"
 	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
@@ -60,6 +61,8 @@ type InspectionTaskRunner struct {
 	availableTasks         *coretask.TaskSet
 	featureTasks           *coretask.TaskSet
 	runner                 coretask.TaskRunner
+	runTaskGraph           *coretask.TaskSet
+	runTaskGraphDAGInfo    *apiv1.TaskDAGInfo
 	runnerLock             sync.Mutex
 	metadata               *typedmap.ReadonlyTypedMap
 	cancel                 context.CancelFunc
@@ -184,7 +187,7 @@ func (i *InspectionTaskRunner) SetInspectionType(inspectionType string) error {
 
 	filteredTasks := []coretask.UntypedTask{}
 	for _, task := range i.inspectionServer.RootTaskSet.GetAll() {
-		if isTaskCompatible(task, currentType) {
+		if compatible, _ := EvaluateTaskCompatibility(task, currentType); compatible {
 			filteredTasks = append(filteredTasks, task)
 		}
 	}
@@ -203,18 +206,6 @@ func (i *InspectionTaskRunner) SetInspectionType(inspectionType string) error {
 	}
 	i.currentInspectionType = inspectionType
 	return i.SetFeatureList(defaultFeatureIds)
-}
-
-func isTaskCompatible(task coretask.UntypedTask, inspectionType *InspectionType) bool {
-	labels := task.Labels()
-
-	// 1. Evaluate with Label Selector if present.
-	if selector, ok := typedmap.Get(labels, inspectioncore_contract.LabelKeyInspectionTypeLabelSelector); ok {
-		return selector.Match(inspectionType.Labels)
-	}
-
-	// 2. Defaults to true if no selector is defined (global tasks).
-	return true
 }
 
 // deduplicateTasksByPriority retains only the task with the highest LabelKeyTaskSelectionPriority for each TaskRef, sorted by reference name.
@@ -361,6 +352,7 @@ func (i *InspectionTaskRunner) Run(ctx context.Context, req *inspectioncore_cont
 		return err
 	}
 	i.runner = runner
+	i.runTaskGraph = runnableTaskGraph
 
 	runCtx, err := i.withRunContextValues(context.WithoutCancel(ctx), i.runner, inspectioncore_contract.TaskModeRun, req.Values)
 	if err != nil {
@@ -571,16 +563,64 @@ func (i *InspectionTaskRunner) ResolveTaskGraph() (*coretask.TaskSet, error) {
 	if i.featureTasks == nil || i.availableTasks == nil {
 		return nil, fmt.Errorf("this runner is not ready for resolving graph")
 	}
-	resolver := coretask.DefaultTaskGraphResolver
-	resolvedTask, err := resolver.Resolve(i.featureTasks.GetAll(), i.availableTasks.GetAll())
+	featureSet := coretask.Subset(i.availableTasks, filter.NewEnabledFilter(inspectioncore_contract.LabelKeyInspectionFeatureFlag, false))
+	var disabledTasks []coretask.UntypedTask
+	for _, t := range featureSet.GetAll() {
+		if !i.enabledFeatures[t.UntypedID().String()] {
+			disabledTasks = append(disabledTasks, t)
+		}
+	}
+	return coretask.ResolveGraph(i.featureTasks.GetAll(), i.availableTasks.GetAll(), disabledTasks)
+}
+
+// ErrRunTaskGraphNotStarted is returned when an inspection has no observable task graph execution yet.
+// Inspections restored from a KHI file also fall into this case because they never execute a task graph.
+var ErrRunTaskGraphNotStarted = errors.New("inspection has no observable task graph execution")
+
+// RunTaskGraphSnapshot is a point-in-time view of the task graph executed by an inspection run.
+type RunTaskGraphSnapshot struct {
+	// DAG is the API representation of the task graph passed to the task runner when the run started.
+	// The topology never changes during a run, so it is built once and shared by every snapshot.
+	DAG *apiv1.TaskDAGInfo
+	// TaskRunStatuses holds the execution state of each task keyed by the task implementation ID.
+	TaskRunStatuses map[string]coretask.TaskRunStatus
+	// IsRunFinished reports whether the whole inspection run has already completed.
+	IsRunFinished bool
+}
+
+// runTaskGraphView returns the runner and the memoized DAG of the current run under runnerLock.
+func (i *InspectionTaskRunner) runTaskGraphView() (coretask.TaskRunner, *apiv1.TaskDAGInfo, error) {
+	i.runnerLock.Lock()
+	defer i.runnerLock.Unlock()
+	if i.runTaskGraph == nil {
+		return nil, nil, fmt.Errorf("inspection %s: %w", i.ID, ErrRunTaskGraphNotStarted)
+	}
+	if i.runTaskGraphDAGInfo == nil {
+		i.runTaskGraphDAGInfo = buildTaskDAGInfoFromTaskSet(i.runTaskGraph)
+	}
+	return i.runner, i.runTaskGraphDAGInfo, nil
+}
+
+// TakeRunTaskGraphSnapshot returns the task graph being executed along with the latest run status of
+// each task. It returns ErrRunTaskGraphNotStarted when the inspection has no task graph execution to observe.
+func (i *InspectionTaskRunner) TakeRunTaskGraphSnapshot() (*RunTaskGraphSnapshot, error) {
+	runner, dag, err := i.runTaskGraphView()
 	if err != nil {
 		return nil, err
 	}
-	initialTaskSet, err := coretask.NewTaskSet(resolvedTask)
-	if err != nil {
-		return nil, err
+
+	isRunFinished := false
+	select {
+	case <-i.runComplete:
+		isRunFinished = true
+	default:
 	}
-	return initialTaskSet.ToRunnableTaskSet()
+
+	return &RunTaskGraphSnapshot{
+		DAG:             dag,
+		TaskRunStatuses: runner.TaskRunStatuses(),
+		IsRunFinished:   isRunFinished,
+	}, nil
 }
 
 func (i *InspectionTaskRunner) generateMetadataForDryRun(ctx context.Context, initHeader *inspectionmetadata.HeaderMetadata, taskGraph *coretask.TaskSet) *typedmap.ReadonlyTypedMap {

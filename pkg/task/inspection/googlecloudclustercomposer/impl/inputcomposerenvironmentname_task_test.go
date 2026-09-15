@@ -23,14 +23,13 @@ import (
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
 	googlecloudclustercomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 func TestInputComposerEnvironmentNameTask(t *testing.T) {
-	mockAutocompleteEnvironments := coretask.NewTask(googlecloudclustercomposer_contract.AutocompleteComposerEnvironmentIdentityTaskID, []taskid.UntypedTaskReference{}, func(ctx context.Context) (*inspectioncore_contract.AutocompleteResult[googlecloudclustercomposer_contract.ComposerEnvironmentIdentity], error) {
+	mockAutocompleteEnvironments := coretask.NewTask(googlecloudclustercomposer_contract.AutocompleteComposerEnvironmentIdentityTaskID, []coretask.Dependency{}, func(ctx context.Context) (*inspectioncore_contract.AutocompleteResult[googlecloudclustercomposer_contract.ComposerEnvironmentIdentity], error) {
 		return &inspectioncore_contract.AutocompleteResult[googlecloudclustercomposer_contract.ComposerEnvironmentIdentity]{
 			Values: []googlecloudclustercomposer_contract.ComposerEnvironmentIdentity{
 				{
@@ -47,13 +46,13 @@ func TestInputComposerEnvironmentNameTask(t *testing.T) {
 		}, nil
 	})
 
-	mockAutocompleteEmptyEnvironments := coretask.NewTask(googlecloudclustercomposer_contract.AutocompleteComposerEnvironmentIdentityTaskID, []taskid.UntypedTaskReference{}, func(ctx context.Context) (*inspectioncore_contract.AutocompleteResult[googlecloudclustercomposer_contract.ComposerEnvironmentIdentity], error) {
+	mockAutocompleteEmptyEnvironments := coretask.NewTask(googlecloudclustercomposer_contract.AutocompleteComposerEnvironmentIdentityTaskID, []coretask.Dependency{}, func(ctx context.Context) (*inspectioncore_contract.AutocompleteResult[googlecloudclustercomposer_contract.ComposerEnvironmentIdentity], error) {
 		return &inspectioncore_contract.AutocompleteResult[googlecloudclustercomposer_contract.ComposerEnvironmentIdentity]{
 			Values: []googlecloudclustercomposer_contract.ComposerEnvironmentIdentity{},
 		}, nil
 	})
 
-	mockAutocompleteErrorEnvironments := coretask.NewTask(googlecloudclustercomposer_contract.AutocompleteComposerEnvironmentIdentityTaskID, []taskid.UntypedTaskReference{}, func(ctx context.Context) (*inspectioncore_contract.AutocompleteResult[googlecloudclustercomposer_contract.ComposerEnvironmentIdentity], error) {
+	mockAutocompleteErrorEnvironments := coretask.NewTask(googlecloudclustercomposer_contract.AutocompleteComposerEnvironmentIdentityTaskID, []coretask.Dependency{}, func(ctx context.Context) (*inspectioncore_contract.AutocompleteResult[googlecloudclustercomposer_contract.ComposerEnvironmentIdentity], error) {
 		return &inspectioncore_contract.AutocompleteResult[googlecloudclustercomposer_contract.ComposerEnvironmentIdentity]{
 			Values: []googlecloudclustercomposer_contract.ComposerEnvironmentIdentity{},
 			Error:  "failed to list environments",

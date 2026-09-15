@@ -58,8 +58,8 @@ type ResourceRevisionLogToTimelineMapperTaskSetting struct {
 }
 
 // Dependencies implements commonlogk8saudit_contract.ManifestLogToTimelineMapper.
-func (r *ResourceRevisionLogToTimelineMapperTaskSetting) Dependencies() []taskid.UntypedTaskReference {
-	return []taskid.UntypedTaskReference{
+func (r *ResourceRevisionLogToTimelineMapperTaskSetting) Dependencies() []coretask.Dependency {
+	return []coretask.Dependency{
 		commonlogk8saudit_contract.InitialResourceStateProviderRef,
 	}
 }

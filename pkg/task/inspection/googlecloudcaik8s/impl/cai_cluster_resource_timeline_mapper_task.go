@@ -47,8 +47,8 @@ func (m *caiClusterResourceTimelineMapper) GroupedLogTask() taskid.TaskReference
 }
 
 // Dependencies returns additional task dependencies for timeline mapping.
-func (m *caiClusterResourceTimelineMapper) Dependencies() []taskid.UntypedTaskReference {
-	return []taskid.UntypedTaskReference{
+func (m *caiClusterResourceTimelineMapper) Dependencies() []coretask.Dependency {
+	return []coretask.Dependency{
 		googlecloudk8scommon_contract.ClusterIdentityTaskID.Ref(),
 		googlecloudcommon_contract.InputStartTimeTaskID.Ref(),
 	}

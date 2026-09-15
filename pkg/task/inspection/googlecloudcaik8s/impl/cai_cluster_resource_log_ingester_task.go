@@ -56,7 +56,7 @@ func snapshotToRawLog(idGen *id.Generator, s *googlecloudcaik8s_contract.Cluster
 // RawLogTask converts fetched cluster resource snapshots into raw logs.
 var RawLogTask = inspectiontaskbase.NewInspectionTask(
 	googlecloudcaik8s_contract.RawLogTaskID,
-	[]taskid.UntypedTaskReference{
+	[]coretask.Dependency{
 		googlecloudcaik8s_contract.ClusterResourceFetcherTaskID.Ref(),
 	},
 	func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) ([]*log.Log, error) {
@@ -89,8 +89,8 @@ func (i *caiClusterResourceLogIngester) RawLogTask() taskid.TaskReference[[]*log
 }
 
 // Dependencies returns additional task dependencies for log ingestion.
-func (i *caiClusterResourceLogIngester) Dependencies() []taskid.UntypedTaskReference {
-	return []taskid.UntypedTaskReference{}
+func (i *caiClusterResourceLogIngester) Dependencies() []coretask.Dependency {
+	return []coretask.Dependency{}
 }
 
 // ProcessLog populates the metadata into LogChangeSet.

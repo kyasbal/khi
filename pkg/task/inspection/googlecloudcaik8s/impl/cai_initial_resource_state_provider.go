@@ -93,7 +93,7 @@ func initialResourceStateKey(identity *commonlogk8saudit_contract.ResourceIdenti
 // selected, so enabling the Kubernetes audit log feature alone also renders the CAI revisions.
 var InitialResourceStateProviderTask = inspectiontaskbase.NewInspectionTask(
 	taskid.NewImplementationID(commonlogk8saudit_contract.InitialResourceStateProviderRef, "cai"),
-	[]taskid.UntypedTaskReference{
+	[]coretask.Dependency{
 		googlecloudcaik8s_contract.RawLogTaskID.Ref(),
 		googlecloudcommon_contract.InputStartTimeTaskID.Ref(),
 	},

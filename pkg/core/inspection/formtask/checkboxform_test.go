@@ -159,14 +159,14 @@ func TestCheckboxFormDefinitionBuilder(t *testing.T) {
 			formConfigurator: func(builder *CheckboxFormTaskBuilder) {},
 			requestValue:     "not-a-bool",
 			hasRequestValue:  true,
-			expectedError:    "request parameter `foo#default` was not a valid boolean in task foo#default",
+			expectedError:    "request parameter `foo` was not a valid boolean in task foo#default",
 		},
 		{
 			name:             "checkbox form with invalid parameter type",
 			formConfigurator: func(builder *CheckboxFormTaskBuilder) {},
 			requestValue:     123,
 			hasRequestValue:  true,
-			expectedError:    "request parameter `foo#default` was not given as boolean or boolean string in task foo#default",
+			expectedError:    "request parameter `foo` was not given as boolean or boolean string in task foo#default",
 		},
 	}
 

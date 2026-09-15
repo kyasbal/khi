@@ -22,7 +22,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	common_task "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
@@ -70,7 +70,7 @@ func NewCheckboxFormTaskBuilder(id taskid.TaskImplementationID[bool], priority i
 }
 
 // WithDependencies sets upstream task dependencies for this checkbox task.
-func (b *CheckboxFormTaskBuilder) WithDependencies(dependencies []taskid.UntypedTaskReference) *CheckboxFormTaskBuilder {
+func (b *CheckboxFormTaskBuilder) WithDependencies(dependencies []coretask.Dependency) *CheckboxFormTaskBuilder {
 	b.FormTaskBuilderBase.WithDependencies(dependencies)
 	return b
 }
@@ -92,11 +92,6 @@ func (b *CheckboxFormTaskBuilder) WithDefaultValue(defValue bool) *CheckboxFormT
 	return b.WithDefaultValueFunc(func(ctx context.Context) (bool, error) {
 		return defValue, nil
 	})
-}
-
-// WithDefaultValueConstant sets a constant default checked state.
-func (b *CheckboxFormTaskBuilder) WithDefaultValueConstant(defValue bool) *CheckboxFormTaskBuilder {
-	return b.WithDefaultValue(defValue)
 }
 
 // WithDefaultValueFunc sets dynamic generator for the default checked state.
@@ -125,8 +120,8 @@ func (b *CheckboxFormTaskBuilder) WithHintFunc(hintFunc CheckboxFormHintGenerato
 }
 
 // Build creates a DAG task instance from this builder definition.
-func (b *CheckboxFormTaskBuilder) Build(labelOpts ...common_task.LabelOpt) common_task.Task[bool] {
-	return common_task.NewTask(b.id, b.dependencies, func(ctx context.Context) (bool, error) {
+func (b *CheckboxFormTaskBuilder) Build(labelOpts ...coretask.LabelOpt) coretask.Task[bool] {
+	return coretask.NewTask(b.id, b.dependencies, func(ctx context.Context) (bool, error) {
 		m := khictx.MustGetValue(ctx, inspectioncore_contract.InspectionRunMetadata)
 		req := khictx.MustGetValue(ctx, inspectioncore_contract.InspectionTaskInput)
 		taskMode := khictx.MustGetValue(ctx, inspectioncore_contract.InspectionTaskMode)
@@ -153,11 +148,11 @@ func (b *CheckboxFormTaskBuilder) Build(labelOpts ...common_task.LabelOpt) commo
 			case string:
 				parsed, err := strconv.ParseBool(v)
 				if err != nil {
-					return false, fmt.Errorf("request parameter `%s` was not a valid boolean in task %s: %w", b.id, b.id, err)
+					return false, fmt.Errorf("request parameter `%s` was not a valid boolean in task %s: %w", b.id.ReferenceIDString(), b.id, err)
 				}
 				currentValue = parsed
 			default:
-				return false, fmt.Errorf("request parameter `%s` was not given as boolean or boolean string in task %s", b.id, b.id)
+				return false, fmt.Errorf("request parameter `%s` was not given as boolean or boolean string in task %s", b.id.ReferenceIDString(), b.id)
 			}
 		}
 

@@ -18,7 +18,6 @@ import (
 	"context"
 
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/k8s"
 	commonlogk8saudit_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/commonlogk8saudit/contract"
 )
@@ -26,7 +25,7 @@ import (
 // DefaultK8sResourceMergeConfigTask is the task that generates the default patch request merge config.
 var DefaultK8sResourceMergeConfigTask = coretask.NewTask(
 	commonlogk8saudit_contract.K8sResourceMergeConfigTaskID,
-	[]taskid.UntypedTaskReference{},
+	[]coretask.Dependency{},
 	func(ctx context.Context) (*k8s.K8sManifestMergeConfigRegistry, error) {
 		return k8s.GenerateDefaultMergeConfig()
 	},

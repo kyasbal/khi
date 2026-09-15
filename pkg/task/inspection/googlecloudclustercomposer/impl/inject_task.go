@@ -18,26 +18,14 @@ import (
 	"context"
 
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	googlecloudclustercomposer_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudclustercomposer/contract"
 	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
-)
-
-// ComposerEnvironmentListFetcherTask injects ComposerEnvironmentListFetcher implementation.
-var ComposerEnvironmentListFetcherTask = coretask.NewTask(
-	googlecloudclustercomposer_contract.ComposerEnvironmentListFetcherTaskID,
-	[]taskid.UntypedTaskReference{
-		googlecloudcommon_contract.APIClientFactoryTaskID.Ref(),
-	},
-	func(ctx context.Context) (googlecloudclustercomposer_contract.ComposerEnvironmentListFetcher, error) {
-		return &googlecloudclustercomposer_contract.ComposerEnvironmentListFetcherImpl{}, nil
-	},
 )
 
 // ComposerEnvironmentClusterFinderTask injects ComposerEnvironmentClusterFinder implementation.
 var ComposerEnvironmentClusterFinderTask = coretask.NewTask(
 	googlecloudclustercomposer_contract.ComposerEnvironmentClusterFinderTaskID,
-	[]taskid.UntypedTaskReference{
+	[]coretask.Dependency{
 		googlecloudcommon_contract.APIClientFactoryTaskID.Ref(),
 	},
 	func(ctx context.Context) (googlecloudclustercomposer_contract.ComposerEnvironmentClusterFinder, error) {
