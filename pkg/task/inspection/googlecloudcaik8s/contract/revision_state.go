@@ -29,4 +29,31 @@ var (
 		style.Color{R: 0.35, G: 0.55, B: 0.95, A: 1.0},
 		pb.RevisionStateStyle_REVISION_STATE_STYLE_NORMAL,
 	)
+
+	// RevisionStateGKEClusterSnapshotFromCAI indicates the GKE cluster state discovered via CAI.
+	RevisionStateGKEClusterSnapshotFromCAI = style.MustRegisterRevisionState(
+		"Cluster Snapshot (Asset Inventory)",
+		"deployed_code",
+		"The GKE cluster state discovered via Cloud Asset Inventory.",
+		style.Color{R: 0.35, G: 0.55, B: 0.95, A: 1.0},
+		pb.RevisionStateStyle_REVISION_STATE_STYLE_NORMAL,
+	)
+
+	// RevisionStateGKENodePoolSnapshotFromCAI indicates the GKE node pool state discovered via CAI.
+	RevisionStateGKENodePoolSnapshotFromCAI = style.MustRegisterRevisionState(
+		"Node Pool Snapshot (Asset Inventory)",
+		"deployed_code",
+		"The GKE node pool state discovered via Cloud Asset Inventory.",
+		style.Color{R: 0.35, G: 0.55, B: 0.95, A: 1.0},
+		pb.RevisionStateStyle_REVISION_STATE_STYLE_NORMAL,
+	)
+
+	// RevisionStateGKENodePoolExistenceUndetermined indicates the GKE node pool existence was undetermined before the first recorded snapshot.
+	RevisionStateGKENodePoolExistenceUndetermined = style.MustRegisterRevisionState(
+		"Node Pool existence is undetermined",
+		"help_outline",
+		"The node pool may have existed because the parent cluster was active, but its existence is undetermined prior to the first recorded asset snapshot.",
+		style.Color{R: 0.53, G: 0.53, B: 0.6, A: 1.0},
+		pb.RevisionStateStyle_REVISION_STATE_STYLE_PARTIAL_INFO,
+	)
 )
