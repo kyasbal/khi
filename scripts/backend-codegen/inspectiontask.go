@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 )
 
 // InspectionTaskPackage represents a Go package that defines an inspection task.
@@ -26,21 +28,11 @@ type InspectionTaskPackage struct {
 	PackageRootFolderPath string
 	// PackageImportPathBase is the base import path for the package.
 	PackageImportPathBase string
-	// PackageNamePrefix is the prefix for the package name, derived from its directory name.
+	// PackageNamePrefix is the prefix for the package name, derived from its directory path.
 	PackageNamePrefix string
 }
 
-// ContractPackageName returns the package name for the contract part of the task.
-func (p *InspectionTaskPackage) ContractPackageName() string {
-	return fmt.Sprintf("%s_contract", p.PackageNamePrefix)
-}
-
-// ContractPackageImportPath returns the full Go import path for the contract package.
-func (p *InspectionTaskPackage) ContractPackageImportPath() string {
-	return fmt.Sprintf("%s/contract", p.PackageImportPathBase)
-}
-
-// ImplPackageName returns the package name for the implementation part of the task.
+// ImplPackageName returns the package alias name for the implementation part of the task.
 func (p *InspectionTaskPackage) ImplPackageName() string {
 	return fmt.Sprintf("%s_impl", p.PackageNamePrefix)
 }
@@ -59,8 +51,6 @@ var DoNotRegisterPackagePaths = map[string]struct{}{
 // InspectionTaskPackageFinder is responsible for finding inspection task packages
 // within the project structure.
 type InspectionTaskPackageFinder struct {
-	// PackageRootFilePath is the root directory of the project's Go packages (e.g., "pkg").
-	PackageRootFilePath string
 	// InspectionTaskPackageRootFilePath is the specific directory where inspection task packages reside.
 	InspectionTaskPackageRootFilePath string
 	// RepositoryPackageName is the Go module name for the repository (e.g., "github.com/GoogleCloudPlatform/khi").
@@ -77,45 +67,46 @@ func (f *InspectionTaskPackageFinder) FindAllRequireRegistration() ([]Inspection
 
 	var requiredPackages []InspectionTaskPackage
 	for _, pkg := range allPackages {
-		// All packages having `pkg/task/inspection/<package_name>/impl` folder require registration.
-		implPath := filepath.Join(pkg.PackageRootFolderPath, "impl")
-		info, err := os.Stat(implPath)
-		switch {
-		case err == nil && info.IsDir():
-			if _, ok := DoNotRegisterPackagePaths[pkg.PackageRootFolderPath]; !ok {
-				requiredPackages = append(requiredPackages, pkg)
-			}
-		case err == nil && !info.IsDir():
-			return nil, fmt.Errorf("expected %s is a directory name but it's not a dir", implPath)
-		case os.IsNotExist(err):
-			continue
-		default:
-			return nil, err
+		if _, ok := DoNotRegisterPackagePaths[pkg.PackageRootFolderPath]; !ok {
+			requiredPackages = append(requiredPackages, pkg)
 		}
 	}
 	return requiredPackages, nil
 }
 
-// findAllInspectionTaskPackages returns a list of all packages that are direct children
-// of the inspection task package root directory.
+// findAllInspectionTaskPackages recursively walks the inspection task package root directory
+// and returns all packages that contain an 'impl' subdirectory.
 func (f *InspectionTaskPackageFinder) findAllInspectionTaskPackages() ([]InspectionTaskPackage, error) {
-	entries, err := os.ReadDir(f.InspectionTaskPackageRootFilePath)
+	var packages []InspectionTaskPackage
+	err := filepath.WalkDir(f.InspectionTaskPackageRootFilePath, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() || path == f.InspectionTaskPackageRootFilePath {
+			return nil
+		}
+		if d.Name() == "impl" {
+			pkgRootPath := filepath.ToSlash(filepath.Dir(path))
+			relPath, err := filepath.Rel(f.InspectionTaskPackageRootFilePath, pkgRootPath)
+			if err != nil {
+				return err
+			}
+			aliasPrefix := strings.ReplaceAll(filepath.ToSlash(relPath), "/", "_")
+			packages = append(packages, InspectionTaskPackage{
+				PackageRootFolderPath: pkgRootPath,
+				PackageImportPathBase: filepath.ToSlash(filepath.Join(f.RepositoryPackageName, pkgRootPath)),
+				PackageNamePrefix:     aliasPrefix,
+			})
+			return filepath.SkipDir
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	var packages []InspectionTaskPackage
-	for _, entry := range entries {
-		if entry.IsDir() {
-			dirName := entry.Name()
-			pkgRootPath := filepath.Join(f.InspectionTaskPackageRootFilePath, dirName)
-			// The package name prefix is the same name of its directory name
-			packages = append(packages, InspectionTaskPackage{
-				PackageRootFolderPath: pkgRootPath,
-				PackageImportPathBase: filepath.ToSlash(filepath.Join(f.RepositoryPackageName, pkgRootPath)),
-				PackageNamePrefix:     dirName,
-			})
-		}
-	}
+	slices.SortFunc(packages, func(a, b InspectionTaskPackage) int {
+		return strings.Compare(a.PackageImportPathBase, b.PackageImportPathBase)
+	})
 	return packages, nil
 }
