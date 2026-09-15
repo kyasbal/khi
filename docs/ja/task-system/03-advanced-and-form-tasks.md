@@ -120,21 +120,21 @@ KHI では、`inspectiontaskbase.NewInventoryTaskBuilder` を使用して、情�
 // 1. Inventory ビルダを初期化
 var containerInventoryBuilder = inspectiontaskbase.NewInventoryTaskBuilder(ContainerIDInventoryTaskID)
 
-// 2-A. ノードログからのコンテナID発見タスク (ノードログパーサー等から依存された場合のみグラフに含まれる)
+// 2-A. ノードログパーサーなどから依存された場合のみグラフに含まれる、ノードログからのコンテナID発見タスク
 var NodeLogContainerIDDiscoveryTask = containerInventoryBuilder.DiscoveryTask(
     NodeLogContainerIDDiscoveryTaskID,
     []taskid.UntypedTaskReference{NodeLogParserTaskID.Ref()},
-    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (commonlogk8saudit_contract.ContainerIDToContainerIdentity, error) {
+    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (commonlogk8saudit_contract.ContainerIDToContainerIdentity, error) {
         logs := coretask.GetTaskResult(ctx, NodeLogParserTaskID.Ref())
         return extractContainersFromNodeLogs(logs), nil
     },
 )
 
-// 2-B. 監査ログからのコンテナID発見タスク (監査ログパーサー等から依存された場合のみグラフに含まれる)
+// 2-B. 監査ログパーサーなどから依存された場合のみグラフに含まれる、監査ログからのコンテナID発見タスク
 var AuditLogContainerIDDiscoveryTask = containerInventoryBuilder.DiscoveryTask(
     AuditLogContainerIDDiscoveryTaskID,
     []taskid.UntypedTaskReference{AuditLogParserTaskID.Ref()},
-    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (commonlogk8saudit_contract.ContainerIDToContainerIdentity, error) {
+    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (commonlogk8saudit_contract.ContainerIDToContainerIdentity, error) {
         logs := coretask.GetTaskResult(ctx, AuditLogParserTaskID.Ref())
         return extractContainersFromAuditLogs(logs), nil
     },
@@ -286,70 +286,86 @@ var ClusterIdentityTask = inspectiontaskbase.NewInspectionTask(
 
 ## 5. 低レベルタスクユーティリティ
 
-### 5.1 動的な進捗報告 (`NewProgressReportableInspectionTask`)
+### 5.1 `progress` パッケージによる動的な進捗報告
 
-ログフェッチや大容量ファイルの解析など、タスクの進捗状況を動的にフロントエンドへ報告したい場合は、`NewProgressReportableInspectionTask` を使用してタスクを作成します。
-このタスクはロジック内に `TaskProgressMetadata` を受け取り、実行の進み具合に応じて具体的なパーセンテージや不定状態をフロントエンドへ通知できます。
+KHI のすべてのタスクには、タスクランナーのインターセプタによって実行時の `context.Context` に進捗メタデータが自動的に付与されます。`github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress` パッケージを使用することで、タスクの実行中に進捗状況をフロントエンドへ動的に報告できます。
 
-#### 1. 定量的な進捗を定期更新する例 (`progressutil.NewProgressUpdater`)
-
-処理総量（件数やバイト数）が既知である場合、`progressutil.NewProgressUpdater` を利用してタイマー間隔（例: 1秒ごと）で進行度とステータスメッセージを定期反映させる実装が標準的です:
+デフォルトでは、進捗ラベルとして短縮されたタスク ID が表示されます。プログレスバーに分かりやすい表示タイトルを設定するには、タスク定義時に `progress.WithTitle("...")` をラベルオプションとして指定します:
 
 ```go
-var HeavyProcessingTask = inspectiontaskbase.NewProgressReportableInspectionTask(
+var HeavyProcessingTask = inspectiontaskbase.NewInspectionTask(
     HeavyProcessingTaskID,
     []taskid.UntypedTaskReference{SourceLogsTaskID.Ref()},
-    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (ResultType, error) {
+    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (ResultType, error) {
+        // タスクの実装...
+    },
+    progress.WithTitle("Analyze Node Logs"),
+)
+```
+
+#### 1. `progress.NewTracker` と `progress.ForEach` による定量的な進捗追跡
+
+処理対象の総件数が事前に判明している場合は、`progress.NewTracker` または `progress.ForEach` を使用します。トラッカーは UI 更新頻度を自動的に間引くことで過剰な描画負荷を防ぎ、進捗率と残り時間の予測を算出します:
+
+```go
+var HeavyProcessingTask = inspectiontaskbase.NewInspectionTask(
+    HeavyProcessingTaskID,
+    []taskid.UntypedTaskReference{SourceLogsTaskID.Ref()},
+    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (ResultType, error) {
         if taskMode != inspectioncore_contract.TaskModeRun {
             return ResultType{}, nil
         }
 
         logs := coretask.GetTaskResult(ctx, SourceLogsTaskID.Ref())
-        total := len(logs)
-        processed := 0
 
-        // 1秒ごとに progress を更新する ProgressUpdater を生成
-        updater := progressutil.NewProgressUpdater(progress, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
-            tp.Percentage = float32(processed) / float32(total)
-            tp.Message = fmt.Sprintf("Processed %d/%d logs", processed, total)
-        })
-
-        updater.Start(ctx)
-        defer updater.Done()
+        // ログの総件数と単位ラベルを指定してトラッカーを生成
+        tracker := progress.NewTracker(ctx, len(logs), progress.WithUnit("logs"))
+        defer tracker.Done()
 
         for _, l := range logs {
-            // 重い解析・処理の実行...
-            processed++
+            // 各ログエントリの処理...
+            processLog(l)
+            tracker.Inc()
         }
 
         return result, nil
     },
+    progress.WithTitle("Process Logs"),
 )
 ```
 
-#### 2. 処理総量が不明な際の不定進捗の報告 (`MarkIndeterminate()`)
-
-チャンネルからの動的処理など、タスク完了までの処理総量が事前に判明しない場合は、`progress.MarkIndeterminate()` を呼び出すことで、フロントエンドのプログレスバーを不定モード（インデターミネイト表示）としてマークできます:
+スライスに対する単純な反復処理では、`progress.ForEach` を使用することで、トラッカーの生成・カウント加算・終了処理を自動化できます:
 
 ```go
-var UnknownLengthTask = inspectiontaskbase.NewProgressReportableInspectionTask(
+err := progress.ForEach(ctx, logs, func(i int, l *log.Log) error {
+    return processLog(l)
+}, progress.WithUnit("logs"))
+```
+
+#### 2. `progress.ReportIndeterminate` と `progress.Report` による不定進捗または任意の進捗率の報告
+
+チャネルからのストリーミング処理や外部 API の応答待機など、完了までの総作業量が事前に判明しない場合は、`progress.ReportIndeterminate` を呼び出してステータスメッセージ付きの不定進捗を表示するか、`progress.Report` を用いて `0.0` から `1.0` の進捗率を直接指定します:
+
+```go
+var UnknownLengthTask = inspectiontaskbase.NewInspectionTask(
     UnknownLengthTaskID,
     []taskid.UntypedTaskReference{SomeDependencyTaskID.Ref()},
-    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (ResultType, error) {
+    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (ResultType, error) {
         if taskMode != inspectioncore_contract.TaskModeRun {
             return ResultType{}, nil
         }
 
-        // 総量が判別できないため不定進捗として宣言
-        progress.MarkIndeterminate()
+        // ステータスメッセージ付きで不定進捗を報告
+        progress.ReportIndeterminate(ctx, "Fetching resources from API...")
 
-        // 動的に発見されるアイテム等の処理...
+        // 動的に発見されるアイテムの処理...
         for item := range dynamicItemsChannel {
             process(item)
         }
 
         return result, nil
     },
+    progress.WithTitle("Fetch Dynamic Resources"),
 )
 ```
 

@@ -25,7 +25,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progressutil"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
@@ -38,12 +38,12 @@ var (
 	pathAuditFileReaderStageTimestamp = structured.CompileFieldPath("stageTimestamp")
 )
 
-var AuditLogFileReaderTask = inspectiontaskbase.NewProgressReportableInspectionTask(
+var AuditLogFileReaderTask = inspectiontaskbase.NewInspectionTask(
 	ossk8s.AuditLogFileReaderTaskID,
 	[]coretask.Dependency{
 		ossk8s.InputAuditLogFilesFormTaskID.Ref(),
 	},
-	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, tp *inspectionmetadata.TaskProgressMetadata) ([]*log.Log, error) {
+	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) ([]*log.Log, error) {
 		if taskMode == inspectioncore.TaskModeDryRun {
 			return []*log.Log{}, nil
 		}
@@ -67,7 +67,7 @@ var AuditLogFileReaderTask = inspectiontaskbase.NewProgressReportableInspectionT
 		blockStore := structured.NewDefaultLazyJSONBlockStore()
 		builder := blockStore.NewBuilder(100, 256*1024)
 
-		progressutil.ReportProgressFromArraySync(tp, logLines, func(i int, line string) error {
+		err = progress.ForEach(ctx, logLines, func(i int, line string) error {
 			trimmed := strings.TrimSpace(line)
 			if trimmed == "" {
 				return nil
@@ -85,7 +85,10 @@ var AuditLogFileReaderTask = inspectiontaskbase.NewProgressReportableInspectionT
 			l := log.NewLogWithTimestamp(idGen, reader, ts)
 			logs = append(logs, l)
 			return nil
-		})
+		}, progress.WithUnit("lines"))
+		if err != nil {
+			return nil, err
+		}
 		builder.Flush()
 
 		slices.SortFunc(logs, func(a, b *log.Log) int {

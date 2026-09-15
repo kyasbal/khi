@@ -23,29 +23,30 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore"
 )
 
 type taskProgressReporter struct {
-	progress *inspectionmetadata.TaskProgressMetadata
+	progressMeta *inspectionmetadata.TaskProgressMetadata
 }
 
-func (t *taskProgressReporter) ReportProgress(percentage float32, status string) {
-	t.progress.Update(percentage, status)
+func (t *taskProgressReporter) ReportProgress(ratio float32, message string) {
+	t.progressMeta.Update(ratio, message)
 }
 
 // SerializeTask is a subsequent task that must be included in the task graph after tasks like TimelineMapper and LogIngester.
 // It retrieves the Builder instance populated by its preceding tasks and serializes its accumulated contents into the final KHI file.
-var SerializeTask = inspectiontaskbase.NewProgressReportableInspectionTask(
+var SerializeTask = inspectiontaskbase.NewInspectionTask(
 	inspectioncore.SerializerTaskID,
 	[]coretask.Dependency{
 		JobModeCommandTaskID.Ref(),
 		inspectiontaskbase.TagLogIngester.Ref(),
 		inspectiontaskbase.TagTimelineMapper.Ref(),
 	},
-	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (*inspectioncore.FileSystemStore, error) {
+	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (*inspectioncore.FileSystemStore, error) {
 
 		if taskMode == inspectioncore.TaskModeDryRun {
 			slog.DebugContext(ctx, "Skipping because this is in dryrun mode")
@@ -71,7 +72,7 @@ var SerializeTask = inspectiontaskbase.NewProgressReportableInspectionTask(
 		store := inspectioncore.NewFileSystemInspectionResultRepository(filepath.Join(ioConfig.DataDestination, inspectionID+".khi"))
 
 		// 3. Build KHI v6 format and flush remaining chunks
-		if err := builder.Build(&taskProgressReporter{progress: progress}); err != nil {
+		if err := builder.Build(&taskProgressReporter{progressMeta: progress.FromContext(ctx)}); err != nil {
 			return nil, err
 		}
 

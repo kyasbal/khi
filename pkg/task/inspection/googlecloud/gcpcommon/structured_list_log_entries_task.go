@@ -29,6 +29,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
@@ -75,10 +76,10 @@ func NewStructuredListLogEntriesTask(taskSetting StructuredListLogEntriesTaskSet
 	)
 	queryName := taskSetting.QueryName()
 
-	return inspectiontaskbase.NewProgressReportableInspectionTask(
+	return inspectiontaskbase.NewInspectionTask(
 		taskID,
 		dependencies,
-		func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) ([]*log.Log, error) {
+		func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) ([]*log.Log, error) {
 			startTime := coretask.GetTaskResult(ctx, InputStartTimeTaskID.Ref())
 			endTime := coretask.GetTaskResult(ctx, InputEndTimeTaskID.Ref())
 			resourceNames, err := handleResourceNames(ctx, taskID, &resourceNamesSettingAdapter{taskSetting: taskSetting})
@@ -117,9 +118,10 @@ func NewStructuredListLogEntriesTask(taskSetting StructuredListLogEntriesTaskSet
 			}
 
 			logFetcher := coretask.GetTaskResult(ctx, LoggingFetcherTaskID.Ref())
-			return fetchLogsForStructuredQueries(ctx, taskID.String(), logFetcher, groups, queries, startTime, endTime, queryName, timePartitionCount, progress)
+			return fetchLogsForStructuredQueries(ctx, taskID.String(), logFetcher, groups, queries, startTime, endTime, queryName, timePartitionCount)
 		},
 		coretask.WithLabelValue(RequestOptionalInputResourceNameTaskLabel, taskID.ReferenceIDString()),
+		progress.WithTitle(fmt.Sprintf("Fetch %s", queryName)),
 	)
 }
 
@@ -267,12 +269,12 @@ func fetchLogsForStructuredQueries(
 	startTime, endTime time.Time,
 	queryName string,
 	timePartitionCount int,
-	progress *inspectionmetadata.TaskProgressMetadata,
 ) ([]*log.Log, error) {
 	groups = divideGroupByMaximumResourceName(groups, maxResourceNameCountPerRequest)
 	progressReportableLogFetcher := NewTimePartitioningProgressReportableLogFetcher(logFetcher, 500*time.Millisecond, timePartitionCount, runtime.GOMAXPROCS(0))
 
-	taskStartTime := time.Now()
+	tracker := progress.NewRatioTracker(ctx, progress.WithUnit("logs"))
+	defer tracker.Done()
 	totalLogsFetched := 0
 	allLogSlices := make([][]*log.Log, 0, len(queries)*len(groups))
 	for queryIndex, q := range queries {
@@ -285,8 +287,8 @@ func fetchLogsForStructuredQueries(
 			var wg sync.WaitGroup
 			var progressChan = make(chan LogFetchProgress)
 			listCallIndex := queryIndex*len(groups) + groupIndex
-			allListCalls := len(queries) * len(groups)
-			monitorProgress(ctx, &wg, progressChan, progress, taskStartTime, totalLogsFetched, listCallIndex, allListCalls)
+			totalListCalls := len(queries) * len(groups)
+			monitorProgress(ctx, &wg, progressChan, tracker, totalLogsFetched, listCallIndex, totalListCalls)
 			logs, err := progressReportableLogFetcher.FetchLogsWithProgress(progressChan, ctx, startTime, endTime, filterString, group.container, group.resourceNames)
 			wg.Wait()
 

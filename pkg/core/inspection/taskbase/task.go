@@ -16,54 +16,18 @@ package inspectiontaskbase
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
-	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore"
 )
 
-// ProgressReportableInspectionTaskFunc is a type for inspection task functions with progress reporting capabilities.
-type ProgressReportableInspectionTaskFunc[T any] = func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (T, error)
-
-// InspectionTaskFunc is a type for basic inspection task functions.
+// InspectionTaskFunc is a type for inspection task functions.
 type InspectionTaskFunc[T any] = func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (T, error)
 
-// NewProgressReportableInspectionTask generates a task with progress reporting capabilities.
-// This task can report its progress during execution through the TaskProgress object.
-// Use NewInspectionTask for tasks that complete immediately.
-//
-// Parameters:
-//   - taskId: The unique identifier for the task.
-//   - dependencies: A list of task references that this task depends on.
-//   - taskFunc: The function to execute, which includes progress reporting.
-//   - labelOpts: Optional labels to apply to the task.
-//
-// Returns:
-//
-//	A task with progress reporting capabilities.
-func NewProgressReportableInspectionTask[T any](taskId taskid.TaskImplementationID[T], dependencies []coretask.Dependency, taskFunc ProgressReportableInspectionTaskFunc[T], labelOpts ...coretask.LabelOpt) coretask.Task[T] {
-
-	return NewInspectionTask(taskId, dependencies, func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (T, error) {
-		metadataSet := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
-		progress, found := typedmap.Get(metadataSet, inspectionmetadata.ProgressMetadataKey)
-		if !found {
-			return *new(T), fmt.Errorf("progress metadata not found")
-		}
-		defer progress.ResolveTask(taskId.String())
-		taskProgress, err := progress.GetOrCreateTaskProgress(taskId.String())
-		if err != nil {
-			return *new(T), err
-		}
-		return taskFunc(ctx, taskMode, taskProgress)
-	}, append([]coretask.LabelOpt{&inspectioncore.ProgressReportableTaskLabelOptImpl{}}, labelOpts...)...)
-}
-
-// NewInspectionTask creates a basic inspection task.
-// The task is executed based on the task mode retrieved from the context.
+// NewInspectionTask creates an inspection task.
+// The task is executed based on the task mode retrieved from the context and reports progress via context.
 //
 // Parameters:
 //   - taskId: The unique identifier for the task.
@@ -78,6 +42,5 @@ func NewInspectionTask[T any](taskId taskid.TaskImplementationID[T], dependencie
 	return coretask.NewTask(taskId, dependencies, func(ctx context.Context) (T, error) {
 		taskMode := khictx.MustGetValue(ctx, inspectioncore.InspectionTaskMode)
 		return taskFunc(ctx, taskMode)
-
 	}, labelOpts...)
 }

@@ -124,7 +124,7 @@ var containerInventoryBuilder = inspectiontaskbase.NewInventoryTaskBuilder(Conta
 var NodeLogContainerIDDiscoveryTask = containerInventoryBuilder.DiscoveryTask(
     NodeLogContainerIDDiscoveryTaskID,
     []taskid.UntypedTaskReference{NodeLogParserTaskID.Ref()},
-    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (commonlogk8saudit_contract.ContainerIDToContainerIdentity, error) {
+    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (commonlogk8saudit_contract.ContainerIDToContainerIdentity, error) {
         logs := coretask.GetTaskResult(ctx, NodeLogParserTaskID.Ref())
         return extractContainersFromNodeLogs(logs), nil
     },
@@ -134,7 +134,7 @@ var NodeLogContainerIDDiscoveryTask = containerInventoryBuilder.DiscoveryTask(
 var AuditLogContainerIDDiscoveryTask = containerInventoryBuilder.DiscoveryTask(
     AuditLogContainerIDDiscoveryTaskID,
     []taskid.UntypedTaskReference{AuditLogParserTaskID.Ref()},
-    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (commonlogk8saudit_contract.ContainerIDToContainerIdentity, error) {
+    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (commonlogk8saudit_contract.ContainerIDToContainerIdentity, error) {
         logs := coretask.GetTaskResult(ctx, AuditLogParserTaskID.Ref())
         return extractContainersFromAuditLogs(logs), nil
     },
@@ -286,62 +286,77 @@ var ClusterIdentityTask = inspectiontaskbase.NewInspectionTask(
 
 ## 5. Low-Level Task Utilities
 
-### 5.1 Dynamic Progress Reporting (`NewProgressReportableInspectionTask`)
+### 5.1 Dynamic Progress Reporting (`progress` Package)
 
-When you want to dynamically report task progress to the frontend, such as during log fetching or large file parsing, create your task using `NewProgressReportableInspectionTask`.
-This task receives `TaskProgressMetadata` in its logic and can notify the frontend of specific completion percentages or indeterminate states as execution proceeds.
+Every task in KHI automatically has progress metadata attached to its execution `context.Context` by the task runner interceptor. You can report task progress dynamically to the frontend during execution using the `progress` package (`github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress`).
 
-#### 1. Example of Periodically Updating Quantitative Progress (`progressutil.NewProgressUpdater`)
-
-When the total work amount (item count or byte size) is known, use `progressutil.NewProgressUpdater` to periodically update the progress ratio and status message at regular timer intervals (e.g., every second):
+By default, the runner displays a shortened task ID as the progress label. To provide a human-readable display title for the task in the progress bar, attach `progress.WithTitle("...")` to the task labels when defining the task:
 
 ```go
-var HeavyProcessingTask = inspectiontaskbase.NewProgressReportableInspectionTask(
+var HeavyProcessingTask = inspectiontaskbase.NewInspectionTask(
     HeavyProcessingTaskID,
     []taskid.UntypedTaskReference{SourceLogsTaskID.Ref()},
-    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (ResultType, error) {
+    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (ResultType, error) {
+        // Task implementation...
+    },
+    progress.WithTitle("Analyze Node Logs"),
+)
+```
+
+#### 1. Tracking Progress for a Known Number of Items (`progress.NewTracker` and `progress.ForEach`)
+
+When the total number of items is known in advance, use `progress.NewTracker` or `progress.ForEach`. The tracker automatically throttles UI updates to avoid excessive rendering overhead, calculates the completion ratio, and estimates the remaining time (ETA):
+
+```go
+var HeavyProcessingTask = inspectiontaskbase.NewInspectionTask(
+    HeavyProcessingTaskID,
+    []taskid.UntypedTaskReference{SourceLogsTaskID.Ref()},
+    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (ResultType, error) {
         if taskMode != inspectioncore_contract.TaskModeRun {
             return ResultType{}, nil
         }
 
         logs := coretask.GetTaskResult(ctx, SourceLogsTaskID.Ref())
-        total := len(logs)
-        processed := 0
 
-        // Create a ProgressUpdater that updates progress every second
-        updater := progressutil.NewProgressUpdater(progress, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
-            tp.Percentage = float32(processed) / float32(total)
-            tp.Message = fmt.Sprintf("Processed %d/%d logs", processed, total)
-        })
-
-        updater.Start(ctx)
-        defer updater.Done()
+        // Create a tracker for the total number of logs with a unit label
+        tracker := progress.NewTracker(ctx, len(logs), progress.WithUnit("logs"))
+        defer tracker.Done()
 
         for _, l := range logs {
-            // Execute heavy analysis or processing...
-            processed++
+            // Process each log entry...
+            processLog(l)
+            tracker.Inc()
         }
 
         return result, nil
     },
+    progress.WithTitle("Process Logs"),
 )
 ```
 
-#### 2. Reporting Indeterminate Progress When Total Work Amount is Unknown (`MarkIndeterminate()`)
-
-When the total work amount before task completion cannot be known in advance, such as when processing dynamic items from a channel, call `progress.MarkIndeterminate()` to mark the frontend progress bar as indeterminate:
+For simple slice iterations, you can use `progress.ForEach` to handle tracker creation, incrementing, and cleanup automatically:
 
 ```go
-var UnknownLengthTask = inspectiontaskbase.NewProgressReportableInspectionTask(
+err := progress.ForEach(ctx, logs, func(i int, l *log.Log) error {
+    return processLog(l)
+}, progress.WithUnit("logs"))
+```
+
+#### 2. Reporting Indeterminate Progress or Custom Ratios (`progress.ReportIndeterminate` and `progress.Report`)
+
+When the total amount of work cannot be determined in advance (such as streaming items from a channel or waiting for an external API response), use `progress.ReportIndeterminate` to show an indeterminate progress bar with a status message, or `progress.Report` to set an explicit completion ratio (`0.0` to `1.0`):
+
+```go
+var UnknownLengthTask = inspectiontaskbase.NewInspectionTask(
     UnknownLengthTaskID,
     []taskid.UntypedTaskReference{SomeDependencyTaskID.Ref()},
-    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (ResultType, error) {
+    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (ResultType, error) {
         if taskMode != inspectioncore_contract.TaskModeRun {
             return ResultType{}, nil
         }
 
-        // Declare indeterminate progress because the total amount is unknown
-        progress.MarkIndeterminate()
+        // Report indeterminate progress with a status message
+        progress.ReportIndeterminate(ctx, "Fetching resources from API...")
 
         // Process items discovered dynamically...
         for item := range dynamicItemsChannel {
@@ -350,6 +365,7 @@ var UnknownLengthTask = inspectiontaskbase.NewProgressReportableInspectionTask(
 
         return result, nil
     },
+    progress.WithTitle("Fetch Dynamic Resources"),
 )
 ```
 

@@ -19,14 +19,11 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
-	"sync/atomic"
-	"time"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khierrors"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/patternfinder"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logutil"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progressutil"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
@@ -49,27 +46,19 @@ var ContainerdLogFilterTask = newParserTypeFilterTask(k8snode.ContainerdLogFilte
 var ContainerdLogGroupTask = newNodeAndComponentNameGrouperTask(k8snode.ContainerdLogGroupTaskID, k8snode.ContainerdLogFilterTaskID.Ref())
 
 // ContainerIDDiscoveryTask discovers mappings between container IDs and GKE pod containers.
-var ContainerIDDiscoveryTask = inspectiontaskbase.NewProgressReportableInspectionTask(k8snode.ContainerIDDiscoveryTaskID,
+var ContainerIDDiscoveryTask = inspectiontaskbase.NewInspectionTask(k8snode.ContainerIDDiscoveryTaskID,
 	[]coretask.Dependency{
 		k8snode.ContainerdLogFilterTaskID.Ref(),
 	},
-	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (k8saudit.ContainerIDToContainerIdentity, error) {
+	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (k8saudit.ContainerIDToContainerIdentity, error) {
 		if taskMode == inspectioncore.TaskModeDryRun {
 			return nil, nil
 		}
 
 		logs := coretask.GetTaskResult(ctx, k8snode.ContainerdLogFilterTaskID.Ref())
 
-		doneLogCount := atomic.Int32{}
-		updator := progressutil.NewProgressUpdator(progress, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
-			current := doneLogCount.Load()
-			if len(logs) > 0 {
-				tp.Percentage = float32(current) / float32(len(logs))
-			}
-			tp.Message = fmt.Sprintf("%d/%d", current, len(logs))
-		})
-		updator.Start(ctx)
-		defer updator.Done()
+		tracker := progress.NewTracker(ctx, len(logs), progress.WithUnit("logs"))
+		defer tracker.Done()
 
 		result := k8saudit.ContainerIDToContainerIdentity{}
 		logChan := make(chan *log.Log)
@@ -86,7 +75,7 @@ var ContainerIDDiscoveryTask = inspectiontaskbase.NewProgressReportableInspectio
 							return nil
 						}
 						processContainerIDDiscoveryForLog(ctx, l, containerIdentitiesChan)
-						doneLogCount.Add(1)
+						tracker.Inc()
 					}
 				}
 			})
@@ -126,26 +115,18 @@ var ContainerIDDiscoveryTask = inspectiontaskbase.NewProgressReportableInspectio
 )
 
 // PodSandboxIDDiscoveryTask discovers mappings between pod sandbox IDs and GKE pods.
-var PodSandboxIDDiscoveryTask = inspectiontaskbase.NewProgressReportableInspectionTask(k8snode.PodSandboxIDDiscoveryTaskID,
+var PodSandboxIDDiscoveryTask = inspectiontaskbase.NewInspectionTask(k8snode.PodSandboxIDDiscoveryTaskID,
 	[]coretask.Dependency{
 		k8snode.ContainerdLogFilterTaskID.Ref(),
 	},
-	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (patternfinder.PatternFinder[*k8snode.PodSandboxIDInfo], error) {
+	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (patternfinder.PatternFinder[*k8snode.PodSandboxIDInfo], error) {
 		if taskMode == inspectioncore.TaskModeDryRun {
 			return nil, nil
 		}
 		logs := coretask.GetTaskResult(ctx, k8snode.ContainerdLogFilterTaskID.Ref())
 
-		doneLogCount := atomic.Int32{}
-		updator := progressutil.NewProgressUpdator(progress, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
-			current := doneLogCount.Load()
-			if len(logs) > 0 {
-				tp.Percentage = float32(current) / float32(len(logs))
-			}
-			tp.Message = fmt.Sprintf("%d/%d", current, len(logs))
-		})
-		updator.Start(ctx)
-		defer updator.Done()
+		tracker := progress.NewTracker(ctx, len(logs), progress.WithUnit("logs"))
+		defer tracker.Done()
 
 		logChan := make(chan *log.Log)
 		errGrp, childCtx := errgroup.WithContext(ctx)
@@ -161,7 +142,7 @@ var PodSandboxIDDiscoveryTask = inspectiontaskbase.NewProgressReportableInspecti
 							return nil
 						}
 						processPodSandboxIDDiscoveryForLog(ctx, l, podSandboxIDFinder)
-						doneLogCount.Add(1)
+						tracker.Inc()
 					}
 				}
 			})

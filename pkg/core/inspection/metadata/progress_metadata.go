@@ -15,6 +15,7 @@
 package inspectionmetadata
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -37,57 +38,123 @@ const (
 )
 
 // TaskProgressMetadata represents the progress of a single task within an inspection.
-// It includes an ID, a human-readable label, a status message, and completion percentage.
 type TaskProgressMetadata struct {
-	Id            string  `json:"id"`
-	Label         string  `json:"label"`
-	Message       string  `json:"message"`
-	Percentage    float32 `json:"percentage"`
-	Indeterminate bool    `json:"indeterminate"`
+	snapshot TaskProgressSnapshot
+	noop     bool
+	lock     sync.RWMutex
 }
 
-// NewTaskProgressMetadata creates and initializes a new TaskProgress object with the given ID.
+var _ json.Marshaler = (*TaskProgressMetadata)(nil)
+
+// NewTaskProgressMetadata creates and initializes a new TaskProgressMetadata object with the given ID.
 func NewTaskProgressMetadata(id string) *TaskProgressMetadata {
 	return &TaskProgressMetadata{
-		Id:            id,
-		Indeterminate: false,
-		Percentage:    0,
-		Message:       "",
-		Label:         id,
+		snapshot: TaskProgressSnapshot{
+			ID:    id,
+			Label: id,
+		},
 	}
 }
 
-// Update updates fields from percentage and message
-func (tp *TaskProgressMetadata) Update(percentage float32, message string) {
-	tp.Percentage = percentage
-	tp.Message = message
-	tp.Indeterminate = false
+// NewNoopTaskProgressMetadata creates an immutable no-op TaskProgressMetadata instance that discards all updates.
+func NewNoopTaskProgressMetadata() *TaskProgressMetadata {
+	return &TaskProgressMetadata{
+		snapshot: TaskProgressSnapshot{
+			ID:    "noop",
+			Label: "noop",
+		},
+		noop: true,
+	}
 }
 
-// MarkIndeterminate updates TaskProgress field to be indeterminate mode
-func (tp *TaskProgressMetadata) MarkIndeterminate() {
-	tp.Indeterminate = true
-	tp.Percentage = 0
+// ID returns the task ID associated with this progress metadata.
+func (tp *TaskProgressMetadata) ID() string {
+	tp.lock.RLock()
+	defer tp.lock.RUnlock()
+	return tp.snapshot.ID
+}
+
+// Update updates fields from completion ratio (0.0 to 1.0) and message.
+func (tp *TaskProgressMetadata) Update(ratio float32, message string) {
+	if tp.noop {
+		return
+	}
+	tp.lock.Lock()
+	defer tp.lock.Unlock()
+	tp.snapshot.Ratio = ratio
+	tp.snapshot.Message = message
+	tp.snapshot.Indeterminate = false
+}
+
+// UpdateIndeterminate marks the task progress as indeterminate and updates the status message.
+func (tp *TaskProgressMetadata) UpdateIndeterminate(message string) {
+	if tp.noop {
+		return
+	}
+	tp.lock.Lock()
+	defer tp.lock.Unlock()
+	tp.snapshot.Indeterminate = true
+	tp.snapshot.Ratio = 0
+	tp.snapshot.Message = message
+}
+
+// SetLabel updates the human-readable label of the task progress.
+func (tp *TaskProgressMetadata) SetLabel(label string) {
+	if tp.noop {
+		return
+	}
+	tp.lock.Lock()
+	defer tp.lock.Unlock()
+	tp.snapshot.Label = label
+}
+
+// TaskProgressSnapshot represents an immutable, point-in-time snapshot of TaskProgressMetadata without mutex locks.
+type TaskProgressSnapshot struct {
+	ID            string  `json:"id"`
+	Label         string  `json:"label"`
+	Message       string  `json:"message"`
+	Ratio         float32 `json:"percentage"`
+	Indeterminate bool    `json:"indeterminate"`
+}
+
+// Snapshot returns a thread-safe value copy of TaskProgressMetadata.
+func (tp *TaskProgressMetadata) Snapshot() TaskProgressSnapshot {
+	tp.lock.RLock()
+	defer tp.lock.RUnlock()
+	return tp.snapshot
+}
+
+// MarshalJSON implements json.Marshaler in a thread-safe manner.
+func (tp *TaskProgressMetadata) MarshalJSON() ([]byte, error) {
+	return json.Marshal(tp.Snapshot())
 }
 
 // Progress aggregates the progress of all tasks in an inspection run.
 // It tracks the overall phase, total progress, and the progress of individual active tasks.
 type Progress struct {
-	Phase             TaskProgressPhase       `json:"phase"`
-	TotalProgress     *TaskProgressMetadata   `json:"totalProgress"`
-	TaskProgresses    []*TaskProgressMetadata `json:"progresses"`
-	totalTaskCount    int                     `json:"-"`
-	resolvedTaskCount int                     `json:"-"`
-	lock              sync.Mutex              `json:"-"`
+	phase             TaskProgressPhase
+	totalProgress     *TaskProgressMetadata
+	taskProgresses    []*TaskProgressMetadata
+	totalTaskCount    int
+	resolvedTaskCount int
+	lock              sync.Mutex
+}
+
+var _ json.Marshaler = (*Progress)(nil)
+
+// ProgressSnapshot represents an immutable, point-in-time snapshot of Progress.
+type ProgressSnapshot struct {
+	Phase          TaskProgressPhase      `json:"phase"`
+	TotalProgress  *TaskProgressSnapshot  `json:"totalProgress"`
+	TaskProgresses []TaskProgressSnapshot `json:"progresses"`
 }
 
 // NewProgress creates and initializes a new Progress object.
 func NewProgress() *Progress {
 	return &Progress{
-		Phase:             TaskPhaseRunning,
-		TaskProgresses:    make([]*TaskProgressMetadata, 0),
-		TotalProgress:     NewTaskProgressMetadata("Total"),
-		lock:              sync.Mutex{},
+		phase:             TaskPhaseRunning,
+		taskProgresses:    make([]*TaskProgressMetadata, 0),
+		totalProgress:     NewTaskProgressMetadata("Total"),
 		resolvedTaskCount: 0,
 		totalTaskCount:    0,
 	}
@@ -105,9 +172,36 @@ func (p *Progress) ToSerializable() interface{} {
 	return p
 }
 
+// Snapshot returns a thread-safe point-in-time copy of Progress.
+func (p *Progress) Snapshot() ProgressSnapshot {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	progresses := make([]TaskProgressSnapshot, len(p.taskProgresses))
+	for i, tp := range p.taskProgresses {
+		progresses[i] = tp.Snapshot()
+	}
+	var total *TaskProgressSnapshot
+	if p.totalProgress != nil {
+		snap := p.totalProgress.Snapshot()
+		total = &snap
+	}
+	return ProgressSnapshot{
+		Phase:          p.phase,
+		TotalProgress:  total,
+		TaskProgresses: progresses,
+	}
+}
+
+// MarshalJSON implements json.Marshaler in a thread-safe manner.
+func (p *Progress) MarshalJSON() ([]byte, error) {
+	return json.Marshal(p.Snapshot())
+}
+
 // SetTotalTaskCount sets the total number of tasks that will be tracked.
-// This is used to calculate the overall progress percentage.
+// This is used to calculate the overall progress completion ratio.
 func (p *Progress) SetTotalTaskCount(count int) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
 	p.totalTaskCount = count
 	p.updateTotalTaskProgress()
 }
@@ -118,16 +212,16 @@ func (p *Progress) SetTotalTaskCount(count int) {
 func (p *Progress) GetOrCreateTaskProgress(id string) (*TaskProgressMetadata, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	if p.Phase != TaskPhaseRunning {
-		return nil, fmt.Errorf("the current progress phase is not RUNNING but %s", p.Phase)
+	if p.phase != TaskPhaseRunning {
+		return nil, fmt.Errorf("the current progress phase is not RUNNING but %s", p.phase)
 	}
-	for _, progress := range p.TaskProgresses {
-		if progress.Id == id {
+	for _, progress := range p.taskProgresses {
+		if progress.ID() == id {
 			return progress, nil
 		}
 	}
 	taskProgress := NewTaskProgressMetadata(id)
-	p.TaskProgresses = append(p.TaskProgresses, taskProgress)
+	p.taskProgresses = append(p.taskProgresses, taskProgress)
 	return taskProgress, nil
 }
 
@@ -137,16 +231,16 @@ func (p *Progress) GetOrCreateTaskProgress(id string) (*TaskProgressMetadata, er
 func (p *Progress) ResolveTask(id string) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	if p.Phase != TaskPhaseRunning {
-		return fmt.Errorf("the current progress phase is not RUNNING but %s", p.Phase)
+	if p.phase != TaskPhaseRunning {
+		return fmt.Errorf("the current progress phase is not RUNNING but %s", p.phase)
 	}
 	newTaskProgress := make([]*TaskProgressMetadata, 0)
-	for _, progress := range p.TaskProgresses {
-		if progress.Id != id {
+	for _, progress := range p.taskProgresses {
+		if progress.ID() != id {
 			newTaskProgress = append(newTaskProgress, progress)
 		}
 	}
-	p.TaskProgresses = newTaskProgress
+	p.taskProgresses = newTaskProgress
 	p.resolvedTaskCount += 1
 	p.updateTotalTaskProgress()
 	return nil
@@ -158,12 +252,12 @@ func (p *Progress) ResolveTask(id string) error {
 func (p *Progress) MarkDone() error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	if p.Phase != TaskPhaseRunning {
-		return fmt.Errorf("the current progress phase is not RUNNING but %s", p.Phase)
+	if p.phase != TaskPhaseRunning {
+		return fmt.Errorf("the current progress phase is not RUNNING but %s", p.phase)
 	}
-	p.Phase = TaskPhaseDone
+	p.phase = TaskPhaseDone
 	p.resolvedTaskCount = p.totalTaskCount
-	p.TaskProgresses = make([]*TaskProgressMetadata, 0)
+	p.taskProgresses = make([]*TaskProgressMetadata, 0)
 	p.updateTotalTaskProgress()
 	return nil
 }
@@ -174,11 +268,11 @@ func (p *Progress) MarkDone() error {
 func (p *Progress) MarkCancelled() error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	if p.Phase != TaskPhaseRunning {
-		return fmt.Errorf("the current progress phase is not RUNNING but %s", p.Phase)
+	if p.phase != TaskPhaseRunning {
+		return fmt.Errorf("the current progress phase is not RUNNING but %s", p.phase)
 	}
-	p.Phase = TaskPhaseCancelled
-	p.TaskProgresses = make([]*TaskProgressMetadata, 0)
+	p.phase = TaskPhaseCancelled
+	p.taskProgresses = make([]*TaskProgressMetadata, 0)
 	return nil
 }
 
@@ -188,25 +282,25 @@ func (p *Progress) MarkCancelled() error {
 func (p *Progress) MarkError() error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	if p.Phase != TaskPhaseRunning {
-		return fmt.Errorf("the current progress phase is not RUNNING but %s", p.Phase)
+	if p.phase != TaskPhaseRunning {
+		return fmt.Errorf("the current progress phase is not RUNNING but %s", p.phase)
 	}
-	p.Phase = TaskPhaseError
-	p.TaskProgresses = make([]*TaskProgressMetadata, 0)
+	p.phase = TaskPhaseError
+	p.taskProgresses = make([]*TaskProgressMetadata, 0)
 	return nil
 }
 
 func (p *Progress) updateTotalTaskProgress() {
 	if p.totalTaskCount <= 0 {
-		if p.Phase == TaskPhaseDone {
-			p.TotalProgress.Message = "Complete"
-			p.TotalProgress.Percentage = 1
+		if p.phase == TaskPhaseDone {
+			p.totalProgress.Update(1, "Complete")
 		} else {
-			p.TotalProgress.Message = ""
-			p.TotalProgress.Percentage = 0
+			p.totalProgress.Update(0, "")
 		}
 		return
 	}
-	p.TotalProgress.Message = fmt.Sprintf("%d of %d tasks complete", p.resolvedTaskCount, p.totalTaskCount)
-	p.TotalProgress.Percentage = float32(p.resolvedTaskCount) / float32(p.totalTaskCount)
+	p.totalProgress.Update(
+		float32(p.resolvedTaskCount)/float32(p.totalTaskCount),
+		fmt.Sprintf("%d of %d tasks complete", p.resolvedTaskCount, p.totalTaskCount),
+	)
 }

@@ -18,13 +18,10 @@ import (
 	"context"
 	"fmt"
 	"runtime"
-	"sync/atomic"
-	"time"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/worker"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progressutil"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
@@ -46,7 +43,7 @@ func NewLogFilterTask(tid taskid.TaskImplementationID[[]*log.Log], sourceLogs ta
 // containing only the logs that satisfy the filter function, with extra task dependencies.
 func NewLogFilterTaskWithDependencies(tid taskid.TaskImplementationID[[]*log.Log], sourceLogs taskid.TaskReference[[]*log.Log], extraDependencies []coretask.Dependency, logFilter LogFilterFunc) coretask.Task[[]*log.Log] {
 	dependencies := append([]coretask.Dependency{sourceLogs}, extraDependencies...)
-	return NewProgressReportableInspectionTask(tid, dependencies, func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) ([]*log.Log, error) {
+	return NewInspectionTask(tid, dependencies, func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) ([]*log.Log, error) {
 		if taskMode != inspectioncore.TaskModeRun {
 			return []*log.Log{}, nil
 		}
@@ -61,15 +58,10 @@ func NewLogFilterTaskWithDependencies(tid taskid.TaskImplementationID[[]*log.Log
 			concurrency = 1
 		}
 
-		var completed atomic.Int32
 		workerResults := make([][]*log.Log, concurrency)
 
-		progressUpdator := progressutil.NewProgressUpdator(progress, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
-			current := int(completed.Load())
-			tp.Percentage = float32(current) / float32(len(logs))
-			tp.Message = fmt.Sprintf("%d/%d", current, len(logs))
-		})
-		progressUpdator.Start(ctx)
+		tracker := progress.NewTracker(ctx, len(logs), progress.WithUnit("logs"))
+		defer tracker.Done()
 
 		pool := worker.NewPool(concurrency)
 		for c := 0; c < concurrency; c++ {
@@ -85,14 +77,12 @@ func NewLogFilterTaskWithDependencies(tid taskid.TaskImplementationID[[]*log.Log
 					if logFilter(ctx, logs[i]) {
 						workerFiltered = append(workerFiltered, logs[i])
 					}
-					completed.Add(1)
+					tracker.Inc()
 				}
 				workerResults[c] = workerFiltered
 			})
 		}
 		pool.Wait()
-
-		progressUpdator.Done()
 
 		if err := ctx.Err(); err != nil {
 			return nil, err

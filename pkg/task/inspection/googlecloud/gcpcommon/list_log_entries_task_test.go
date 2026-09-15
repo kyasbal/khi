@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -30,6 +29,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
@@ -534,159 +534,19 @@ func TestDivideGroupByMaximumResourceName(t *testing.T) {
 	}
 }
 
-func TestFormatETA(t *testing.T) {
-	t.Parallel()
-
-	testCases := []struct {
-		name  string
-		input time.Duration
-		want  string
-	}{
-		{
-			name:  "negative duration",
-			input: -5 * time.Second,
-			want:  "0s",
-		},
-		{
-			name:  "zero duration",
-			input: 0,
-			want:  "0s",
-		},
-		{
-			name:  "seconds under one minute",
-			input: 45 * time.Second,
-			want:  "45s",
-		},
-		{
-			name:  "rounding seconds",
-			input: 14*time.Second + 600*time.Millisecond,
-			want:  "15s",
-		},
-		{
-			name:  "exact one minute",
-			input: 60 * time.Second,
-			want:  "1m00s",
-		},
-		{
-			name:  "minutes and single-digit seconds",
-			input: 65 * time.Second,
-			want:  "1m05s",
-		},
-		{
-			name:  "minutes and double-digit seconds",
-			input: 95 * time.Second,
-			want:  "1m35s",
-		},
-		{
-			name:  "exact one hour",
-			input: 3600 * time.Second,
-			want:  "1h00m",
-		},
-		{
-			name:  "hours and single-digit minutes",
-			input: 3600*time.Second + 5*time.Minute,
-			want:  "1h05m",
-		},
-		{
-			name:  "hours and double-digit minutes",
-			input: 2*time.Hour + 30*time.Minute,
-			want:  "2h30m",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			got := formatETA(tc.input)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Errorf("formatETA() mismatch (-want +got):\n%s", diff)
-			}
-		})
-	}
-}
-
-func TestCalculateETA(t *testing.T) {
-	t.Parallel()
-
-	testCases := []struct {
-		name          string
-		elapsed       time.Duration
-		completeRatio float32
-		want          string
-	}{
-		{
-			name:          "warmup elapsed under 2 seconds",
-			elapsed:       1500 * time.Millisecond,
-			completeRatio: 0.5,
-			want:          "--",
-		},
-		{
-			name:          "warmup complete ratio too small",
-			elapsed:       10 * time.Second,
-			completeRatio: 0.003,
-			want:          "--",
-		},
-		{
-			name:          "zero complete ratio",
-			elapsed:       10 * time.Second,
-			completeRatio: 0,
-			want:          "--",
-		},
-		{
-			name:          "complete ratio 100%",
-			elapsed:       10 * time.Second,
-			completeRatio: 1.0,
-			want:          "0s",
-		},
-		{
-			name:          "complete ratio over 100%",
-			elapsed:       10 * time.Second,
-			completeRatio: 1.2,
-			want:          "0s",
-		},
-		{
-			name:          "normal remaining seconds",
-			elapsed:       10 * time.Second,
-			completeRatio: 0.2, // 10s * (0.8 / 0.2) = 40s
-			want:          "40s",
-		},
-		{
-			name:          "normal remaining minutes",
-			elapsed:       30 * time.Second,
-			completeRatio: 0.25, // 30s * (0.75 / 0.25) = 90s = 1m30s
-			want:          "1m30s",
-		},
-		{
-			name:          "normal remaining hours",
-			elapsed:       10 * time.Minute,
-			completeRatio: 0.1, // 10m * (0.9 / 0.1) = 90m = 1h30m
-			want:          "1h30m",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			got := calculateETA(tc.elapsed, tc.completeRatio)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Errorf("calculateETA() mismatch (-want +got):\n%s", diff)
-			}
-		})
-	}
-}
-
 func TestMonitorProgress(t *testing.T) {
 	t.Parallel()
 
 	progressDest := inspectionmetadata.NewTaskProgressMetadata("test-task")
+	ctx := progress.WithContext(t.Context(), progressDest)
+	tracker := progress.NewRatioTracker(ctx, progress.WithUnit("logs"))
 	source := make(chan LogFetchProgress)
-	taskStartTime := time.Now().Add(-10 * time.Second)
 	baseLogCount := 100
 	listCallIndex := 0
-	allListCalls := 2
+	totalListCalls := 2
 
 	var wg sync.WaitGroup
-	monitorProgress(t.Context(), &wg, source, progressDest, taskStartTime, baseLogCount, listCallIndex, allListCalls)
+	monitorProgress(ctx, &wg, source, tracker, baseLogCount, listCallIndex, totalListCalls)
 
 	source <- LogFetchProgress{
 		LogCount: 50,
@@ -695,19 +555,14 @@ func TestMonitorProgress(t *testing.T) {
 	close(source)
 	wg.Wait()
 
+	snap := progressDest.Snapshot()
 	wantRatio := float32(0+0.5) / float32(2) // 0.25
-	if diff := cmp.Diff(wantRatio, progressDest.Percentage); diff != "" {
-		t.Errorf("progressDest.Percentage mismatch (-want +got):\n%s", diff)
+	if snap.Ratio != wantRatio {
+		t.Errorf("snap.Ratio = %v, want %v", snap.Ratio, wantRatio)
 	}
 
-	// 100 base + 50 current = 150 logs. Elapsed ~10s -> ~15 lps. Ratio 0.25 -> ETA ~30s.
-	if !strings.HasPrefix(progressDest.Message, "150 logs fetched(") {
-		t.Errorf("expected message to start with '150 logs fetched(', got %q", progressDest.Message)
-	}
-	if !strings.Contains(progressDest.Message, ", ETA ") {
-		t.Errorf("expected message to contain ', ETA ', got %q", progressDest.Message)
-	}
-	if !strings.HasSuffix(progressDest.Message, ")[1/2]") {
-		t.Errorf("expected message to end with ')[1/2]', got %q", progressDest.Message)
+	wantMsg := "[1/2] 150 logs"
+	if snap.Message != wantMsg {
+		t.Errorf("snap.Message = %q, want %q", snap.Message, wantMsg)
 	}
 }

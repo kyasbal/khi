@@ -21,12 +21,10 @@ import (
 	"runtime"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/worker"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progressutil"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
@@ -76,7 +74,7 @@ func NewGroupedLogIngesterTask[T any](taskID taskid.TaskImplementationID[struct{
 	allLabels := append([]coretask.LabelOpt{
 		coretask.ProvidesTag(TagLogIngester),
 	}, labels...)
-	return NewProgressReportableInspectionTask(taskID, dependencies, func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (struct{}, error) {
+	return NewInspectionTask(taskID, dependencies, func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (struct{}, error) {
 		if taskMode == inspectioncore.TaskModeDryRun {
 			return struct{}{}, nil
 		}
@@ -84,7 +82,6 @@ func NewGroupedLogIngesterTask[T any](taskID taskid.TaskImplementationID[struct{
 		builder := khictx.MustGetValue(ctx, inspectioncore.Builder)
 
 		totalLogCount := 0
-		var processedLogCount atomic.Uint32
 		var skippedLogCount atomic.Uint32
 		for _, group := range groupedLogs {
 			totalLogCount += len(group.Logs)
@@ -92,15 +89,13 @@ func NewGroupedLogIngesterTask[T any](taskID taskid.TaskImplementationID[struct{
 
 		passCount := ingester.PassCount()
 		totalSteps := totalLogCount * (passCount + 1)
+		unit := "logs"
+		if passCount > 0 {
+			unit = "steps"
+		}
 
-		progressUpdator := progressutil.NewProgressUpdator(progress, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
-			current := processedLogCount.Load()
-			if totalSteps > 0 {
-				tp.Percentage = float32(current) / float32(totalSteps)
-			}
-			tp.Message = fmt.Sprintf("%d/%d", current, totalSteps)
-		})
-		progressUpdator.Start(ctx)
+		tracker := progress.NewTracker(ctx, totalSteps, progress.WithUnit(unit))
+		defer tracker.Done()
 
 		var sharedErr error
 		var errMu sync.Mutex
@@ -141,7 +136,7 @@ func NewGroupedLogIngesterTask[T any](taskID taskid.TaskImplementationID[struct{
 							return
 						}
 						nextGroupData, err := ingester.PreProcessLogByGroup(ctx, passIdx, l, groupData)
-						processedLogCount.Add(1)
+						tracker.Inc()
 						if err != nil {
 							logTaskError(ctx, fmt.Sprintf("pre-processor ended with an error at passIndex %d", passIdx), err, l)
 							setErr(err)
@@ -157,7 +152,7 @@ func NewGroupedLogIngesterTask[T any](taskID taskid.TaskImplementationID[struct{
 						return
 					}
 					cs, nextGroupData, err := ingester.ProcessLogByGroup(ctx, l, groupData)
-					processedLogCount.Add(1)
+					tracker.Inc()
 					if err != nil {
 						logTaskError(ctx, "parser ended with an error", err, l)
 						setErr(err)
@@ -180,7 +175,6 @@ func NewGroupedLogIngesterTask[T any](taskID taskid.TaskImplementationID[struct{
 		}
 
 		pool.Wait()
-		progressUpdator.Done()
 
 		if ctx.Err() != nil {
 			return struct{}{}, ctx.Err()

@@ -716,8 +716,9 @@ func TestInspectionServiceServer_RunInspection(t *testing.T) {
 			if !found {
 				t.Fatalf("progress metadata not found")
 			}
-			if diff := cmp.Diff(inspectionmetadata.TaskPhaseCancelled == progress.Phase, false); diff != "" {
-				t.Errorf("task cancellation status mismatch (-want +got):\n%s", diff)
+			snap := progress.Snapshot()
+			if snap.Phase == inspectionmetadata.TaskPhaseCancelled {
+				t.Errorf("task cancellation status: got phase %v, want not %v", snap.Phase, inspectionmetadata.TaskPhaseCancelled)
 			}
 		})
 	}

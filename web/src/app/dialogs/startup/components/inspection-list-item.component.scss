@@ -270,15 +270,28 @@ $chip-cancelled-dot: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 500);
       overflow: hidden;
 
       .progress-label-inner {
+        display: grid;
+        grid-template:
+          'label message' auto
+          / minmax(0, 1fr) auto;
+        align-items: baseline;
+        gap: 8px;
+
         margin: 0;
+        width: 100%;
 
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
+        .progress-label-span {
+          grid-area: label;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
 
-      .progress-message-span {
-        font-weight: 600;
+        .progress-message-span {
+          grid-area: message;
+          white-space: nowrap;
+          font-weight: 600;
+        }
       }
     }
 

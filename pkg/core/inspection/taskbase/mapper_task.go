@@ -21,12 +21,10 @@ import (
 	"runtime"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/worker"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progressutil"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
@@ -90,7 +88,7 @@ func NewLogToTimelineMapperTask[T any](tid taskid.TaskImplementationID[struct{}]
 	allLabels := append([]coretask.LabelOpt{
 		coretask.ProvidesTag(TagTimelineMapper),
 	}, labels...)
-	return NewProgressReportableInspectionTask(tid, dependencies, func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, tp *inspectionmetadata.TaskProgressMetadata) (struct{}, error) {
+	return NewInspectionTask(tid, dependencies, func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (struct{}, error) {
 		if taskMode == inspectioncore.TaskModeDryRun {
 			slog.DebugContext(ctx, "Skipping task because this is dry run mode")
 			return struct{}{}, nil
@@ -100,7 +98,6 @@ func NewLogToTimelineMapperTask[T any](tid taskid.TaskImplementationID[struct{}]
 		groupedLogs := coretask.GetTaskResult(ctx, groupedLogTaskID)
 
 		totalLogCount := 0
-		var processedLogCount atomic.Uint32
 		var skippedLogCount atomic.Uint32
 		for _, group := range groupedLogs {
 			totalLogCount += len(group.Logs)
@@ -108,17 +105,13 @@ func NewLogToTimelineMapperTask[T any](tid taskid.TaskImplementationID[struct{}]
 
 		passCount := mapper.PassCount()
 		totalSteps := totalLogCount * (passCount + 1)
+		unit := "logs"
+		if passCount > 0 {
+			unit = "steps"
+		}
 
-		updator := progressutil.NewProgressUpdator(tp, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
-			current := processedLogCount.Load()
-			if totalSteps > 0 {
-				tp.Percentage = float32(current) / float32(totalSteps)
-			}
-			tp.Message = fmt.Sprintf("%d/%d", current, totalSteps)
-		})
-		updator.Start(ctx)
-
-		processedLogCount.Store(0)
+		tracker := progress.NewTracker(ctx, totalSteps, progress.WithUnit(unit))
+		defer tracker.Done()
 
 		var sharedErr error
 		var errMu sync.Mutex
@@ -159,7 +152,7 @@ func NewLogToTimelineMapperTask[T any](tid taskid.TaskImplementationID[struct{}]
 							return
 						}
 						nextGroupData, err := mapper.PreProcessLogByGroup(ctx, passIdx, l, groupData)
-						processedLogCount.Add(1)
+						tracker.Inc()
 						if err != nil {
 							logTaskError(ctx, fmt.Sprintf("pre-processor ended with an error at passIndex %d", passIdx), err, l)
 							setErr(err)
@@ -175,7 +168,7 @@ func NewLogToTimelineMapperTask[T any](tid taskid.TaskImplementationID[struct{}]
 						return
 					}
 					cs, nextGroupData, err := mapper.ProcessLogByGroup(ctx, l, groupData)
-					processedLogCount.Add(1)
+					tracker.Inc()
 					if err != nil {
 						logTaskError(ctx, "parser ended with an error", err, l)
 						setErr(err)
@@ -198,7 +191,6 @@ func NewLogToTimelineMapperTask[T any](tid taskid.TaskImplementationID[struct{}]
 			})
 		}
 		pool.Wait()
-		updator.Done()
 
 		if ctx.Err() != nil {
 			return struct{}{}, ctx.Err()

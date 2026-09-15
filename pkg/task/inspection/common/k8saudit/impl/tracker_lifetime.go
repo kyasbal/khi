@@ -19,13 +19,10 @@ import (
 	"fmt"
 	"log/slog"
 	"runtime"
-	"sync/atomic"
-	"time"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/worker"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progressutil"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	pb "github.com/GoogleCloudPlatform/khi/pkg/generated/khifile/v6"
@@ -170,13 +167,13 @@ func (r *lifeTimeTrackerTaskSetting) DetectLifetimeLogEvent(ctx context.Context,
 }
 
 // ResourceLifetimeTrackerTask is the task to track the lifetime of resources.
-var ResourceLifetimeTrackerTask = inspectiontaskbase.NewProgressReportableInspectionTask[k8saudit.ResourceManifestLogGroupMap](
+var ResourceLifetimeTrackerTask = inspectiontaskbase.NewInspectionTask[k8saudit.ResourceManifestLogGroupMap](
 	k8saudit.ResourceLifetimeTrackerTaskID,
 	[]coretask.Dependency{
 		k8saudit.ManifestGeneratorTaskID.Ref(),
 		k8saudit.K8sAuditLogIngesterTaskID.Ref(),
 	},
-	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, tp *inspectionmetadata.TaskProgressMetadata) (k8saudit.ResourceManifestLogGroupMap, error) {
+	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (k8saudit.ResourceManifestLogGroupMap, error) {
 		if taskMode == inspectioncore.TaskModeDryRun {
 			slog.DebugContext(ctx, "Skipping task because this is dry run mode")
 			return k8saudit.ResourceManifestLogGroupMap{}, nil
@@ -185,19 +182,13 @@ var ResourceLifetimeTrackerTask = inspectiontaskbase.NewProgressReportableInspec
 		groupedLogs := coretask.GetTaskResult(ctx, k8saudit.ManifestGeneratorTaskID.Ref())
 
 		totalLogCount := 0
-		var processedLogCount atomic.Uint32
 		for _, group := range groupedLogs {
 			totalLogCount += len(group.Logs)
 		}
 
-		updator := progressutil.NewProgressUpdator(tp, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
-			current := processedLogCount.Load()
-			tp.Percentage = float32(current) / float32(totalLogCount)
-			tp.Message = fmt.Sprintf("%d/%d", current, totalLogCount)
-		})
-		updator.Start(ctx)
+		tracker := progress.NewTracker(ctx, totalLogCount, progress.WithUnit("logs"))
+		defer tracker.Done()
 
-		processedLogCount.Store(0)
 		setting := &lifeTimeTrackerTaskSetting{
 			kindsToWaitExactDeletionToDetermineDeletion: map[string]struct{}{
 				"core/v1#pod": {},
@@ -210,6 +201,7 @@ var ResourceLifetimeTrackerTask = inspectiontaskbase.NewProgressReportableInspec
 				var groupData *lifeTimeTrackerGroupState
 				// Lifetimetracker doesn't handle namespace resources.
 				if group.Resource.Type() == k8saudit.Namespace {
+					tracker.Add(len(group.Logs))
 					return
 				}
 				for _, l := range group.Logs {
@@ -227,11 +219,10 @@ var ResourceLifetimeTrackerTask = inspectiontaskbase.NewProgressReportableInspec
 						continue
 					}
 				}
-				processedLogCount.Add(uint32(len(group.Logs)))
+				tracker.Add(len(group.Logs))
 			})
 		}
 		pool.Wait()
-		updator.Done()
 
 		return groupedLogs, nil
 	},

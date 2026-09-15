@@ -20,7 +20,6 @@ import (
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/patternfinder"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/inspection/common/k8saudit"
@@ -47,12 +46,12 @@ func mergeContainerIDs(results []k8saudit.ContainerIDToContainerIdentity) (k8sau
 	return result, nil
 }
 
-var ContainerIDPatternFinderTask = inspectiontaskbase.NewProgressReportableInspectionTask(
+var ContainerIDPatternFinderTask = inspectiontaskbase.NewInspectionTask(
 	k8saudit.ContainerIDPatternFinderTaskID,
 	[]coretask.Dependency{
 		k8saudit.ContainerIDInventoryTaskID.Ref(),
 	},
-	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (patternfinder.PatternFinder[*k8saudit.ContainerIdentity], error) {
+	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (patternfinder.PatternFinder[*k8saudit.ContainerIdentity], error) {
 		if taskMode == inspectioncore.TaskModeDryRun {
 			return nil, nil
 		}

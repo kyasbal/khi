@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/model"
@@ -54,20 +54,20 @@ var NonSuccessLogGrouperTask = inspectiontaskbase.NewLogGrouperTaskWithDependenc
 // This task determines the group, specifically handling the following cases:
 // 1. When multiple resources are modified by the operation, the log entry is duplicated and assigned to each group.
 // 2. When a subresource is modified by the operation and its result contains its parent manifest, it uses the parent resource as the group key.
-var ChangeTargetGrouperTask = inspectiontaskbase.NewProgressReportableInspectionTask[k8saudit.ResourceLogGroupMap](
+var ChangeTargetGrouperTask = inspectiontaskbase.NewInspectionTask[k8saudit.ResourceLogGroupMap](
 	k8saudit.ChangeTargetGrouperTaskID,
 	[]coretask.Dependency{
 		k8saudit.SuccessLogFilterTaskID.Ref(),
 		k8saudit.K8sAuditLogExtractorRef.Ref(coretask.FromActiveGraph),
 	},
-	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (k8saudit.ResourceLogGroupMap, error) {
+	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (k8saudit.ResourceLogGroupMap, error) {
 		if taskMode != inspectioncore.TaskModeRun {
 			return k8saudit.ResourceLogGroupMap{}, nil
 		}
 
-		progress.MarkIndeterminate()
-
 		logs := coretask.GetTaskResult(ctx, k8saudit.SuccessLogFilterTaskID.Ref())
+		tracker := progress.NewTracker(ctx, len(logs), progress.WithUnit("logs"))
+		defer tracker.Done()
 		result := k8saudit.ResourceLogGroupMap{}
 		scanner := targetResourceScanner{
 			ctx:                                 ctx,
@@ -88,6 +88,7 @@ var ChangeTargetGrouperTask = inspectiontaskbase.NewProgressReportableInspection
 				}
 				result[path].Logs = append(result[path].Logs, l)
 			}
+			tracker.Inc()
 		}
 
 		return result, nil

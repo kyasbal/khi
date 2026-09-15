@@ -23,7 +23,7 @@ import (
 
 	assetpb "cloud.google.com/go/asset/apiv1/assetpb"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloud/caik8s"
@@ -64,7 +64,7 @@ var defaultSupportedKindsToAssetTypes = map[string]string{
 }
 
 // ClusterResourceFetcherTask queries CAI for existing Kubernetes resources in a GKE cluster.
-var ClusterResourceFetcherTask = inspectiontaskbase.NewProgressReportableInspectionTask(
+var ClusterResourceFetcherTask = inspectiontaskbase.NewInspectionTask(
 	caik8s.ClusterResourceFetcherTaskID,
 	[]coretask.Dependency{
 		k8scommon.ClusterIdentityTaskID.Ref(),
@@ -75,7 +75,7 @@ var ClusterResourceFetcherTask = inspectiontaskbase.NewProgressReportableInspect
 		k8scommon.InputKindFilterTaskID.Ref(),
 		k8scommon.InputNamespaceFilterTaskID.Ref(),
 	},
-	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) ([]*caik8s.ClusterResourceSnapshot, error) {
+	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) ([]*caik8s.ClusterResourceSnapshot, error) {
 		cluster := coretask.GetTaskResult(ctx, k8scommon.ClusterIdentityTaskID.Ref())
 		factory := coretask.GetTaskResult(ctx, gcpcommon.APIClientFactoryTaskID.Ref())
 		injector, _ := coretask.GetOptionalTaskResult(ctx, gcpcommon.APIClientCallOptionsInjectorTaskID.Ref())
@@ -104,7 +104,7 @@ var ClusterResourceFetcherTask = inspectiontaskbase.NewProgressReportableInspect
 				StartTime: timestamppb.New(startTime),
 				EndTime:   timestamppb.New(endTime),
 			},
-		}, progress)
+		})
 		if err != nil {
 			// A CAI failure must not break the rest of the inspection. The pipeline then behaves as if
 			// the inventory covered no resource at all.
@@ -246,9 +246,8 @@ func searchAssetsByParent(ctx context.Context, fetcher caik8s.CAIFetcher, scope 
 // Namespace and the parent of a cluster-scoped resource as the cluster. There is no single parent
 // value covering a whole cluster, so the cluster parented phase runs first and the Namespace assets
 // it returns supply the parent values of the namespace parented phase.
-func fetchClusterResourceSnapshots(ctx context.Context, fetcher caik8s.CAIFetcher, lookup clusterResourceLookup, progress *inspectionmetadata.TaskProgressMetadata) ([]*caik8s.ClusterResourceSnapshot, error) {
-	progress.Indeterminate = true
-	progress.Message = "Searching cluster-scoped resources in Cloud Asset Inventory..."
+func fetchClusterResourceSnapshots(ctx context.Context, fetcher caik8s.CAIFetcher, lookup clusterResourceLookup) ([]*caik8s.ClusterResourceSnapshot, error) {
+	progress.ReportIndeterminate(ctx, "Searching cluster-scoped resources in Cloud Asset Inventory...")
 
 	clusterParentedResults, err := searchAssetsByParent(ctx, fetcher, lookup.scope, assetTypesWithNamespace(lookup.assetTypes), buildParentSearchQueries(lookup.clusterParentCandidates))
 	if err != nil {
@@ -256,7 +255,7 @@ func fetchClusterResourceSnapshots(ctx context.Context, fetcher caik8s.CAIFetche
 	}
 
 	namespaceParents := targetNamespaceParents(clusterParentedResults, lookup.namespaceFilter)
-	progress.Message = fmt.Sprintf("Searching namespaced resources in Cloud Asset Inventory (%d namespaces)...", len(namespaceParents))
+	progress.ReportIndeterminate(ctx, fmt.Sprintf("Searching namespaced resources in Cloud Asset Inventory (%d namespaces)...", len(namespaceParents)))
 
 	namespaceParentedResults, err := searchAssetsByParent(ctx, fetcher, lookup.scope, lookup.assetTypes, buildParentSearchQueries(namespaceParents))
 	if err != nil {
@@ -270,13 +269,10 @@ func fetchClusterResourceSnapshots(ctx context.Context, fetcher caik8s.CAIFetche
 	}
 
 	totalChunks := (len(matchedAssetNames) + maxBatchHistorySize - 1) / maxBatchHistorySize
-	progress.Indeterminate = false
-	progress.Percentage = 0.0
-	progress.Message = fmt.Sprintf("Fetching asset history (0/%d chunks, %d assets)...", totalChunks, len(matchedAssetNames))
+	progress.Report(ctx, 0.0, fmt.Sprintf("Fetching asset history (0/%d chunks, %d assets)...", totalChunks, len(matchedAssetNames)))
 
 	temporalAssets, err := fetcher.BatchGetAssetsHistory(ctx, lookup.scope, matchedAssetNames, assetpb.ContentType_RESOURCE, lookup.timeWindow, func(completedChunks, totalChunks int) {
-		progress.Percentage = float32(completedChunks) / float32(totalChunks)
-		progress.Message = fmt.Sprintf("Fetching asset history (%d/%d chunks, %d assets)...", completedChunks, totalChunks, len(matchedAssetNames))
+		progress.Report(ctx, float32(completedChunks)/float32(totalChunks), fmt.Sprintf("Fetching asset history (%d/%d chunks, %d assets)...", completedChunks, totalChunks, len(matchedAssetNames)))
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to batch get assets history from CAI: %w", err)

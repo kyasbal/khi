@@ -22,13 +22,9 @@ import (
 	"log/slog"
 	"runtime"
 	"sync"
-	"sync/atomic"
-	"time"
-
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progressutil"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/k8s"
@@ -47,12 +43,12 @@ var (
 )
 
 // ManifestGeneratorTask is the task to generate manifest from k8s audit logs.
-var ManifestGeneratorTask = inspectiontaskbase.NewProgressReportableInspectionTask(k8saudit.ManifestGeneratorTaskID, []coretask.Dependency{
+var ManifestGeneratorTask = inspectiontaskbase.NewInspectionTask(k8saudit.ManifestGeneratorTaskID, []coretask.Dependency{
 	k8saudit.ChangeTargetGrouperTaskID.Ref(),
 	k8saudit.K8sResourceMergeConfigTaskID.Ref(),
 	k8saudit.K8sAuditLogExtractorRef.Ref(coretask.FromActiveGraph),
 	k8saudit.InitialResourceStateProviderRef,
-}, func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (k8saudit.ResourceManifestLogGroupMap, error) {
+}, func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (k8saudit.ResourceManifestLogGroupMap, error) {
 	if taskMode == inspectioncore.TaskModeDryRun {
 		return map[string]*k8saudit.ResourceManifestLogGroup{}, nil
 	}
@@ -63,19 +59,8 @@ var ManifestGeneratorTask = inspectiontaskbase.NewProgressReportableInspectionTa
 	result := k8saudit.ResourceManifestLogGroupMap{}
 	resultLock := sync.Mutex{}
 
-	doneGroupCount := atomic.Int32{}
-	updator := progressutil.NewProgressUpdator(progress, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
-		current := doneGroupCount.Load()
-		total := len(logGroups)
-		if total > 0 {
-			tp.Percentage = float32(current) / float32(total)
-		} else {
-			tp.Percentage = 1.0
-		}
-		tp.Message = fmt.Sprintf("%d/%d", current, total)
-	})
-	updator.Start(ctx)
-	defer updator.Done()
+	tracker := progress.NewTracker(ctx, len(logGroups), progress.WithUnit("groups"))
+	defer tracker.Done()
 
 	grp, childCtx := errgroup.WithContext(ctx)
 	grp.SetLimit(runtime.GOMAXPROCS(0))
@@ -83,7 +68,7 @@ var ManifestGeneratorTask = inspectiontaskbase.NewProgressReportableInspectionTa
 
 	for path, group := range logGroups {
 		grp.Go(func() error {
-			defer doneGroupCount.Add(1)
+			defer tracker.Inc()
 			resourceLogs := []*k8saudit.ResourceManifestLog{}
 			generator := groupManifestGenerator{
 				mergeConfigRegistry: mergeConfigRegistry,
