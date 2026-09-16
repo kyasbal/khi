@@ -162,10 +162,14 @@ func (m *containerLogPodPhaseTimelineMapper) LogIngesterTask() taskid.TaskRefere
 	return k8scontainer.LogIngesterTaskID.Ref()
 }
 
+var pathMetadataUID = structured.CompileFieldPath("metadata.uid")
+
 func (m *containerLogPodPhaseTimelineMapper) Dependencies() []coretask.Dependency {
 	return []coretask.Dependency{
 		k8scontainer.ClusterIdentityTaskID.Ref(),
 		k8saudit.ResourceRevisionLogToTimelineMapperTaskID.Ref(),
+		k8saudit.PodPhaseLogToTimelineMapperTaskID.Ref(),
+		k8saudit.InitialResourceStateProviderRef,
 	}
 }
 
@@ -208,24 +212,52 @@ func (m *containerLogPodPhaseTimelineMapper) ProcessLogByGroup(ctx context.Conte
 	podPath := k8saudit.MustK8sNamespacedResourceTimeline(ctx, ns, containerFields.PodName)
 	bindingPath := k8saudit.MustK8sSubresourceTimeline(ctx, podPath, "binding")
 
-	// Check if audit log has already written to the Pod or its binding timeline
-	builder := khictx.MustGetValue(ctx, inspectioncore.Builder)
-	hasPodRevision := builder.TimelineAccumulator.HasRevision(podPath)
-	hasBindingRevision := builder.TimelineAccumulator.HasRevision(bindingPath)
-
-	if hasPodRevision || hasBindingRevision {
-		return nil, &containerLogPodPhaseMapperState{AuditLogFound: true}, nil
-	}
-
 	nodeNameChanged := state == nil || state.LastNodeName != nodeFields.NodeName
 	labelsChanged := state == nil || !maps.Equal(state.LastLabels, nodeFields.PodLabels)
-
 	if !nodeNameChanged && !labelsChanged {
 		return nil, state, nil
 	}
 
-	// Generate Pod phase timeline path under the Node
-	podPhasePath := mustPodPhaseTimelinePath(ctx, clusterName, nodeFields.NodeName, containerFields.Namespace, containerFields.PodName, "unknown")
+	// Check if CAI knows about this Pod.
+	initialStateProvider := coretask.GetTaskResult(ctx, k8saudit.InitialResourceStateProviderRef)
+	initialBody, hasInitialState := initialStateProvider.InitialResourceState(&k8saudit.ResourceIdentity{
+		APIVersion: "core/v1",
+		Kind:       "pod",
+		Namespace:  containerFields.Namespace,
+		Name:       containerFields.PodName,
+	})
+
+	nextState := &containerLogPodPhaseMapperState{
+		LastNodeName: nodeFields.NodeName,
+		LastLabels:   nodeFields.PodLabels,
+	}
+	if !nodeNameChanged && hasInitialState {
+		return nil, nextState, nil
+	}
+
+	var podPhasePath *khifilev6.TimelinePath
+	if nodeNameChanged {
+		uid := "unknown"
+		if hasInitialState {
+			if initialUID, err := initialBody.ReadString(pathMetadataUID); err == nil && initialUID != "" {
+				uid = initialUID
+			}
+		}
+		podPhasePath = mustPodPhaseTimelinePath(ctx, clusterName, nodeFields.NodeName, containerFields.Namespace, containerFields.PodName, uid)
+	}
+
+	// Check if audit log has already written to the Pod, its binding, or its phase timeline.
+	// When CAI knows about the Pod, a revision on podPath may originate from CAI rather than audit logs.
+	if state == nil {
+		builder := khictx.MustGetValue(ctx, inspectioncore.Builder)
+		hasBindingRevision := builder.TimelineAccumulator.HasRevision(bindingPath)
+		hasPodPhaseRevision := builder.TimelineAccumulator.HasRevision(podPhasePath)
+		hasAuditPodRevision := !hasInitialState && builder.TimelineAccumulator.HasRevision(podPath)
+
+		if hasBindingRevision || hasPodPhaseRevision || hasAuditPodRevision {
+			return nil, &containerLogPodPhaseMapperState{AuditLogFound: true}, nil
+		}
+	}
 
 	labels := map[string]any{}
 	for k, v := range nodeFields.PodLabels {
@@ -249,23 +281,6 @@ func (m *containerLogPodPhaseTimelineMapper) ProcessLogByGroup(ctx context.Conte
 		return nil, state, fmt.Errorf("failed to generate pod manifest: %w", err)
 	}
 
-	bindingManifest := map[string]any{
-		"apiVersion": "v1",
-		"kind":       "Binding",
-		"metadata": map[string]any{
-			"name":      containerFields.PodName,
-			"namespace": containerFields.Namespace,
-		},
-		"target": map[string]any{
-			"kind": "Node",
-			"name": nodeFields.NodeName,
-		},
-	}
-	bindingNode, err := structured.FromGoValue(bindingManifest, &structured.AlphabeticalGoMapKeyOrderProvider{})
-	if err != nil {
-		return nil, state, fmt.Errorf("failed to generate binding manifest: %w", err)
-	}
-
 	cs := khifilev6.NewTimelineChangeSet(l)
 
 	if nodeNameChanged {
@@ -278,7 +293,8 @@ func (m *containerLogPodPhaseTimelineMapper) ProcessLogByGroup(ctx context.Conte
 		})
 	}
 
-	if nodeNameChanged || labelsChanged {
+	// Only supplement Pod and Binding revisions if CAI does not know about this Pod.
+	if !hasInitialState {
 		cs.AddRevision(podPath, &khifilev6.StagingRevision{
 			ChangedTime:  time.Unix(0, 0),
 			ResourceBody: podNode,
@@ -286,21 +302,32 @@ func (m *containerLogPodPhaseTimelineMapper) ProcessLogByGroup(ctx context.Conte
 			VerbType:     k8saudit.VerbUnknown,
 			StateType:    k8saudit.RevisionStateK8sResourceExistingLogNotFound,
 		})
-	}
 
-	if nodeNameChanged {
-		cs.AddRevision(bindingPath, &khifilev6.StagingRevision{
-			ChangedTime:  time.Unix(0, 0),
-			ResourceBody: bindingNode,
-			Principal:    "N/A",
-			VerbType:     k8saudit.VerbUnknown,
-			StateType:    k8saudit.RevisionStateK8sResourceExistingLogNotFound,
-		})
-	}
-
-	nextState := &containerLogPodPhaseMapperState{
-		LastNodeName: nodeFields.NodeName,
-		LastLabels:   nodeFields.PodLabels,
+		if nodeNameChanged {
+			bindingManifest := map[string]any{
+				"apiVersion": "v1",
+				"kind":       "Binding",
+				"metadata": map[string]any{
+					"name":      containerFields.PodName,
+					"namespace": containerFields.Namespace,
+				},
+				"target": map[string]any{
+					"kind": "Node",
+					"name": nodeFields.NodeName,
+				},
+			}
+			bindingNode, err := structured.FromGoValue(bindingManifest, &structured.AlphabeticalGoMapKeyOrderProvider{})
+			if err != nil {
+				return nil, state, fmt.Errorf("failed to generate binding manifest: %w", err)
+			}
+			cs.AddRevision(bindingPath, &khifilev6.StagingRevision{
+				ChangedTime:  time.Unix(0, 0),
+				ResourceBody: bindingNode,
+				Principal:    "N/A",
+				VerbType:     k8saudit.VerbUnknown,
+				StateType:    k8saudit.RevisionStateK8sResourceExistingLogNotFound,
+			})
+		}
 	}
 
 	return cs, nextState, nil
