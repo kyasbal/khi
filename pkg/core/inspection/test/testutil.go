@@ -21,6 +21,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
@@ -62,7 +63,7 @@ func WithDefaultTestInspectionTaskContext(baseContext context.Context) context.C
 	taskCtx = khictx.WithValue(taskCtx, inspectioncore.IDGenerator, idGen)
 	taskCtx = khictx.WithValue(taskCtx, inspectioncore.CurrentIOConfig, ioConfig)
 	taskCtx = khictx.WithValue(taskCtx, inspectioncore.Builder, khifilev6.NewTestBuilder(idGen))
-	taskCtx = khictx.WithValue(taskCtx, inspectioncore.InspectionRunMetadata, generateTestMetadata())
+	taskCtx = khictx.WithValue(taskCtx, inspectionmetadata.MapContextKey, generateTestMetadata())
 	return taskCtx
 }
 
@@ -81,9 +82,14 @@ func NextRunTaskContext(originalCtx context.Context, prevRunCtx context.Context)
 func RunInspectionTask[T any](baseContext context.Context, task coretask.Task[T], mode inspectioncore.InspectionTaskModeType, input map[string]any, taskDependencyValues ...tasktest.TaskDependencyValues) (T, *typedmap.ReadonlyTypedMap, error) {
 	taskCtx := khictx.WithValue(baseContext, inspectioncore.InspectionTaskInput, input)
 	taskCtx = khictx.WithValue(taskCtx, inspectioncore.InspectionTaskMode, mode)
+	metadata := khictx.MustGetValue(taskCtx, inspectionmetadata.MapContextKey)
 
-	result, err := tasktest.RunTask(taskCtx, task, taskDependencyValues...)
-	metadata := khictx.MustGetValue(taskCtx, inspectioncore.InspectionRunMetadata)
+	var result T
+	_, err := progress.TaskInterceptor(taskCtx, task, func(ctx context.Context) (any, error) {
+		var runErr error
+		result, runErr = tasktest.RunTask(ctx, task, taskDependencyValues...)
+		return result, runErr
+	})
 	return result, metadata, err
 }
 
@@ -91,8 +97,8 @@ func RunInspectionTask[T any](baseContext context.Context, task coretask.Task[T]
 func RunInspectionTaskWithDependency[T any](baseContext context.Context, mainTask coretask.Task[T], dependencies []coretask.UntypedTask, mode inspectioncore.InspectionTaskModeType, input map[string]any) (T, *typedmap.ReadonlyTypedMap, error) {
 	taskCtx := khictx.WithValue(baseContext, inspectioncore.InspectionTaskInput, input)
 	taskCtx = khictx.WithValue(taskCtx, inspectioncore.InspectionTaskMode, mode)
-	result, err := tasktest.RunTaskWithDependency(taskCtx, mainTask, dependencies)
-	metadata := khictx.MustGetValue(taskCtx, inspectioncore.InspectionRunMetadata)
+	metadata := khictx.MustGetValue(taskCtx, inspectionmetadata.MapContextKey)
+	result, err := tasktest.RunTaskWithDependency(taskCtx, mainTask, dependencies, progress.TaskInterceptor)
 	return result, metadata, err
 }
 

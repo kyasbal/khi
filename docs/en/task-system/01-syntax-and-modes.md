@@ -196,10 +196,10 @@ Every inspection task (or low-level task utility) should check `inspectioncore_c
 The following is a standard Go implementation example that returns an empty result or necessary UI metadata without heavy processing during `DryRun`, and executes actual parsing only in `Run` mode:
 
 ```go
-var ExampleInspectionTask = inspectiontaskbase.NewProgressReportableInspectionTask(
+var ExampleInspectionTask = inspectiontaskbase.NewInspectionTask(
     ExampleInspectionTaskID,
     []taskid.UntypedTaskReference{SourceLogsTaskID.Ref()},
-    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (ResultType, error) {
+    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (ResultType, error) {
         // 1. Check DryRun mode: Return immediately to skip heavy log fetching and parsing for form setup or lightweight runs
         if taskMode == inspectioncore_contract.TaskModeDryRun {
             return ResultType{}, nil
@@ -207,12 +207,13 @@ var ExampleInspectionTask = inspectiontaskbase.NewProgressReportableInspectionTa
 
         // 2. Run mode: Perform actual log fetching and time-consuming analysis or calculation
         logs := coretask.GetTaskResult(ctx, SourceLogsTaskID.Ref())
-        result, err := doHeavyAnalysis(ctx, logs, progress)
+        result, err := doHeavyAnalysis(ctx, logs)
         if err != nil {
             return ResultType{}, err
         }
         return result, nil
     },
+    progress.WithTitle("Analyze source logs"),
 )
 ```
 

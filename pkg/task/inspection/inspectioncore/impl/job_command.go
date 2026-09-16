@@ -39,7 +39,7 @@ var JobModeCommandTask = inspectiontaskbase.NewInspectionTask(
 	JobModeCommandTaskID,
 	[]coretask.Dependency{},
 	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (any, error) {
-		metadataSet := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+		metadataSet := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 		jobMetadata, found := typedmap.Get(metadataSet, inspectionmetadata.JobModeCommandMetadataKey)
 		if !found {
 			return nil, fmt.Errorf("job command metadata not found")

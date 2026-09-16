@@ -216,7 +216,7 @@ func TestTextFormDefinitionBuilder(t *testing.T) {
 				if err != nil {
 					t.Errorf("task was ended with unexpected error\n%s", err)
 				}
-				metadata := khictx.MustGetValue(taskCtx, inspectioncore.InspectionRunMetadata)
+				metadata := khictx.MustGetValue(taskCtx, inspectionmetadata.MapContextKey)
 
 				fields, found := typedmap.Get(metadata, inspectionmetadata.FormFieldSetMetadataKey)
 				if !found {
@@ -248,7 +248,7 @@ func TestTextFormDefinitionBuilder(t *testing.T) {
 					if result != testCase.RequestValue {
 						t.Errorf("the result is not matching with the expected value\nexpected:%s\nactual:%s", testCase.RequestValue, result)
 					}
-					metadata := khictx.MustGetValue(taskCtx, inspectioncore.InspectionRunMetadata)
+					metadata := khictx.MustGetValue(taskCtx, inspectionmetadata.MapContextKey)
 
 					fields, found := typedmap.Get(metadata, inspectionmetadata.FormFieldSetMetadataKey)
 					if !found {

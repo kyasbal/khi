@@ -32,6 +32,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
@@ -78,35 +79,7 @@ type ListLogEntriesTaskSetting interface {
 	Description() *ListLogEntriesTaskDescription
 }
 
-// formatETA formats a duration into a human-readable ETA string (e.g. "45s", "1m23s", "1h05m").
-func formatETA(d time.Duration) string {
-	if d < 0 {
-		d = 0
-	}
-	d = d.Round(time.Second)
-	s := int(d.Seconds())
-	if s < 60 {
-		return fmt.Sprintf("%ds", s)
-	}
-	if s < 3600 {
-		return fmt.Sprintf("%dm%02ds", s/60, s%60)
-	}
-	return fmt.Sprintf("%dh%02dm", s/3600, (s%3600)/60)
-}
-
-// calculateETA estimates remaining duration based on elapsed time and completion ratio.
-func calculateETA(elapsed time.Duration, completeRatio float32) string {
-	if elapsed < 2*time.Second || completeRatio <= 0.005 {
-		return "--"
-	}
-	if completeRatio >= 1.0 {
-		return "0s"
-	}
-	remainingSeconds := float64(elapsed.Seconds()) * float64(1.0-completeRatio) / float64(completeRatio)
-	return formatETA(time.Duration(remainingSeconds * float64(time.Second)))
-}
-
-func monitorProgress(ctx context.Context, wg *sync.WaitGroup, source <-chan LogFetchProgress, progressDest *inspectionmetadata.TaskProgressMetadata, taskStartTime time.Time, baseLogCount int, listCallIndex int, allListCalls int) {
+func monitorProgress(ctx context.Context, wg *sync.WaitGroup, source <-chan LogFetchProgress, tracker *progress.RatioTracker, baseLogCount int, listCallIndex int, totalListCalls int) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -114,20 +87,13 @@ func monitorProgress(ctx context.Context, wg *sync.WaitGroup, source <-chan LogF
 			select {
 			case <-ctx.Done():
 				return
-			case progress, ok := <-source:
+			case p, ok := <-source:
 				if !ok {
 					return
 				}
-				current := time.Now()
-				elapsed := current.Sub(taskStartTime)
-				totalLogCount := baseLogCount + progress.LogCount
-				var lps float64
-				if elapsed.Seconds() > 0 {
-					lps = float64(totalLogCount) / elapsed.Seconds()
-				}
-				completeRatio := (float32(listCallIndex) + progress.Progress) / float32(allListCalls)
-				etaStr := calculateETA(elapsed, completeRatio)
-				progressDest.Update(completeRatio, fmt.Sprintf("%d logs fetched(%.2f lps, ETA %s)[%d/%d]", totalLogCount, lps, etaStr, listCallIndex+1, allListCalls))
+				totalLogCount := baseLogCount + p.LogCount
+				completeRatio := (float32(listCallIndex) + p.Progress) / float32(totalListCalls)
+				tracker.Update(completeRatio, totalLogCount, progress.WithStep(listCallIndex+1, totalListCalls))
 			}
 		}
 	}()
@@ -141,10 +107,10 @@ func NewListLogEntriesTask(taskSetting ListLogEntriesTaskSetting) coretask.Task[
 	dependencies = append(dependencies, InputStartTimeTaskID.Ref(), InputEndTimeTaskID.Ref(), InputLoggingFilterResourceNameTaskID.Ref(), LoggingFetcherTaskID.Ref())
 	description := taskSetting.Description()
 
-	return inspectiontaskbase.NewProgressReportableInspectionTask(
+	return inspectiontaskbase.NewInspectionTask(
 		taskID,
 		dependencies,
-		func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) ([]*log.Log, error) {
+		func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) ([]*log.Log, error) {
 			startTime := coretask.GetTaskResult(ctx, InputStartTimeTaskID.Ref())
 			endTime := coretask.GetTaskResult(ctx, InputEndTimeTaskID.Ref())
 			resourceNames, err := handleResourceNames(ctx, taskID, taskSetting)
@@ -168,7 +134,8 @@ func NewListLogEntriesTask(taskSetting ListLogEntriesTaskSetting) coretask.Task[
 				return nil, fmt.Errorf("TimePartitionCount returned an invalid value %d, it must be bigger than 0", timePartitionCount)
 			}
 
-			taskStartTime := time.Now()
+			tracker := progress.NewRatioTracker(ctx, progress.WithUnit("logs"))
+			defer tracker.Done()
 			totalLogsFetched := 0
 			allLogSlices := make([][]*log.Log, 0, len(filters))
 			for filterIndex, filter := range filters {
@@ -195,8 +162,8 @@ func NewListLogEntriesTask(taskSetting ListLogEntriesTaskSetting) coretask.Task[
 					var wg sync.WaitGroup
 					var progressChan = make(chan LogFetchProgress)
 					listCallIndex := filterIndex*len(groups) + groupIndex
-					allListCalls := len(filters) * len(groups)
-					monitorProgress(ctx, &wg, progressChan, progress, taskStartTime, totalLogsFetched, listCallIndex, allListCalls)
+					totalListCalls := len(filters) * len(groups)
+					monitorProgress(ctx, &wg, progressChan, tracker, totalLogsFetched, listCallIndex, totalListCalls)
 					logs, err := progressReportableLogFetcher.FetchLogsWithProgress(progressChan, ctx, startTime, endTime, filter, group.container, group.resourceNames)
 					wg.Wait()
 
@@ -221,8 +188,10 @@ func NewListLogEntriesTask(taskSetting ListLogEntriesTaskSetting) coretask.Task[
 			}
 
 			return allLogs, nil
-		}, inspectioncore.NewQueryTaskLabelOpt(description.ExampleQuery),
+		},
+		inspectioncore.NewQueryTaskLabelOpt(description.ExampleQuery),
 		coretask.WithLabelValue(RequestOptionalInputResourceNameTaskLabel, taskID.ReferenceIDString()),
+		progress.WithTitle(fmt.Sprintf("Fetch %s", description.QueryName)),
 	)
 }
 
@@ -243,7 +212,7 @@ func handleResourceNames(ctx context.Context, taskID taskid.TaskImplementationID
 
 // setQueryInfo records the generated Cloud Logging query details into the inspection run metadata.
 func setQueryInfo(ctx context.Context, taskID, baseLogFilter string, logFilterIndex, totalLogFilterCount int, startTime, endTime time.Time, description *ListLogEntriesTaskDescription) error {
-	metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+	metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 	queryInfo, found := typedmap.Get(metadata, inspectionmetadata.QueryMetadataKey)
 	if !found {
 		return fmt.Errorf("query metadata was not found")
@@ -264,7 +233,7 @@ func setQueryInfo(ctx context.Context, taskID, baseLogFilter string, logFilterIn
 
 // setErrorMetadataForFetchLogError extracts error information from a log fetching operation and adds it to the inspection run's error message set metadata.
 func setErrorMetadataForFetchLogError(ctx context.Context, err error) error {
-	metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+	metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 	errorMessageSet, found := typedmap.Get(metadata, inspectionmetadata.ErrorMessageSetMetadataKey)
 	if !found {
 		return fmt.Errorf("error message set metadata was not found. originalError=%w", err)

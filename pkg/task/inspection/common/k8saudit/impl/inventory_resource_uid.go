@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/patternfinder"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/inspection/common/k8saudit"
@@ -70,10 +69,10 @@ var ResourceUIDDiscoveryTask = inspectiontaskbase.NewInspectionTask(
 	coretask.ProvidesTag(k8saudit.TagResourceUIDDiscovery),
 )
 
-var UIDPatternFinderTask = inspectiontaskbase.NewProgressReportableInspectionTask(
+var UIDPatternFinderTask = inspectiontaskbase.NewInspectionTask(
 	k8saudit.ResourceUIDPatternFinderTaskID,
 	[]coretask.Dependency{k8saudit.ResourceUIDInventoryTaskID.Ref()},
-	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (patternfinder.PatternFinder[*k8saudit.ResourceIdentity], error) {
+	func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (patternfinder.PatternFinder[*k8saudit.ResourceIdentity], error) {
 		if taskMode == inspectioncore.TaskModeDryRun {
 			return nil, nil
 		}

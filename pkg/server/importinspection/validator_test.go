@@ -155,8 +155,8 @@ func TestValidateAndExtractMetadata(t *testing.T) {
 			progressMetadata, found := typedmap.Get(metadataMap, inspectionmetadata.ProgressMetadataKey)
 			if !found {
 				t.Errorf("expected ProgressMetadata to be present")
-			} else if progressMetadata.Phase != inspectionmetadata.TaskPhaseDone {
-				t.Errorf("progress phase mismatch: got %v, want %v", progressMetadata.Phase, inspectionmetadata.TaskPhaseDone)
+			} else if snap := progressMetadata.Snapshot(); snap.Phase != inspectionmetadata.TaskPhaseDone {
+				t.Errorf("progress phase mismatch: got %v, want %v", snap.Phase, inspectionmetadata.TaskPhaseDone)
 			}
 		})
 	}

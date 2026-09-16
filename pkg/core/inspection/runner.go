@@ -34,6 +34,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logger"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	apiv1 "github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1"
 	"github.com/GoogleCloudPlatform/khi/pkg/lifecycle"
@@ -351,6 +352,7 @@ func (i *InspectionTaskRunner) Run(ctx context.Context, req *inspectioncore.Insp
 	if err != nil {
 		return err
 	}
+	runner.AddInterceptor(progress.TaskInterceptor)
 	i.runner = runner
 	i.runTaskGraph = runnableTaskGraph
 
@@ -367,7 +369,7 @@ func (i *InspectionTaskRunner) Run(ctx context.Context, req *inspectioncore.Insp
 		SuggestedFileName:      "unnamed.khi",
 	}, runnableTaskGraph)
 
-	runCtx = khictx.WithValue(runCtx, inspectioncore.InspectionRunMetadata, runMetadata)
+	runCtx = khictx.WithValue(runCtx, inspectionmetadata.MapContextKey, runMetadata)
 
 	cancelableCtx, cancel := context.WithCancel(runCtx)
 	i.cancel = cancel
@@ -496,7 +498,7 @@ func (i *InspectionTaskRunner) DryRun(ctx context.Context, req *inspectioncore.I
 
 	dryrunMetadata := i.generateMetadataForDryRun(runCtx, &inspectionmetadata.HeaderMetadata{}, runnableTaskGraph)
 
-	runCtx = khictx.WithValue(runCtx, inspectioncore.InspectionRunMetadata, dryrunMetadata)
+	runCtx = khictx.WithValue(runCtx, inspectionmetadata.MapContextKey, dryrunMetadata)
 
 	runFunc := func(ctx context.Context) error {
 		err := runner.Run(ctx)
@@ -644,7 +646,7 @@ func (i *InspectionTaskRunner) addCommonMetadata(ctx context.Context, writableMe
 	typedmap.Set(writableMetadata, inspectionmetadata.JobModeCommandMetadataKey, inspectionmetadata.NewJobModeCommandMetadata(""))
 
 	progressMeta := inspectionmetadata.NewProgress()
-	progressMeta.SetTotalTaskCount(len(coretask.Subset(taskGraph, filter.NewEnabledFilter(inspectioncore.LabelKeyProgressReportable, false)).GetAll()))
+	progressMeta.SetTotalTaskCount(len(taskGraph.GetAll()))
 	typedmap.Set(writableMetadata, inspectionmetadata.ProgressMetadataKey, progressMeta)
 
 	taskGraphStr, err := taskGraph.DumpGraphviz()

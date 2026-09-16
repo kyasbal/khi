@@ -114,7 +114,7 @@ func TestStructuredListLogEntriesTask_DryRun_FallbackWhenNoClient(t *testing.T) 
 	}
 
 	// Verify QueryMetadata
-	metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+	metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 	queryMetadata, found := typedmap.Get(metadata, inspectionmetadata.QueryMetadataKey)
 	if !found {
 		t.Fatalf("QueryMetadata not found in run metadata")
@@ -374,7 +374,7 @@ timestamp <= "2025-01-01T01:01:00+0000"`,
 				t.Fatalf("setStructuredQueryInfo returned error: %v", err)
 			}
 
-			metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+			metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 			queryMetadata, found := typedmap.Get(metadata, inspectionmetadata.QueryMetadataKey)
 			if !found {
 				t.Fatalf("QueryMetadata not found")
@@ -510,7 +510,7 @@ func TestStructuredListLogEntriesTask_DryRun_Incomplete(t *testing.T) {
 				t.Fatalf("dryrun failed: %v", err)
 			}
 
-			metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+			metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 			queryMetadata, found := typedmap.Get(metadata, inspectionmetadata.QueryMetadataKey)
 			if !found {
 				t.Fatalf("QueryMetadata not found")
@@ -565,7 +565,7 @@ func TestStructuredListLogEntriesTask_DryRun_CallOptionInjector(t *testing.T) {
 		t.Fatalf("dryrun failed: %v", err)
 	}
 
-	metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+	metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 	_, found := typedmap.Get(metadata, inspectionmetadata.QueryMetadataKey)
 	if !found {
 		t.Fatalf("QueryMetadata not found")

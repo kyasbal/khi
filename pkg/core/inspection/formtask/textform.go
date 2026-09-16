@@ -159,7 +159,7 @@ func (b *TextFormTaskBuilder[T]) WithValidatingTiming(timing inspectionmetadata.
 
 func (b *TextFormTaskBuilder[T]) Build(labelOpts ...coretask.LabelOpt) coretask.Task[T] {
 	return coretask.NewTask(b.id, b.dependencies, func(ctx context.Context) (T, error) {
-		m := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+		m := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 		req := khictx.MustGetValue(ctx, inspectioncore.InspectionTaskInput)
 		taskMode := khictx.MustGetValue(ctx, inspectioncore.InspectionTaskMode)
 		globalSharedMap := khictx.MustGetValue(ctx, inspectioncore.GlobalSharedMap)

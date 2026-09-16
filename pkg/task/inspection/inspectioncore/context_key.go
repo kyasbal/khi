@@ -59,11 +59,6 @@ var InspectionTaskInspectionID = typedmap.NewTypedKey[string]("khi.google.com/in
 // between multiple executions of the same inspection.
 var InspectionTaskRunID = typedmap.NewTypedKey[string]("khi.google.com/inspection/task-run-id")
 
-// InspectionRunMetadata is the context key to access the metadata map for the current inspection run.
-// This map stores supplementary data beyond the main task results, such as logs and progress information.
-// It is expected to be serialized and passed to the frontend for display.
-var InspectionRunMetadata = typedmap.NewTypedKey[*typedmap.ReadonlyTypedMap]("khi.google.com/inspection/metadata-map")
-
 // CurrentIOConfig is the context key to access the current IO configuration
 // for file operations during inspection task execution.
 var CurrentIOConfig = typedmap.NewTypedKey[*IOConfig]("khi.google.com/inspection/current-io-config")

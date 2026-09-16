@@ -49,7 +49,6 @@ const (
 var (
 	LabelKeyInspectionFeatureFlag        = coretask.NewTaskLabelKey[bool](InspectionTaskPrefix + "feature")
 	LabelKeyInspectionDefaultFeatureFlag = coretask.NewTaskLabelKey[bool](InspectionTaskPrefix + "default-feature")
-	LabelKeyProgressReportable           = coretask.NewTaskLabelKey[bool](InspectionTaskPrefix + "progress-reportable")
 	// LabelKeyInspectionTypeLabelSelector is a task label key used to specify target inspection types using a label selector.
 	LabelKeyInspectionTypeLabelSelector = coretask.NewTaskLabelKey[LabelSelector](InspectionTaskPrefix + "inspection-type-selector")
 	LabelKeyFeatureTaskTitle            = coretask.NewTaskLabelKey[string](InspectionTaskPrefix + "feature/title")
@@ -57,15 +56,6 @@ var (
 	// LabelKeyFeatureTaskOrder is a label key of an integer assigned for a feature task. Feature task with smaller order is placed at the top of the feature task list.
 	LabelKeyFeatureTaskOrder = coretask.NewTaskLabelKey[int](InspectionTaskPrefix + "feature/order")
 )
-
-type ProgressReportableTaskLabelOptImpl struct{}
-
-// Write implements task.LabelOpt.
-func (i *ProgressReportableTaskLabelOptImpl) Write(label *typedmap.TypedMap) {
-	typedmap.Set(label, LabelKeyProgressReportable, true)
-}
-
-var _ coretask.LabelOpt = (*ProgressReportableTaskLabelOptImpl)(nil)
 
 // FeatureTaskLabelImpl is an implementation of task.LabelOpt.
 // This annotates a task to be a feature in inspection for v6 format.

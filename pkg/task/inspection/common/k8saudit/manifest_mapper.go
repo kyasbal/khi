@@ -16,19 +16,16 @@ package k8saudit
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"runtime"
 	"sort"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/worker"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progressutil"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
@@ -153,7 +150,7 @@ func NewManifestLogToTimelineMapper[T any](setting ManifestLogToTimelineMapper[T
 		coretask.ProvidesTag(inspectiontaskbase.TagTimelineMapper),
 	}, labelOpts...)
 
-	return inspectiontaskbase.NewProgressReportableInspectionTask(setting.TaskID(), dependencies, func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, tp *inspectionmetadata.TaskProgressMetadata) (struct{}, error) {
+	return inspectiontaskbase.NewInspectionTask(setting.TaskID(), dependencies, func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (struct{}, error) {
 		if taskMode == inspectioncore.TaskModeDryRun {
 			slog.DebugContext(ctx, "Skipping task because this is dry run mode")
 			return struct{}{}, nil
@@ -162,23 +159,14 @@ func NewManifestLogToTimelineMapper[T any](setting ManifestLogToTimelineMapper[T
 		builder := khictx.MustGetValue(ctx, inspectioncore.Builder)
 		groupedLogs := coretask.GetTaskResult(ctx, groupedLogTaskID)
 
-		tp.MarkIndeterminate()
+		progress.ReportIndeterminate(ctx, "Resolving related group sets...")
 		relatedGroupSets, err := setting.ResolveRelatedGroupSets(ctx, groupedLogs)
 		if err != nil {
 			return struct{}{}, err
 		}
 
-		var processedGroupCount atomic.Int32
-		totalGroups := len(relatedGroupSets)
-
-		updator := progressutil.NewProgressUpdator(tp, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
-			current := processedGroupCount.Load()
-			if totalGroups > 0 {
-				tp.Percentage = float32(current) / float32(totalGroups)
-			}
-			tp.Message = fmt.Sprintf("%d/%d", current, totalGroups)
-		})
-		updator.Start(ctx)
+		tracker := progress.NewTracker(ctx, len(relatedGroupSets), progress.WithUnit("groups"))
+		defer tracker.Done()
 
 		var sharedErr error
 		var errMu sync.Mutex
@@ -202,7 +190,7 @@ func NewManifestLogToTimelineMapper[T any](setting ManifestLogToTimelineMapper[T
 
 		for _, groupSet := range relatedGroupSets {
 			pool.Run(func() {
-				defer processedGroupCount.Add(1)
+				defer tracker.Inc()
 				if hasErr() {
 					return
 				}
@@ -249,7 +237,6 @@ func NewManifestLogToTimelineMapper[T any](setting ManifestLogToTimelineMapper[T
 		}
 
 		pool.Wait()
-		updator.Done()
 
 		if sharedErr != nil {
 			return struct{}{}, sharedErr

@@ -23,6 +23,7 @@ import (
 	assetpb "cloud.google.com/go/asset/apiv1/assetpb"
 	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
 	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloud/caik8s"
@@ -244,15 +245,23 @@ func TestFetchGKEResourceSnapshots(t *testing.T) {
 				batchAssets:          tc.batchAssets,
 				batchErr:             tc.batchErr,
 			}
-			progress := &inspectionmetadata.TaskProgressMetadata{}
+			progressMeta := inspectionmetadata.NewTaskProgressMetadata("test")
+			ctx := progress.WithContext(t.Context(), progressMeta)
 
-			got, err := fetchGKEResourceSnapshots(t.Context(), fetcher, cluster, startTime, endTime, progress)
+			got, err := fetchGKEResourceSnapshots(ctx, fetcher, cluster, startTime, endTime)
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("fetchGKEResourceSnapshots() error = %v, wantErr %v", err, tc.wantErr)
 			}
 			if !tc.wantErr {
 				if len(got) != tc.wantCount {
 					t.Errorf("len(got) = %d, want %d", len(got), tc.wantCount)
+				}
+				snap := progressMeta.Snapshot()
+				if len(tc.wantBatchAssetNames) > 0 && snap.Ratio != 1.0 {
+					t.Errorf("progressMeta.Ratio = %f, want 1.0", snap.Ratio)
+				}
+				if snap.Message == "" {
+					t.Errorf("progressMeta.Message is empty")
 				}
 			}
 

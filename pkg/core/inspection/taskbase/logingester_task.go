@@ -21,12 +21,10 @@ import (
 	"runtime"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/worker"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progressutil"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
@@ -53,7 +51,7 @@ func NewLogIngesterTask(taskID taskid.TaskImplementationID[struct{}], ingester L
 	allLabels := append([]coretask.LabelOpt{
 		coretask.ProvidesTag(TagLogIngester),
 	}, labels...)
-	return NewProgressReportableInspectionTask(taskID, dependencies, func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (struct{}, error) {
+	return NewInspectionTask(taskID, dependencies, func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (struct{}, error) {
 		if taskMode == inspectioncore.TaskModeDryRun {
 			return struct{}{}, nil
 		}
@@ -66,17 +64,10 @@ func NewLogIngesterTask(taskID taskid.TaskImplementationID[struct{}], ingester L
 
 		concurrency := runtime.GOMAXPROCS(0)
 		pool := worker.NewPool(concurrency)
-		var processedLogCount atomic.Uint32
 		var skippedLogCount atomic.Uint32
 
-		progressUpdator := progressutil.NewProgressUpdator(progress, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
-			current := processedLogCount.Load()
-			if len(logs) > 0 {
-				tp.Percentage = float32(current) / float32(len(logs))
-			}
-			tp.Message = fmt.Sprintf("%d/%d", current, len(logs))
-		})
-		progressUpdator.Start(ctx)
+		tracker := progress.NewTracker(ctx, len(logs), progress.WithUnit("logs"))
+		defer tracker.Done()
 
 		var sharedErr error
 		var errMu sync.Mutex
@@ -113,7 +104,7 @@ func NewLogIngesterTask(taskID taskid.TaskImplementationID[struct{}], ingester L
 					}
 					l := logs[i]
 					cs, err := ingester.ProcessLog(ctx, l)
-					processedLogCount.Add(1)
+					tracker.Inc()
 					if err != nil {
 						logTaskError(ctx, "failed to process log in ingester", err, l)
 						setErr(err)
@@ -134,7 +125,6 @@ func NewLogIngesterTask(taskID taskid.TaskImplementationID[struct{}], ingester L
 		}
 
 		pool.Wait()
-		progressUpdator.Done()
 
 		if ctx.Err() != nil {
 			return struct{}{}, ctx.Err()

@@ -42,7 +42,7 @@ var InputLoggingFilterResourceNameTask = inspectiontaskbase.NewInspectionTask(gc
 	sharedMap := khictx.MustGetValue(ctx, inspectioncore.InspectionSharedMap)
 	resourceNamesInput := typedmap.GetOrSetFunc(sharedMap, resourceNamesInputKey, gcpcommon.NewResourceNamesInput)
 
-	metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+	metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 	formFields, found := typedmap.Get(metadata, inspectionmetadata.FormFieldSetMetadataKey)
 	if !found {
 		return nil, fmt.Errorf("failed to get form fields from run metadata")

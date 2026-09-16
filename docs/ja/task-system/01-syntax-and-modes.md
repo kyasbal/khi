@@ -196,10 +196,10 @@ KHI のインスペクションタスクは、実行されるシチュエーシ�
 以下は、`DryRun` 時には重い処理を行わずに軽量な空結果や必要な UI メタデータのみを返し、`Run` モード時にのみ実際の解析処理を実行する標準的な Go 実装例です:
 
 ```go
-var ExampleInspectionTask = inspectiontaskbase.NewProgressReportableInspectionTask(
+var ExampleInspectionTask = inspectiontaskbase.NewInspectionTask(
     ExampleInspectionTaskID,
     []taskid.UntypedTaskReference{SourceLogsTaskID.Ref()},
-    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (ResultType, error) {
+    func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (ResultType, error) {
         // 1. DryRun モードの判定: フォーム設定用や軽量実行時は、重いログ取得や解析をスキップして即座に返す
         if taskMode == inspectioncore_contract.TaskModeDryRun {
             return ResultType{}, nil
@@ -207,16 +207,17 @@ var ExampleInspectionTask = inspectiontaskbase.NewProgressReportableInspectionTa
 
         // 2. Run モード時: 実際のログ取得および時間のかかる解析・計算処理を実行する
         logs := coretask.GetTaskResult(ctx, SourceLogsTaskID.Ref())
-        result, err := doHeavyAnalysis(ctx, logs, progress)
+        result, err := doHeavyAnalysis(ctx, logs)
         if err != nil {
             return ResultType{}, err
         }
         return result, nil
     },
+    progress.WithTitle("Analyze source logs"),
 )
 ```
 
-この「モードによる早期リターン（Early Return）」パターンをすべてのタスクで一貫して適用することにより、KHI は複雑なログ分析タスクグラフを構成している場合でも、「New Inspection」画面での快適かつ高速なインタラクションを実現しています。
+このモードによる早期リターンパターンをすべてのタスクで一貫して適用することにより、KHI は複雑なログ分析タスクグラフを構成している場合でも、「New Inspection」画面での快適かつ高速なインタラクションを実現しています。
 
 ## 7. タスクのテスト
 

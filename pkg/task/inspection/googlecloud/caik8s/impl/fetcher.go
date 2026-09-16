@@ -21,6 +21,7 @@ import (
 
 	assetpb "cloud.google.com/go/asset/apiv1/assetpb"
 	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloud/caik8s"
 	"google.golang.org/api/iterator"
@@ -90,7 +91,7 @@ func (f *caiFetcher) SearchResources(ctx context.Context, scope, query string, a
 
 // BatchGetAssetsHistory retrieves historical temporal snapshots for specified asset names.
 // It automatically chunks assetNames exceeding Cloud Asset Inventory limits (max 100 per request).
-func (f *caiFetcher) BatchGetAssetsHistory(ctx context.Context, parent string, assetNames []string, contentType assetpb.ContentType, timeWindow *assetpb.TimeWindow, onProgress func(completedChunks, totalChunks int)) ([]*assetpb.TemporalAsset, error) {
+func (f *caiFetcher) BatchGetAssetsHistory(ctx context.Context, parent string, assetNames []string, contentType assetpb.ContentType, timeWindow *assetpb.TimeWindow) ([]*assetpb.TemporalAsset, error) {
 	if len(assetNames) == 0 {
 		return nil, nil
 	}
@@ -104,6 +105,9 @@ func (f *caiFetcher) BatchGetAssetsHistory(ctx context.Context, parent string, a
 	callCtx := f.callOptionInjector.InjectToCallContext(ctx, resourceContainer)
 
 	totalChunks := (len(assetNames) + maxBatchHistorySize - 1) / maxBatchHistorySize
+	tracker := progress.NewTracker(ctx, totalChunks, progress.WithUnit("chunks"))
+	defer tracker.Done()
+
 	var allAssets []*assetpb.TemporalAsset
 	for i := 0; i < len(assetNames); i += maxBatchHistorySize {
 		select {
@@ -128,9 +132,7 @@ func (f *caiFetcher) BatchGetAssetsHistory(ctx context.Context, parent string, a
 			return nil, fmt.Errorf("failed during batch get assets history: %w", err)
 		}
 		allAssets = append(allAssets, resp.Assets...)
-		if onProgress != nil {
-			onProgress(i/maxBatchHistorySize+1, totalChunks)
-		}
+		tracker.Add(1)
 	}
 	return allAssets, nil
 }

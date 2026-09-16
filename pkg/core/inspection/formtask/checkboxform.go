@@ -122,7 +122,7 @@ func (b *CheckboxFormTaskBuilder) WithHintFunc(hintFunc CheckboxFormHintGenerato
 // Build creates a DAG task instance from this builder definition.
 func (b *CheckboxFormTaskBuilder) Build(labelOpts ...coretask.LabelOpt) coretask.Task[bool] {
 	return coretask.NewTask(b.id, b.dependencies, func(ctx context.Context) (bool, error) {
-		m := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+		m := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 		req := khictx.MustGetValue(ctx, inspectioncore.InspectionTaskInput)
 		taskMode := khictx.MustGetValue(ctx, inspectioncore.InspectionTaskMode)
 

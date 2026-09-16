@@ -26,6 +26,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	inspectiontest "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/test"
 	tasktest "github.com/GoogleCloudPlatform/khi/pkg/core/task/test"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloud/caik8s"
@@ -109,14 +110,16 @@ func (m *mockCAIFetcher) recordedSearchAssetTypes() [][]string {
 	return assetTypes
 }
 
-func (m *mockCAIFetcher) BatchGetAssetsHistory(ctx context.Context, parent string, assetNames []string, contentType assetpb.ContentType, timeWindow *assetpb.TimeWindow, onProgress func(completedChunks, totalChunks int)) ([]*assetpb.TemporalAsset, error) {
+func (m *mockCAIFetcher) BatchGetAssetsHistory(ctx context.Context, parent string, assetNames []string, contentType assetpb.ContentType, timeWindow *assetpb.TimeWindow) ([]*assetpb.TemporalAsset, error) {
 	m.batchCallCount++
 	m.gotBatchParent = parent
 	m.gotBatchAssetNames = assetNames
-	if onProgress != nil && len(assetNames) > 0 {
+	if len(assetNames) > 0 {
 		totalChunks := (len(assetNames) + maxBatchHistorySize - 1) / maxBatchHistorySize
+		tracker := progress.NewTracker(ctx, totalChunks, progress.WithUnit("chunks"))
+		defer tracker.Done()
 		for i := 1; i <= totalChunks; i++ {
-			onProgress(i, totalChunks)
+			tracker.Add(1)
 		}
 	}
 	return m.batchAssets, m.batchErr
@@ -579,8 +582,9 @@ func TestFetchClusterResourceSnapshots(t *testing.T) {
 				},
 			}
 
-			progress := &inspectionmetadata.TaskProgressMetadata{}
-			got, err := fetchClusterResourceSnapshots(t.Context(), tc.fetcher, lookup, progress)
+			progressMeta := inspectionmetadata.NewTaskProgressMetadata("test")
+			ctx := progress.WithContext(t.Context(), progressMeta)
+			got, err := fetchClusterResourceSnapshots(ctx, tc.fetcher, lookup)
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("fetchClusterResourceSnapshots() error = %v, wantErr %v", err, tc.wantErr)
 			}
@@ -588,10 +592,11 @@ func TestFetchClusterResourceSnapshots(t *testing.T) {
 				return
 			}
 
-			if tc.wantBatchCallCount > 0 && progress.Percentage != 1.0 {
-				t.Errorf("progress.Percentage = %f, want 1.0", progress.Percentage)
+			snap := progressMeta.Snapshot()
+			if tc.wantBatchCallCount > 0 && snap.Ratio != 1.0 {
+				t.Errorf("progress.Ratio = %f, want 1.0", snap.Ratio)
 			}
-			if progress.Message == "" {
+			if snap.Message == "" {
 				t.Errorf("progress.Message is empty")
 			}
 

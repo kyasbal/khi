@@ -468,25 +468,26 @@ func runnerToInspectionListItem(runner *coreinspection.InspectionTaskRunner) (*a
 }
 
 func convertProgress(progress *inspectionmetadata.Progress) *apiv1.InspectionProgress {
+	snap := progress.Snapshot()
 	p := &apiv1.InspectionProgress{
-		Phase: convertInspectionPhase(progress.Phase).Enum(),
+		Phase: convertInspectionPhase(snap.Phase).Enum(),
 	}
-	if progress.TotalProgress != nil {
+	if snap.TotalProgress != nil {
 		p.TotalProgress = &apiv1.TaskProgressElement{
-			Id:            proto.String(progress.TotalProgress.Id),
-			Label:         proto.String(progress.TotalProgress.Label),
-			Message:       proto.String(progress.TotalProgress.Message),
-			Percentage:    proto.Float32(progress.TotalProgress.Percentage),
-			Indeterminate: proto.Bool(progress.TotalProgress.Indeterminate),
+			Id:            proto.String(snap.TotalProgress.ID),
+			Label:         proto.String(snap.TotalProgress.Label),
+			Message:       proto.String(snap.TotalProgress.Message),
+			Percentage:    proto.Float32(snap.TotalProgress.Ratio),
+			Indeterminate: proto.Bool(snap.TotalProgress.Indeterminate),
 		}
 	}
-	p.Progresses = make([]*apiv1.TaskProgressElement, 0, len(progress.TaskProgresses))
-	for _, tp := range progress.TaskProgresses {
+	p.Progresses = make([]*apiv1.TaskProgressElement, 0, len(snap.TaskProgresses))
+	for _, tp := range snap.TaskProgresses {
 		p.Progresses = append(p.Progresses, &apiv1.TaskProgressElement{
-			Id:            proto.String(tp.Id),
+			Id:            proto.String(tp.ID),
 			Label:         proto.String(tp.Label),
 			Message:       proto.String(tp.Message),
-			Percentage:    proto.Float32(tp.Percentage),
+			Percentage:    proto.Float32(tp.Ratio),
 			Indeterminate: proto.Bool(tp.Indeterminate),
 		})
 	}

@@ -57,7 +57,7 @@ func RunTask[T any](baseContext context.Context, task coretask.Task[T], taskDepe
 }
 
 // RunTaskWithDependency runs a task as a graph. Supply the dependencies of the main task to resolve the graph correctly.
-func RunTaskWithDependency[T any](baseContext context.Context, mainTask coretask.Task[T], dependencies []coretask.UntypedTask) (T, error) {
+func RunTaskWithDependency[T any](baseContext context.Context, mainTask coretask.Task[T], dependencies []coretask.UntypedTask, interceptors ...coretask.Interceptor) (T, error) {
 	retainedMainTask := coretask.NewTask(
 		mainTask.ID(),
 		mainTask.Dependencies(),
@@ -78,6 +78,9 @@ func RunTaskWithDependency[T any](baseContext context.Context, mainTask coretask
 	runner, err := coretask.NewLocalRunner(resolvedTaskSet)
 	if err != nil {
 		return *new(T), err
+	}
+	for _, interceptor := range interceptors {
+		runner.AddInterceptor(interceptor)
 	}
 
 	err = runner.Run(taskCtx)

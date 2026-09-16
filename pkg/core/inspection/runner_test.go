@@ -21,7 +21,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logger"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	apiv1 "github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1"
@@ -634,4 +637,149 @@ func newTestInspectionServer(t *testing.T, taskErr error) (*InspectionTaskServer
 		t.Fatalf("CreateInspection failed: %v", err)
 	}
 	return server, inspectionID, dummyTaskID.String()
+}
+
+func TestInspectionTaskRunner_ProgressInterceptor(t *testing.T) {
+	logger.InitGlobalKHILogger()
+
+	testCases := []struct {
+		name               string
+		taskIDStr          string
+		labelOpts          []coretask.LabelOpt
+		taskErr            error
+		wantInFlightLabel  string
+		wantFinalPhase     inspectionmetadata.TaskProgressPhase
+		wantFinalRatio     float32
+		checkTotalProgress bool
+	}{
+		{
+			name:               "explicit progress title label and done phase",
+			taskIDStr:          "khi.google.com/inspection/test/custom-task",
+			labelOpts:          []coretask.LabelOpt{progress.WithTitle("Custom Task Title")},
+			wantInFlightLabel:  "Custom Task Title",
+			wantFinalPhase:     inspectionmetadata.TaskPhaseDone,
+			wantFinalRatio:     1.0,
+			checkTotalProgress: true,
+		},
+		{
+			name:               "default shortened task ID fallback without title label",
+			taskIDStr:          "khi.google.com/inspection/test/shortened-task",
+			labelOpts:          nil,
+			wantInFlightLabel:  "test/shortened-task",
+			wantFinalPhase:     inspectionmetadata.TaskPhaseDone,
+			wantFinalRatio:     1.0,
+			checkTotalProgress: true,
+		},
+		{
+			name:               "task failure cleans up in-flight progress and marks error phase",
+			taskIDStr:          "khi.google.com/inspection/test/failing-task",
+			labelOpts:          []coretask.LabelOpt{progress.WithTitle("Failing Task")},
+			taskErr:            errors.New("simulated task failure"),
+			wantInFlightLabel:  "Failing Task",
+			wantFinalPhase:     inspectionmetadata.TaskPhaseError,
+			checkTotalProgress: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			server, err := NewServer(&inspectioncore.IOConfig{TemporaryFolder: t.TempDir()})
+			if err != nil {
+				t.Fatalf("NewServer failed: %v", err)
+			}
+			inspectionType := InspectionType{Id: "test-progress-inspection", Name: "Test Progress Inspection"}
+			if err := server.AddInspectionType(inspectionType); err != nil {
+				t.Fatalf("AddInspectionType failed: %v", err)
+			}
+
+			var capturedSnapshot inspectionmetadata.ProgressSnapshot
+			var capturedTaskCtx context.Context
+			var runner *InspectionTaskRunner
+
+			taskID := taskid.NewDefaultImplementationID[any](tc.taskIDStr)
+			opts := append([]coretask.LabelOpt{
+				coretask.WithLabelValue(inspectioncore.LabelKeyInspectionDefaultFeatureFlag, true),
+				coretask.WithLabelValue(inspectioncore.LabelKeyInspectionFeatureFlag, true),
+				coretask.NewSubsequentTaskRefsTaskLabel(inspectioncore.SerializerTaskID.Ref()),
+			}, tc.labelOpts...)
+
+			task := coretask.NewTask(
+				taskID,
+				nil,
+				func(ctx context.Context) (any, error) {
+					capturedTaskCtx = ctx
+					progress.Report(ctx, 0.5, "Halfway through")
+					meta, err := runner.GetCurrentMetadata()
+					if err != nil {
+						return nil, err
+					}
+					if prog, found := typedmap.Get(meta, inspectionmetadata.ProgressMetadataKey); found {
+						capturedSnapshot = prog.Snapshot()
+					}
+					if tc.taskErr != nil {
+						return nil, tc.taskErr
+					}
+					return "ok", nil
+				},
+				opts...,
+			)
+			if err := server.AddTask(task); err != nil {
+				t.Fatalf("AddTask failed: %v", err)
+			}
+
+			inspectionID, err := server.CreateInspection(inspectionType.Id)
+			if err != nil {
+				t.Fatalf("CreateInspection failed: %v", err)
+			}
+			runner = server.GetInspection(inspectionID)
+			if err := runner.Run(t.Context(), &inspectioncore.InspectionRequest{Values: map[string]any{}}); err != nil {
+				t.Fatalf("runner.Run failed: %v", err)
+			}
+			<-runner.Wait()
+
+			if capturedTaskCtx == nil || capturedTaskCtx.Err() == nil {
+				t.Errorf("capturedTaskCtx.Err() = %v, want non-nil after task exits", capturedTaskCtx.Err())
+			}
+
+			var foundCustomTask bool
+			for _, tp := range capturedSnapshot.TaskProgresses {
+				if tp.ID == taskID.String() {
+					foundCustomTask = true
+					if tp.Label != tc.wantInFlightLabel {
+						t.Errorf("in-flight task progress Label = %q, want %q", tp.Label, tc.wantInFlightLabel)
+					}
+					if tp.Ratio != 0.5 {
+						t.Errorf("in-flight task progress Ratio = %v, want 0.5", tp.Ratio)
+					}
+					if tp.Message != "Halfway through" {
+						t.Errorf("in-flight task progress Message = %q, want %q", tp.Message, "Halfway through")
+					}
+				}
+			}
+			if !foundCustomTask {
+				t.Errorf("task %q not found in in-flight TaskProgresses", taskID.String())
+			}
+
+			finalMeta, err := runner.GetCurrentMetadata()
+			if err != nil {
+				t.Fatalf("runner.GetCurrentMetadata failed: %v", err)
+			}
+			prog, found := typedmap.Get(finalMeta, inspectionmetadata.ProgressMetadataKey)
+			if !found {
+				t.Fatal("ProgressMetadataKey missing from final metadata")
+			}
+			finalSnap := prog.Snapshot()
+			if finalSnap.Phase != tc.wantFinalPhase {
+				t.Errorf("finalSnap.Phase = %v, want %v", finalSnap.Phase, tc.wantFinalPhase)
+			}
+			if len(finalSnap.TaskProgresses) != 0 {
+				t.Errorf("len(finalSnap.TaskProgresses) = %d, want 0", len(finalSnap.TaskProgresses))
+			}
+			if tc.checkTotalProgress {
+				if finalSnap.TotalProgress == nil || finalSnap.TotalProgress.Ratio != tc.wantFinalRatio {
+					t.Errorf("finalSnap.TotalProgress = %+v, want Ratio == %v", finalSnap.TotalProgress, tc.wantFinalRatio)
+				}
+			}
+		})
+	}
 }

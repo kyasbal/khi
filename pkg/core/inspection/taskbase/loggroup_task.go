@@ -17,11 +17,9 @@ package inspectiontaskbase
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
-	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
-	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progressutil"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
@@ -52,21 +50,17 @@ func NewLogGrouperTask(taskID taskid.TaskImplementationID[LogGroupMap], logTask 
 // NewLogGrouperTaskWithDependencies creates a task that groups logs based on a grouper function with extra task dependencies.
 func NewLogGrouperTaskWithDependencies(taskID taskid.TaskImplementationID[LogGroupMap], logTask taskid.TaskReference[[]*log.Log], extraDependencies []coretask.Dependency, grouper LogGrouperFunc) coretask.Task[LogGroupMap] {
 	dependencies := append([]coretask.Dependency{logTask}, extraDependencies...)
-	return NewProgressReportableInspectionTask(taskID, dependencies,
-		func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType, progress *inspectionmetadata.TaskProgressMetadata) (LogGroupMap, error) {
+	return NewInspectionTask(taskID, dependencies,
+		func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (LogGroupMap, error) {
 			if taskMode != inspectioncore.TaskModeRun {
 				return LogGroupMap{}, nil
 			}
 
 			logs := coretask.GetTaskResult(ctx, logTask)
 			groups := LogGroupMap{}
-			completed := 0
 
-			progressUpdator := progressutil.NewProgressUpdator(progress, time.Second, func(tp *inspectionmetadata.TaskProgressMetadata) {
-				tp.Percentage = float32(completed) / float32(len(logs))
-				tp.Message = fmt.Sprintf("%d/%d", completed, len(logs))
-			})
-			progressUpdator.Start(ctx)
+			tracker := progress.NewTracker(ctx, len(logs), progress.WithUnit("logs"))
+			defer tracker.Done()
 
 			for _, l := range logs {
 				group := grouper(ctx, l)
@@ -77,10 +71,8 @@ func NewLogGrouperTaskWithDependencies(taskID taskid.TaskImplementationID[LogGro
 					}
 				}
 				groups[group].Logs = append(groups[group].Logs, l)
-				completed++
+				tracker.Inc()
 			}
-
-			progressUpdator.Done()
 
 			tracingActive, _ := khictx.GetValue(ctx, inspectioncore.TracingActive)
 			if tracingActive {

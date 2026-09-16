@@ -28,6 +28,5 @@ type CAIFetcher interface {
 
 	// BatchGetAssetsHistory retrieves historical temporal snapshots for specified asset names.
 	// Implementations must automatically chunk assetNames exceeding Cloud Asset Inventory limits (max 100 per request).
-	// onProgress is called after each chunk completes with the number of completed chunks and total chunks.
-	BatchGetAssetsHistory(ctx context.Context, parent string, assetNames []string, contentType assetpb.ContentType, timeWindow *assetpb.TimeWindow, onProgress func(completedChunks, totalChunks int)) ([]*assetpb.TemporalAsset, error)
+	BatchGetAssetsHistory(ctx context.Context, parent string, assetNames []string, contentType assetpb.ContentType, timeWindow *assetpb.TimeWindow) ([]*assetpb.TemporalAsset, error)
 }

@@ -55,7 +55,7 @@ func (b *FileFormTaskBuilder) WithDescription(description string) *FileFormTaskB
 
 func (b *FileFormTaskBuilder) Build(labelOpts ...coretask.LabelOpt) coretask.Task[upload.UploadResult] {
 	return coretask.NewTask(b.FormTaskBuilderBase.id, b.FormTaskBuilderBase.dependencies, func(ctx context.Context) (upload.UploadResult, error) {
-		metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+		metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 
 		req := khictx.MustGetValue(ctx, inspectioncore.InspectionTaskInput)
 
