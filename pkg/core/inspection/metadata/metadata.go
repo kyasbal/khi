@@ -21,6 +21,9 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 )
 
+// MapContextKey is the context key to access the metadata map for the current inspection run.
+var MapContextKey = typedmap.NewTypedKey[*typedmap.ReadonlyTypedMap]("khi.google.com/inspection/metadata-map")
+
 // MetadataLabelsKey is a type-safe key for metadata label values.
 type MetadataLabelsKey[T any] = typedmap.TypedKey[T]
 

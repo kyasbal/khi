@@ -369,7 +369,7 @@ func (i *InspectionTaskRunner) Run(ctx context.Context, req *inspectioncore.Insp
 		SuggestedFileName:      "unnamed.khi",
 	}, runnableTaskGraph)
 
-	runCtx = khictx.WithValue(runCtx, inspectioncore.InspectionRunMetadata, runMetadata)
+	runCtx = khictx.WithValue(runCtx, inspectionmetadata.MapContextKey, runMetadata)
 
 	cancelableCtx, cancel := context.WithCancel(runCtx)
 	i.cancel = cancel
@@ -498,7 +498,7 @@ func (i *InspectionTaskRunner) DryRun(ctx context.Context, req *inspectioncore.I
 
 	dryrunMetadata := i.generateMetadataForDryRun(runCtx, &inspectionmetadata.HeaderMetadata{}, runnableTaskGraph)
 
-	runCtx = khictx.WithValue(runCtx, inspectioncore.InspectionRunMetadata, dryrunMetadata)
+	runCtx = khictx.WithValue(runCtx, inspectionmetadata.MapContextKey, dryrunMetadata)
 
 	runFunc := func(ctx context.Context) error {
 		err := runner.Run(ctx)

@@ -99,17 +99,12 @@ func fetchGKEResourceSnapshots(
 		assetNames = append(assetNames, res.Name)
 	}
 
-	totalChunks := (len(assetNames) + maxBatchHistorySize - 1) / maxBatchHistorySize
-	progress.Report(ctx, 0.0, fmt.Sprintf("Fetching GKE asset history (0/%d chunks, %d assets)...", totalChunks, len(assetNames)))
-
 	timeWindow := &assetpb.TimeWindow{
 		StartTime: timestamppb.New(startTime),
 		EndTime:   timestamppb.New(endTime),
 	}
 
-	temporalAssets, err := fetcher.BatchGetAssetsHistory(ctx, scope, assetNames, assetpb.ContentType_RESOURCE, timeWindow, func(completedChunks, totalChunks int) {
-		progress.Report(ctx, float32(completedChunks)/float32(totalChunks), fmt.Sprintf("Fetching GKE asset history (%d/%d chunks, %d assets)...", completedChunks, totalChunks, len(assetNames)))
-	})
+	temporalAssets, err := fetcher.BatchGetAssetsHistory(ctx, scope, assetNames, assetpb.ContentType_RESOURCE, timeWindow)
 	if err != nil {
 		return nil, fmt.Errorf("failed to batch get GKE assets history from CAI: %w", err)
 	}

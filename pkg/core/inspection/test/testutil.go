@@ -63,7 +63,7 @@ func WithDefaultTestInspectionTaskContext(baseContext context.Context) context.C
 	taskCtx = khictx.WithValue(taskCtx, inspectioncore.IDGenerator, idGen)
 	taskCtx = khictx.WithValue(taskCtx, inspectioncore.CurrentIOConfig, ioConfig)
 	taskCtx = khictx.WithValue(taskCtx, inspectioncore.Builder, khifilev6.NewTestBuilder(idGen))
-	taskCtx = khictx.WithValue(taskCtx, inspectioncore.InspectionRunMetadata, generateTestMetadata())
+	taskCtx = khictx.WithValue(taskCtx, inspectionmetadata.MapContextKey, generateTestMetadata())
 	return taskCtx
 }
 
@@ -82,7 +82,7 @@ func NextRunTaskContext(originalCtx context.Context, prevRunCtx context.Context)
 func RunInspectionTask[T any](baseContext context.Context, task coretask.Task[T], mode inspectioncore.InspectionTaskModeType, input map[string]any, taskDependencyValues ...tasktest.TaskDependencyValues) (T, *typedmap.ReadonlyTypedMap, error) {
 	taskCtx := khictx.WithValue(baseContext, inspectioncore.InspectionTaskInput, input)
 	taskCtx = khictx.WithValue(taskCtx, inspectioncore.InspectionTaskMode, mode)
-	metadata := khictx.MustGetValue(taskCtx, inspectioncore.InspectionRunMetadata)
+	metadata := khictx.MustGetValue(taskCtx, inspectionmetadata.MapContextKey)
 
 	var result T
 	_, err := progress.TaskInterceptor(taskCtx, task, func(ctx context.Context) (any, error) {
@@ -97,7 +97,7 @@ func RunInspectionTask[T any](baseContext context.Context, task coretask.Task[T]
 func RunInspectionTaskWithDependency[T any](baseContext context.Context, mainTask coretask.Task[T], dependencies []coretask.UntypedTask, mode inspectioncore.InspectionTaskModeType, input map[string]any) (T, *typedmap.ReadonlyTypedMap, error) {
 	taskCtx := khictx.WithValue(baseContext, inspectioncore.InspectionTaskInput, input)
 	taskCtx = khictx.WithValue(taskCtx, inspectioncore.InspectionTaskMode, mode)
-	metadata := khictx.MustGetValue(taskCtx, inspectioncore.InspectionRunMetadata)
+	metadata := khictx.MustGetValue(taskCtx, inspectionmetadata.MapContextKey)
 	result, err := tasktest.RunTaskWithDependency(taskCtx, mainTask, dependencies, progress.TaskInterceptor)
 	return result, metadata, err
 }

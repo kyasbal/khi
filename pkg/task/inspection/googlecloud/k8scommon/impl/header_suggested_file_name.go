@@ -37,7 +37,7 @@ var HeaderSuggestedFileNameTask = inspectiontaskbase.NewInspectionTask(k8scommon
 	gcpcommon.InputEndTimeTaskID.Ref(),
 	k8scommon.InputClusterNameTaskID.Ref(),
 }, func(ctx context.Context, taskMode inspectioncore.InspectionTaskModeType) (struct{}, error) {
-	metadataSet := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+	metadataSet := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 	header := typedmap.GetOrDefault(metadataSet, inspectionmetadata.HeaderMetadataKey, &inspectionmetadata.HeaderMetadata{})
 
 	clusterName := coretask.GetTaskResult(ctx, k8scommon.InputClusterNameTaskID.Ref())

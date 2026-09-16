@@ -200,7 +200,7 @@ func TestCheckboxFormDefinitionBuilder(t *testing.T) {
 				t.Fatalf("dry run unexpected error: %v", dryRunErr)
 			}
 
-			metadata := khictx.MustGetValue(dryRunCtx, inspectioncore.InspectionRunMetadata)
+			metadata := khictx.MustGetValue(dryRunCtx, inspectionmetadata.MapContextKey)
 			fields, found := typedmap.Get(metadata, inspectionmetadata.FormFieldSetMetadataKey)
 			if !found {
 				t.Fatal("form field set metadata not found")

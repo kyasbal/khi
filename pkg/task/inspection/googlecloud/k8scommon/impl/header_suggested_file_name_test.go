@@ -55,7 +55,7 @@ func TestHeaderSuggestedFileNameTask(t *testing.T) {
 				tasktest.NewTaskDependencyValuePair(gcpcommon.InputEndTimeTaskID.Ref(), tc.EndTime),
 			)
 
-			metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+			metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 			header, found := typedmap.Get(metadata, inspectionmetadata.HeaderMetadataKey)
 			if !found {
 				t.Fatalf("header metadata not found")

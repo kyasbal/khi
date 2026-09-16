@@ -160,7 +160,7 @@ func TestTrackerLifecycle(t *testing.T) {
 			},
 			wantRatio:         0.5,
 			wantIndeterminate: false,
-			wantMsgSubstring:  "lps, ETA",
+			wantMsgSubstring:  "logs/s, ETA",
 		},
 		{
 			name:  "tracker done flushes completed count",

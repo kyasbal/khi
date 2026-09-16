@@ -105,12 +105,8 @@ func NewLogToTimelineMapperTask[T any](tid taskid.TaskImplementationID[struct{}]
 
 		passCount := mapper.PassCount()
 		totalSteps := totalLogCount * (passCount + 1)
-		unit := "logs"
-		if passCount > 0 {
-			unit = "steps"
-		}
 
-		tracker := progress.NewTracker(ctx, totalSteps, progress.WithUnit(unit))
+		tracker := progress.NewTracker(ctx, totalSteps, progress.WithUnit("steps"))
 		defer tracker.Done()
 
 		var sharedErr error

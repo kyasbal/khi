@@ -142,7 +142,7 @@ func TestSetFormDefinitionBuilder(t *testing.T) {
 				if err != nil {
 					t.Errorf("task was ended with unexpected error\n%s", err)
 				}
-				metadata := khictx.MustGetValue(taskCtx, inspectioncore.InspectionRunMetadata)
+				metadata := khictx.MustGetValue(taskCtx, inspectionmetadata.MapContextKey)
 
 				fields, found := typedmap.Get(metadata, inspectionmetadata.FormFieldSetMetadataKey)
 				if !found {
@@ -164,7 +164,7 @@ func TestSetFormDefinitionBuilder(t *testing.T) {
 				if diff := cmp.Diff(testCase.ExpectedValue, result); diff != "" {
 					t.Errorf("the result is not matching with the expected value\n%s", diff)
 				}
-				metadata := khictx.MustGetValue(taskCtx, inspectioncore.InspectionRunMetadata)
+				metadata := khictx.MustGetValue(taskCtx, inspectionmetadata.MapContextKey)
 
 				fields, found := typedmap.Get(metadata, inspectionmetadata.FormFieldSetMetadataKey)
 				if !found {

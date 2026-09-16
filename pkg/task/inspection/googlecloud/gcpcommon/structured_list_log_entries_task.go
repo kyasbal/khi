@@ -321,7 +321,7 @@ func setStructuredQueryInfo(ctx context.Context, taskID, baseLogFilter string, l
 
 // setStructuredQueryInfoWithPendingAndPreset records the generated Cloud Logging query details, estimated count, pending status, and preset into the inspection run metadata.
 func setStructuredQueryInfoWithPendingAndPreset(ctx context.Context, taskID, baseLogFilter string, logFilterIndex, totalLogFilterCount int, startTime, endTime time.Time, queryName string, estimatedCount *int64, incomplete bool, pending bool, preset logestimator.EstimatedCountPreset) error {
-	metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+	metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 	queryInfo, found := typedmap.Get(metadata, inspectionmetadata.QueryMetadataKey)
 	if !found {
 		return fmt.Errorf("query metadata was not found")

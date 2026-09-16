@@ -17,7 +17,6 @@ package progress
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -246,10 +245,6 @@ func (r *RatioTracker) Done() {
 }
 
 func rateUnitLabel(unit string) string {
-	lower := strings.ToLower(unit)
-	if strings.Contains(lower, "log") {
-		return "lps"
-	}
 	if unit != "" {
 		return unit + "/s"
 	}

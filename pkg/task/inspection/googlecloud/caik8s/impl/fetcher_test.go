@@ -25,6 +25,8 @@ import (
 
 	assetpb "cloud.google.com/go/asset/apiv1/assetpb"
 	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud"
+	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloud/caik8s"
 	"github.com/google/go-cmp/cmp"
@@ -183,36 +185,42 @@ func TestCAIFetcher_BatchGetAssetsHistory_Chunking(t *testing.T) {
 		assetCount        int
 		wantRequestsCount int
 		wantChunkSizes    []int
+		wantProgressRatio float32
 	}{
 		{
 			name:              "0 assets produces no requests",
 			assetCount:        0,
 			wantRequestsCount: 0,
 			wantChunkSizes:    nil,
+			wantProgressRatio: 0,
 		},
 		{
 			name:              "50 assets produces single request",
 			assetCount:        50,
 			wantRequestsCount: 1,
 			wantChunkSizes:    []int{50},
+			wantProgressRatio: 1.0,
 		},
 		{
 			name:              "100 assets produces single request",
 			assetCount:        100,
 			wantRequestsCount: 1,
 			wantChunkSizes:    []int{100},
+			wantProgressRatio: 1.0,
 		},
 		{
 			name:              "101 assets chunks into 100 and 1",
 			assetCount:        101,
 			wantRequestsCount: 2,
 			wantChunkSizes:    []int{100, 1},
+			wantProgressRatio: 1.0,
 		},
 		{
 			name:              "250 assets chunks into 100, 100, and 50",
 			assetCount:        250,
 			wantRequestsCount: 3,
 			wantChunkSizes:    []int{100, 100, 50},
+			wantProgressRatio: 1.0,
 		},
 	}
 
@@ -224,12 +232,10 @@ func TestCAIFetcher_BatchGetAssetsHistory_Chunking(t *testing.T) {
 			fetcher := NewCAIFetcher(factory, googlecloud.NewCallOptionInjector(), "test-project")
 			inputNames := generateAssetNames(tc.assetCount)
 
-			var gotProgress [][2]int
-			onProgress := func(completedChunks, totalChunks int) {
-				gotProgress = append(gotProgress, [2]int{completedChunks, totalChunks})
-			}
+			tp := inspectionmetadata.NewTaskProgressMetadata("test-task")
+			ctx := progress.WithContext(t.Context(), tp)
 
-			assets, err := fetcher.BatchGetAssetsHistory(t.Context(), "projects/test-project", inputNames, assetpb.ContentType_RESOURCE, nil, onProgress)
+			assets, err := fetcher.BatchGetAssetsHistory(ctx, "projects/test-project", inputNames, assetpb.ContentType_RESOURCE, nil)
 			if err != nil {
 				t.Fatalf("BatchGetAssetsHistory() unexpected error: %v", err)
 			}
@@ -255,16 +261,9 @@ func TestCAIFetcher_BatchGetAssetsHistory_Chunking(t *testing.T) {
 				t.Errorf("returned assets count mismatch: got %d, want %d", len(assets), tc.assetCount)
 			}
 
-			if tc.wantRequestsCount > 0 {
-				var wantProgress [][2]int
-				for i := 1; i <= tc.wantRequestsCount; i++ {
-					wantProgress = append(wantProgress, [2]int{i, tc.wantRequestsCount})
-				}
-				if diff := cmp.Diff(wantProgress, gotProgress); diff != "" {
-					t.Errorf("progress mismatch (-want +got):\n%s", diff)
-				}
-			} else if len(gotProgress) != 0 {
-				t.Errorf("expected no progress calls, got: %v", gotProgress)
+			gotRatio := tp.Snapshot().Ratio
+			if gotRatio != tc.wantProgressRatio {
+				t.Errorf("progress ratio = %v, want %v", gotRatio, tc.wantProgressRatio)
 			}
 		})
 	}
@@ -312,7 +311,7 @@ func TestCAIFetcher_QuotaProjectResolution(t *testing.T) {
 			factory := setupMockServer(t, mockServer)
 
 			fetcher := NewCAIFetcher(factory, googlecloud.NewCallOptionInjector(), tc.defaultProjectID)
-			_, err := fetcher.BatchGetAssetsHistory(t.Context(), fmt.Sprintf("projects/%s", tc.defaultProjectID), []string{"asset-1"}, assetpb.ContentType_RESOURCE, nil, nil)
+			_, err := fetcher.BatchGetAssetsHistory(t.Context(), fmt.Sprintf("projects/%s", tc.defaultProjectID), []string{"asset-1"}, assetpb.ContentType_RESOURCE, nil)
 			if err != nil {
 				t.Fatalf("BatchGetAssetsHistory() unexpected error: %v", err)
 			}
@@ -346,7 +345,7 @@ func TestCAIFetcher_ContextCancellation(t *testing.T) {
 				ctx, cancel := context.WithCancel(t.Context())
 				cancel()
 
-				_, err := fetcher.BatchGetAssetsHistory(ctx, "projects/test-project", generateAssetNames(50), assetpb.ContentType_RESOURCE, nil, nil)
+				_, err := fetcher.BatchGetAssetsHistory(ctx, "projects/test-project", generateAssetNames(50), assetpb.ContentType_RESOURCE, nil)
 				if !errors.Is(err, context.Canceled) {
 					t.Errorf("expected context.Canceled error, got: %v", err)
 				}
@@ -367,7 +366,7 @@ func TestCAIFetcher_ContextCancellation(t *testing.T) {
 				}
 				mockServer.mu.Unlock()
 
-				_, err := fetcher.BatchGetAssetsHistory(ctx, "projects/test-project", generateAssetNames(250), assetpb.ContentType_RESOURCE, nil, nil)
+				_, err := fetcher.BatchGetAssetsHistory(ctx, "projects/test-project", generateAssetNames(250), assetpb.ContentType_RESOURCE, nil)
 				if !errors.Is(err, context.Canceled) {
 					t.Errorf("expected context.Canceled error, got: %v", err)
 				}

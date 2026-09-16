@@ -94,7 +94,7 @@ var AuditLogFileReaderTask = inspectiontaskbase.NewInspectionTask(
 		slices.SortFunc(logs, func(a, b *log.Log) int {
 			return a.Timestamp.Compare(b.Timestamp)
 		})
-		metadataSet := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+		metadataSet := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 		header := typedmap.GetOrDefault(metadataSet, inspectionmetadata.HeaderMetadataKey, &inspectionmetadata.HeaderMetadata{})
 
 		if len(logs) > 0 {

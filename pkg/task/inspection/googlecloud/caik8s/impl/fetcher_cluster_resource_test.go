@@ -110,14 +110,16 @@ func (m *mockCAIFetcher) recordedSearchAssetTypes() [][]string {
 	return assetTypes
 }
 
-func (m *mockCAIFetcher) BatchGetAssetsHistory(ctx context.Context, parent string, assetNames []string, contentType assetpb.ContentType, timeWindow *assetpb.TimeWindow, onProgress func(completedChunks, totalChunks int)) ([]*assetpb.TemporalAsset, error) {
+func (m *mockCAIFetcher) BatchGetAssetsHistory(ctx context.Context, parent string, assetNames []string, contentType assetpb.ContentType, timeWindow *assetpb.TimeWindow) ([]*assetpb.TemporalAsset, error) {
 	m.batchCallCount++
 	m.gotBatchParent = parent
 	m.gotBatchAssetNames = assetNames
-	if onProgress != nil && len(assetNames) > 0 {
+	if len(assetNames) > 0 {
 		totalChunks := (len(assetNames) + maxBatchHistorySize - 1) / maxBatchHistorySize
+		tracker := progress.NewTracker(ctx, totalChunks, progress.WithUnit("chunks"))
+		defer tracker.Done()
 		for i := 1; i <= totalChunks; i++ {
-			onProgress(i, totalChunks)
+			tracker.Add(1)
 		}
 	}
 	return m.batchAssets, m.batchErr

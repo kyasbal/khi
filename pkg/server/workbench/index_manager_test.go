@@ -66,7 +66,7 @@ func createTestKhiFile(t *testing.T, dir string, inspectionID string) {
 		t.Fatalf("failed to add log: %v", err)
 	}
 
-	if err := b.Build(nil); err != nil {
+	if err := b.Build(t.Context()); err != nil {
 		t.Fatalf("failed to build KHI file: %v", err)
 	}
 }

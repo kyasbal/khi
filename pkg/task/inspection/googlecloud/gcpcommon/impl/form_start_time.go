@@ -38,7 +38,7 @@ var InputStartTimeTask = inspectiontaskbase.NewInspectionTask(gcpcommon.InputSta
 	duration := coretask.GetTaskResult(ctx, gcpcommon.InputDurationTaskID.Ref())
 	startTime := endTime.Add(-duration)
 	// Add starttime and endtime on the header metadata
-	metadataSet := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+	metadataSet := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 
 	header, found := typedmap.Get(metadataSet, inspectionmetadata.HeaderMetadataKey)
 	if !found {

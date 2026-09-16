@@ -22,7 +22,6 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
-	inspectioncore "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore"
 )
 
 // LabelKeyTitle is the task label key used to store a human-readable title for progress display.
@@ -71,7 +70,7 @@ func TaskInterceptor(ctx context.Context, task coretask.UntypedTask, next func(c
 	taskCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if metadataSet, err := khictx.GetValue(taskCtx, inspectioncore.InspectionRunMetadata); err == nil {
+	if metadataSet, err := khictx.GetValue(taskCtx, inspectionmetadata.MapContextKey); err == nil {
 		if progressMeta, found := typedmap.Get(metadataSet, inspectionmetadata.ProgressMetadataKey); found {
 			taskID := task.UntypedID().String()
 			if tp, err := progressMeta.GetOrCreateTaskProgress(taskID); err == nil {

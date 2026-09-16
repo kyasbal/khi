@@ -212,7 +212,7 @@ func handleResourceNames(ctx context.Context, taskID taskid.TaskImplementationID
 
 // setQueryInfo records the generated Cloud Logging query details into the inspection run metadata.
 func setQueryInfo(ctx context.Context, taskID, baseLogFilter string, logFilterIndex, totalLogFilterCount int, startTime, endTime time.Time, description *ListLogEntriesTaskDescription) error {
-	metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+	metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 	queryInfo, found := typedmap.Get(metadata, inspectionmetadata.QueryMetadataKey)
 	if !found {
 		return fmt.Errorf("query metadata was not found")
@@ -233,7 +233,7 @@ func setQueryInfo(ctx context.Context, taskID, baseLogFilter string, logFilterIn
 
 // setErrorMetadataForFetchLogError extracts error information from a log fetching operation and adds it to the inspection run's error message set metadata.
 func setErrorMetadataForFetchLogError(ctx context.Context, err error) error {
-	metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+	metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 	errorMessageSet, found := typedmap.Get(metadata, inspectionmetadata.ErrorMessageSetMetadataKey)
 	if !found {
 		return fmt.Errorf("error message set metadata was not found. originalError=%w", err)

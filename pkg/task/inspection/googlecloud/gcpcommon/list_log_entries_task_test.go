@@ -352,7 +352,7 @@ func TestSetQueryInfo(t *testing.T) {
 			ctx := inspectiontest.WithDefaultTestInspectionTaskContext(t.Context())
 			setQueryInfo(ctx, taskID, baseLogFilter, tt.logFilterIndex, tt.totalLogFilterCount, startTime, endTime, description)
 
-			metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+			metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 			errorMessageSet, found := typedmap.Get(metadata, inspectionmetadata.QueryMetadataKey)
 			if !found {
 				t.Fatalf("query metadata not found")
@@ -393,7 +393,7 @@ func TestSetErrorMetadataForFetchLogError(t *testing.T) {
 			ctx := inspectiontest.WithDefaultTestInspectionTaskContext(t.Context())
 			setErrorMetadataForFetchLogError(ctx, tt.err)
 
-			metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+			metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 			errorMessageSet, found := typedmap.Get(metadata, inspectionmetadata.ErrorMessageSetMetadataKey)
 			if !found {
 				t.Fatalf("error message set metadata not found")

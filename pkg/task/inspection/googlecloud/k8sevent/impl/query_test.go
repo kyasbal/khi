@@ -317,7 +317,7 @@ func TestListLogEntriesTask_DryRun(t *testing.T) {
 		t.Errorf("dry run should return 0 logs, got %d", len(gotLogs))
 	}
 
-	metadata := khictx.MustGetValue(ctx, inspectioncore.InspectionRunMetadata)
+	metadata := khictx.MustGetValue(ctx, inspectionmetadata.MapContextKey)
 	queryMetadata, found := typedmap.Get(metadata, inspectionmetadata.QueryMetadataKey)
 	if !found {
 		t.Fatalf("QueryMetadata not found in metadata")

@@ -266,7 +266,7 @@ func TestBuilder_Build(t *testing.T) {
 			b := NewBuilder(gen, writer)
 			tc.setup(gen, b)
 
-			if err := b.Build(nil); err != nil {
+			if err := b.Build(t.Context()); err != nil {
 				t.Fatalf("Build() failed: %v.", err)
 			}
 

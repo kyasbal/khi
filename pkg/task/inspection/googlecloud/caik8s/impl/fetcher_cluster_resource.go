@@ -268,12 +268,7 @@ func fetchClusterResourceSnapshots(ctx context.Context, fetcher caik8s.CAIFetche
 		return []*caik8s.ClusterResourceSnapshot{}, nil
 	}
 
-	totalChunks := (len(matchedAssetNames) + maxBatchHistorySize - 1) / maxBatchHistorySize
-	progress.Report(ctx, 0.0, fmt.Sprintf("Fetching asset history (0/%d chunks, %d assets)...", totalChunks, len(matchedAssetNames)))
-
-	temporalAssets, err := fetcher.BatchGetAssetsHistory(ctx, lookup.scope, matchedAssetNames, assetpb.ContentType_RESOURCE, lookup.timeWindow, func(completedChunks, totalChunks int) {
-		progress.Report(ctx, float32(completedChunks)/float32(totalChunks), fmt.Sprintf("Fetching asset history (%d/%d chunks, %d assets)...", completedChunks, totalChunks, len(matchedAssetNames)))
-	})
+	temporalAssets, err := fetcher.BatchGetAssetsHistory(ctx, lookup.scope, matchedAssetNames, assetpb.ContentType_RESOURCE, lookup.timeWindow)
 	if err != nil {
 		return nil, fmt.Errorf("failed to batch get assets history from CAI: %w", err)
 	}

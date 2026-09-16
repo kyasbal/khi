@@ -23,7 +23,6 @@ import (
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
-	inspectioncore "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore"
 )
 
 func TestResolveTitle(t *testing.T) {
@@ -180,12 +179,12 @@ func TestTaskInterceptor(t *testing.T) {
 				prog.SetTotalTaskCount(1)
 				md := typedmap.NewTypedMap()
 				typedmap.Set(md, inspectionmetadata.ProgressMetadataKey, prog)
-				ctx := khictx.WithValue(context.Background(), inspectioncore.InspectionRunMetadata, md.AsReadonly())
+				ctx := khictx.WithValue(context.Background(), inspectionmetadata.MapContextKey, md.AsReadonly())
 				return ctx, prog
 			},
 		},
 		{
-			name: "executes safely when InspectionRunMetadata is absent from context",
+			name: "executes safely when metadata map is absent from context",
 			setupCtx: func() (context.Context, *inspectionmetadata.Progress) {
 				return context.Background(), nil
 			},

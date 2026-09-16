@@ -15,18 +15,14 @@
 package khifilev6
 
 import (
+	"context"
 	"fmt"
 	"slices"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/id"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6/style"
 )
-
-// BuilderProgressReporter is an interface to report progress during KHI file generation.
-type BuilderProgressReporter interface {
-	// ReportProgress reports the current progress with a percentage (0.0 to 1.0) and status message.
-	ReportProgress(progress float32, status string)
-}
 
 // Builder orchestrates the accumulators, pools, and final file generation for KHI v6 format.
 type Builder struct {
@@ -80,7 +76,7 @@ func (b *Builder) Dispose() {
 }
 
 // Build writes the accumulated metadata, timeline chunks, and flushes remaining log and intern pool chunks.
-func (b *Builder) Build(reporter BuilderProgressReporter) (err error) {
+func (b *Builder) Build(ctx context.Context) (err error) {
 	defer b.Dispose()
 	defer func() {
 		if closeErr := b.writer.Close(); closeErr != nil && err == nil {
@@ -88,20 +84,14 @@ func (b *Builder) Build(reporter BuilderProgressReporter) (err error) {
 		}
 	}()
 
-	report := func(progress float32, status string) {
-		if reporter != nil {
-			reporter.ReportProgress(progress, status)
-		}
-	}
-
-	report(0.1, "Writing timeline style chunk")
+	progress.Report(ctx, 0.1, "Writing timeline style chunk")
 	// 1. Write TimelineStyleChunk directly (no generator needed since it's a single chunk)
 	styleChunk := style.GenerateChunk()
 	if err := b.writer.WriteChunk(ChunkTypeTimelineStyle, styleChunk); err != nil {
 		return fmt.Errorf("failed to write timeline style chunk: %w", err)
 	}
 
-	report(0.2, "Writing metadata chunk")
+	progress.Report(ctx, 0.2, "Writing metadata chunk")
 	// 2. Write MetadataChunk
 	metadataList := b.MetadataAccumulator.Accumulate()
 	if len(metadataList) > 0 {
@@ -112,19 +102,19 @@ func (b *Builder) Build(reporter BuilderProgressReporter) (err error) {
 		}
 	}
 
-	report(0.4, "Flushing log chunks")
+	progress.Report(ctx, 0.4, "Flushing log chunks")
 	// 3. Flush remaining LogChunks
 	if err := b.LogAccumulator.Flush(); err != nil {
 		return fmt.Errorf("failed to flush log accumulator: %w", err)
 	}
 
-	report(0.6, "Writing timeline chunks")
+	progress.Report(ctx, 0.6, "Writing timeline chunks")
 	// 4. Flush timeline chunks
 	if err := b.TimelineAccumulator.Flush(); err != nil {
 		return fmt.Errorf("failed to flush timeline accumulator: %w", err)
 	}
 
-	report(0.8, "Flushing intern pool chunks")
+	progress.Report(ctx, 0.8, "Flushing intern pool chunks")
 	// 5. Flush client and server intern pool chunks
 	if err := b.internPool.Flush(); err != nil {
 		return fmt.Errorf("failed to flush client intern pool: %w", err)
@@ -133,6 +123,6 @@ func (b *Builder) Build(reporter BuilderProgressReporter) (err error) {
 		return fmt.Errorf("failed to flush server intern pool: %w", err)
 	}
 
-	report(1.0, "Done")
+	progress.Report(ctx, 1.0, "Done")
 	return nil
 }
