@@ -18,7 +18,10 @@ import { signal, WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { ViewStateService } from 'src/app/services/view-state.service';
+import {
+  TimeRangeFilter,
+  ViewStateService,
+} from 'src/app/services/view-state.service';
 import { InspectionDataStore } from 'src/app/services/inspection-data-store.service';
 import { CelValidationClientService } from 'src/app/services/api/cel/cel-validation-client.service';
 import { SelectionManager } from 'src/app/services/selection-manager.service';
@@ -251,6 +254,7 @@ describe('TimelineToolbarSmartComponent', () => {
   let standardTimelineFiltersSignal: WritableSignal<TimelineFilterConfig[]>;
   let standardSelectedSeveritySignal: WritableSignal<string>;
   let standardLogSearchTermsSignal: WritableSignal<string[]>;
+  let timeRangeFilterSignal: WritableSignal<TimeRangeFilter | null>;
 
   beforeEach(async () => {
     mockCelValidationClient = jasmine.createSpyObj(
@@ -271,6 +275,7 @@ describe('TimelineToolbarSmartComponent', () => {
     standardTimelineFiltersSignal = signal([]);
     standardSelectedSeveritySignal = signal('ANY');
     standardLogSearchTermsSignal = signal([]);
+    timeRangeFilterSignal = signal<TimeRangeFilter | null>(null);
 
     mockBackendFilter = {
       updateFilterParams: jasmine.createSpy('updateFilterParams'),
@@ -301,6 +306,7 @@ describe('TimelineToolbarSmartComponent', () => {
         advancedTimelineExcludeCel: advancedTimelineExcludeCelSignal,
         advancedLogCel: advancedLogCelSignal,
         hideTimelinesWithoutMatchingLogs: of(true),
+        timeRangeFilter: timeRangeFilterSignal,
       },
     );
 
@@ -432,6 +438,31 @@ describe('TimelineToolbarSmartComponent', () => {
     );
     expect(mockBackendFilter.updateFilterParams).not.toHaveBeenCalledWith(
       jasmine.objectContaining({ logQuery: 'invalid[' }),
+    );
+  });
+
+  it('should synchronize timeRangeFilter changes and clearing to backend filter', () => {
+    mockBackendFilter.updateFilterParams.calls.reset();
+
+    timeRangeFilterSignal.set({ startTime: 1000n, endTime: 2000n });
+    fixture.detectChanges();
+
+    expect(mockBackendFilter.updateFilterParams).toHaveBeenCalledWith(
+      jasmine.objectContaining({
+        filterStartTime: 1000n,
+        filterEndTime: 2000n,
+      }),
+    );
+
+    mockBackendFilter.updateFilterParams.calls.reset();
+    timeRangeFilterSignal.set(null);
+    fixture.detectChanges();
+
+    expect(mockBackendFilter.updateFilterParams).toHaveBeenCalledWith(
+      jasmine.objectContaining({
+        filterStartTime: null,
+        filterEndTime: null,
+      }),
     );
   });
 });

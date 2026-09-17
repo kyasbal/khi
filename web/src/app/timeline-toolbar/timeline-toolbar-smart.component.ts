@@ -242,6 +242,18 @@ export class TimelineToolbarSmartComponent implements OnDestroy {
       });
     });
 
+    // Synchronize timeRangeFilter to backend filter
+    effect(() => {
+      const view = this.inspectionDataStore.timelineView();
+      if (!view) return;
+
+      const timeRange = this.viewStateService.timeRangeFilter();
+      view.backendFilter.updateFilterParams({
+        filterStartTime: timeRange ? timeRange.startTime : null,
+        filterEndTime: timeRange ? timeRange.endTime : null,
+      });
+    });
+
     // Synchronize standard filter changes to advanced CEL inputs and backend filter
     effect(() => {
       if (!this.isAdvancedMode()) {
