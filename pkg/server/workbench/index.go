@@ -375,7 +375,7 @@ func (w *Workbench) indexTimelinesParallel(
 								Severity:  sev,
 							})
 						}
-						slices.SortStableFunc(events, func(a, b cel.EventInfo) int {
+						slices.SortFunc(events, func(a, b cel.EventInfo) int {
 							if c := cmp.Compare(a.Timestamp, b.Timestamp); c != 0 {
 								return c
 							}
@@ -407,7 +407,7 @@ func (w *Workbench) indexTimelinesParallel(
 								Severity:             sev,
 							})
 						}
-						slices.SortStableFunc(revisions, func(a, b cel.RevisionInfo) int {
+						slices.SortFunc(revisions, func(a, b cel.RevisionInfo) int {
 							if c := cmp.Compare(a.ChangedTime, b.ChangedTime); c != 0 {
 								return c
 							}
