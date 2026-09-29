@@ -61,6 +61,11 @@
             [parameter]="parameter"
           ></khi-new-inspection-group-parameter>
         }
+        @case (ParameterInputType.List) {
+          <khi-new-inspection-list-parameter
+            [parameter]="parameter"
+          ></khi-new-inspection-list-parameter>
+        }
         @default {
           <p>Unknown parameter type!</p>
         }

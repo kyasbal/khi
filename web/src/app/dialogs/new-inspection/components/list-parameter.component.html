@@ -1,0 +1,95 @@
+<!--
+ Copyright 2026 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+@let param = parameter();
+<div class="container">
+  <div class="header-row">
+    <khi-new-inspection-parameter-header
+      [parameter]="param"
+    ></khi-new-inspection-parameter-header>
+  </div>
+  @if (param.hintType !== ParameterHintType.None) {
+    <khi-new-inspection-parameter-hint
+      [parameter]="param"
+    ></khi-new-inspection-parameter-hint>
+  }
+  <div class="items-container">
+    @for (item of activeItems(); track item.key; let idx = $index) {
+      <div class="list-item-card">
+        <div class="list-item-header">
+          <span class="list-item-index">#{{ idx + 1 }}</span>
+          <button
+            mat-icon-button
+            type="button"
+            class="remove-item-btn"
+            [disabled]="!canRemove()"
+            [matTooltip]="
+              canRemove() ? 'Remove item' : 'Minimum item count reached'
+            "
+            (click)="removeItem(item.key)"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+        <div class="list-item-body">
+          @switch (item.field.type) {
+            @case (ParameterInputType.Text) {
+              <khi-new-inspection-text-parameter
+                [parameter]="item.field"
+              ></khi-new-inspection-text-parameter>
+            }
+            @case (ParameterInputType.File) {
+              <khi-new-inspection-file-parameter
+                [parameter]="item.field"
+              ></khi-new-inspection-file-parameter>
+            }
+            @case (ParameterInputType.Set) {
+              <khi-new-inspection-set-parameter
+                [parameter]="item.field"
+              ></khi-new-inspection-set-parameter>
+            }
+            @case (ParameterInputType.Checkbox) {
+              <khi-new-inspection-checkbox-parameter
+                [parameter]="item.field"
+              ></khi-new-inspection-checkbox-parameter>
+            }
+            @case (ParameterInputType.Group) {
+              <khi-new-inspection-group-parameter
+                [parameter]="item.field"
+              ></khi-new-inspection-group-parameter>
+            }
+            @case (ParameterInputType.List) {
+              <khi-new-inspection-list-parameter
+                [parameter]="item.field"
+              ></khi-new-inspection-list-parameter>
+            }
+          }
+        </div>
+      </div>
+    }
+  </div>
+  <div class="actions-row">
+    <button
+      mat-stroked-button
+      type="button"
+      class="add-item-btn"
+      [disabled]="!canAdd()"
+      (click)="addItem()"
+    >
+      <mat-icon>add</mat-icon>{{ param.addButtonLabel || "Add" }}
+    </button>
+  </div>
+</div>

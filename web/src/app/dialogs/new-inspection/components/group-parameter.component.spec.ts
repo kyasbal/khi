@@ -123,14 +123,24 @@ describe('GroupParameterComponent', () => {
           hintType: ParameterHintType.None,
         },
         {
-          type: ParameterInputType.File,
-          label: 'file-form-2',
+          type: ParameterInputType.List,
+          label: 'list-form-1',
           hintType: ParameterHintType.None,
+          default: [],
+          minCount: 0,
+          maxCount: 5,
+          addButtonLabel: 'Add',
+          items: [],
         },
       ] as ParameterFormField[],
     } as GroupParameterFormField);
     fixture.detectChanges();
     expect(fixture.componentInstance).toBeTruthy();
+
+    const listElement = fixture.debugElement.query(
+      By.css('khi-new-inspection-list-parameter'),
+    );
+    expect(listElement).toBeTruthy();
 
     const containerElement = fixture.debugElement.query(By.css('.container'));
     expect(containerElement.classes['collapsable']).toBeFalsy();

@@ -36,6 +36,7 @@ import {
   FileParameterFormField,
   SetParameterFormField,
   CheckboxParameterFormField,
+  ListParameterFormField,
 } from 'src/app/common/schema/form-types';
 import { EstimatedCountPreset } from 'src/app/common/schema/metadata-types';
 import {
@@ -285,6 +286,120 @@ describe('inspection-converter', () => {
       expect(converted.readonly).toBeFalse();
       expect(converted.default).toBeTrue();
       expect(converted.hintType).toBe(ParameterHintType.Info);
+    });
+
+    it('converts list field with file items', () => {
+      const field = create(FormFieldSchema, {
+        id: 'list-files',
+        label: 'List of Files',
+        description: 'Upload multiple files',
+        hint: 'At least one file',
+        hintType: ProtoParameterHintType.INFO,
+        kind: {
+          case: 'list',
+          value: {
+            items: [
+              {
+                key: '0',
+                field: {
+                  id: 'file-sub-0',
+                  label: 'Log File',
+                  description: '',
+                  hint: '',
+                  kind: {
+                    case: 'file',
+                    value: {
+                      tokenId: 'token-0',
+                      status: ProtoUploadStatus.DONE,
+                    },
+                  },
+                },
+              },
+            ],
+            defaultItemKeys: ['0'],
+            minCount: 1,
+            maxCount: 5,
+            addButtonLabel: 'Add File',
+          },
+        },
+      });
+
+      const converted = convertProtoFormFieldToParameterFormField(
+        field,
+      ) as ListParameterFormField;
+      expect(converted).not.toBeNull();
+      expect(converted.id).toBe('list-files');
+      expect(converted.type).toBe(ParameterInputType.List);
+      expect(converted.label).toBe('List of Files');
+      expect(converted.minCount).toBe(1);
+      expect(converted.maxCount).toBe(5);
+      expect(converted.addButtonLabel).toBe('Add File');
+      expect(converted.default).toEqual(['0']);
+      expect(converted.items.length).toBe(1);
+      expect(converted.items[0].key).toBe('0');
+      expect(converted.items[0].field.id).toBe('file-sub-0');
+      expect(converted.items[0].field.type).toBe(ParameterInputType.File);
+    });
+
+    it('converts list field with nested group items', () => {
+      const field = create(FormFieldSchema, {
+        id: 'list-groups',
+        label: 'List of Groups',
+        kind: {
+          case: 'list',
+          value: {
+            items: [
+              {
+                key: 'item-0',
+                field: {
+                  id: 'group-sub-0',
+                  label: 'Node Group',
+                  kind: {
+                    case: 'group',
+                    value: {
+                      children: [
+                        {
+                          id: 'node-name-0',
+                          label: 'Node Name',
+                          kind: {
+                            case: 'text',
+                            value: {
+                              readonly: false,
+                              defaultValue: 'node-1',
+                              suggestions: [],
+                              validationTiming: ProtoValidationTiming.CHANGE,
+                            },
+                          },
+                        },
+                      ],
+                      collapsible: false,
+                      collapsedByDefault: false,
+                    },
+                  },
+                },
+              },
+            ],
+            defaultItemKeys: ['item-0'],
+            minCount: 0,
+            maxCount: 0,
+            addButtonLabel: 'Add Node',
+          },
+        },
+      });
+
+      const converted = convertProtoFormFieldToParameterFormField(
+        field,
+      ) as ListParameterFormField;
+      expect(converted).not.toBeNull();
+      expect(converted.id).toBe('list-groups');
+      expect(converted.type).toBe(ParameterInputType.List);
+      expect(converted.items.length).toBe(1);
+      expect(converted.items[0].key).toBe('item-0');
+      expect(converted.items[0].field.type).toBe(ParameterInputType.Group);
+      const groupField = converted.items[0].field as GroupParameterFormField;
+      expect(groupField.children.length).toBe(1);
+      expect(groupField.children[0].id).toBe('node-name-0');
+      expect(groupField.children[0].type).toBe(ParameterInputType.Text);
     });
 
     it('propagates pending: true to parameter form field', () => {

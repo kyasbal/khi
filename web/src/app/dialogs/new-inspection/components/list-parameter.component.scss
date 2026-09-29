@@ -1,0 +1,94 @@
+/**
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@use '@angular/material' as mat;
+
+$card-border-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 300);
+$card-bg-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 50);
+$index-color: mat.m2-get-color-from-palette(mat.$m2-gray-palette, 600);
+
+.container {
+  display: grid;
+  grid-template:
+    'header' auto
+    'hint' auto
+    'items' auto
+    'actions' auto
+    / 1fr;
+  row-gap: 8px;
+
+  .header-row {
+    grid-area: header;
+  }
+
+  khi-new-inspection-parameter-hint {
+    grid-area: hint;
+  }
+
+  .items-container {
+    grid-area: items;
+    display: grid;
+    grid-auto-flow: row;
+    row-gap: 8px;
+
+    .list-item-card {
+      border: 1px solid $card-border-color;
+      border-radius: 4px;
+      padding: 8px 12px;
+      background-color: $card-bg-color;
+      display: grid;
+      grid-template:
+        'item-header' auto
+        'item-body' auto
+        / 1fr;
+      row-gap: 8px;
+
+      .list-item-header {
+        grid-area: item-header;
+        display: grid;
+        grid-template:
+          'index remove' auto
+          / 1fr auto;
+        align-items: center;
+
+        .list-item-index {
+          grid-area: index;
+          font-weight: 500;
+          font-size: 12px;
+          color: $index-color;
+        }
+
+        .remove-item-btn {
+          grid-area: remove;
+        }
+      }
+
+      .list-item-body {
+        grid-area: item-body;
+      }
+    }
+  }
+
+  .actions-row {
+    grid-area: actions;
+
+    .add-item-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+  }
+}

@@ -38,6 +38,8 @@ const (
 	Set ParameterInputType = "set"
 	// Checkbox is a type of ParameterInputType. This represents the checkbox type input field.
 	Checkbox ParameterInputType = "checkbox"
+	// List is a type of ParameterInputType. This represents a repeatable list of form fields.
+	List ParameterInputType = "list"
 )
 
 // ParameterHintType represents the types of hint message shown at the bottom of parameter forms.
@@ -155,6 +157,29 @@ type CheckboxParameterFormField struct {
 	Default bool `json:"default"`
 }
 
+// ListParameterFormFieldItem represents a single item entry within a ListParameterFormField.
+type ListParameterFormFieldItem struct {
+	// Key is the stable identifier of this item within the list.
+	Key string `json:"key"`
+	// Field is the form field rendered for this item.
+	Field ParameterFormField `json:"field"`
+}
+
+// ListParameterFormField represents List type parameter specific data.
+type ListParameterFormField struct {
+	ParameterFormFieldBase
+	// Items is the ordered list of active items in this list field.
+	Items []ListParameterFormFieldItem `json:"items"`
+	// Default is the default list of item keys.
+	Default []string `json:"default"`
+	// MinCount is the minimum number of items required in the list.
+	MinCount int `json:"minCount"`
+	// MaxCount is the maximum number of items allowed in the list. Zero means unlimited.
+	MaxCount int `json:"maxCount"`
+	// AddButtonLabel is the label text shown on the button to add a new item.
+	AddButtonLabel string `json:"addButtonLabel"`
+}
+
 // FormFieldSetMetadata is a metadata type used in frontend to generate the form fields.
 type FormFieldSetMetadata struct {
 	fieldsLock sync.RWMutex
@@ -225,14 +250,29 @@ func (f *FormFieldSetMetadata) DangerouslyGetField(id string) ParameterFormField
 func (f *FormFieldSetMetadata) GetFileFieldIDs() []string {
 	f.fieldsLock.RLock()
 	defer f.fieldsLock.RUnlock()
-	var returnIDs []string
-	for _, field := range f.fields {
+	return collectFileFieldIDs(f.fields)
+}
+
+// collectFileFieldIDs recursively traverses fields and collects IDs of all file-type form fields.
+func collectFileFieldIDs(fields []ParameterFormField) []string {
+	var fileIDs []string
+	for _, field := range fields {
 		base := GetParameterFormFieldBase(field)
 		if base.Type == File {
-			returnIDs = append(returnIDs, base.ID)
+			fileIDs = append(fileIDs, base.ID)
+		}
+		switch v := field.(type) {
+		case GroupParameterFormField:
+			fileIDs = append(fileIDs, collectFileFieldIDs(v.Children)...)
+		case ListParameterFormField:
+			for _, item := range v.Items {
+				if item.Field != nil {
+					fileIDs = append(fileIDs, collectFileFieldIDs([]ParameterFormField{item.Field})...)
+				}
+			}
 		}
 	}
-	return returnIDs
+	return fileIDs
 }
 
 // GetParameterFormFieldBase returns the ParameterFormFieldBase from the given ParameterFormField.
@@ -247,6 +287,8 @@ func GetParameterFormFieldBase(parameter ParameterFormField) ParameterFormFieldB
 	case FileParameterFormField:
 		return v.ParameterFormFieldBase
 	case CheckboxParameterFormField:
+		return v.ParameterFormFieldBase
+	case ListParameterFormField:
 		return v.ParameterFormFieldBase
 	default:
 		return ParameterFormFieldBase{}

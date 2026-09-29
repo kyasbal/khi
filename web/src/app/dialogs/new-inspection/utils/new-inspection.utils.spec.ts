@@ -24,6 +24,7 @@ import {
   CheckboxParameterFormField,
   FileParameterFormField,
   GroupParameterFormField,
+  ListParameterFormField,
   ParameterFormField,
   ParameterFormValidationTiming,
   ParameterHintType,
@@ -365,6 +366,62 @@ describe('new-inspection.utils', () => {
       ).toBe(true);
     });
 
+    it('hasFormErrors should return true when a list item field has an error', () => {
+      expect(
+        hasFormErrors([
+          {
+            id: 'list-field',
+            type: ParameterInputType.List,
+            label: 'List Field',
+            description: '',
+            hint: '',
+            hintType: ParameterHintType.None,
+            items: [
+              {
+                key: '0',
+                field: {
+                  id: 'item-text',
+                  type: ParameterInputType.Text,
+                  label: 'Item Text',
+                  description: '',
+                  hint: 'Item error',
+                  hintType: ParameterHintType.Error,
+                  default: '',
+                  readonly: false,
+                  suggestions: [],
+                  validationTiming: ParameterFormValidationTiming.Blur,
+                },
+              },
+            ],
+            default: ['0'],
+            minCount: 0,
+            maxCount: 0,
+            addButtonLabel: 'Add',
+          } as ListParameterFormField,
+        ]),
+      ).toBe(true);
+    });
+
+    it('hasFormErrors should return true when list field itself has an error', () => {
+      expect(
+        hasFormErrors([
+          {
+            id: 'list-field',
+            type: ParameterInputType.List,
+            label: 'List Field',
+            description: '',
+            hint: 'List error',
+            hintType: ParameterHintType.Error,
+            items: [],
+            default: [],
+            minCount: 1,
+            maxCount: 5,
+            addButtonLabel: 'Add',
+          } as ListParameterFormField,
+        ]),
+      ).toBe(true);
+    });
+
     it('hasFormErrors should return false when no errors exist', () => {
       expect(
         hasFormErrors([
@@ -622,6 +679,59 @@ describe('new-inspection.utils', () => {
         'safe-key': 'safe-value',
       });
     });
+
+    it('should extract default item keys and nested item defaults for list fields', () => {
+      const fields: ParameterFormField[] = [
+        {
+          id: 'file-list',
+          type: ParameterInputType.List,
+          label: 'File List',
+          description: '',
+          hint: '',
+          hintType: ParameterHintType.None,
+          default: ['0', '1'],
+          minCount: 1,
+          maxCount: 5,
+          addButtonLabel: 'Add',
+          items: [
+            {
+              key: '0',
+              field: {
+                id: 'item-param-0',
+                type: ParameterInputType.Text,
+                label: 'Item 0',
+                description: '',
+                hint: '',
+                hintType: ParameterHintType.None,
+                default: 'default-0',
+                readonly: false,
+                suggestions: [],
+                validationTiming: ParameterFormValidationTiming.Blur,
+              } as TextParameterFormField,
+            },
+            {
+              key: '1',
+              field: {
+                id: 'item-param-1',
+                type: ParameterInputType.Checkbox,
+                label: 'Item 1',
+                description: '',
+                hint: '',
+                hintType: ParameterHintType.None,
+                default: true,
+                readonly: false,
+              } as CheckboxParameterFormField,
+            },
+          ],
+        } as ListParameterFormField,
+      ];
+
+      expect(flattenDefaultValues(fields)).toEqual({
+        'file-list': ['0', '1'],
+        'item-param-0': 'default-0',
+        'item-param-1': true,
+      });
+    });
   });
 
   describe('countErrorFields', () => {
@@ -744,6 +854,62 @@ describe('new-inspection.utils', () => {
 
       expect(countErrorFields(fields, (id) => id === 'field1')).toBe(0);
     });
+
+    it('should count error hints on list fields and their items', () => {
+      const fields: ParameterFormField[] = [
+        {
+          id: 'list1',
+          type: ParameterInputType.List,
+          label: 'List 1',
+          description: '',
+          hint: 'List error',
+          hintType: ParameterHintType.Error,
+          default: ['0'],
+          minCount: 1,
+          maxCount: 5,
+          addButtonLabel: 'Add',
+          items: [
+            {
+              key: '0',
+              field: {
+                id: 'item1',
+                type: ParameterInputType.Text,
+                label: 'Item 1',
+                description: '',
+                hint: 'Item error',
+                hintType: ParameterHintType.Error,
+                default: '',
+                readonly: false,
+                suggestions: [],
+                validationTiming: ParameterFormValidationTiming.Blur,
+              } as TextParameterFormField,
+            },
+          ],
+        } as ListParameterFormField,
+      ];
+
+      expect(countErrorFields(fields, () => false)).toBe(2);
+    });
+
+    it('should suppress error count on list field when validating or pending', () => {
+      const fields: ParameterFormField[] = [
+        {
+          id: 'list1',
+          type: ParameterInputType.List,
+          label: 'List 1',
+          description: '',
+          hint: 'List error',
+          hintType: ParameterHintType.Error,
+          default: [],
+          minCount: 1,
+          maxCount: 5,
+          addButtonLabel: 'Add',
+          items: [],
+        } as ListParameterFormField,
+      ];
+
+      expect(countErrorFields(fields, (id) => id === 'list1')).toBe(0);
+    });
   });
 
   describe('countPendingFields', () => {
@@ -848,6 +1014,43 @@ describe('new-inspection.utils', () => {
 
       expect(countPendingFields(fields, (id) => id === 'nested2')).toBe(2);
     });
+
+    it('should count pending list fields and their pending items', () => {
+      const fields: ParameterFormField[] = [
+        {
+          id: 'list1',
+          type: ParameterInputType.List,
+          label: 'List 1',
+          description: '',
+          hint: '',
+          hintType: ParameterHintType.None,
+          pending: true,
+          default: ['0'],
+          minCount: 0,
+          maxCount: 0,
+          addButtonLabel: 'Add',
+          items: [
+            {
+              key: '0',
+              field: {
+                id: 'item1',
+                type: ParameterInputType.Text,
+                label: 'Item 1',
+                description: '',
+                hint: '',
+                hintType: ParameterHintType.None,
+                default: '',
+                readonly: false,
+                suggestions: [],
+                validationTiming: ParameterFormValidationTiming.Blur,
+              } as TextParameterFormField,
+            },
+          ],
+        } as ListParameterFormField,
+      ];
+
+      expect(countPendingFields(fields, (id) => id === 'item1')).toBe(2);
+    });
   });
 
   describe('countAllFields', () => {
@@ -935,6 +1138,55 @@ describe('new-inspection.utils', () => {
       ];
 
       expect(countAllFields(fields)).toBe(2);
+    });
+
+    it('should count 1 for list field container plus its nested item fields', () => {
+      const fields: ParameterFormField[] = [
+        {
+          id: 'list1',
+          type: ParameterInputType.List,
+          label: 'List 1',
+          description: '',
+          hint: '',
+          hintType: ParameterHintType.None,
+          default: ['0'],
+          minCount: 0,
+          maxCount: 0,
+          addButtonLabel: 'Add',
+          items: [
+            {
+              key: '0',
+              field: {
+                id: 'item1',
+                type: ParameterInputType.Text,
+                label: 'Item 1',
+                description: '',
+                hint: '',
+                hintType: ParameterHintType.None,
+                default: '',
+                readonly: false,
+                suggestions: [],
+                validationTiming: ParameterFormValidationTiming.Blur,
+              } as TextParameterFormField,
+            },
+          ],
+        } as ListParameterFormField,
+        {
+          id: 'emptyList',
+          type: ParameterInputType.List,
+          label: 'Empty List',
+          description: '',
+          hint: '',
+          hintType: ParameterHintType.None,
+          default: [],
+          minCount: 0,
+          maxCount: 0,
+          addButtonLabel: 'Add',
+          items: [],
+        } as ListParameterFormField,
+      ];
+
+      expect(countAllFields(fields)).toBe(3);
     });
   });
 

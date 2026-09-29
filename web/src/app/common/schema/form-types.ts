@@ -23,6 +23,7 @@ export enum ParameterInputType {
   File = 'file',
   Set = 'set',
   Checkbox = 'checkbox',
+  List = 'list',
 }
 
 /**
@@ -223,9 +224,57 @@ export interface CheckboxParameterFormField extends ParameterFormFieldBase {
   readonly default: boolean;
 }
 
+/**
+ * Represents a single repeatable item entry within a ListParameterFormField.
+ */
+export interface ListParameterFormFieldItem {
+  /**
+   * Stable identifier of this item within the list.
+   */
+  readonly key: string;
+
+  /**
+   * Form field rendered for this item.
+   */
+  readonly field: ParameterFormField;
+}
+
+/**
+ * Represents the field data for List type parameters.
+ */
+export interface ListParameterFormField extends ParameterFormFieldBase {
+  readonly type: ParameterInputType.List;
+
+  /**
+   * The ordered list of active items in this list field.
+   */
+  readonly items: ListParameterFormFieldItem[];
+
+  /**
+   * The default list of item keys.
+   */
+  readonly default: string[];
+
+  /**
+   * Minimum number of items required in the list.
+   */
+  readonly minCount: number;
+
+  /**
+   * Maximum number of items allowed in the list. Zero means unlimited.
+   */
+  readonly maxCount: number;
+
+  /**
+   * Label text shown on the button to add a new item.
+   */
+  readonly addButtonLabel: string;
+}
+
 export type ParameterFormField =
   | GroupParameterFormField
   | TextParameterFormField
   | FileParameterFormField
   | SetParameterFormField
-  | CheckboxParameterFormField;
+  | CheckboxParameterFormField
+  | ListParameterFormField;

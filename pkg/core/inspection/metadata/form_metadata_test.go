@@ -135,6 +135,23 @@ func TestGetParameterFormFieldBase(t *testing.T) {
 			},
 		},
 		{
+			name: "list field",
+			input: ListParameterFormField{
+				ParameterFormFieldBase: ParameterFormFieldBase{
+					ID:    "list-1",
+					Label: "List 1",
+					Type:  List,
+				},
+				MinCount: 1,
+				MaxCount: 5,
+			},
+			want: ParameterFormFieldBase{
+				ID:    "list-1",
+				Label: "List 1",
+				Type:  List,
+			},
+		},
+		{
 			name:  "unknown field",
 			input: struct{}{},
 			want:  ParameterFormFieldBase{},
@@ -146,6 +163,146 @@ func TestGetParameterFormFieldBase(t *testing.T) {
 			got := GetParameterFormFieldBase(tc.input)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Errorf("GetParameterFormFieldBase() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestGetFileFieldIDs(t *testing.T) {
+	testCases := []struct {
+		name   string
+		fields []ParameterFormField
+		want   []string
+	}{
+		{
+			name: "top-level file fields",
+			fields: []ParameterFormField{
+				FileParameterFormField{
+					ParameterFormFieldBase: ParameterFormFieldBase{
+						ID:   "file-1",
+						Type: File,
+					},
+				},
+				TextParameterFormField{
+					ParameterFormFieldBase: ParameterFormFieldBase{
+						ID:   "text-1",
+						Type: Text,
+					},
+				},
+				FileParameterFormField{
+					ParameterFormFieldBase: ParameterFormFieldBase{
+						ID:   "file-2",
+						Type: File,
+					},
+				},
+			},
+			want: []string{"file-1", "file-2"},
+		},
+		{
+			name: "file fields nested in group field",
+			fields: []ParameterFormField{
+				GroupParameterFormField{
+					ParameterFormFieldBase: ParameterFormFieldBase{
+						ID:   "group-1",
+						Type: Group,
+					},
+					Children: []ParameterFormField{
+						FileParameterFormField{
+							ParameterFormFieldBase: ParameterFormFieldBase{
+								ID:   "nested-file-1",
+								Type: File,
+							},
+						},
+						TextParameterFormField{
+							ParameterFormFieldBase: ParameterFormFieldBase{
+								ID:   "nested-text-1",
+								Type: Text,
+							},
+						},
+					},
+				},
+			},
+			want: []string{"nested-file-1"},
+		},
+		{
+			name: "file fields nested in list field",
+			fields: []ParameterFormField{
+				ListParameterFormField{
+					ParameterFormFieldBase: ParameterFormFieldBase{
+						ID:   "list-1",
+						Type: List,
+					},
+					Items: []ListParameterFormFieldItem{
+						{
+							Key: "0",
+							Field: FileParameterFormField{
+								ParameterFormFieldBase: ParameterFormFieldBase{
+									ID:   "list-file-0",
+									Type: File,
+								},
+							},
+						},
+						{
+							Key: "1",
+							Field: FileParameterFormField{
+								ParameterFormFieldBase: ParameterFormFieldBase{
+									ID:   "list-file-1",
+									Type: File,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []string{"list-file-0", "list-file-1"},
+		},
+		{
+			name: "file fields nested in group inside list field",
+			fields: []ParameterFormField{
+				ListParameterFormField{
+					ParameterFormFieldBase: ParameterFormFieldBase{
+						ID:   "nodes",
+						Type: List,
+					},
+					Items: []ListParameterFormFieldItem{
+						{
+							Key: "0",
+							Field: GroupParameterFormField{
+								ParameterFormFieldBase: ParameterFormFieldBase{
+									ID:   "nodes/0",
+									Type: Group,
+								},
+								Children: []ParameterFormField{
+									FileParameterFormField{
+										ParameterFormFieldBase: ParameterFormFieldBase{
+											ID:   "nodes/0/kubelet",
+											Type: File,
+										},
+									},
+									FileParameterFormField{
+										ParameterFormFieldBase: ParameterFormFieldBase{
+											ID:   "nodes/0/containerd",
+											Type: File,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []string{"nodes/0/kubelet", "nodes/0/containerd"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			fs := &FormFieldSetMetadata{
+				fields: tc.fields,
+			}
+			got := fs.GetFileFieldIDs()
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Errorf("GetFileFieldIDs() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

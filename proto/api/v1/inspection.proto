@@ -279,6 +279,33 @@ message CheckboxFormField {
   bool default_value = 2;
 }
 
+// ListItemFormField represents a single item entry within a ListFormField.
+message ListItemFormField {
+  // Stable key identifying this item within the list across additions and removals.
+  string key = 1;
+
+  // Form field rendered for this list item.
+  FormField field = 2;
+}
+
+// ListFormField configures a repeatable list of form fields whose item count can be adjusted by the user.
+message ListFormField {
+  // Ordered list of active items in this list.
+  repeated ListItemFormField items = 1;
+
+  // Default item keys initialized when the list has not been modified by the user.
+  repeated string default_item_keys = 2;
+
+  // Minimum number of items required in the list.
+  int32 min_count = 3;
+
+  // Maximum number of items allowed in the list. Zero means unlimited.
+  int32 max_count = 4;
+
+  // Label text displayed on the button that appends a new item.
+  string add_button_label = 5;
+}
+
 // FormField defines a single input field or group within the dynamic inspection parameter form.
 message FormField {
   // Unique identifier for the form field.
@@ -312,6 +339,9 @@ message FormField {
 
     // Checkbox toggle input field.
     CheckboxFormField checkbox = 10;
+
+    // Repeatable list of form fields with user-adjustable count.
+    ListFormField list = 12;
   }
 
   // Indicates whether the form field is currently being processed or validated asynchronously.
@@ -350,7 +380,6 @@ message InspectionQuery {
   // Predefined estimation preset category if exact count estimation is unfeasible.
   EstimatedCountPreset estimated_count_preset = 7;
 }
-
 
 // InspectionLog contains diagnostic or operational logs captured during inspection.
 message InspectionLog {

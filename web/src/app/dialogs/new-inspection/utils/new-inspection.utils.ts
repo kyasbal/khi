@@ -166,12 +166,17 @@ export function computeTotalEstimatedLogs(
  */
 export function hasFormErrors(fields: readonly ParameterFormField[]): boolean {
   for (const field of fields) {
+    if (field.hintType === ParameterHintType.Error) {
+      return true;
+    }
     if (field.type === ParameterInputType.Group) {
       if (hasFormErrors(field.children)) {
         return true;
       }
-    } else if (field.hintType === ParameterHintType.Error) {
-      return true;
+    } else if (field.type === ParameterInputType.List) {
+      if (hasFormErrors(field.items.map((item) => item.field))) {
+        return true;
+      }
     }
   }
   return false;
@@ -220,6 +225,13 @@ export function flattenDefaultValues(
       case ParameterInputType.Group:
         Object.assign(result, flattenDefaultValues(parameter.children));
         break;
+      case ParameterInputType.List:
+        result[parameter.id] = [...parameter.default];
+        Object.assign(
+          result,
+          flattenDefaultValues(parameter.items.map((item) => item.field)),
+        );
+        break;
       default:
         break;
     }
@@ -244,6 +256,18 @@ export function countErrorFields(
   for (const parameter of parameters) {
     if (parameter.type === ParameterInputType.Group) {
       result += countErrorFields(parameter.children, isValidating);
+    } else if (parameter.type === ParameterInputType.List) {
+      if (
+        !parameter.pending &&
+        !isValidating(parameter.id) &&
+        parameter.hintType === ParameterHintType.Error
+      ) {
+        result++;
+      }
+      result += countErrorFields(
+        parameter.items.map((item) => item.field),
+        isValidating,
+      );
     } else {
       const isClientValidating = isValidating(parameter.id);
       const isPending = !!parameter.pending || isClientValidating;
@@ -270,6 +294,14 @@ export function countPendingFields(
   for (const parameter of parameters) {
     if (parameter.type === ParameterInputType.Group) {
       result += countPendingFields(parameter.children, isValidating);
+    } else if (parameter.type === ParameterInputType.List) {
+      if (parameter.pending || isValidating(parameter.id)) {
+        result++;
+      }
+      result += countPendingFields(
+        parameter.items.map((item) => item.field),
+        isValidating,
+      );
     } else {
       const isClientValidating = isValidating(parameter.id);
       if (parameter.pending || isClientValidating) {
@@ -293,6 +325,8 @@ export function countAllFields(
   for (const parameter of parameters) {
     if (parameter.type === ParameterInputType.Group) {
       result += countAllFields(parameter.children);
+    } else if (parameter.type === ParameterInputType.List) {
+      result += 1 + countAllFields(parameter.items.map((item) => item.field));
     } else {
       result++;
     }

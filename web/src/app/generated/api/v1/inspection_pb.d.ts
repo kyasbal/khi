@@ -575,6 +575,81 @@ export declare type CheckboxFormField = Message<'api.v1.CheckboxFormField'> & {
 export declare const CheckboxFormFieldSchema: GenMessage<CheckboxFormField>;
 
 /**
+ * ListItemFormField represents a single item entry within a ListFormField.
+ *
+ * @generated from message api.v1.ListItemFormField
+ */
+export declare type ListItemFormField = Message<'api.v1.ListItemFormField'> & {
+  /**
+   * Stable key identifying this item within the list across additions and removals.
+   *
+   * @generated from field: string key = 1;
+   */
+  key: string;
+
+  /**
+   * Form field rendered for this list item.
+   *
+   * @generated from field: api.v1.FormField field = 2;
+   */
+  field?: FormField | undefined;
+};
+
+/**
+ * Describes the message api.v1.ListItemFormField.
+ * Use `create(ListItemFormFieldSchema)` to create a new message.
+ */
+export declare const ListItemFormFieldSchema: GenMessage<ListItemFormField>;
+
+/**
+ * ListFormField configures a repeatable list of form fields whose item count can be adjusted by the user.
+ *
+ * @generated from message api.v1.ListFormField
+ */
+export declare type ListFormField = Message<'api.v1.ListFormField'> & {
+  /**
+   * Ordered list of active items in this list.
+   *
+   * @generated from field: repeated api.v1.ListItemFormField items = 1;
+   */
+  items: ListItemFormField[];
+
+  /**
+   * Default item keys initialized when the list has not been modified by the user.
+   *
+   * @generated from field: repeated string default_item_keys = 2;
+   */
+  defaultItemKeys: string[];
+
+  /**
+   * Minimum number of items required in the list.
+   *
+   * @generated from field: int32 min_count = 3;
+   */
+  minCount: number;
+
+  /**
+   * Maximum number of items allowed in the list. Zero means unlimited.
+   *
+   * @generated from field: int32 max_count = 4;
+   */
+  maxCount: number;
+
+  /**
+   * Label text displayed on the button that appends a new item.
+   *
+   * @generated from field: string add_button_label = 5;
+   */
+  addButtonLabel: string;
+};
+
+/**
+ * Describes the message api.v1.ListFormField.
+ * Use `create(ListFormFieldSchema)` to create a new message.
+ */
+export declare const ListFormFieldSchema: GenMessage<ListFormField>;
+
+/**
  * FormField defines a single input field or group within the dynamic inspection parameter form.
  *
  * @generated from message api.v1.FormField
@@ -665,6 +740,15 @@ export declare type FormField = Message<'api.v1.FormField'> & {
          */
         value: CheckboxFormField;
         case: 'checkbox';
+      }
+    | {
+        /**
+         * Repeatable list of form fields with user-adjustable count.
+         *
+         * @generated from field: api.v1.ListFormField list = 12;
+         */
+        value: ListFormField;
+        case: 'list';
       }
     | { case: undefined; value?: undefined };
 

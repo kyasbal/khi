@@ -910,3 +910,189 @@ func TestConvertParametersToMap_Checkbox(t *testing.T) {
 		})
 	}
 }
+
+func TestConvertFormFields_List(t *testing.T) {
+	testCases := []struct {
+		name  string
+		input []inspectionmetadata.ParameterFormField
+		want  []*apiv1.FormField
+	}{
+		{
+			name: "converts list field containing file items",
+			input: []inspectionmetadata.ParameterFormField{
+				inspectionmetadata.ListParameterFormField{
+					ParameterFormFieldBase: inspectionmetadata.ParameterFormFieldBase{
+						ID:          "file-list",
+						Label:       "File List",
+						Description: "List of files",
+						Hint:        "Upload files",
+						HintType:    inspectionmetadata.Info,
+						Priority:    1,
+					},
+					Items: []inspectionmetadata.ListParameterFormFieldItem{
+						{
+							Key: "0",
+							Field: inspectionmetadata.FileParameterFormField{
+								ParameterFormFieldBase: inspectionmetadata.ParameterFormFieldBase{
+									ID:          "file-list/0",
+									Label:       "File 0",
+									Description: "First file",
+									Hint:        "Select file",
+									HintType:    inspectionmetadata.None,
+								},
+								Status: upload.UploadStatusWaiting,
+							},
+						},
+					},
+					Default:        []string{"0"},
+					MinCount:       1,
+					MaxCount:       5,
+					AddButtonLabel: "Add File",
+				},
+			},
+			want: []*apiv1.FormField{
+				{
+					Id:          proto.String("file-list"),
+					Label:       proto.String("File List"),
+					Description: proto.String("List of files"),
+					Hint:        proto.String("Upload files"),
+					HintType:    apiv1.ParameterHintType_PARAMETER_HINT_TYPE_INFO.Enum(),
+					Pending:     proto.Bool(false),
+					Kind: &apiv1.FormField_List{
+						List: &apiv1.ListFormField{
+							Items: []*apiv1.ListItemFormField{
+								{
+									Key: proto.String("0"),
+									Field: &apiv1.FormField{
+										Id:          proto.String("file-list/0"),
+										Label:       proto.String("File 0"),
+										Description: proto.String("First file"),
+										Hint:        proto.String("Select file"),
+										HintType:    apiv1.ParameterHintType_PARAMETER_HINT_TYPE_NONE.Enum(),
+										Pending:     proto.Bool(false),
+										Kind: &apiv1.FormField_File{
+											File: &apiv1.FileFormField{
+												TokenId: proto.String(""),
+												Status:  apiv1.UploadStatus_UPLOAD_STATUS_WAITING.Enum(),
+											},
+										},
+									},
+								},
+							},
+							DefaultItemKeys: []string{"0"},
+							MinCount:        proto.Int32(1),
+							MaxCount:        proto.Int32(5),
+							AddButtonLabel:  proto.String("Add File"),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "converts list field containing group items",
+			input: []inspectionmetadata.ParameterFormField{
+				inspectionmetadata.ListParameterFormField{
+					ParameterFormFieldBase: inspectionmetadata.ParameterFormFieldBase{
+						ID:          "node-list",
+						Label:       "Nodes",
+						Description: "Per-node logs",
+						HintType:    inspectionmetadata.None,
+						Priority:    2,
+					},
+					Items: []inspectionmetadata.ListParameterFormFieldItem{
+						{
+							Key: "node-1",
+							Field: inspectionmetadata.GroupParameterFormField{
+								ParameterFormFieldBase: inspectionmetadata.ParameterFormFieldBase{
+									ID:          "node-list/node-1",
+									Label:       "Node 1",
+									Description: "Logs for node 1",
+									HintType:    inspectionmetadata.None,
+								},
+								Children: []inspectionmetadata.ParameterFormField{
+									inspectionmetadata.FileParameterFormField{
+										ParameterFormFieldBase: inspectionmetadata.ParameterFormFieldBase{
+											ID:          "node-list/node-1/kubelet",
+											Label:       "Kubelet log",
+											Description: "Kubelet log file",
+											HintType:    inspectionmetadata.None,
+										},
+										Status: upload.UploadStatusCompleted,
+									},
+								},
+								Collapsible:        true,
+								CollapsedByDefault: false,
+							},
+						},
+					},
+					Default:        []string{"node-1"},
+					MinCount:       0,
+					MaxCount:       0,
+					AddButtonLabel: "Add Node",
+				},
+			},
+			want: []*apiv1.FormField{
+				{
+					Id:          proto.String("node-list"),
+					Label:       proto.String("Nodes"),
+					Description: proto.String("Per-node logs"),
+					Hint:        proto.String(""),
+					HintType:    apiv1.ParameterHintType_PARAMETER_HINT_TYPE_NONE.Enum(),
+					Pending:     proto.Bool(false),
+					Kind: &apiv1.FormField_List{
+						List: &apiv1.ListFormField{
+							Items: []*apiv1.ListItemFormField{
+								{
+									Key: proto.String("node-1"),
+									Field: &apiv1.FormField{
+										Id:          proto.String("node-list/node-1"),
+										Label:       proto.String("Node 1"),
+										Description: proto.String("Logs for node 1"),
+										Hint:        proto.String(""),
+										HintType:    apiv1.ParameterHintType_PARAMETER_HINT_TYPE_NONE.Enum(),
+										Pending:     proto.Bool(false),
+										Kind: &apiv1.FormField_Group{
+											Group: &apiv1.GroupFormField{
+												Children: []*apiv1.FormField{
+													{
+														Id:          proto.String("node-list/node-1/kubelet"),
+														Label:       proto.String("Kubelet log"),
+														Description: proto.String("Kubelet log file"),
+														Hint:        proto.String(""),
+														HintType:    apiv1.ParameterHintType_PARAMETER_HINT_TYPE_NONE.Enum(),
+														Pending:     proto.Bool(false),
+														Kind: &apiv1.FormField_File{
+															File: &apiv1.FileFormField{
+																TokenId: proto.String(""),
+																Status:  apiv1.UploadStatus_UPLOAD_STATUS_DONE.Enum(),
+															},
+														},
+													},
+												},
+												Collapsible:        proto.Bool(true),
+												CollapsedByDefault: proto.Bool(false),
+											},
+										},
+									},
+								},
+							},
+							DefaultItemKeys: []string{"node-1"},
+							MinCount:        proto.Int32(0),
+							MaxCount:        proto.Int32(0),
+							AddButtonLabel:  proto.String("Add Node"),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := convertFormFields(tc.input)
+			if diff := cmp.Diff(tc.want, got, protocmp.Transform()); diff != "" {
+				t.Errorf("convertFormFields() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}

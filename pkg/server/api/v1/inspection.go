@@ -618,6 +618,30 @@ func convertFormFields(fields []inspectionmetadata.ParameterFormField) []*apiv1.
 					DefaultValue: proto.Bool(v.Default),
 				},
 			}
+		case inspectionmetadata.ListParameterFormField:
+			items := make([]*apiv1.ListItemFormField, 0, len(v.Items))
+			for _, item := range v.Items {
+				var convertedField *apiv1.FormField
+				if item.Field != nil {
+					convertedSlice := convertFormFields([]inspectionmetadata.ParameterFormField{item.Field})
+					if len(convertedSlice) > 0 {
+						convertedField = convertedSlice[0]
+					}
+				}
+				items = append(items, &apiv1.ListItemFormField{
+					Key:   proto.String(item.Key),
+					Field: convertedField,
+				})
+			}
+			f.Kind = &apiv1.FormField_List{
+				List: &apiv1.ListFormField{
+					Items:           items,
+					DefaultItemKeys: v.Default,
+					MinCount:        proto.Int32(int32(v.MinCount)),
+					MaxCount:        proto.Int32(int32(v.MaxCount)),
+					AddButtonLabel:  proto.String(v.AddButtonLabel),
+				},
+			}
 		}
 		res = append(res, f)
 	}

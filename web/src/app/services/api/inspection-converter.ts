@@ -41,6 +41,8 @@ import {
   FileParameterFormField,
   SetParameterFormField,
   CheckboxParameterFormField,
+  ListParameterFormField,
+  ListParameterFormFieldItem,
   ParameterInputType,
   ParameterHintType,
   ParameterFormValidationTiming,
@@ -257,6 +259,38 @@ export function convertProtoFormFieldToParameterFormField(
         default: cf.defaultValue,
       };
       return checkboxResult;
+    }
+    case 'list': {
+      const items: ListParameterFormFieldItem[] = [];
+      for (const item of field.kind.value.items) {
+        if (!item.field) {
+          continue;
+        }
+        const convertedField = convertProtoFormFieldToParameterFormField(
+          item.field,
+        );
+        if (convertedField) {
+          items.push({
+            key: item.key,
+            field: convertedField,
+          });
+        }
+      }
+      const listResult: ListParameterFormField = {
+        id: commonId,
+        type: ParameterInputType.List,
+        label: commonLabel,
+        description: commonDesc,
+        hint: commonHint,
+        hintType: commonHintType,
+        pending: commonPending,
+        items,
+        default: [...field.kind.value.defaultItemKeys],
+        minCount: field.kind.value.minCount,
+        maxCount: field.kind.value.maxCount,
+        addButtonLabel: field.kind.value.addButtonLabel,
+      };
+      return listResult;
     }
     default:
       return null;

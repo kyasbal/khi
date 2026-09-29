@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Component, computed, input, signal } from '@angular/core';
+import { Component, computed, forwardRef, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -36,6 +36,7 @@ import { SetParameterComponent } from 'src/app/dialogs/new-inspection/components
 import { CheckboxParameterComponent } from 'src/app/dialogs/new-inspection/components/checkbox-parameter.component';
 import { ParameterHeaderComponent } from 'src/app/dialogs/new-inspection/components/parameter-header.component';
 import { ParameterHintComponent } from 'src/app/dialogs/new-inspection/components/parameter-hint.component';
+import { ListParameterComponent } from 'src/app/dialogs/new-inspection/components/list-parameter.component';
 
 /**
  * A collection of form fields.
@@ -55,6 +56,7 @@ import { ParameterHintComponent } from 'src/app/dialogs/new-inspection/component
     CheckboxParameterComponent,
     ParameterHeaderComponent,
     ParameterHintComponent,
+    forwardRef(() => ListParameterComponent),
   ],
   animations: [
     trigger('children-animation', [
