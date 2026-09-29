@@ -147,12 +147,15 @@ func (b *ListFormTaskBuilder[T]) Build(labelOpts ...coretask.LabelOpt) coretask.
 			return nil, itemErr
 		}
 
-		validationErr, err := b.validateItems(ctx, currentKeys, resolvedValues, taskID)
-		if err != nil {
-			return nil, err
+		var validationErr string
+		if itemErr == nil {
+			validationErr, err = b.validateItems(ctx, currentKeys, resolvedValues, taskID)
+			if err != nil {
+				return nil, err
+			}
 		}
 
-		field, err := b.buildFormField(ctx, items, defaultKeys, resolvedValues, validationErr)
+		field, err := b.buildFormField(ctx, items, defaultKeys, resolvedValues, validationErr, itemErr != nil)
 		if err != nil {
 			return nil, err
 		}
@@ -189,6 +192,12 @@ func validateCountConstraints(defaultCount, minCount, maxCount int, taskID strin
 	}
 	if maxCount > 0 && minCount > maxCount {
 		return fmt.Errorf("min count (%d) cannot be greater than max count (%d) in task %s", minCount, maxCount, taskID)
+	}
+	if defaultCount < minCount {
+		return fmt.Errorf("default count (%d) cannot be less than min count (%d) in task %s", defaultCount, minCount, taskID)
+	}
+	if maxCount > 0 && defaultCount > maxCount {
+		return fmt.Errorf("default count (%d) cannot be greater than max count (%d) in task %s", defaultCount, maxCount, taskID)
 	}
 	return nil
 }
@@ -282,6 +291,7 @@ func (b *ListFormTaskBuilder[T]) buildFormField(
 	defaultKeys []string,
 	values []T,
 	validationErr string,
+	hasItemErr bool,
 ) (inspectionmetadata.ListParameterFormField, error) {
 	field := inspectionmetadata.ListParameterFormField{
 		ParameterFormFieldBase: inspectionmetadata.ParameterFormFieldBase{
@@ -300,6 +310,10 @@ func (b *ListFormTaskBuilder[T]) buildFormField(
 	if validationErr != "" {
 		field.HintType = inspectionmetadata.Error
 		field.Hint = validationErr
+		return field, nil
+	}
+
+	if hasItemErr {
 		return field, nil
 	}
 

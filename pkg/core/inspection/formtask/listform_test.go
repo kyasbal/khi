@@ -208,7 +208,7 @@ func TestListFormTaskBuilder_CountConstraintsAndValidation(t *testing.T) {
 					}
 					return field, fmt.Sprintf("val-%s", itemKey), nil
 				},
-			).WithMinCount(tc.minCount).WithMaxCount(tc.maxCount)
+			).WithDefaultCount(tc.minCount).WithMinCount(tc.minCount).WithMaxCount(tc.maxCount)
 
 			if tc.customValidator != nil {
 				builder.WithValidator(tc.customValidator)
@@ -546,6 +546,89 @@ func TestListFormTaskBuilder_GroupItems(t *testing.T) {
 			}
 			if diff := cmp.Diff(wantFileIDs, fileIDs); diff != "" {
 				t.Errorf("GetFileFieldIDs() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestValidateCountConstraints(t *testing.T) {
+	testCases := []struct {
+		name         string
+		defaultCount int
+		minCount     int
+		maxCount     int
+		wantErrSub   string
+	}{
+		{
+			name:         "valid configuration",
+			defaultCount: 2,
+			minCount:     1,
+			maxCount:     3,
+			wantErrSub:   "",
+		},
+		{
+			name:         "valid configuration with zero max count",
+			defaultCount: 5,
+			minCount:     2,
+			maxCount:     0,
+			wantErrSub:   "",
+		},
+		{
+			name:         "negative default count",
+			defaultCount: -1,
+			minCount:     0,
+			maxCount:     5,
+			wantErrSub:   "default count must be non-negative",
+		},
+		{
+			name:         "negative min count",
+			defaultCount: 0,
+			minCount:     -1,
+			maxCount:     5,
+			wantErrSub:   "min count must be non-negative",
+		},
+		{
+			name:         "negative max count",
+			defaultCount: 0,
+			minCount:     0,
+			maxCount:     -1,
+			wantErrSub:   "max count must be non-negative",
+		},
+		{
+			name:         "min count greater than max count",
+			defaultCount: 3,
+			minCount:     5,
+			maxCount:     2,
+			wantErrSub:   "min count (5) cannot be greater than max count (2)",
+		},
+		{
+			name:         "default count less than min count",
+			defaultCount: 1,
+			minCount:     2,
+			maxCount:     5,
+			wantErrSub:   "default count (1) cannot be less than min count (2)",
+		},
+		{
+			name:         "default count greater than max count",
+			defaultCount: 6,
+			minCount:     1,
+			maxCount:     5,
+			wantErrSub:   "default count (6) cannot be greater than max count (5)",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateCountConstraints(tc.defaultCount, tc.minCount, tc.maxCount, "test-task")
+			if tc.wantErrSub != "" {
+				if err == nil {
+					t.Fatalf("expected error containing %q, got nil", tc.wantErrSub)
+				}
+				if !strings.Contains(err.Error(), tc.wantErrSub) {
+					t.Errorf("error %q does not contain expected substring %q", err.Error(), tc.wantErrSub)
+				}
+			} else if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
 		})
 	}
