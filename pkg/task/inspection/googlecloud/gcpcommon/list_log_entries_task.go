@@ -33,6 +33,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/gcpqueryutil"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/summary"
 	inspectiontaskbase "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/taskbase"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
@@ -191,7 +192,7 @@ func NewListLogEntriesTask(taskSetting ListLogEntriesTaskSetting) coretask.Task[
 		},
 		inspectioncore.NewQueryTaskLabelOpt(description.ExampleQuery),
 		coretask.WithLabelValue(RequestOptionalInputResourceNameTaskLabel, taskID.ReferenceIDString()),
-		progress.WithTitle(fmt.Sprintf("Fetch %s", description.QueryName)),
+		coretask.WithTitle(fmt.Sprintf("Fetch %s", description.QueryName)),
 	)
 }
 
@@ -228,6 +229,7 @@ func setQueryInfo(ctx context.Context, taskID, baseLogFilter string, logFilterIn
 		slog.WarnContext(ctx, fmt.Sprintf("Logging filter is exceeding Cloud Logging limitation 20000 characters\n%s", finalFilter))
 	}
 	queryInfo.SetQuery(taskID, logFilterName, finalFilter)
+	summary.RecordQuery(ctx, taskID, logFilterName, finalFilter)
 	return nil
 }
 

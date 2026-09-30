@@ -35,6 +35,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/logger"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/progress"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/summary"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	apiv1 "github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1"
 	"github.com/GoogleCloudPlatform/khi/pkg/lifecycle"
@@ -659,6 +660,7 @@ func (i *InspectionTaskRunner) addCommonMetadata(ctx context.Context, writableMe
 	progressMeta.SetTotalTaskCount(len(taskGraph.GetAll()))
 	typedmap.Set(writableMetadata, inspectionmetadata.ProgressMetadataKey, progressMeta)
 
+	typedmap.Set(writableMetadata, summary.MetadataKey, summary.NewCollector(taskGraph))
 }
 
 func InspectionTaskLogger(logLevelForRun slog.Level, logLevelForDryRun slog.Level, withColor bool) InspectionInterceptor {
