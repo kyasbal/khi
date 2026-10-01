@@ -253,11 +253,8 @@ func buildSortedTimelineGroups(tlStatsMap map[uint32]*timelineLogStats) []Timeli
 		if c := cmp.Compare(b.MatchedLogCount, a.MatchedLogCount); c != 0 {
 			return c
 		}
-		if !a.FirstMatchTime.Equal(b.FirstMatchTime) {
-			if a.FirstMatchTime.Before(b.FirstMatchTime) {
-				return -1
-			}
-			return 1
+		if c := a.FirstMatchTime.Compare(b.FirstMatchTime); c != 0 {
+			return c
 		}
 		return cmp.Compare(a.TimelineID, b.TimelineID)
 	})
