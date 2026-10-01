@@ -16,6 +16,7 @@ package mdtemplate
 
 import (
 	"bytes"
+	"embed"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -25,6 +26,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/server/workbench"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -102,15 +104,35 @@ func PageFooter(nextPageToken string) string {
 	return fmt.Sprintf("pageToken: %q", nextPageToken)
 }
 
+//go:embed templates/*.md.tmpl
+var builtinTemplateFS embed.FS
+
+var appliedFilterTemplate = template.Must(
+	template.New("applied_filter.md.tmpl").Funcs(template.FuncMap{
+		"time": FormatTime,
+	}).ParseFS(builtinTemplateFS, "templates/applied_filter.md.tmpl"),
+)
+
+// FormatAppliedFilter formats an AppliedFilter struct into a markdown explanation with a YAML block.
+func FormatAppliedFilter(f workbench.AppliedFilter) string {
+	var buf bytes.Buffer
+	if err := appliedFilterTemplate.Execute(&buf, f); err != nil {
+		panic(err)
+	}
+	return strings.TrimRight(buf.String(), "\r\n")
+}
+
 // DefaultFuncMap returns the default template functions for markdown templates.
 func DefaultFuncMap() template.FuncMap {
 	return template.FuncMap{
-		"code":       Code,
-		"cell":       Cell,
-		"time":       FormatTime,
-		"percent":    Percent,
-		"fence":      Fence,
-		"pageFooter": PageFooter,
+		"code":          Code,
+		"cell":          Cell,
+		"time":          FormatTime,
+		"percent":       Percent,
+		"fence":         Fence,
+		"pageFooter":    PageFooter,
+		"timelinePath":  workbench.FormatTimelinePath,
+		"appliedFilter": FormatAppliedFilter,
 	}
 }
 
@@ -218,6 +240,27 @@ func ErrorResult(code string, bullets ...string) (*mcp.CallToolResult, any, erro
 		Content: []mcp.Content{
 			&mcp.TextContent{
 				Text: FormatError(code, bullets...),
+			},
+		},
+	}, nil, nil
+}
+
+// FormatCELError formats a CEL validation error into markdown.
+func FormatCELError(field, expression string, err error) string {
+	return FormatError("INVALID_CEL",
+		fmt.Sprintf("Field: %s", Code(field)),
+		fmt.Sprintf("Expression: %s", Code(expression)),
+		fmt.Sprintf("Message: %s", err.Error()),
+	)
+}
+
+// CELErrorResult formats a CEL validation error into an MCP CallToolResult with IsError set to true.
+func CELErrorResult(field, expression string, err error) (*mcp.CallToolResult, any, error) {
+	return &mcp.CallToolResult{
+		IsError: true,
+		Content: []mcp.Content{
+			&mcp.TextContent{
+				Text: FormatCELError(field, expression, err),
 			},
 		},
 	}, nil, nil
