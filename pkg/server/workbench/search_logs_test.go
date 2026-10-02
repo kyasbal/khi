@@ -352,6 +352,7 @@ func TestSearchLogs_TimelineFiltering(t *testing.T) {
 func TestSearchLogs_TruncationAndSampling(t *testing.T) {
 	testCases := []struct {
 		name                string
+		setupWorkbench      func() *Workbench
 		maxTimelines        int
 		maxSampleLogs       int
 		wantMatchedLogCount int
@@ -381,6 +382,63 @@ func TestSearchLogs_TruncationAndSampling(t *testing.T) {
 			wantSampleLogIDs:    []uint32{1, 3, 5},
 		},
 		{
+			name: "time-based sampling avoids clustering in an initial log burst",
+			setupWorkbench: func() *Workbench {
+				wb := setupSearchLogsTestWorkbench()
+				// Place logs 1, 2, and 3 in a tight burst near t=1000, log 4 at the midpoint t=3000, and log 5 at t=5000.
+				wb.searchIndex.Logs[0].Timestamp = 1000
+				wb.searchIndex.Logs[1].Timestamp = 1001
+				wb.searchIndex.Logs[2].Timestamp = 1002
+				wb.searchIndex.Logs[3].Timestamp = 3000
+				wb.searchIndex.Logs[4].Timestamp = 5000
+				return wb
+			},
+			maxTimelines:        10,
+			maxSampleLogs:       3,
+			wantMatchedLogCount: 5,
+			wantMatchedTLCount:  3,
+			wantGroupCount:      3,
+			wantSampleLogCount:  3,
+			wantSampleLogIDs:    []uint32{1, 4, 5},
+		},
+		{
+			name: "fallback to index-based sampling when all logs have identical timestamps",
+			setupWorkbench: func() *Workbench {
+				wb := setupSearchLogsTestWorkbench()
+				for i := range wb.searchIndex.Logs {
+					wb.searchIndex.Logs[i].Timestamp = 1000
+				}
+				return wb
+			},
+			maxTimelines:        10,
+			maxSampleLogs:       3,
+			wantMatchedLogCount: 5,
+			wantMatchedTLCount:  3,
+			wantGroupCount:      3,
+			wantSampleLogCount:  3,
+			wantSampleLogIDs:    []uint32{1, 3, 5},
+		},
+		{
+			name: "time-based sampling returns strictly increasing indices with duplicate timestamps",
+			setupWorkbench: func() *Workbench {
+				wb := setupSearchLogsTestWorkbench()
+				// Duplicate timestamps across intermediate logs.
+				wb.searchIndex.Logs[0].Timestamp = 1000
+				wb.searchIndex.Logs[1].Timestamp = 3000
+				wb.searchIndex.Logs[2].Timestamp = 3000
+				wb.searchIndex.Logs[3].Timestamp = 3000
+				wb.searchIndex.Logs[4].Timestamp = 5000
+				return wb
+			},
+			maxTimelines:        10,
+			maxSampleLogs:       4,
+			wantMatchedLogCount: 5,
+			wantMatchedTLCount:  3,
+			wantGroupCount:      3,
+			wantSampleLogCount:  4,
+			wantSampleLogIDs:    []uint32{1, 2, 4, 5},
+		},
+		{
 			name:                "sampling single log picks the first log",
 			maxTimelines:        10,
 			maxSampleLogs:       1,
@@ -405,6 +463,9 @@ func TestSearchLogs_TruncationAndSampling(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			wb := setupSearchLogsTestWorkbench()
+			if tc.setupWorkbench != nil {
+				wb = tc.setupWorkbench()
+			}
 			got, err := wb.SearchLogs(context.Background(), Filter{}, tc.maxTimelines, tc.maxSampleLogs)
 			if err != nil {
 				t.Fatalf("SearchLogs() unexpected error = %v", err)

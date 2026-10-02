@@ -252,7 +252,7 @@ func buildSampleLogEntries(
 	index *SearchIndex,
 	severityMap map[uint32]*khifilev6.Severity,
 ) []SampleLogEntry {
-	sampleIndices := selectEvenlySpacedIndices(len(matchedLogs), maxSampleLogs)
+	sampleIndices := selectTimeSpacedSampleIndices(matchedLogs, maxSampleLogs)
 	samples := make([]SampleLogEntry, 0, len(sampleIndices))
 	for _, idx := range sampleIndices {
 		l := matchedLogs[idx]
@@ -289,8 +289,11 @@ func buildSampleLogEntries(
 	return samples
 }
 
-func selectEvenlySpacedIndices(total, maxSamples int) []int {
-	if total <= 0 || maxSamples <= 0 {
+// selectTimeSpacedSampleIndices selects up to maxSamples log indices spread evenly across the matched time range.
+// matchedLogs must be sorted by timestamp ascending.
+func selectTimeSpacedSampleIndices(matchedLogs []*cel.LogData, maxSamples int) []int {
+	total := len(matchedLogs)
+	if total == 0 || maxSamples <= 0 {
 		return nil
 	}
 	if total <= maxSamples {
@@ -303,9 +306,39 @@ func selectEvenlySpacedIndices(total, maxSamples int) []int {
 	if maxSamples == 1 {
 		return []int{0}
 	}
+
+	firstTs := matchedLogs[0].Timestamp
+	lastTs := matchedLogs[total-1].Timestamp
+	if lastTs <= firstTs {
+		indices := make([]int, maxSamples)
+		for i := range maxSamples {
+			indices[i] = i * (total - 1) / (maxSamples - 1)
+		}
+		return indices
+	}
+
 	indices := make([]int, maxSamples)
-	for i := range maxSamples {
-		indices[i] = i * (total - 1) / (maxSamples - 1)
+	indices[0] = 0
+	indices[maxSamples-1] = total - 1
+	for i := 1; i < maxSamples-1; i++ {
+		targetTs := firstTs + (lastTs-firstTs)*int64(i)/int64(maxSamples-1)
+		minIdx := indices[i-1] + 1
+		maxIdx := total - (maxSamples - i)
+		indices[i] = closestTimestampIndex(matchedLogs, minIdx, maxIdx, targetTs)
 	}
 	return indices
+}
+
+func closestTimestampIndex(logs []*cel.LogData, minIdx, maxIdx int, targetTs int64) int {
+	pos, _ := slices.BinarySearchFunc(logs[minIdx:maxIdx+1], targetTs, func(l *cel.LogData, target int64) int {
+		return cmp.Compare(l.Timestamp, target)
+	})
+	idx := minIdx + pos
+	if idx > maxIdx {
+		return maxIdx
+	}
+	if idx > minIdx && targetTs-logs[idx-1].Timestamp <= logs[idx].Timestamp-targetTs {
+		return idx - 1
+	}
+	return idx
 }
