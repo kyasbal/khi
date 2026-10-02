@@ -119,6 +119,8 @@ func setupSearchLogsTestWorkbench() *Workbench {
 	wb.styleChunk = &khifilev6.TimelineStyleChunk{
 		Severities: []*khifilev6.Severity{testSeverityInfo, testSeverityWarning, testSeverityError, testSeverityFatal},
 	}
+	// Build the style maps from the style chunk as BuildBaseSearchIndex does when the workbench loads.
+	wb.styles = wb.buildStyleMaps()
 
 	return wb
 }

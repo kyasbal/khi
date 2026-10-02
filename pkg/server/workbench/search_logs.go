@@ -112,7 +112,7 @@ func (w *Workbench) SearchLogs(ctx context.Context, filter Filter, maxTimelines,
 		return nil, fmt.Errorf("search index is not ready")
 	}
 	index := w.searchIndex
-	styleChunk := w.styleChunk
+	styles := w.styles
 	w.mu.RUnlock()
 
 	res := &LogSearchResult{
@@ -124,8 +124,7 @@ func (w *Workbench) SearchLogs(ctx context.Context, filter Filter, maxTimelines,
 		return res, nil
 	}
 
-	severitiesByID := buildSeverityMap(styleChunk)
-	tlStatsMap, totalSeverityCounts, firstNs, lastNs := aggregateLogSearchStats(matchedLogs, filterOut.TimelineIDs, index, severitiesByID)
+	tlStatsMap, totalSeverityCounts, firstNs, lastNs := aggregateLogSearchStats(matchedLogs, filterOut.TimelineIDs, index, styles.severityMap)
 	allGroups := buildSortedTimelineGroups(tlStatsMap)
 
 	res.MatchedLogCount = len(matchedLogs)
@@ -146,7 +145,7 @@ func (w *Workbench) SearchLogs(ctx context.Context, filter Filter, maxTimelines,
 		allGroups[i].Segments = segments
 	}
 	res.TimelineGroups = allGroups
-	res.SampleLogs = buildSampleLogEntries(matchedLogs, maxSampleLogs, filterOut.TimelineIDs, index, severitiesByID)
+	res.SampleLogs = buildSampleLogEntries(matchedLogs, maxSampleLogs, filterOut.TimelineIDs, index, styles.severityMap)
 
 	return res, nil
 }
@@ -175,7 +174,7 @@ func aggregateLogSearchStats(
 	matchedLogs []*cel.LogData,
 	timelineIDs *roaring.Bitmap,
 	index *SearchIndex,
-	severitiesByID map[uint32]*khifilev6.Severity,
+	severityMap map[uint32]*khifilev6.Severity,
 ) (map[uint32]*timelineLogStats, severityCounter, int64, int64) {
 	totalSeverityCounts := make(severityCounter)
 	var firstNs int64 = -1
@@ -183,7 +182,7 @@ func aggregateLogSearchStats(
 	tlStatsMap := make(map[uint32]*timelineLogStats)
 
 	for _, l := range matchedLogs {
-		severity := severitiesByID[l.SeverityTypeID]
+		severity := severityMap[l.SeverityTypeID]
 		totalSeverityCounts[severity]++
 
 		if l.Timestamp > 0 {
@@ -251,7 +250,7 @@ func buildSampleLogEntries(
 	maxSampleLogs int,
 	timelineIDs *roaring.Bitmap,
 	index *SearchIndex,
-	severitiesByID map[uint32]*khifilev6.Severity,
+	severityMap map[uint32]*khifilev6.Severity,
 ) []SampleLogEntry {
 	sampleIndices := selectEvenlySpacedIndices(len(matchedLogs), maxSampleLogs)
 	samples := make([]SampleLogEntry, 0, len(sampleIndices))
@@ -281,7 +280,7 @@ func buildSampleLogEntries(
 		samples = append(samples, SampleLogEntry{
 			LogID:       l.ID,
 			Time:        logTime,
-			Severity:    severitiesByID[l.SeverityTypeID],
+			Severity:    severityMap[l.SeverityTypeID],
 			LogType:     logType,
 			Summary:     summary,
 			TimelineIDs: linkedTLs,
