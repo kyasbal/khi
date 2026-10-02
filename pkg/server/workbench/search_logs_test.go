@@ -25,6 +25,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/server/workbench/cel"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/testing/protocmp"
 )
 
 func setupSearchLogsTestWorkbench() *Workbench {
@@ -78,9 +79,9 @@ func setupSearchLogsTestWorkbench() *Workbench {
 		Name:         "pod-a",
 		TimelineType: "Pod",
 		Events: []cel.EventInfo{
-			{LogID: 1, Timestamp: 1000, Severity: 1},
-			{LogID: 2, Timestamp: 2000, Severity: 2},
-			{LogID: 4, Timestamp: 4000, Severity: 3},
+			{LogID: 1, Timestamp: 1000},
+			{LogID: 2, Timestamp: 2000},
+			{LogID: 4, Timestamp: 4000},
 		},
 	}
 
@@ -91,8 +92,8 @@ func setupSearchLogsTestWorkbench() *Workbench {
 		Name:         "pod-b",
 		TimelineType: "Pod",
 		Events: []cel.EventInfo{
-			{LogID: 3, Timestamp: 3000, Severity: 3},
-			{LogID: 5, Timestamp: 5000, Severity: 4},
+			{LogID: 3, Timestamp: 3000},
+			{LogID: 5, Timestamp: 5000},
 		},
 	}
 
@@ -103,7 +104,7 @@ func setupSearchLogsTestWorkbench() *Workbench {
 		Name:         "container-a1",
 		TimelineType: "Container",
 		Events: []cel.EventInfo{
-			{LogID: 2, Timestamp: 2000, Severity: 2},
+			{LogID: 2, Timestamp: 2000},
 		},
 	}
 
@@ -114,6 +115,10 @@ func setupSearchLogsTestWorkbench() *Workbench {
 	wb.searchIndex.TimelineMap[4] = tl4
 
 	wb.searchIndex.LogTimelineIndex = NewLogTimelineCSRIndex(uint32(len(wb.searchIndex.Logs)), wb.searchIndex.Timelines)
+
+	wb.styleChunk = &khifilev6.TimelineStyleChunk{
+		Severities: []*khifilev6.Severity{testSeverityInfo, testSeverityWarning, testSeverityError, testSeverityFatal},
+	}
 
 	return wb
 }
@@ -142,10 +147,10 @@ func TestSearchLogs_Aggregation(t *testing.T) {
 			wantFirstMatchTime:  time.Unix(0, 1000).UTC(),
 			wantLastMatchTime:   time.Unix(0, 5000).UTC(),
 			wantSeverityCounts: []SeverityCount{
-				{Severity: "FATAL", Count: 1},
-				{Severity: "ERROR", Count: 2},
-				{Severity: "WARNING", Count: 1},
-				{Severity: "INFO", Count: 1},
+				{Severity: testSeverityFatal, Count: 1},
+				{Severity: testSeverityError, Count: 2},
+				{Severity: testSeverityWarning, Count: 1},
+				{Severity: testSeverityInfo, Count: 1},
 			},
 			wantTimelineGroups: []TimelineLogGroup{
 				{
@@ -156,9 +161,9 @@ func TestSearchLogs_Aggregation(t *testing.T) {
 					},
 					MatchedLogCount: 3,
 					SeverityCounts: []SeverityCount{
-						{Severity: "ERROR", Count: 1},
-						{Severity: "WARNING", Count: 1},
-						{Severity: "INFO", Count: 1},
+						{Severity: testSeverityError, Count: 1},
+						{Severity: testSeverityWarning, Count: 1},
+						{Severity: testSeverityInfo, Count: 1},
 					},
 					FirstMatchTime: time.Unix(0, 1000).UTC(),
 					LastMatchTime:  time.Unix(0, 4000).UTC(),
@@ -171,8 +176,8 @@ func TestSearchLogs_Aggregation(t *testing.T) {
 					},
 					MatchedLogCount: 2,
 					SeverityCounts: []SeverityCount{
-						{Severity: "FATAL", Count: 1},
-						{Severity: "ERROR", Count: 1},
+						{Severity: testSeverityFatal, Count: 1},
+						{Severity: testSeverityError, Count: 1},
 					},
 					FirstMatchTime: time.Unix(0, 3000).UTC(),
 					LastMatchTime:  time.Unix(0, 5000).UTC(),
@@ -186,7 +191,7 @@ func TestSearchLogs_Aggregation(t *testing.T) {
 					},
 					MatchedLogCount: 1,
 					SeverityCounts: []SeverityCount{
-						{Severity: "WARNING", Count: 1},
+						{Severity: testSeverityWarning, Count: 1},
 					},
 					FirstMatchTime: time.Unix(0, 2000).UTC(),
 					LastMatchTime:  time.Unix(0, 2000).UTC(),
@@ -196,7 +201,7 @@ func TestSearchLogs_Aggregation(t *testing.T) {
 				{
 					LogID:       1,
 					Time:        time.Unix(0, 1000).UTC(),
-					Severity:    "INFO",
+					Severity:    testSeverityInfo,
 					LogType:     "k8s-event",
 					Summary:     "summary-1",
 					TimelineIDs: []uint32{2},
@@ -204,7 +209,7 @@ func TestSearchLogs_Aggregation(t *testing.T) {
 				{
 					LogID:       2,
 					Time:        time.Unix(0, 2000).UTC(),
-					Severity:    "WARNING",
+					Severity:    testSeverityWarning,
 					LogType:     "k8s-event",
 					Summary:     "summary-2",
 					TimelineIDs: []uint32{2, 4},
@@ -212,7 +217,7 @@ func TestSearchLogs_Aggregation(t *testing.T) {
 				{
 					LogID:       3,
 					Time:        time.Unix(0, 3000).UTC(),
-					Severity:    "ERROR",
+					Severity:    testSeverityError,
 					LogType:     "k8s-event",
 					Summary:     "summary-3",
 					TimelineIDs: []uint32{3},
@@ -220,7 +225,7 @@ func TestSearchLogs_Aggregation(t *testing.T) {
 				{
 					LogID:       4,
 					Time:        time.Unix(0, 4000).UTC(),
-					Severity:    "ERROR",
+					Severity:    testSeverityError,
 					LogType:     "k8s-event",
 					Summary:     "summary-4",
 					TimelineIDs: []uint32{2},
@@ -228,7 +233,7 @@ func TestSearchLogs_Aggregation(t *testing.T) {
 				{
 					LogID:       5,
 					Time:        time.Unix(0, 5000).UTC(),
-					Severity:    "FATAL",
+					Severity:    testSeverityFatal,
 					LogType:     "k8s-event",
 					Summary:     "summary-5",
 					TimelineIDs: []uint32{3},
@@ -262,13 +267,13 @@ func TestSearchLogs_Aggregation(t *testing.T) {
 			if !got.LastMatchTime.Equal(tc.wantLastMatchTime) {
 				t.Errorf("LastMatchTime = %v, want %v", got.LastMatchTime, tc.wantLastMatchTime)
 			}
-			if diff := cmp.Diff(tc.wantSeverityCounts, got.SeverityCounts); diff != "" {
+			if diff := cmp.Diff(tc.wantSeverityCounts, got.SeverityCounts, protocmp.Transform()); diff != "" {
 				t.Errorf("SeverityCounts mismatch (-want +got):\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.wantTimelineGroups, got.TimelineGroups); diff != "" {
+			if diff := cmp.Diff(tc.wantTimelineGroups, got.TimelineGroups, protocmp.Transform()); diff != "" {
 				t.Errorf("TimelineGroups mismatch (-want +got):\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.wantSampleLogs, got.SampleLogs); diff != "" {
+			if diff := cmp.Diff(tc.wantSampleLogs, got.SampleLogs, protocmp.Transform()); diff != "" {
 				t.Errorf("SampleLogs mismatch (-want +got):\n%s", diff)
 			}
 		})

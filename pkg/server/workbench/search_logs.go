@@ -21,6 +21,7 @@ import (
 	"slices"
 	"time"
 
+	khifilev6 "github.com/GoogleCloudPlatform/khi/pkg/generated/khifile/v6"
 	"github.com/GoogleCloudPlatform/khi/pkg/server/workbench/cel"
 	"github.com/RoaringBitmap/roaring/v2"
 )
@@ -31,20 +32,6 @@ const (
 	// DefaultMaxSampleLogs is the default maximum number of sample logs returned by SearchLogs.
 	DefaultMaxSampleLogs = 20
 )
-
-var severityOrderLabels = [5]string{
-	0: "UNKNOWN",
-	1: "INFO",
-	2: "WARNING",
-	3: "ERROR",
-	4: "FATAL",
-}
-
-// SeverityCount represents the number of logs matching a specific severity label.
-type SeverityCount struct {
-	Severity string
-	Count    int
-}
 
 // TimelineLogGroup represents a timeline linked to matched logs, along with its per-timeline log statistics.
 type TimelineLogGroup struct {
@@ -60,7 +47,7 @@ type TimelineLogGroup struct {
 type SampleLogEntry struct {
 	LogID       uint32
 	Time        time.Time
-	Severity    string
+	Severity    *khifilev6.Severity
 	LogType     string
 	Summary     string
 	TimelineIDs []uint32
@@ -79,16 +66,16 @@ type LogSearchResult struct {
 }
 
 type timelineLogStats struct {
-	timelineID uint32
-	count      int
-	sevCounts  [5]int
-	firstNs    int64
-	lastNs     int64
+	timelineID     uint32
+	count          int
+	severityCounts severityCounter
+	firstNs        int64
+	lastNs         int64
 }
 
-func (s *timelineLogStats) record(sevOrder uint32, ts int64) {
+func (s *timelineLogStats) record(severity *khifilev6.Severity, ts int64) {
 	s.count++
-	s.sevCounts[sevOrder]++
+	s.severityCounts[severity]++
 	if ts <= 0 {
 		return
 	}
@@ -125,6 +112,7 @@ func (w *Workbench) SearchLogs(ctx context.Context, filter Filter, maxTimelines,
 		return nil, fmt.Errorf("search index is not ready")
 	}
 	index := w.searchIndex
+	styleChunk := w.styleChunk
 	w.mu.RUnlock()
 
 	res := &LogSearchResult{
@@ -136,7 +124,8 @@ func (w *Workbench) SearchLogs(ctx context.Context, filter Filter, maxTimelines,
 		return res, nil
 	}
 
-	tlStatsMap, totalSevCounts, firstNs, lastNs := aggregateLogSearchStats(matchedLogs, filterOut.TimelineIDs, index)
+	severitiesByID := buildSeverityMap(styleChunk)
+	tlStatsMap, totalSeverityCounts, firstNs, lastNs := aggregateLogSearchStats(matchedLogs, filterOut.TimelineIDs, index, severitiesByID)
 	allGroups := buildSortedTimelineGroups(tlStatsMap)
 
 	res.MatchedLogCount = len(matchedLogs)
@@ -147,7 +136,7 @@ func (w *Workbench) SearchLogs(ctx context.Context, filter Filter, maxTimelines,
 	if lastNs > 0 {
 		res.LastMatchTime = time.Unix(0, lastNs).UTC()
 	}
-	res.SeverityCounts = buildSeverityCounts(totalSevCounts)
+	res.SeverityCounts = totalSeverityCounts.sorted()
 
 	if len(allGroups) > maxTimelines {
 		allGroups = allGroups[:maxTimelines]
@@ -157,7 +146,7 @@ func (w *Workbench) SearchLogs(ctx context.Context, filter Filter, maxTimelines,
 		allGroups[i].Segments = segments
 	}
 	res.TimelineGroups = allGroups
-	res.SampleLogs = buildSampleLogEntries(matchedLogs, maxSampleLogs, filterOut.TimelineIDs, index)
+	res.SampleLogs = buildSampleLogEntries(matchedLogs, maxSampleLogs, filterOut.TimelineIDs, index, severitiesByID)
 
 	return res, nil
 }
@@ -186,21 +175,16 @@ func aggregateLogSearchStats(
 	matchedLogs []*cel.LogData,
 	timelineIDs *roaring.Bitmap,
 	index *SearchIndex,
-) (map[uint32]*timelineLogStats, [5]int, int64, int64) {
-	var totalSevCounts [5]int
+	severitiesByID map[uint32]*khifilev6.Severity,
+) (map[uint32]*timelineLogStats, severityCounter, int64, int64) {
+	totalSeverityCounts := make(severityCounter)
 	var firstNs int64 = -1
 	var lastNs int64 = -1
 	tlStatsMap := make(map[uint32]*timelineLogStats)
 
 	for _, l := range matchedLogs {
-		var sevOrder uint32
-		if index.StyleResolver != nil {
-			sevOrder = index.StyleResolver.ResolveSeverity(l.SeverityTypeID)
-		}
-		if int(sevOrder) >= len(totalSevCounts) {
-			sevOrder = 0
-		}
-		totalSevCounts[sevOrder]++
+		severity := severitiesByID[l.SeverityTypeID]
+		totalSeverityCounts[severity]++
 
 		if l.Timestamp > 0 {
 			if firstNs == -1 || l.Timestamp < firstNs {
@@ -218,16 +202,17 @@ func aggregateLogSearchStats(
 			st, ok := tlStatsMap[tlID]
 			if !ok {
 				st = &timelineLogStats{
-					timelineID: tlID,
-					firstNs:    -1,
-					lastNs:     -1,
+					timelineID:     tlID,
+					severityCounts: make(severityCounter),
+					firstNs:        -1,
+					lastNs:         -1,
 				}
 				tlStatsMap[tlID] = st
 			}
-			st.record(sevOrder, l.Timestamp)
+			st.record(severity, l.Timestamp)
 		}
 	}
-	return tlStatsMap, totalSevCounts, firstNs, lastNs
+	return tlStatsMap, totalSeverityCounts, firstNs, lastNs
 }
 
 func buildSortedTimelineGroups(tlStatsMap map[uint32]*timelineLogStats) []TimelineLogGroup {
@@ -243,7 +228,7 @@ func buildSortedTimelineGroups(tlStatsMap map[uint32]*timelineLogStats) []Timeli
 		allGroups = append(allGroups, TimelineLogGroup{
 			TimelineID:      st.timelineID,
 			MatchedLogCount: st.count,
-			SeverityCounts:  buildSeverityCounts(st.sevCounts),
+			SeverityCounts:  st.severityCounts.sorted(),
 			FirstMatchTime:  firstTime,
 			LastMatchTime:   lastTime,
 		})
@@ -266,15 +251,14 @@ func buildSampleLogEntries(
 	maxSampleLogs int,
 	timelineIDs *roaring.Bitmap,
 	index *SearchIndex,
+	severitiesByID map[uint32]*khifilev6.Severity,
 ) []SampleLogEntry {
 	sampleIndices := selectEvenlySpacedIndices(len(matchedLogs), maxSampleLogs)
 	samples := make([]SampleLogEntry, 0, len(sampleIndices))
 	for _, idx := range sampleIndices {
 		l := matchedLogs[idx]
-		var sevOrder uint32
 		var logType string
 		if index.StyleResolver != nil {
-			sevOrder = index.StyleResolver.ResolveSeverity(l.SeverityTypeID)
 			logType = index.StyleResolver.ResolveLogType(l.LogTypeID)
 		}
 		var summary string
@@ -297,33 +281,13 @@ func buildSampleLogEntries(
 		samples = append(samples, SampleLogEntry{
 			LogID:       l.ID,
 			Time:        logTime,
-			Severity:    severityLabelForOrder(sevOrder),
+			Severity:    severitiesByID[l.SeverityTypeID],
 			LogType:     logType,
 			Summary:     summary,
 			TimelineIDs: linkedTLs,
 		})
 	}
 	return samples
-}
-
-func severityLabelForOrder(order uint32) string {
-	if int(order) < len(severityOrderLabels) {
-		return severityOrderLabels[order]
-	}
-	return "UNKNOWN"
-}
-
-func buildSeverityCounts(counts [5]int) []SeverityCount {
-	var res []SeverityCount
-	for order := len(severityOrderLabels) - 1; order >= 0; order-- {
-		if counts[order] > 0 {
-			res = append(res, SeverityCount{
-				Severity: severityOrderLabels[order],
-				Count:    counts[order],
-			})
-		}
-	}
-	return res
 }
 
 func selectEvenlySpacedIndices(total, maxSamples int) []int {
