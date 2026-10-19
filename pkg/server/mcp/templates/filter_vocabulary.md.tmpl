@@ -1,0 +1,12 @@
+{{ define "filterVocabulary" -}}
+## Filter vocabulary
+These are the values that filter CEL can match in this inspection.
+- path keys (lowercased timelineType): {{ template "codeListOrNone" .PathKeys }}
+- timelineType: {{ template "codeListOrNone" .TimelineTypes }}
+- logType: {{ template "codeListOrNone" .LogTypes }}
+- severity: `UNKNOWN`, `INFO`, `WARNING`, `ERROR`, `FATAL` (reassigned by KHI per logType for investigation importance; does not match Cloud Logging severity — query `body("severity", "ERROR")` for the raw Cloud Logging field)
+{{- end }}
+
+{{- define "codeListOrNone" }}
+{{- range $i, $v := . }}{{ if $i }}, {{ end }}{{ code $v }}{{ else }}none{{ end }}
+{{- end }}

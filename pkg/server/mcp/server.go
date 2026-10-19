@@ -33,13 +33,21 @@ type Server struct {
 	sseHandler        *mcpsdk.SSEHandler
 }
 
+// serverInstructions is the guidance that the initialize response gives to agents.
+// It stays within 500 characters because some clients truncate longer instructions, and detailed usage belongs to skills.
+const serverInstructions = "KHI builds Kubernetes resource timelines from logs. " +
+	"Read khi://inspections for existing inspections, or read khi://inspection-types, call create_inspection and update_inspection_features, " +
+	"repeat dry_run_inspection until Errors: 0, then call run_inspection and wait_inspection until not RUNNING. " +
+	"Investigate with search_timelines and search_logs, then drill down with get_* tools. " +
+	"Use CEL values from Filter vocabulary, and show Applied filter values so the user can view the same data in the Web UI."
+
 // NewServer creates a new Server instance and registers the provided domain handlers.
 func NewServer(handlers ...DomainHandler) *Server {
 	impl := &mcpsdk.Implementation{
 		Name:    "khi",
 		Version: constants.VERSION,
 	}
-	mcpServer := mcpsdk.NewServer(impl, nil)
+	mcpServer := mcpsdk.NewServer(impl, &mcpsdk.ServerOptions{Instructions: serverInstructions})
 	s := &Server{
 		mcpServer: mcpServer,
 		streamableHandler: mcpsdk.NewStreamableHTTPHandler(func(*http.Request) *mcpsdk.Server {

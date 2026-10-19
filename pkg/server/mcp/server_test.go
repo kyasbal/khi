@@ -132,6 +132,10 @@ func TestServerTransportsAndDomainHandler(t *testing.T) {
 			}
 			defer session.Close()
 
+			if got := session.InitializeResult().Instructions; got != serverInstructions {
+				t.Errorf("InitializeResult().Instructions = %q, want %q", got, serverInstructions)
+			}
+
 			// Verify tool discovery
 			toolsRes, err := session.ListTools(ctx, nil)
 			if err != nil {
@@ -215,6 +219,9 @@ func TestServerTransportsAndDomainHandler(t *testing.T) {
 }
 
 func TestServerRegisterHandler(t *testing.T) {
+	if len(serverInstructions) > 500 {
+		t.Errorf("len(serverInstructions) = %d, want <= 500", len(serverInstructions))
+	}
 	server := NewServer()
 
 	handler := &testDomainHandler{

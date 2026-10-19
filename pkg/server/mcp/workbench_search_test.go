@@ -60,6 +60,24 @@ func TestWorkbenchHandler_HandleSearchTimelines(t *testing.T) {
 				"# Timeline tree",
 				"## Applied filter",
 				"## Tree",
+				"## Filter vocabulary",
+				"- path keys (lowercased timelineType):",
+				"- severity: `UNKNOWN`, `INFO`, `WARNING`, `ERROR`, `FATAL`",
+			},
+		},
+		{
+			name: "zero matching timelines still returns Filter vocabulary",
+			input: SearchTimelinesInput{
+				InspectionID: inspectionID,
+				Filter: workbench.Filter{
+					TimelineQuery: `name == "no-such-timeline"`,
+				},
+			},
+			wantIsError: false,
+			wantSubstring: []string{
+				"Matched 0 timelines.",
+				"## Filter vocabulary",
+				"- path keys (lowercased timelineType):",
 			},
 		},
 		{
@@ -148,6 +166,24 @@ func TestWorkbenchHandler_HandleSearchLogs(t *testing.T) {
 			wantSubstring: []string{
 				"# Logs matching the filter",
 				"## Applied filter",
+				"## Filter vocabulary",
+				"- path keys (lowercased timelineType):",
+				"- severity: `UNKNOWN`, `INFO`, `WARNING`, `ERROR`, `FATAL`",
+			},
+		},
+		{
+			name: "zero matching logs still returns Filter vocabulary",
+			input: SearchLogsInput{
+				InspectionID: inspectionID,
+				Filter: workbench.Filter{
+					LogQuery: `logType == "no-such-log-type"`,
+				},
+			},
+			wantIsError: false,
+			wantSubstring: []string{
+				"No logs matched the filter.",
+				"## Filter vocabulary",
+				"- path keys (lowercased timelineType):",
 			},
 		},
 		{
@@ -338,6 +374,11 @@ func TestWorkbenchSearch_Templates(t *testing.T) {
 					"[pod] test-pod id=1 ev=2 rev=1",
 					"  [container] main id=2 ev=1 rev=0",
 				},
+				FilterVocabulary: workbench.FilterVocabulary{
+					PathKeys:      []string{"container", "k8scluster", "pod"},
+					TimelineTypes: []string{"container", "k8sCluster", "pod"},
+					LogTypes:      []string{"k8s audit", "k8s event"},
+				},
 			},
 			want: strings.Join([]string{
 				"# Timeline tree",
@@ -348,7 +389,8 @@ func TestWorkbenchSearch_Templates(t *testing.T) {
 				"Enter these values in the KHI Web UI filter to see the same data.",
 				"",
 				"```yaml",
-				"timelineQuery: has(resource.labels.pod)",
+				"timelineQuery: |-",
+				"  has(resource.labels.pod)",
 				`timelineExclusionQuery: ""`,
 				`logQuery: ""`,
 				`startTime: ""`,
@@ -365,10 +407,17 @@ func TestWorkbenchSearch_Templates(t *testing.T) {
 				"[pod] test-pod id=1 ev=2 rev=1",
 				"  [container] main id=2 ev=1 rev=0",
 				"```",
+				"",
+				"## Filter vocabulary",
+				"These are the values that filter CEL can match in this inspection.",
+				"- path keys (lowercased timelineType): `container`, `k8scluster`, `pod`",
+				"- timelineType: `container`, `k8sCluster`, `pod`",
+				"- logType: `k8s audit`, `k8s event`",
+				"- severity: `UNKNOWN`, `INFO`, `WARNING`, `ERROR`, `FATAL` (reassigned by KHI per logType for investigation importance; does not match Cloud Logging severity — query `body(\"severity\", \"ERROR\")` for the raw Cloud Logging field)",
 			}, "\n"),
 		},
 		{
-			name:         "search_timelines.md.tmpl with empty tree",
+			name:         "search_timelines.md.tmpl with empty tree and no vocabulary",
 			templateName: "search_timelines.md.tmpl",
 			data: searchTimelinesTemplateData{
 				MatchedTimelineCount: 0,
@@ -399,6 +448,13 @@ func TestWorkbenchSearch_Templates(t *testing.T) {
 				"## Tree",
 				"",
 				"No timelines matched the filter.",
+				"",
+				"## Filter vocabulary",
+				"These are the values that filter CEL can match in this inspection.",
+				"- path keys (lowercased timelineType): none",
+				"- timelineType: none",
+				"- logType: none",
+				"- severity: `UNKNOWN`, `INFO`, `WARNING`, `ERROR`, `FATAL` (reassigned by KHI per logType for investigation importance; does not match Cloud Logging severity — query `body(\"severity\", \"ERROR\")` for the raw Cloud Logging field)",
 			}, "\n"),
 		},
 		{
@@ -435,6 +491,11 @@ func TestWorkbenchSearch_Templates(t *testing.T) {
 						TimelinesCell: "`1`",
 					},
 				},
+				FilterVocabulary: workbench.FilterVocabulary{
+					PathKeys:      []string{"container", "pod"},
+					TimelineTypes: []string{"container", "pod"},
+					LogTypes:      []string{"container"},
+				},
 			},
 			want: strings.Join([]string{
 				"# Logs matching the filter",
@@ -448,7 +509,8 @@ func TestWorkbenchSearch_Templates(t *testing.T) {
 				"```yaml",
 				`timelineQuery: ""`,
 				`timelineExclusionQuery: ""`,
-				"logQuery: severity >= ERROR",
+				"logQuery: |-",
+				"  severity >= ERROR",
 				`startTime: ""`,
 				`endTime: ""`,
 				"excludeTimelinesWithoutLogs: false",
@@ -468,6 +530,13 @@ func TestWorkbenchSearch_Templates(t *testing.T) {
 				"| Time | Severity | Type | Log ID | Summary | Timelines |",
 				"| --- | --- | --- | --- | --- | --- |",
 				"| 2026-10-01T10:15:00Z | ERROR | container | `101` | CrashLoopBackOff | `1` |",
+				"",
+				"## Filter vocabulary",
+				"These are the values that filter CEL can match in this inspection.",
+				"- path keys (lowercased timelineType): `container`, `pod`",
+				"- timelineType: `container`, `pod`",
+				"- logType: `container`",
+				"- severity: `UNKNOWN`, `INFO`, `WARNING`, `ERROR`, `FATAL` (reassigned by KHI per logType for investigation importance; does not match Cloud Logging severity — query `body(\"severity\", \"ERROR\")` for the raw Cloud Logging field)",
 			}, "\n"),
 		},
 		{
@@ -477,6 +546,11 @@ func TestWorkbenchSearch_Templates(t *testing.T) {
 				MatchedLogCount: 0,
 				Applied: workbench.AppliedFilter{
 					ExcludeTimelinesWithoutLogs: false,
+				},
+				FilterVocabulary: workbench.FilterVocabulary{
+					PathKeys:      []string{"kind", "namespace"},
+					TimelineTypes: []string{"kind", "namespace"},
+					LogTypes:      []string{"k8s audit"},
 				},
 			},
 			want: strings.Join([]string{
@@ -495,6 +569,13 @@ func TestWorkbenchSearch_Templates(t *testing.T) {
 				`endTime: ""`,
 				"excludeTimelinesWithoutLogs: false",
 				"```",
+				"",
+				"## Filter vocabulary",
+				"These are the values that filter CEL can match in this inspection.",
+				"- path keys (lowercased timelineType): `kind`, `namespace`",
+				"- timelineType: `kind`, `namespace`",
+				"- logType: `k8s audit`",
+				"- severity: `UNKNOWN`, `INFO`, `WARNING`, `ERROR`, `FATAL` (reassigned by KHI per logType for investigation importance; does not match Cloud Logging severity — query `body(\"severity\", \"ERROR\")` for the raw Cloud Logging field)",
 			}, "\n"),
 		},
 	}

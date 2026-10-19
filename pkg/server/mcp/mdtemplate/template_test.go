@@ -26,6 +26,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/server/workbench"
 	"github.com/google/go-cmp/cmp"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"gopkg.in/yaml.v3"
 )
 
 //go:embed testdata/*.tmpl testdata/*.golden.md
@@ -708,12 +709,66 @@ func TestFormatAppliedFilter(t *testing.T) {
 			want: "## Applied filter\n" +
 				"Enter these values in the KHI Web UI filter to see the same data.\n\n" +
 				"```yaml\n" +
-				"timelineQuery: t.path.namespace == \"kube-system\"\n" +
-				"timelineExclusionQuery: t.name.contains(\"pause\")\n" +
-				"logQuery: severity >= WARNING\n" +
+				"timelineQuery: |-\n  t.path.namespace == \"kube-system\"\n" +
+				"timelineExclusionQuery: |-\n  t.name.contains(\"pause\")\n" +
+				"logQuery: |-\n  severity >= WARNING\n" +
 				"startTime: 2026-09-24T01:00:00Z\n" +
 				"endTime: 2026-09-24T02:00:00Z\n" +
 				"excludeTimelinesWithoutLogs: true\n" +
+				"```",
+		},
+		{
+			name: "queries that are not valid plain YAML scalars",
+			input: workbench.AppliedFilter{
+				TimelineQuery:          "!has(t.path.namespace)",
+				TimelineExclusionQuery: "t.name == \"a\" ||\nt.name.startsWith(\"b: c\")",
+				LogQuery:               "  l.summary.contains(\"#\")",
+			},
+			want: "## Applied filter\n" +
+				"Enter these values in the KHI Web UI filter to see the same data.\n\n" +
+				"```yaml\n" +
+				"timelineQuery: |-\n  !has(t.path.namespace)\n" +
+				"timelineExclusionQuery: |-\n  t.name == \"a\" ||\n  t.name.startsWith(\"b: c\")\n" +
+				"logQuery: |2-\n    l.summary.contains(\"#\")\n" +
+				"startTime: \"\"\n" +
+				"endTime: \"\"\n" +
+				"excludeTimelinesWithoutLogs: false\n" +
+				"```",
+		},
+		{
+			name: "queries led by tabs or blank lines",
+			input: workbench.AppliedFilter{
+				TimelineQuery:          "\tt.name == \"a\"",
+				TimelineExclusionQuery: "\n\tt.name == \"b\"",
+				LogQuery:               "\n  severity >= WARNING",
+			},
+			want: "## Applied filter\n" +
+				"Enter these values in the KHI Web UI filter to see the same data.\n\n" +
+				"```yaml\n" +
+				"timelineQuery: |2-\n  \tt.name == \"a\"\n" +
+				"timelineExclusionQuery: |2-\n  \n  \tt.name == \"b\"\n" +
+				"logQuery: |2-\n  \n    severity >= WARNING\n" +
+				"startTime: \"\"\n" +
+				"endTime: \"\"\n" +
+				"excludeTimelinesWithoutLogs: false\n" +
+				"```",
+		},
+		{
+			name: "queries with CRLF and CR line endings are normalized to LF",
+			input: workbench.AppliedFilter{
+				TimelineQuery:          "t.name == \"a\"\r\nt.name == \"b\"",
+				TimelineExclusionQuery: "\r\n  t.name == \"c\"",
+				LogQuery:               "severity >= WARNING\rl.summary.contains(\"err\")",
+			},
+			want: "## Applied filter\n" +
+				"Enter these values in the KHI Web UI filter to see the same data.\n\n" +
+				"```yaml\n" +
+				"timelineQuery: |-\n  t.name == \"a\"\n  t.name == \"b\"\n" +
+				"timelineExclusionQuery: |2-\n  \n    t.name == \"c\"\n" +
+				"logQuery: |-\n  severity >= WARNING\n  l.summary.contains(\"err\")\n" +
+				"startTime: \"\"\n" +
+				"endTime: \"\"\n" +
+				"excludeTimelinesWithoutLogs: false\n" +
 				"```",
 		},
 		{
@@ -734,11 +789,36 @@ func TestFormatAppliedFilter(t *testing.T) {
 		},
 	}
 
+	type parsedQueries struct {
+		TimelineQuery          string `yaml:"timelineQuery"`
+		TimelineExclusionQuery string `yaml:"timelineExclusionQuery"`
+		LogQuery               string `yaml:"logQuery"`
+	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := FormatAppliedFilter(tc.input)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Errorf("FormatAppliedFilter() mismatch (-want +got):\n%s", diff)
+			}
+
+			_, yamlBody, found := strings.Cut(got, "```yaml\n")
+			if !found {
+				t.Fatalf("FormatAppliedFilter() output has no yaml block: %q", got)
+			}
+			var gotQueries parsedQueries
+			if err := yaml.Unmarshal([]byte(strings.TrimSuffix(yamlBody, "```")), &gotQueries); err != nil {
+				t.Fatalf("failed to parse the yaml block: %v", err)
+			}
+			normalizeLF := func(s string) string {
+				return strings.ReplaceAll(strings.ReplaceAll(s, "\r\n", "\n"), "\r", "\n")
+			}
+			wantQueries := parsedQueries{
+				TimelineQuery:          normalizeLF(tc.input.TimelineQuery),
+				TimelineExclusionQuery: normalizeLF(tc.input.TimelineExclusionQuery),
+				LogQuery:               normalizeLF(tc.input.LogQuery),
+			}
+			if diff := cmp.Diff(wantQueries, gotQueries); diff != "" {
+				t.Errorf("parsed yaml queries mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
