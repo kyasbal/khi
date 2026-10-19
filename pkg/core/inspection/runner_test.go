@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
@@ -900,5 +901,51 @@ func TestInspectionTaskRunner_ErrorUnwrapping(t *testing.T) {
 				t.Errorf("taskErr.TaskID = %q, want %q", taskErr.TaskID.String(), taskImplID)
 			}
 		})
+	}
+}
+
+func TestInspectionTaskRunner_RunContextErrorDoesNotCorruptState(t *testing.T) {
+	logger.InitGlobalKHILogger()
+
+	server, inspectionID, _ := newTestInspectionServer(t, nil)
+	runner := server.GetInspection(inspectionID)
+
+	failSetup := true
+	cleanupDone := make(chan struct{})
+	setupErr := errors.New("run context setup failed")
+	runner.runContextOptions = append(runner.runContextOptions, func(ctx context.Context, mode inspectioncore.InspectionTaskModeType) (context.Context, error) {
+		if failSetup {
+			context.AfterFunc(ctx, func() {
+				close(cleanupDone)
+			})
+			return ctx, setupErr
+		}
+		return ctx, nil
+	})
+
+	req := &inspectioncore.InspectionRequest{Values: map[string]any{}}
+	err := runner.Run(context.Background(), req)
+	if !errors.Is(err, setupErr) {
+		t.Fatalf("first Run() error = %v, want %v", err, setupErr)
+	}
+	select {
+	case <-cleanupDone:
+	case <-time.After(time.Second):
+		t.Errorf("timed out waiting for run context AfterFunc cleanup after failed RunContextOption")
+	}
+	if runner.Started() {
+		t.Errorf("runner.Started() = true after failed RunContextOption, want false")
+	}
+	if cancelErr := runner.Cancel(); cancelErr == nil || !strings.Contains(cancelErr.Error(), "this task is not yet started") {
+		t.Errorf("runner.Cancel() error = %v, want error containing %q", cancelErr, "this task is not yet started")
+	}
+
+	failSetup = false
+	if err := runner.Run(context.Background(), req); err != nil {
+		t.Fatalf("retry Run() failed: %v", err)
+	}
+	<-runner.Wait()
+	if _, err := runner.Result(); err != nil {
+		t.Errorf("runner.Result() after retry = %v, want nil", err)
 	}
 }
