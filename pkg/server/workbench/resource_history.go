@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/server/workbench/cel"
@@ -36,6 +37,8 @@ type ResourceRevision struct {
 	State     string
 	Principal string
 	LogID     uint32
+	// HasBody reports whether a resource manifest body was recorded for this revision.
+	HasBody bool
 }
 
 // ResourceRevisionSummary is a ResourceRevision with the line change counts from its previous revision.
@@ -141,16 +144,18 @@ func (w *Workbench) GetResourceRevisions(timelineID uint32, query ResourceRevisi
 		if i > 0 {
 			prevBody = bodies[tl.Revisions[i-1].ResourceBodyStructID]
 		}
+		body := bodies[tl.Revisions[i].ResourceBodyStructID]
 		result.Revisions = append(result.Revisions, ResourceRevisionSummary{
-			ResourceRevision: toResourceRevision(index, tl.Revisions, i),
-			Changes:          countLineChanges(prevBody, bodies[tl.Revisions[i].ResourceBodyStructID]),
+			ResourceRevision: toResourceRevision(index, tl.Revisions, i, body != ""),
+			Changes:          countLineChanges(prevBody, body),
 		})
 	}
 	return result, nil
 }
 
 // GetResourceManifest returns the manifest YAML of the selected revision, sliced from byteOffset.
-func (w *Workbench) GetResourceManifest(timelineID uint32, selector RevisionSelector, byteOffset int) (*ResourceManifest, error) {
+// When includeManagedFields is false, metadata.managedFields is omitted from the manifest.
+func (w *Workbench) GetResourceManifest(timelineID uint32, selector RevisionSelector, byteOffset int, includeManagedFields bool) (*ResourceManifest, error) {
 	index, _, err := w.readyIndex()
 	if err != nil {
 		return nil, err
@@ -168,11 +173,16 @@ func (w *Workbench) GetResourceManifest(timelineID uint32, selector RevisionSele
 	if err != nil {
 		return nil, err
 	}
+	body := bodies[tl.Revisions[revIdx].ResourceBodyStructID]
+	hasBody := body != ""
+	if !includeManagedFields {
+		body = stripManagedFields(body)
+	}
 	return &ResourceManifest{
 		TimelineID: timelineID,
 		Segments:   segments,
-		Revision:   toResourceRevision(index, tl.Revisions, revIdx),
-		Body:       truncateBody(bodies[tl.Revisions[revIdx].ResourceBodyStructID], byteOffset, bodyByteLimit),
+		Revision:   toResourceRevision(index, tl.Revisions, revIdx, hasBody),
+		Body:       truncateBody(body, byteOffset, bodyByteLimit),
 	}, nil
 }
 
@@ -195,20 +205,21 @@ func (w *Workbench) GetResourceDiff(timelineID uint32, revisionIndex, byteOffset
 	if err != nil {
 		return nil, err
 	}
+	body := bodies[tl.Revisions[revisionIndex].ResourceBodyStructID]
 	result := &ResourceDiff{
 		TimelineID: timelineID,
 		Segments:   segments,
-		Revision:   toResourceRevision(index, tl.Revisions, revisionIndex),
+		Revision:   toResourceRevision(index, tl.Revisions, revisionIndex, body != ""),
 	}
 	prevBody := ""
 	prevLabel := "none"
 	if revisionIndex > 0 {
-		prev := toResourceRevision(index, tl.Revisions, revisionIndex-1)
-		result.Previous = &prev
 		prevBody = bodies[tl.Revisions[revisionIndex-1].ResourceBodyStructID]
+		prev := toResourceRevision(index, tl.Revisions, revisionIndex-1, prevBody != "")
+		result.Previous = &prev
 		prevLabel = revisionLabel(revisionIndex - 1)
 	}
-	diff := computeUnifiedDiff(prevBody, bodies[tl.Revisions[revisionIndex].ResourceBodyStructID], prevLabel, revisionLabel(revisionIndex))
+	diff := computeUnifiedDiff(prevBody, body, prevLabel, revisionLabel(revisionIndex))
 	result.Changes = diff.Changes
 	result.Diff = truncateBody(diff.Text, byteOffset, bodyByteLimit)
 	return result, nil
@@ -256,7 +267,7 @@ func selectRevision(revs []cel.RevisionInfo, selector RevisionSelector) (int, er
 	return idx, nil
 }
 
-func toResourceRevision(index *SearchIndex, revs []cel.RevisionInfo, i int) ResourceRevision {
+func toResourceRevision(index *SearchIndex, revs []cel.RevisionInfo, i int, hasBody bool) ResourceRevision {
 	rev := revs[i]
 	var changedTime time.Time
 	if rev.ChangedTime > 0 {
@@ -269,9 +280,57 @@ func toResourceRevision(index *SearchIndex, revs []cel.RevisionInfo, i int) Reso
 		State:     rev.State,
 		Principal: index.InternPool.ResolveStringFromID(rev.PrincipalStringID),
 		LogID:     rev.LogID,
+		HasBody:   hasBody,
 	}
 }
 
 func revisionLabel(i int) string {
 	return "revision " + strconv.Itoa(i)
+}
+
+// stripManagedFields removes the top-level metadata.managedFields block from a DirectYAMLSerializer manifest.
+func stripManagedFields(yamlStr string) string {
+	if !strings.Contains(yamlStr, "managedFields:") {
+		return yamlStr
+	}
+	lines := strings.Split(yamlStr, "\n")
+	out := make([]string, 0, len(lines))
+	inMetadata := false
+	inManagedFields := false
+	strippedInMetadata := false
+
+	for _, line := range lines {
+		if line != "" && line[0] != ' ' {
+			if strippedInMetadata && len(out) > 0 && out[len(out)-1] == "metadata:" {
+				out = out[:len(out)-1]
+			}
+			inMetadata = line == "metadata:"
+			inManagedFields = false
+			strippedInMetadata = false
+			out = append(out, line)
+			continue
+		}
+		if inMetadata {
+			if line == "  managedFields:" || strings.HasPrefix(line, "  managedFields: ") {
+				inManagedFields = true
+				strippedInMetadata = true
+				continue
+			}
+			if inManagedFields {
+				if strings.HasPrefix(line, "    ") || strings.HasPrefix(line, "  -") {
+					continue
+				}
+				inManagedFields = false
+			}
+		}
+		out = append(out, line)
+	}
+	if strippedInMetadata {
+		if len(out) > 0 && out[len(out)-1] == "metadata:" {
+			out = out[:len(out)-1]
+		} else if len(out) > 1 && out[len(out)-1] == "" && out[len(out)-2] == "metadata:" {
+			out = append(out[:len(out)-2], "")
+		}
+	}
+	return strings.Join(out, "\n")
 }
