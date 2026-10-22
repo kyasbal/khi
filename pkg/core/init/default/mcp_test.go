@@ -24,6 +24,7 @@ import (
 	coreinit "github.com/GoogleCloudPlatform/khi/pkg/core/init"
 	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
 	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
+	"github.com/GoogleCloudPlatform/khi/pkg/server/cdp"
 	"github.com/GoogleCloudPlatform/khi/pkg/server/uploadurl"
 	"github.com/GoogleCloudPlatform/khi/pkg/server/workbench"
 	"github.com/gin-gonic/gin"
@@ -34,11 +35,13 @@ func TestMCPServerInitializer(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	testCases := []struct {
-		name         string
-		jobMode      bool
-		basePath     string
-		wantMounted  bool
-		wantNotFound []string
+		name           string
+		jobMode        bool
+		withCDPBrowser bool
+		basePath       string
+		wantMounted    bool
+		wantRenderTool bool
+		wantNotFound   []string
 	}{
 		{
 			name:        "skips initialization in job mode",
@@ -47,16 +50,20 @@ func TestMCPServerInitializer(t *testing.T) {
 			wantMounted: false,
 		},
 		{
-			name:        "mounts endpoints under empty base path in normal mode",
-			jobMode:     false,
-			basePath:    "",
-			wantMounted: true,
+			name:           "mounts endpoints without render_timelines when CDPBrowserKey is absent",
+			jobMode:        false,
+			withCDPBrowser: false,
+			basePath:       "",
+			wantMounted:    true,
+			wantRenderTool: false,
 		},
 		{
-			name:        "mounts endpoints under /khi-base base path in normal mode",
-			jobMode:     false,
-			basePath:    "/khi-base",
-			wantMounted: true,
+			name:           "mounts endpoints with render_timelines when CDPBrowserKey is present",
+			jobMode:        false,
+			withCDPBrowser: true,
+			basePath:       "/khi-base",
+			wantMounted:    true,
+			wantRenderTool: true,
 			wantNotFound: []string{
 				"/mcp",
 				"/mcp/sse",
@@ -72,6 +79,16 @@ func TestMCPServerInitializer(t *testing.T) {
 			coreinit.Set(ctx, JobParametersKey, &parameters.JobParameters{
 				JobMode: &tc.jobMode,
 			})
+			host := "127.0.0.1"
+			port := 8080
+			coreinit.Set(ctx, ServerParametersKey, &parameters.ServerParameters{
+				Host: &host,
+				Port: &port,
+			})
+			coreinit.Set(ctx, BasePathKey, tc.basePath)
+			if tc.withCDPBrowser {
+				coreinit.Set(ctx, CDPBrowserKey, cdp.NewBrowserFromPageWSURL("ws://127.0.0.1:9222/devtools/page/1"))
+			}
 
 			taskServer, err := coreinspection.NewServer(nil)
 			if err != nil {
@@ -156,7 +173,17 @@ func TestMCPServerInitializer(t *testing.T) {
 						t.Fatalf("session.ListTools() failed for %s: %v", tr.name, err)
 					}
 					if tools == nil {
-						t.Errorf("session.ListTools() returned nil for %s", tr.name)
+						t.Fatalf("session.ListTools() returned nil for %s", tr.name)
+					}
+					hasRenderTool := false
+					for _, tool := range tools.Tools {
+						if tool.Name == "render_timelines" {
+							hasRenderTool = true
+							break
+						}
+					}
+					if hasRenderTool != tc.wantRenderTool {
+						t.Errorf("render_timelines registered = %v, want %v", hasRenderTool, tc.wantRenderTool)
 					}
 				})
 			}

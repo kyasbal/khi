@@ -15,6 +15,9 @@
 package defaultinit
 
 import (
+	"net"
+	"strconv"
+
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	coreinit "github.com/GoogleCloudPlatform/khi/pkg/core/init"
 	mcp "github.com/GoogleCloudPlatform/khi/pkg/server/mcp"
@@ -37,6 +40,7 @@ var MCPServerInitializer = &coreinit.Initializer{
 		InitializerIDInspectionTaskServer,
 		InitializerIDWorkbenchService,
 		InitializerIDFileParameterUpload,
+		InitializerIDCDPBrowser,
 	},
 	Before: []coreinit.InitializerID{
 		InitializerIDServerRunner,
@@ -49,7 +53,22 @@ var MCPServerInitializer = &coreinit.Initializer{
 		inspectionServer := coreinit.MustGet(ctx, InspectionTaskServerKey)
 		workbenchManager := coreinit.MustGet(ctx, WorkbenchManagerKey)
 		uploadURLIssuer := coreinit.MustGet(ctx, UploadURLIssuerKey)
-		srv := mcp.NewServer(mcp.NewInspectionHandler(inspectionServer, uploadURLIssuer), mcp.NewWorkbenchHandler(workbenchManager))
+
+		var timelineRenderer mcp.TimelineImageRenderer
+		if browser, found := coreinit.Get(ctx, CDPBrowserKey); found && browser != nil {
+			serverParams := coreinit.MustGet(ctx, ServerParametersKey)
+			basePath := coreinit.MustGet(ctx, BasePathKey)
+			renderer := mcp.NewChromeTimelineImageRenderer(browser, localServerBaseURL(*serverParams.Host, *serverParams.Port, basePath))
+			ctx.OnTerminate(func() error {
+				return renderer.Close()
+			})
+			timelineRenderer = renderer
+		}
+
+		srv := mcp.NewServer(
+			mcp.NewInspectionHandler(inspectionServer, uploadURLIssuer),
+			mcp.NewWorkbenchHandler(workbenchManager, timelineRenderer),
+		)
 		coreinit.Set(ctx, MCPServerKey, srv)
 
 		router := coreinit.MustGet(ctx, GinRouterKey)
@@ -57,6 +76,14 @@ var MCPServerInitializer = &coreinit.Initializer{
 		router.Any("/mcp/sse", gin.WrapH(srv.SSEHandler()))
 		return nil
 	},
+}
+
+func localServerBaseURL(host string, port int, basePath string) string {
+	switch host {
+	case "", "0.0.0.0", "::":
+		host = "127.0.0.1"
+	}
+	return "http://" + net.JoinHostPort(host, strconv.Itoa(port)) + basePath
 }
 
 func init() {
