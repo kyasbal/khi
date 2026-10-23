@@ -66,3 +66,12 @@ Split the query into 4 time ranges because of the log volume.
 | Property | Value |
 | --- | --- |
 | nodeCount | 3 |
+
+---
+
+## Filter vocabulary
+These are the values that filter CEL can match in this inspection.
+- path keys (lowercased timelineType): `apiversion`, `kind`, `namespace`, `resource`, `subresource`
+- timelineType: `apiVersion`, `kind`, `namespace`, `resource`, `subresource`
+- logType: `k8s_audit`, `k8s_event`
+- severity: `UNKNOWN`, `INFO`, `WARNING`, `ERROR`, `FATAL` (reassigned by KHI per logType for investigation importance; does not match Cloud Logging severity — query `body("severity", "ERROR")` for the raw Cloud Logging field)

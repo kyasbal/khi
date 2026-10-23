@@ -56,7 +56,7 @@ func TestInspectionCreate_Golden(t *testing.T) {
 		t.Fatalf("failed to create server: %v", err)
 	}
 	// Template rendering does not issue upload URLs.
-	handler := NewInspectionHandler(server, nil)
+	handler := NewInspectionHandler(server, nil, nil)
 
 	testCases := []struct {
 		name       string
@@ -399,7 +399,7 @@ func newToolsTestEnv(t *testing.T) *toolsTestEnv {
 	mux.HandleFunc("PUT /api/v1/file-upload/{urlToken}", func(w http.ResponseWriter, r *http.Request) {
 		uploadHandler.ServeUpload(w, r, r.PathValue("urlToken"))
 	})
-	mux.Handle("/mcp", NewServer(NewInspectionHandler(server, issuer)).HTTPHandler())
+	mux.Handle("/mcp", NewServer(NewInspectionHandler(server, nil, issuer)).HTTPHandler())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	t.Cleanup(cancel)

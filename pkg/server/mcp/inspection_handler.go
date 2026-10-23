@@ -28,8 +28,10 @@ import (
 	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/summary"
+	apiv1 "github.com/GoogleCloudPlatform/khi/pkg/generated/api/v1"
 	"github.com/GoogleCloudPlatform/khi/pkg/server/mcp/mdtemplate"
 	"github.com/GoogleCloudPlatform/khi/pkg/server/uploadurl"
+	"github.com/GoogleCloudPlatform/khi/pkg/server/workbench"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -38,23 +40,25 @@ var templateFS embed.FS
 
 // InspectionHandler exposes inspection types, inspection listing, inspection summaries, and inspection lifecycle tools over MCP.
 type InspectionHandler struct {
-	server          *coreinspection.InspectionTaskServer
-	uploadURLIssuer *uploadurl.Issuer
-	templates       *mdtemplate.Set
-	summaryCache    map[string]string
-	cacheMu         sync.Mutex
+	server           *coreinspection.InspectionTaskServer
+	workbenchManager *workbench.WorkbenchManager
+	uploadURLIssuer  *uploadurl.Issuer
+	templates        *mdtemplate.Set
+	summaryCache     map[string]string
+	cacheMu          sync.Mutex
 }
 
 var _ DomainHandler = (*InspectionHandler)(nil)
 
-// NewInspectionHandler creates a new InspectionHandler using the provided InspectionTaskServer.
+// NewInspectionHandler creates a new InspectionHandler using the provided InspectionTaskServer and WorkbenchManager.
 // uploadURLIssuer issues the URLs that agents upload files for file form fields to.
-func NewInspectionHandler(server *coreinspection.InspectionTaskServer, uploadURLIssuer *uploadurl.Issuer) *InspectionHandler {
+func NewInspectionHandler(server *coreinspection.InspectionTaskServer, workbenchManager *workbench.WorkbenchManager, uploadURLIssuer *uploadurl.Issuer) *InspectionHandler {
 	return &InspectionHandler{
-		server:          server,
-		uploadURLIssuer: uploadURLIssuer,
-		templates:       mdtemplate.MustParse(templateFS, "templates/*.md.tmpl"),
-		summaryCache:    make(map[string]string),
+		server:           server,
+		workbenchManager: workbenchManager,
+		uploadURLIssuer:  uploadURLIssuer,
+		templates:        mdtemplate.MustParse(templateFS, "templates/*.md.tmpl"),
+		summaryCache:     make(map[string]string),
 	}
 }
 
@@ -77,7 +81,7 @@ func (h *InspectionHandler) Register(srv *mcpsdk.Server) {
 	srv.AddResourceTemplate(&mcpsdk.ResourceTemplate{
 		URITemplate: "khi://inspections/{id}",
 		Name:        "inspection",
-		Description: "Inspection summary or current progress status.",
+		Description: "Inspection summary and filter vocabulary, or current progress status.",
 		MIMEType:    "text/markdown",
 	}, h.handleInspectionResource)
 
@@ -243,10 +247,11 @@ type inspectionStatusData struct {
 }
 
 type inspectionSummaryData struct {
-	ID        string
-	Header    *inspectionmetadata.HeaderMetadata
-	TimeRange string
-	Summary   summary.Snapshot
+	ID               string
+	Header           *inspectionmetadata.HeaderMetadata
+	TimeRange        string
+	Summary          summary.Snapshot
+	FilterVocabulary workbench.FilterVocabulary
 }
 
 func (h *InspectionHandler) handleInspectionResource(ctx context.Context, req *mcpsdk.ReadResourceRequest) (*mcpsdk.ReadResourceResult, error) {
@@ -283,7 +288,7 @@ func (h *InspectionHandler) handleInspectionResource(ctx context.Context, req *m
 		})
 	}
 
-	text, err := h.renderSummary(id, metadata)
+	text, err := h.renderSummary(ctx, id, metadata)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +304,7 @@ func (h *InspectionHandler) handleInspectionResource(ctx context.Context, req *m
 	}, nil
 }
 
-func (h *InspectionHandler) renderSummary(id string, metadata *typedmap.ReadonlyTypedMap) (string, error) {
+func (h *InspectionHandler) renderSummary(ctx context.Context, id string, metadata *typedmap.ReadonlyTypedMap) (string, error) {
 	h.cacheMu.Lock()
 	cached, ok := h.summaryCache[id]
 	h.cacheMu.Unlock()
@@ -330,11 +335,17 @@ func (h *InspectionHandler) renderSummary(id string, metadata *typedmap.Readonly
 		snap = s.Snapshot()
 	}
 
+	wb, err := h.workbenchManager.Open(ctx, id, workbench.AccessorMCP, func(apiv1.OpenWorkbenchResponse_Stage, float64, string) error { return nil })
+	if err != nil {
+		return "", err
+	}
+
 	text, err := h.templates.Render("inspection_summary.md.tmpl", inspectionSummaryData{
-		ID:        id,
-		Header:    header,
-		TimeRange: timeRange,
-		Summary:   snap,
+		ID:               id,
+		Header:           header,
+		TimeRange:        timeRange,
+		Summary:          snap,
+		FilterVocabulary: wb.SearchIndex().FilterVocabulary,
 	})
 	if err != nil {
 		return "", err

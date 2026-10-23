@@ -36,7 +36,7 @@ func TestInspectionWait_Golden(t *testing.T) {
 		t.Fatalf("failed to create server: %v", err)
 	}
 	// Template rendering does not issue upload URLs.
-	handler := NewInspectionHandler(server, nil)
+	handler := NewInspectionHandler(server, nil, nil)
 
 	testCases := []struct {
 		name       string

@@ -66,7 +66,7 @@ var MCPServerInitializer = &coreinit.Initializer{
 		}
 
 		srv := mcp.NewServer(
-			mcp.NewInspectionHandler(inspectionServer, uploadURLIssuer),
+			mcp.NewInspectionHandler(inspectionServer, workbenchManager, uploadURLIssuer),
 			mcp.NewWorkbenchHandler(workbenchManager, timelineRenderer),
 		)
 		coreinit.Set(ctx, MCPServerKey, srv)

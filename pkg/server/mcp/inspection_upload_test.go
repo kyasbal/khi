@@ -35,7 +35,7 @@ func TestRequestFileUpload_Golden(t *testing.T) {
 		t.Fatalf("failed to create server: %v", err)
 	}
 	// The grant is fixed here, so the handler does not issue upload URLs.
-	handler := NewInspectionHandler(server, nil)
+	handler := NewInspectionHandler(server, nil, nil)
 	got, err := handler.templates.Render("request_file_upload.md.tmpl", uploadurl.Grant{
 		URL:          "http://127.0.0.1:8080/api/v1/file-upload/ABCDEF",
 		FieldID:      logFileFieldID,

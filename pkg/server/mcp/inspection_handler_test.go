@@ -20,18 +20,24 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/khictx"
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
 	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
 	inspectionmetadata "github.com/GoogleCloudPlatform/khi/pkg/core/inspection/metadata"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/summary"
 	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/id"
+	khifilev6model "github.com/GoogleCloudPlatform/khi/pkg/model/khifile/v6"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
 	"github.com/GoogleCloudPlatform/khi/pkg/server/mcp/mdtemplate"
+	"github.com/GoogleCloudPlatform/khi/pkg/server/workbench"
 	core_contract "github.com/GoogleCloudPlatform/khi/pkg/task/core/contract"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore"
 	"github.com/google/go-cmp/cmp"
@@ -125,8 +131,8 @@ func TestInspectionHandler_SummaryGolden(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create server: %v", err)
 	}
-	// Template rendering does not issue upload URLs.
-	handler := NewInspectionHandler(server, nil)
+	// Template rendering does not load workbenches or issue upload URLs.
+	handler := NewInspectionHandler(server, nil, nil)
 
 	startTime := time.Unix(header.StartTimeUnixSeconds, 0)
 	endTime := time.Unix(header.EndTimeUnixSeconds, 0)
@@ -135,6 +141,11 @@ func TestInspectionHandler_SummaryGolden(t *testing.T) {
 		Header:    header,
 		TimeRange: fmt.Sprintf("%s - %s", mdtemplate.FormatTime(startTime), mdtemplate.FormatTime(endTime)),
 		Summary:   c.Snapshot(),
+		FilterVocabulary: workbench.FilterVocabulary{
+			PathKeys:      []string{"apiversion", "kind", "namespace", "resource", "subresource"},
+			TimelineTypes: []string{"apiVersion", "kind", "namespace", "resource", "subresource"},
+			LogTypes:      []string{"k8s_audit", "k8s_event"},
+		},
 	}
 
 	got, err := handler.templates.Render("inspection_summary.md.tmpl", data)
@@ -184,8 +195,12 @@ func TestInspectionHandler_E2E(t *testing.T) {
 		t.Fatalf("failed to add k8s-event-log task: %v", err)
 	}
 
+	indexMgr := workbench.NewInspectionIndexManager(server, t.TempDir())
+	t.Cleanup(indexMgr.Wait)
+	workbenchMgr := workbench.NewWorkbenchManager(server, indexMgr, 3)
+
 	// This test does not call request_file_upload.
-	handler := NewInspectionHandler(server, nil)
+	handler := NewInspectionHandler(server, workbenchMgr, nil)
 	mcpServer := NewServer(handler)
 
 	mux := http.NewServeMux()
@@ -285,7 +300,7 @@ func TestInspectionHandler_E2E(t *testing.T) {
 	summary.SetCoreLabel(ctxTask1, "projectId", "my-gcp-project")
 	typedmap.Set(md1, summary.MetadataKey, summary1)
 
-	server.RegisterImportedInspection("2026-09-24-0130-a1b2", nil, md1.AsReadonly())
+	server.RegisterImportedInspection("2026-09-24-0130-a1b2", newTestInspectionStore(t, "2026-09-24-0130-a1b2"), md1.AsReadonly())
 
 	// Register running inspection (RUNNING, newer InspectTime)
 	md2 := typedmap.NewTypedMap()
@@ -348,8 +363,16 @@ func TestInspectionHandler_E2E(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ReadResource for DONE inspection failed: %v", err)
 		}
-		if !strings.Contains(readDone.Contents[0].Text, "# Inspection Summary: prod-cluster-1 restart investigation") {
-			t.Errorf("ReadResource DONE unexpected text: %s", readDone.Contents[0].Text)
+		for _, wantSubstr := range []string{
+			"# Inspection Summary: prod-cluster-1 restart investigation",
+			"## Filter vocabulary",
+			"- path keys (lowercased timelineType): `namespace`, `resource`",
+			"- timelineType: `namespace`, `resource`",
+			"- logType: `unknown`",
+		} {
+			if !strings.Contains(readDone.Contents[0].Text, wantSubstr) {
+				t.Errorf("ReadResource DONE text missing %q:\n%s", wantSubstr, readDone.Contents[0].Text)
+			}
 		}
 
 		// Read again to verify cached result
@@ -390,4 +413,42 @@ func TestInspectionHandler_E2E(t *testing.T) {
 			t.Error("expected error for unknown inspection, got nil")
 		}
 	})
+}
+
+func newTestInspectionStore(t *testing.T, inspectionID string) inspectioncore.Store {
+	t.Helper()
+	filePath := filepath.Join(t.TempDir(), inspectionID+".khi")
+	f, err := os.Create(filePath)
+	if err != nil {
+		t.Fatalf("failed to create test KHI file: %v", err)
+	}
+	defer f.Close()
+
+	writer, err := khifilev6model.NewWriter(f)
+	if err != nil {
+		t.Fatalf("failed to create KHI writer: %v", err)
+	}
+	idGen := id.NewGenerator()
+	b := khifilev6model.NewBuilder(idGen, writer)
+	b.TimelineAccumulator.GetPath(nil,
+		khifilev6model.PathSegment{Name: "default", Type: inspectioncore.TimelineTypeNamespace},
+		khifilev6model.PathSegment{Name: "nginx-pod", Type: inspectioncore.TimelineTypeResource},
+	)
+	node := structured.NewStandardMap(
+		[]string{"message"},
+		[]structured.Node{structured.NewStandardScalarNode("restarted")},
+	)
+	if err := b.LogAccumulator.AddLog(&khifilev6model.StagingLog{
+		Log:       log.NewLog(idGen, structured.NewNodeReader(node)),
+		Summary:   "restarted",
+		Timestamp: time.Date(2026, 9, 24, 1, 15, 0, 0, time.UTC),
+		Severity:  inspectioncore.SeverityInfo,
+		LogType:   inspectioncore.LogTypeUnknown,
+	}); err != nil {
+		t.Fatalf("failed to add test log: %v", err)
+	}
+	if err := b.Build(t.Context()); err != nil {
+		t.Fatalf("failed to build test KHI file: %v", err)
+	}
+	return inspectioncore.NewFileSystemInspectionResultRepository(filePath)
 }

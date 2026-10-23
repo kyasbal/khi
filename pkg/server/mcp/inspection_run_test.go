@@ -62,7 +62,7 @@ func TestInspectionRun_Golden(t *testing.T) {
 		t.Fatalf("failed to create server: %v", err)
 	}
 	// Template rendering does not issue upload URLs.
-	handler := NewInspectionHandler(server, nil)
+	handler := NewInspectionHandler(server, nil, nil)
 
 	defaultedClusterField := formFieldData{
 		ID:          "clusterName",
